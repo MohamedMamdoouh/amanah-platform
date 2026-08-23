@@ -2,14 +2,9 @@ using Npgsql;
 
 namespace Amanah.Api.Tests;
 
-public class PostgreSqlConnectionTests : IClassFixture<ApiWebApplicationFactory>
+public class PostgreSqlConnectionTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
-    private readonly string _connectionString;
-
-    public PostgreSqlConnectionTests(ApiWebApplicationFactory factory)
-    {
-        _connectionString = factory.ConnectionString;
-    }
+    private readonly string _connectionString = factory.ConnectionString;
 
     [Fact]
     public async Task Postgre_sql_container_accepts_connections()

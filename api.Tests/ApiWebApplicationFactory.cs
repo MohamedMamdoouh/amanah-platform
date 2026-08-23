@@ -1,4 +1,3 @@
-using Amanah.Api;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +18,6 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Default"] = ConnectionString,
-                ["RateLimit:PermitLimit"] = "1000",
             });
         });
     }

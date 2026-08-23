@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Amanah.Api.Filters;
+using Amanah.Api.Handlers;
 using Amanah.Api.Middleware;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,8 +10,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<RateLimitOptions>(
-            configuration.GetSection(RateLimitOptions.SectionName));
+        services.AddExceptionHandler<ApiExceptionHandler>();
+        services.AddProblemDetails();
+        services.AddApiRateLimiting(configuration);
+        services.AddApiCors(configuration);
+        services.AddForwardedHeaders(configuration);
 
         services.AddControllers(options => options.Filters.Add<ApiValidationFilter>())
             .AddJsonOptions(options =>
@@ -23,25 +27,17 @@ public static class DependencyInjection
             options.SuppressModelStateInvalidFilter = true;
         });
 
-        services.AddCors(options =>
-        {
-            options.AddDefaultPolicy(policy =>
-            {
-                policy.WithOrigins("http://localhost:4200")
-                    .AllowAnyHeader()
-                    .AllowAnyMethod();
-            });
-        });
-
         return services;
     }
 
     public static WebApplication UsePipeline(this WebApplication app)
     {
-        app.UseMiddleware<ExceptionHandlingMiddleware>();
+        app.UseExceptionHandler();
+        app.UseForwardedHeaders();
         app.UseMiddleware<RequestLoggingMiddleware>();
+        app.UseRouting();
         app.UseCors();
-        app.UseMiddleware<RateLimitMiddleware>();
+        app.UseRateLimiter();
         app.MapControllers();
 
         return app;

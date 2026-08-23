@@ -91,7 +91,7 @@ Resolve **before starting** this phase:
 
 - **Engine:** PostgreSQL 16+ everywhere (dev, tests, production). EF Core with `Npgsql.EntityFrameworkCore.PostgreSQL`.
 - **Local dev:** native PostgreSQL on Windows (`localhost:5432`, db `amanah` — see root `README.md`).
-- **Integration tests:** PostgreSQL via Testcontainers (`postgres:16`); `ApiWebApplicationFactory` / `RateLimitWebApplicationFactory` inject `ConnectionStrings:Default` from the container.
+- **Integration tests:** PostgreSQL via Testcontainers (`postgres:16`); `ApiWebApplicationFactory` injects `ConnectionStrings:Default` from the container.
 - **Production:** Railway managed PostgreSQL; migrations on deploy.
 - EF Core migration creating all Section 17 entities: `User`, `Category`, `CategoryFieldDefinition`, `Governorate`, `Report`, `CategoryField`, `ReportPhoto`, `Claim`, `Resolution`, `ChatThread`, `Message`, `Notification`, `OtpCode`, `RefreshToken`, `AbuseReport`, `ModerationAction`
 - Seed migration: 8 default categories + field definitions (Section 5.2), 27 governorates

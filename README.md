@@ -7,7 +7,7 @@ Lost-and-found platform for Egypt. [SPEC](docs/SPEC.md) · [Phases](docs/README.
 Prerequisites: PostgreSQL 16+ on Windows (db `amanah`, user `amanah`, password `amanah_dev`).
 
 ```bash
-cd api && dotnet run          # http://localhost:5000/health
+cd api && dotnet run
 cd web && npm start           # http://localhost:4200
 ```
 
