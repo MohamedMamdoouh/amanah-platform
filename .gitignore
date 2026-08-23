@@ -1,0 +1,21 @@
+# .NET
+api/bin/
+api/obj/
+api/storage/
+
+# Tests
+api.Tests/bin/
+api.Tests/obj/
+
+# Node
+web/node_modules/
+web/dist/
+web/.angular/
+
+# Environment
+.env
+
+# IDE
+.vs/
+.idea/
+.cursor/

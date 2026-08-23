@@ -1,10 +1,10 @@
-# Amanah — Specification (SPEC)
+# Amanah - Specification (SPEC)
 
 **Status:** v9  
 **Owner:** Mohamed Mamdouh
 
-- **Part I (1–15)** — product behavior.
-- **Part II (16–21)** — technical specification.
+- **Part I (1-15)** - product behavior.
+- **Part II (16-21)** - technical specification.
 
 ---
 
@@ -36,7 +36,7 @@
 
 ---
 
-# Part I — Product Requirements
+# Part I - Product Requirements
 
 ---
 
@@ -44,10 +44,10 @@
 
 In Egypt, when someone loses an item (a phone, national ID, wallet, keys, a bag, etc.), or finds someone else's lost item, there is no dedicated, trustworthy channel to connect the two parties. Today this happens informally through scattered Facebook posts and groups, which has several problems:
 
-- No moderation — posts can be spam, scams, or joke posts.
-- No structured data — no consistent way to search by location, category, or date.
-- No verification — no way to confirm a claimant is the real owner before handing over a found item, creating a real risk of theft or fraud.
-- No direct communication channel — people have to exchange personal contact info immediately, with no intermediary layer of safety.
+- No moderation - posts can be spam, scams, or joke posts.
+- No structured data - no consistent way to search by location, category, or date.
+- No verification - no way to confirm a claimant is the real owner before handing over a found item, creating a real risk of theft or fraud.
+- No direct communication channel - people have to exchange personal contact info immediately, with no intermediary layer of safety.
 
 **Amanah** aims to be the dedicated home for these reports across Egypt, with built-in moderation, a lightweight ownership-verification mechanism, and in-app messaging.
 
@@ -55,22 +55,22 @@ In Egypt, when someone loses an item (a phone, national ID, wallet, keys, a bag,
 
 ## 2. Vision & Goals
 
-Build a **real product** (not just a portfolio demo) that real people across Egypt can use to report lost items, report found items, and reconnect — safely and with minimal friction.
+Build a **real product** (not just a portfolio demo) that real people across Egypt can use to report lost items, report found items, and reconnect - safely and with minimal friction.
 
 ### Primary success metric
 
-**Number of confirmed reunions** — an item successfully returned to its owner through the platform. A reunion is only counted when **both parties mutually confirm** (see 4.6). This is the truest signal that the platform delivered real value, as opposed to vanity metrics like report volume or signups.
+**Number of confirmed reunions** - an item successfully returned to its owner through the platform. A reunion is only counted when **both parties mutually confirm** (see 4.6). This is the truest signal that the platform delivered real value, as opposed to vanity metrics like report volume or signups.
 
 ---
 
 ## 3. Target Users & Launch Scope
 
-- **Real users**, not a simulated/demo audience — the platform is meant to actually be used.
+- **Real users**, not a simulated/demo audience - the platform is meant to actually be used.
 - **Nationwide launch (all of Egypt).** No single pilot city. Density of overlapping "lost" and "found" reports in the same area is normally the argument for starting narrow, but expected early traffic is low (pre-marketing, solo-founder scale), so that dilution risk is acceptable and manual moderation stays feasible. Revisit with geo-targeted seeding if thin coverage in some governorates becomes a real bottleneck.
 - **Language:** Arabic only for v1 (RTL layout), matching how the target users actually communicate. English localization is explicitly deferred.
 - **Access model:** anyone, including logged-out visitors, can browse, search, and filter all publicly visible reports (see 4.4 for which statuses are publicly visible). **Login is required** to: submit a report, submit a claim, respond to a claim, message another user, confirm a resolution, or flag a listing. Action buttons prompt login on tap.
 - **Logged-out vs logged-in parity:** logged-out visitors see exactly the same content as logged-in users on publicly visible reports.
-- **Public identity:** each user chooses a **display name** at signup, which is shown on their listings and in chat. Display names are **not unique** in v1 and are **not editable** after signup. Phone numbers are **never** shown to other users — admin only.
+- **Public identity:** each user chooses a **display name** at signup, which is shown on their listings and in chat. Display names are **not unique** in v1 and are **not editable** after signup. Phone numbers are **never** shown to other users - admin only.
 - **Eligibility:** users must explicitly accept the Terms of Service and Privacy Policy at signup (version and timestamp recorded). Minimum age stated in Terms: **16**. No separate age verification in v1.
 - **Time standard:** all `timestamptz` values are stored in **UTC** in the database. **Date-only** fields (date lost/found) are stored as PostgreSQL `date` values representing the **Africa/Cairo calendar day** the user selected. **Day boundaries** for quotas and date validation use the Africa/Cairo calendar. **Displayed** timestamps use Africa/Cairo local time (11.2).
 - **Support channel:** a static contact page, linked from the footer, publishes a support email address. It is reachable by logged-out visitors. Every requirement in this document that refers to "contacting the admin" means this channel.
@@ -84,24 +84,24 @@ Build a **real product** (not just a portfolio demo) that real people across Egy
 1. User signs up/logs in via phone number + OTP and sets a display name; accepts Terms (5.1).
 2. User selects **"I lost something"**, picks a category, and fills in:
 
-- **Title** (required, 10–80 characters).
-- **Description** (required, 20–1,000 characters).
-- **Date lost** (required, exact date — no time). Must not be in the future and must not be more than **12 months** ago.
+- **Title** (required, 10-80 characters).
+- **Description** (required, 20-1,000 characters).
+- **Date lost** (required, exact date - no time). Must not be in the future and must not be more than **12 months** ago.
 - Category-specific fields (5.2).
 - **Location:** governorate (required dropdown) + free-text area/landmark (optional, max 120 chars; e.g. "Ramses station, platform 2").
-- **Photos:** optional, 0–5, max 5 MB each. Visibility is category-driven, not user-controlled (5.2). Uploaded photos have location/device metadata removed; users see optimized thumbnails.
+- **Photos:** optional, 0-5, max 5 MB each. Visibility is category-driven, not user-controlled (5.2). Uploaded photos have location/device metadata removed; users see optimized thumbnails.
 - Optional **reward offered** flag with amount in EGP (5.4).
-- **One hidden verification detail (required)** — a private text fact (10–500 characters), never shown to anyone but the reporter. Used in the claim flow (6).
+- **One hidden verification detail (required)** - a private text fact (10-500 characters), never shown to anyone but the reporter. Used in the claim flow (6).
 
-1. **Contact-info block.** Submission is rejected with field-level validation if contact info is detected in any public text field — `title`, `description`, `area/landmark`, found-item held-location detail, and all public category text fields — or in claim text (6.2). Blocking patterns are:
+1. **Contact-info block.** Submission is rejected with field-level validation if contact info is detected in any public text field - `title`, `description`, `area/landmark`, found-item held-location detail, and all public category text fields - or in claim text (6.2). Blocking patterns are:
 
 - URL-like text (`http://`, `https://`, `www.`), or explicit social domains (`facebook.com`, `instagram.com`, `t.me`, `telegram.me`, `wa.me`, `whatsapp.com`).
 - Phone-like sequences that normalize to **10 or more digits** (Arabic-Indic and Western digits are normalized to Western digits, and whitespace/dashes/dots/parentheses are stripped, before counting).
 
-This is a hard block with no override — the user must remove the flagged text to submit. It re-runs on every resubmission (4.3). It does **not** apply to the hidden verification detail or to chat messages (5.6). Admin review remains a backstop for anything that slips through. See risk table (section 13) for rationale. All user-entered text fields are normalized by trimming leading/trailing spaces and collapsing repeated internal spaces before validation and storage.
+This is a hard block with no override - the user must remove the flagged text to submit. It re-runs on every resubmission (4.3). It does **not** apply to the hidden verification detail or to chat messages (5.6). Admin review remains a backstop for anything that slips through. See risk table (section 13) for rationale. All user-entered text fields are normalized by trimming leading/trailing spaces and collapsing repeated internal spaces before validation and storage.
 
-1. Report is submitted with status **Pending Review**. The confirmation screen says review is **"usually within a day"** (internal SLA: 24 hours — not a guaranteed promise).
-2. No draft saving in v1 — submission is a single session.
+1. Report is submitted with status **Pending Review**. The confirmation screen says review is **"usually within a day"** (internal SLA: 24 hours - not a guaranteed promise).
+2. No draft saving in v1 - submission is a single session.
 3. **Submission quota:** max **3 new reports per day** per account (Africa/Cairo day boundary). Resubmissions of a rejected report do not count against this quota and are capped separately (4.3).
 4. **Concurrent open-report cap:** max **5** reports per account in `Pending Review`, `Published`, or `Claim In Progress`. `Rejected` and terminal statuses do not count. Resubmitting a `Rejected` report does not require a free slot. New submissions at the cap are rejected with clear messaging.
 
@@ -129,7 +129,7 @@ Same as 4.1, with these differences:
 3. **No editing after publication.** Published content is fixed. A reporter who needs to change published content withdraws the report (4.7) and submits a new one.
 4. Admin may **take down** an already-published report or **ban** a user (7.2).
 
-The admin never edits report content — only approves, rejects, and takes enforcement actions.
+The admin never edits report content - only approves, rejects, and takes enforcement actions.
 
 ### 4.4 Browsing & discovery
 
@@ -153,7 +153,7 @@ See section 6.
 3. Once the item is returned, **both parties** tap **"Confirm Resolved"**. When the first party confirms, the other party is notified that their confirmation is awaited. When both confirmations are recorded, the report becomes **Resolved** and both parties are notified.
 4. **A confirmation is irrevocable.** A party who has confirmed cannot withdraw that confirmation and cannot cancel the claim. The party who has not yet confirmed may still cancel.
 5. Either party may **cancel** an approved claim while neither has confirmed, or the not-yet-confirmed party may cancel after the other has confirmed → the report returns to `Published` and becomes claimable again (6.7).
-6. Resolution is **final** — no dispute or reopen mechanism in v1. Either party can flag the listing (7.1) or use the support channel (section 3) if something goes wrong.
+6. Resolution is **final** - no dispute or reopen mechanism in v1. Either party can flag the listing (7.1) or use the support channel (section 3) if something goes wrong.
 7. After resolution or cancellation, chat becomes read-only immediately and is deleted after 30 days (section 12).
 
 ### 4.7 Withdrawal and listing lifecycle
@@ -163,13 +163,13 @@ See section 6.
 - On withdrawal the reporter may optionally select a reason: _recovered outside the platform_, _no longer needed_, _posted by mistake_, or _other_. The reason is internal (reporter and admin only).
 - Withdrawal closes any `Pending` claims on the report (6.7).
 - Withdrawn reports are hidden from discovery and their URLs show a permanently-unavailable page (4.4).
-- Reporters can always submit a new report, subject to the daily quota and open-report cap (4.1.6–4.1.7).
+- Reporters can always submit a new report, subject to the daily quota and open-report cap (4.1.6-4.1.7).
 
 ### 4.8 Self-management surfaces
 
-- **My Reports** — status tabs: `Pending Review`, `Rejected`, `Published`, `Claim In Progress`, and closed (`Withdrawn`, `Resolved`, `Removed by Admin`). The `Rejected` tab is where a reporter reads the rejection reason and fixes and resubmits (4.3).
-- **My Claims** — every claim the user submitted, with its status and outcome.
-- **My Chats** — every chat thread the user is part of, active or read-only, reachable regardless of the underlying report's status until the thread is deleted (section 12).
+- **My Reports** - status tabs: `Pending Review`, `Rejected`, `Published`, `Claim In Progress`, and closed (`Withdrawn`, `Resolved`, `Removed by Admin`). The `Rejected` tab is where a reporter reads the rejection reason and fixes and resubmits (4.3).
+- **My Claims** - every claim the user submitted, with its status and outcome.
+- **My Chats** - every chat thread the user is part of, active or read-only, reachable regardless of the underlying report's status until the thread is deleted (section 12).
 - Reporter claim-review actions live inside the corresponding report-detail page, in a dedicated **Claims** section.
 
 ---
@@ -180,7 +180,7 @@ See section 6.
 
 - **Method:** phone number + OTP as the sole signup/login method.
 - **Accepted phone inputs:** Egyptian mobile numbers only (`01XXXXXXXXX` or international `+20XXXXXXXXXX`). Formatting variants of the same number count as one identity for uniqueness and OTP send limits.
-- **Display name rules:** required at signup, 3–40 chars, Arabic/Latin letters + digits + spaces + `- _ .`; not unique; not editable after signup in v1.
+- **Display name rules:** required at signup, 3-40 chars, Arabic/Latin letters + digits + spaces + `- _ .`; not unique; not editable after signup in v1.
 - **Account creation point:** an account exists only once the user has submitted a display name and accepted the Terms. Abandoning signup after OTP verification leaves no account behind.
 - **OTP delivery:** SMS one-time code.
 - **Code rules:** 6-digit code, valid **10 minutes**; up to **3** entry attempts per code; after 3 failures the code is void and the user must request a new one (which counts toward send limits).
@@ -194,8 +194,8 @@ See section 6.
 - **Banned accounts:** a banned user cannot sign in. The blocked sign-in attempt states that the account is banned and shows the recorded reason (7.2).
 - **Sessions:** users stay signed in across multiple devices. "Log out everywhere" ends all sessions immediately. Sessions expire after a period without use and then require re-authentication.
 - **Terms changes:** the accepted version and timestamp are recorded as an audit trail. There is no re-acceptance flow in v1.
-- **Phone change:** out of scope in v1 — neither self-serve nor admin-assisted.
-- **Account deletion:** self-serve, but **blocked** while the user has a report in `Claim In Progress` or holds an approved claim on someone else's report — the claim must be cancelled first (6.7). Once eligible: their reports in `Pending Review` or `Published` are withdrawn (closing any pending claims on them), their own `Pending` claims are withdrawn, and they are signed out immediately. Chat message bodies remain until the normal chat retention deadline while sender identity is anonymized immediately. Direct personal data is purged within **30 days** per section 12.
+- **Phone change:** out of scope in v1 - neither self-serve nor admin-assisted.
+- **Account deletion:** self-serve, but **blocked** while the user has a report in `Claim In Progress` or holds an approved claim on someone else's report - the claim must be cancelled first (6.7). Once eligible: their reports in `Pending Review` or `Published` are withdrawn (closing any pending claims on them), their own `Pending` claims are withdrawn, and they are signed out immediately. Chat message bodies remain until the normal chat retention deadline while sender identity is anonymized immediately. Direct personal data is purged within **30 days** per section 12.
 - **Roles:** `User`, `Admin`.
 - **Admin bootstrap:** the initial admin account is provisioned at launch; no in-app admin promotion in v1.
 
@@ -218,9 +218,9 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 
 **Default validation rules** (apply to seed data and admin-defined fields unless overridden per field):
 
-- Text fields: **2–80** characters.
-- `First name on document` (seed): **2–40** characters, letters and spaces only. First name only — helper copy states that surnames must not be entered.
-- `Key count` (seed): integer **1–20**.
+- Text fields: **2-80** characters.
+- `First name on document` (seed): **2-40** characters, letters and spaces only. First name only - helper copy states that surnames must not be entered.
+- `Key count` (seed): integer **1-20**.
 
 **Private-photo categories (`photosPrivate` = true):**
 
@@ -230,11 +230,11 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 
 **Hidden verification detail (required on every report):**
 
-- Exactly one per report: private text, **10–500 characters**.
+- Exactly one per report: private text, **10-500 characters**.
 - Visible **only to the reporter**. Never shown to claimants, the public, or the admin.
-- **Rationale:** this is the reporter's private proof question — like a security answer. Admin moderates public content quality; ownership verification stays between reporter and claimant. Showing it to admin would expand PII access and undermine reporter trust.
+- **Rationale:** this is the reporter's private proof question - like a security answer. Admin moderates public content quality; ownership verification stays between reporter and claimant. Showing it to admin would expand PII access and undermine reporter trust.
 - Claims use one model for all reports: the claimant describes the item (6.2) and the reporter compares that description manually against the report details and this hidden detail.
-- Editable only from `Rejected` (4.3.4); not while `Pending Review`, `Published`, or terminal (4.3.6–4.3.7).
+- Editable only from `Rejected` (4.3.4); not while `Pending Review`, `Published`, or terminal (4.3.6-4.3.7).
 
 ### 5.3 Location
 
@@ -247,7 +247,7 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 - Optional boolean + amount in **EGP** (whole numbers only).
 - If the reward flag is true, the amount is required and must be an integer between **50 and 50,000**. If the flag is false, the amount must be empty.
 - Shown on the public listing when set.
-- Set at initial submission or on `Rejected` resubmit only — not editable in any other status (4.3.7).
+- Set at initial submission or on `Rejected` resubmit only - not editable in any other status (4.3.7).
 - The platform never processes, holds, or escrows payment. Reward negotiation and exchange happen entirely offline.
 - Demanding money beyond an advertised reward is prohibited in the Terms (7.4).
 
@@ -258,16 +258,16 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 - **Rejection reasons (predefined list):**
   1. Unclear photos
   2. Suspected spam or scam
-  3. Duplicate report — the same reporter has posted the same item more than once
+  3. Duplicate report - the same reporter has posted the same item more than once
   4. Insufficient description
   5. Contains contact info
   6. Prohibited or illegal item
   7. Wrong category
   8. Contains a raw ID/document number in a text field
 - An optional free-text note is shown to the reporter alongside the reason.
-- Admin cannot edit report content — only approve, reject, and take enforcement actions (7.2).
+- Admin cannot edit report content - only approve, reject, and take enforcement actions (7.2).
 - **Admin surfaces in v1:** moderation queue, abuse-report queue, user lookup (with ban and unban), and category & field management at `/admin/categories`. There is no admin tool for changing a user's phone number.
-- **Category management:** admins may add categories (Arabic name, slug, sort order, `photosPrivate` flag, active flag), edit names and sort order, deactivate categories, and define per-category fields (key, Arabic label, type `text` or `integer`, validation ranges, required flag). Deactivated categories are hidden from new submissions; existing reports keep their category. Field-definition changes do not retroactively re-validate old reports. Categories referenced by reports cannot be deleted — only deactivated.
+- **Category management:** admins may add categories (Arabic name, slug, sort order, `photosPrivate` flag, active flag), edit names and sort order, deactivate categories, and define per-category fields (key, Arabic label, type `text` or `integer`, validation ranges, required flag). Deactivated categories are hidden from new submissions; existing reports keep their category. Field-definition changes do not retroactively re-validate old reports. Categories referenced by reports cannot be deleted - only deactivated.
 - **Admin access to private data:**
   - Private photos: during report review and enforcement investigations only.
   - Claim text and claim photos: during flagged-listing abuse or enforcement investigations only.
@@ -278,9 +278,9 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 ### 5.6 Messaging
 
 - Real-time in-app chat (messages appear without a page refresh), unlocked only after a claim is approved.
-- One thread per approved claim — not a general-purpose DM system.
+- One thread per approved claim - not a general-purpose DM system.
 - Text and photo attachments (same size and format rules as report photos).
-- Chat messages are **not** subject to the contact-info block (4.1.3) — verified, matched parties may need to exchange contact details to coordinate a real-world handover.
+- Chat messages are **not** subject to the contact-info block (4.1.3) - verified, matched parties may need to exchange contact details to coordinate a real-world handover.
 - Safety banner on every new thread, linking to the safety page.
 - **Report from chat:** see section 7.1 (shortcut to the listing-flag flow).
 - Threads are listed in **My Chats** (4.8).
@@ -290,9 +290,9 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 
 **Channels:**
 
-- **In-app notification center** — the source of truth for all user-facing events. Notifications are not configurable; there is no preferences screen in v1.
-- **SMS** — used only for OTP. Never used for event notifications.
-- **Email** — used only to alert the admin that new submissions are waiting in the moderation queue. Never used for user-facing events.
+- **In-app notification center** - the source of truth for all user-facing events. Notifications are not configurable; there is no preferences screen in v1.
+- **SMS** - used only for OTP. Never used for event notifications.
+- **Email** - used only to alert the admin that new submissions are waiting in the moderation queue. Never used for user-facing events.
 
 **Read behavior:** notifications stay unread until the user opens or explicitly marks them read.
 
@@ -309,7 +309,7 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 | Report expired                            | Reporter and pending claimants     | The listing was auto-withdrawn after 90 cumulative published days; pending claims closed                               |
 | Claim approved                            | Claimant                           | Their claim was accepted; chat is now available; links to the chat thread                                              |
 | Claim rejected                            | Claimant                           | Their claim was rejected, including the system reason `Another claim approved`; links to the report if attempts remain |
-| Claim closed — report no longer available | Claimant                           | The report was withdrawn, expired, or taken down, so their pending claim was closed; no attempt was consumed           |
+| Claim closed - report no longer available | Claimant                           | The report was withdrawn, expired, or taken down, so their pending claim was closed; no attempt was consumed           |
 | Claim cancelled by counterparty           | Other party                        | The approved claim was cancelled and the report is claimable again                                                     |
 | Counterparty confirmed resolution         | Other party                        | The other party confirmed the item was returned; their own confirmation is awaited                                     |
 | Report resolved                           | Both parties                       | Both confirmations were recorded and the report is closed                                                              |
@@ -320,7 +320,7 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 
 ### 5.8 Legal & privacy
 
-- Basic Terms of Service and Privacy Policy — reasonable diligence for v1 under Egypt's Personal Data Protection Law context.
+- Basic Terms of Service and Privacy Policy - reasonable diligence for v1 under Egypt's Personal Data Protection Law context.
 - **PDPL cross-border transfer:** infrastructure may be hosted outside Egypt. Accepted as a known legal gap for v1; hosting location disclosed in the Privacy Policy. Full legal review deferred.
 - **PDPL data rights:** self-serve deletion is implemented (5.1). Correction and access rights are not: display names cannot be changed, phone numbers cannot be changed, and there is no data export in v1. This gap is accepted and disclosed in the Privacy Policy alongside the hosting disclosure.
 - Minimal PII retention (section 12). Private photos and hidden verification details are access-controlled as defined in sections 5.2 and 9.
@@ -337,7 +337,7 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 
 ### 6.2 Claim submission
 
-- The claimant writes a free-text description, **10–500 characters**, prompted according to the report's direction:
+- The claimant writes a free-text description, **10-500 characters**, prompted according to the report's direction:
   - On a **lost** report (posted by the owner), the claimant is the finder: _"Describe the item you found."_
   - On a **found** report (posted by the finder), the claimant is the owner: _"Describe the item you lost and anything that proves it is yours."_
 - The claimant may attach **one optional photo** (same size and format rules as report photos). It is visible only to the reporter and, during an abuse or enforcement investigation, the admin.
@@ -347,7 +347,7 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 ### 6.3 Manual review by reporter
 
 - Each claim submission creates a `Pending` claim record and notifies the reporter.
-- The reporter approves or rejects manually — there is no automatic matching.
+- The reporter approves or rejects manually - there is no automatic matching.
 - **Reporter timeout:** a `Pending` claim is **auto-withdrawn** after **10 days** from `submittedAt` without reporter action. Status → `Withdrawn`; no attempt consumed; report stays `Published`. Reporter and claimant are notified in-app (`ClaimAutoWithdrawn`).
 - **Claimant withdrawal:** the claimant may withdraw their own `Pending` claim at any time before the reporter decides. The claim becomes `Withdrawn`, no attempt is consumed, and the reporter is notified.
 
@@ -366,7 +366,7 @@ Claim statuses: `Pending`, `Approved`, `Rejected`, `Withdrawn` (claimant withdre
   - Auto-rejection because another claim was approved.
   - Auto-closure because the report is no longer available.
   - A claim refused because the report was not `Published`.
-- No cooldown-and-retry cycles and no cross-report tracking in v1 — the limit is per user per report only.
+- No cooldown-and-retry cycles and no cross-report tracking in v1 - the limit is per user per report only.
 
 ### 6.5 Approval and locking
 
@@ -381,12 +381,12 @@ When the reporter approves a claim:
 
 - On manual rejection the claimant is notified and gets no chat access.
 - The claimant may submit a new attempt if attempts remain (6.4).
-- Rejection is final once attempts are exhausted — there is no admin appeal in v1. A claimant who believes they were wrongly rejected may use the support channel (section 3); the admin has no in-product tool to overturn a reporter's decision.
+- Rejection is final once attempts are exhausted - there is no admin appeal in v1. A claimant who believes they were wrongly rejected may use the support channel (section 3); the admin has no in-product tool to overturn a reporter's decision.
 
 ### 6.7 Cancellation and closure of claims
 
 - **Cancellation of an approved claim:** either party may cancel while they have not themselves confirmed resolution (4.6.4). The claim becomes `Cancelled`, the report returns to `Published` and is claimable again, the counterparty is notified, and the chat thread becomes read-only immediately.
-- **Closure of pending claims:** when a report leaves `Published` for any reason other than a claim approval — reporter withdrawal, **automatic expiry** (4.7), admin takedown, or ban and account-deletion cleanup — all `Pending` claims on it are closed automatically. Those claimants are notified, and no attempt is consumed.
+- **Closure of pending claims:** when a report leaves `Published` for any reason other than a claim approval - reporter withdrawal, **automatic expiry** (4.7), admin takedown, or ban and account-deletion cleanup - all `Pending` claims on it are closed automatically. Those claimants are notified, and no attempt is consumed.
 
 ---
 
@@ -410,7 +410,7 @@ When the reporter approves a claim:
   - Withdraw their `Pending` claims on other reports.
   - Cancel any `Approved` claim they are part of, whether as reporter or claimant; the chat becomes read-only. If the banned user was the reporter, the report is then withdrawn, so no report belonging to a banned user stays publicly visible.
   - Notify impacted counterparties.
-- **Unban a user** — restores their ability to sign in and use the product. It does not restore anything that ban cleanup withdrew or cancelled.
+- **Unban a user** - restores their ability to sign in and use the product. It does not restore anything that ban cleanup withdrew or cancelled.
 - When investigating a flagged listing, the admin may access the associated chat content, claim text, and claim photos (5.5).
 - **Abuse report workflow:** `Open` → `Resolved`, with an outcome of no action taken, report taken down, or user banned. The flagger is notified of the high-level outcome only.
 
@@ -452,7 +452,7 @@ When the reporter approves a claim:
 
 | From                | To                  | Triggered by                                                                  | Notes                                                                                                            |
 | ------------------- | ------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| —                   | `Pending Review`    | User submits report                                                           | Counts against the daily submission quota                                                                        |
+| -                   | `Pending Review`    | User submits report                                                           | Counts against the daily submission quota                                                                        |
 | `Pending Review`    | `Published`         | Admin approves                                                                |                                                                                                                  |
 | `Pending Review`    | `Rejected`          | Admin rejects                                                                 | Reason + optional note; reporter notified                                                                        |
 | `Pending Review`    | `Withdrawn`         | Reporter withdraws before a decision                                          |                                                                                                                  |
@@ -465,7 +465,7 @@ When the reporter approves a claim:
 | `Claim In Progress` | `Withdrawn`         | Ban cleanup where the banned user is the reporter                             | Approved claim cancelled first                                                                                   |
 | `Claim In Progress` | `Removed by Admin`  | Admin takedown                                                                | Approved claim cancelled first; chat read-only                                                                   |
 
-`Resolved`, `Withdrawn`, and `Removed by Admin` are terminal — no reopening or reactivation in v1. `Rejected` is terminal only in the sense that it is not publicly visible; it leaves that state solely by resubmission, and is deleted once its retention window expires.
+`Resolved`, `Withdrawn`, and `Removed by Admin` are terminal - no reopening or reactivation in v1. `Rejected` is terminal only in the sense that it is not publicly visible; it leaves that state solely by resubmission, and is deleted once its retention window expires.
 
 ---
 
@@ -494,28 +494,28 @@ Per-field access above. Public visibility by status: section 4.4.
 ## 10. Explicitly Out of Scope for v1
 
 - **Automated/AI-assisted matching** of any kind, including identifier-based pairing (IMEI, serial).
-- **Claim rejection appeals** — a rejection is final once attempts are exhausted.
-- **Editing a published report's content** — the reporter withdraws and submits a new report instead (4.3.7).
-- **In-chat block user** — listing-level reporting (including from chat) exists in v1; per-user blocking does not.
-- **Per-photo visibility control** — photo visibility is category-driven only.
-- **Resolution disputes/reopening** — confirmations are final and irrevocable.
+- **Claim rejection appeals** - a rejection is final once attempts are exhausted.
+- **Editing a published report's content** - the reporter withdraws and submits a new report instead (4.3.7).
+- **In-chat block user** - listing-level reporting (including from chat) exists in v1; per-user blocking does not.
+- **Per-photo visibility control** - photo visibility is category-driven only.
+- **Resolution disputes/reopening** - confirmations are final and irrevocable.
 - **Display-name edits after signup.**
-- **Phone-number change** — neither self-serve nor admin-assisted.
+- **Phone-number change** - neither self-serve nor admin-assisted.
 - **Terms re-acceptance flow** when the Terms version changes.
-- **Notification preferences** — all notifications are always on.
+- **Notification preferences** - all notifications are always on.
 - **Data export / access requests** (5.8).
-- **Automated profanity filtering** — moderation and abuse reporting only.
-- **Social link previews and rich share cards** — shared links show a plain URL.
-- **In-app payments/escrow** for rewards — offline negotiation only.
-- **Native mobile apps** — web app only (installable on home screen).
-- **English localization** — Arabic only for v1.
-- **Community-assisted moderation** — solo-admin review only.
-- **Monetization** (ads, premium boosts, donations) — fully free in v1.
-- **Web push notifications** — the in-app notification center is the only user-facing event channel.
-- **SMS notifications for in-app events** — SMS is used solely for OTP.
-- **Map/GPS-based location picking** — governorate dropdown + free-text area only.
-- **Draft report saving** — single-session submission only.
-- **Formal performance targets** — no page-load or bundle-size budgets for v1.
+- **Automated profanity filtering** - moderation and abuse reporting only.
+- **Social link previews and rich share cards** - shared links show a plain URL.
+- **In-app payments/escrow** for rewards - offline negotiation only.
+- **Native mobile apps** - web app only (installable on home screen).
+- **English localization** - Arabic only for v1.
+- **Community-assisted moderation** - solo-admin review only.
+- **Monetization** (ads, premium boosts, donations) - fully free in v1.
+- **Web push notifications** - the in-app notification center is the only user-facing event channel.
+- **SMS notifications for in-app events** - SMS is used solely for OTP.
+- **Map/GPS-based location picking** - governorate dropdown + free-text area only.
+- **Draft report saving** - single-session submission only.
+- **Formal performance targets** - no page-load or bundle-size budgets for v1.
 
 ---
 
@@ -556,7 +556,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 
 | Risk                                                            | Mitigation                                                                                                                                                              |
 | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| False claims / theft of found items                             | Manual claim review before chat unlocks + required hidden verification detail + optional claim photo (one max — keeps reporter review lightweight)                      |
+| False claims / theft of found items                             | Manual claim review before chat unlocks + required hidden verification detail + optional claim photo (one max - keeps reporter review lightweight)                      |
 | False negatives (real owner rejected)                           | Up to 3 attempts per user/report; accepted no-appeal trade-off in v1                                                                                                    |
 | Weak hidden verification details                                | Reporter's own interest plus a minimum length; no longer admin-reviewed, accepted in exchange for the reporter's privacy                                                |
 | Reporter never reviews claims                                   | Action-required in-app notifications + claim visibility in My Reports; **10-day auto-withdraw** of pending claims (6.3)                                                 |
@@ -580,8 +580,8 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 
 | Item                                          | Status                            |
 | --------------------------------------------- | --------------------------------- |
-| OTP / SMS provider                            | **To be chosen** before launch    |
-| API error contract appendix                   | **Pending** before implementation |
+| OTP / SMS provider                            | **Partial** - `ISmsSender` defined in [Phase 01](./PHASE-01-platform-foundation.md); vendor chosen at Railway deploy |
+| API error contract appendix                   | **Resolved** - [api-error-contract.md](./api-error-contract.md) |
 | SignalR event/payload contract                | **Pending** before implementation |
 | Transactional email provider for admin alerts | **To be chosen** before launch    |
 | Domain name                                   | **To be chosen** before launch    |
@@ -596,9 +596,9 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 - **Valid submission creates a pending report:** given a logged-in user with remaining quota, when they submit all required fields including the hidden verification detail, then a report is created with status `Pending Review`.
 - **Date bounds:** a date lost/found in the future, or more than 12 months before today in Africa/Cairo time, is rejected with field-level validation. Today's local date is always accepted.
-- **Hidden-detail format:** the hidden verification detail is private text of 10–500 characters, and is required.
-- **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held-location detail, public category fields, and claim text — and is accepted in the hidden verification detail and in chat messages.
-- **Category fields:** required category fields are validated per the active category's field definitions (5.2), including seed defaults (text 2–80 chars, `first name on document` 2–40 letters/spaces, `key count` integer 1–20).
+- **Hidden-detail format:** the hidden verification detail is private text of 10-500 characters, and is required.
+- **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held-location detail, public category fields, and claim text - and is accepted in the hidden verification detail and in chat messages.
+- **Category fields:** required category fields are validated per the active category's field definitions (5.2), including seed defaults (text 2-80 chars, `first name on document` 2-40 letters/spaces, `key count` integer 1-20).
 - **Submission quota:** at 3 new reports in the current Africa/Cairo day, the next submission is rejected with clear quota messaging.
 - **Open-report cap:** at 5 reports in `Pending Review`, `Published`, or `Claim In Progress`, the next new submission is rejected with clear cap messaging; resubmitting a `Rejected` report still succeeds.
 
@@ -619,13 +619,13 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 - **Listing scope:** browse and filter requests return `Published` and `Claim In Progress` reports and nothing else.
 - **Claim In Progress presentation:** a `Claim In Progress` report is publicly readable, labelled as having a claim in progress, and its claim action is unavailable.
-- **Search behavior:** a query matches only reports where every query word appears, in any order and case-insensitively, across title, description, public category field values, and area text, after Arabic normalization — so a query using a bare alef, a haa in place of taa marbuta, tatweel, or no diacritics still matches the equivalent stored text.
+- **Search behavior:** a query matches only reports where every query word appears, in any order and case-insensitively, across title, description, public category field values, and area text, after Arabic normalization - so a query using a bare alef, a haa in place of taa marbuta, tatweel, or no diacritics still matches the equivalent stored text.
 - **Filters:** category, governorate, type, and date range combine with the keyword query using AND.
 - **URL behavior:** `Resolved`, `Withdrawn`, and `Removed by Admin` show a permanently-unavailable page; `Pending Review` and `Rejected` show a not-found page to everyone but their reporter and the admin; missing IDs and wrong-type links show a not-found page.
 
 ### 15.4 Claiming and review
 
-- **Claim creation constraints:** a logged-in non-reporter submitting 10–500 characters on a `Published` report creates a `Pending` claim. Claim creation is refused on any other status without consuming an attempt, and refused when that user already has an open `Pending` claim on the report.
+- **Claim creation constraints:** a logged-in non-reporter submitting 10-500 characters on a `Published` report creates a `Pending` claim. Claim creation is refused on any other status without consuming an attempt, and refused when that user already has an open `Pending` claim on the report.
 - **Direction-specific prompt:** the claim form asks the finder to describe the item they found on a lost report, and asks the owner to describe and prove the item on a found report.
 - **Claim photo:** at most one photo may be attached, and it is visible only to the reporter and, during a flagged-listing investigation, the admin.
 - **Reporter timeout:** a `Pending` claim is auto-withdrawn after **10 days** without reporter action; no attempt is consumed; the report stays `Published`; both parties are notified.
@@ -666,7 +666,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 ### 15.8 Privacy and permissions
 
-- **Private photos (`photosPrivate`):** categories with `photosPrivate` never expose photos on a public listing or to claimants — only the reporter and admin (during review/enforcement).
+- **Private photos (`photosPrivate`):** categories with `photosPrivate` never expose photos on a public listing or to claimants - only the reporter and admin (during review/enforcement).
 - **Hidden verification detail:** it is returned only to its reporter, and never to a claimant, the public, or the admin.
 - **Claim text and photos:** visible to their own claimant and the reporter at all times, and to the admin only while a flagged-listing investigation is open.
 - **Chat access:** only the two parties can read a thread, plus the admin during a flagged-listing investigation.
@@ -682,20 +682,20 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 ---
 
-# Part II — Technical Specification
+# Part II - Technical Specification
 
 ---
 
 ## 16. Architecture & Stack
 
-- **Frontend:** Angular, built as an installable PWA, Arabic-first RTL layout. Plain client-side rendering — no SSR in v1.
+- **Frontend:** Angular, built as an installable PWA, Arabic-first RTL layout. Plain client-side rendering - no SSR in v1.
 - **Backend:** ASP.NET Core Web API, with SignalR for real-time chat (5.6).
-- **Database:** PostgreSQL, hosted on **Railway** (managed Postgres service).
-- **Hosting:** **Railway** for the API and Angular build/serving — DB, API, and object storage on one platform for v1 simplicity.
-- **Object storage:** **Railway Buckets** (S3-compatible) — separate buckets/prefixes for public vs private media.
+- **Database:** PostgreSQL (EF Core + Npgsql). Hosted on **Railway** in production (managed Postgres service). Local dev uses native PostgreSQL on Windows; integration tests use PostgreSQL via Testcontainers.
+- **Hosting:** **Railway** for the API and Angular build/serving - DB, API, and object storage on one platform for v1 simplicity.
+- **Object storage:** **Railway Buckets** (S3-compatible) - separate buckets/prefixes for public vs private media.
 - **Private media access:** private report photos (`photosPrivate` categories) and claim photos are served via short-lived **pre-signed URLs (5-minute expiry)**, generated per request after the access-control check in section 9. Authorized viewers: reporter and admin for report photos; claimant, reporter, and (during a flagged-listing investigation) admin for claim photos.
 - **Expired private URL behavior:** if a private image URL expires while viewing, the client silently requests a fresh authorized URL and retries.
-- **Timezone storage:** per section 3 — `timestamptz` in UTC; `date` fields as Cairo calendar days; quotas and validation use Africa/Cairo; display in Africa/Cairo (11.2).
+- **Timezone storage:** per section 3 - `timestamptz` in UTC; `date` fields as Cairo calendar days; quotas and validation use Africa/Cairo; display in Africa/Cairo (11.2).
 - **Search implementation:** 4.4 requires all-terms matching with Arabic normalization, which plain `ILIKE` on raw columns cannot deliver.
   - Each report carries a denormalized, normalized search column built from title + description + public category field values + area text, recomputed whenever the report is written.
   - Normalization (applied identically to stored text and to the incoming query): alef variants (`أ إ آ ٱ` → `ا`), `ى` → `ي`, `ة` → `ه`, strip tatweel and Arabic diacritics, collapse whitespace, lowercase.
@@ -739,7 +739,7 @@ Implementation notes:
 
 Implementation for section 5.1:
 
-- **OTP:** SMS delivery provider **deferred** (section 14) — implement behind an abstracted interface; concrete provider chosen before launch. v1 still requires SMS OTP per section 5.1.
+- **OTP:** SMS delivery provider **deferred** (section 14) - implement behind an abstracted interface; concrete provider chosen before launch. v1 still requires SMS OTP per section 5.1.
 - **Account creation:** `User` row created only when display name and Terms are submitted.
 - **Session:** JWT access token (15 minutes) + refresh token (30 days), rotating on refresh. Multi-device allowed.
 - **Logout everywhere:** revokes all refresh tokens; active access tokens expire within one access-token lifetime.
@@ -773,7 +773,11 @@ Per section 7.5. On limit exceed: HTTP `429` with `Retry-After` header.
 
 ## 21. Infrastructure & Operations
 
-- **Environments:** production only.
+- **Environments:** production only (plus local dev on developer machines).
+- **Database:** PostgreSQL everywhere.
+  - **Local dev:** native PostgreSQL 16+ on Windows (`localhost:5432`; connection string in `api/appsettings.Development.json`).
+  - **Integration tests:** PostgreSQL 16 via Testcontainers (`postgres:16`); `IClassFixture` web application factories override `ConnectionStrings:Default`. Requires Docker; no docker-compose in repo.
+  - **Production:** Railway managed PostgreSQL.
 - **Migrations:** EF Core migrations on deploy.
 - **Scheduled jobs:** retention cleanup (section 12); **listing expiry** and expiry-warning checks (4.7); **pending-claim timeout** (6.3). All business-date logic uses Africa/Cairo day boundaries where applicable.
 - **Backups:** Railway managed Postgres defaults.
