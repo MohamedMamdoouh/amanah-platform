@@ -3,6 +3,8 @@
 **Status:** Not started  
 **Prerequisites:** Phase 03 — Admin Moderation
 
+**Incremental implementation:** This phase is broken into 8 sub-phases for step-by-step work. Start at [README.md](./README.md).
+
 ---
 
 ## 1. Summary
@@ -76,7 +78,7 @@ Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (l
 
 ### Shared utilities
 
-- Arabic normalization for query: alef variants → `Section `, `ى` → `ي`, `ة` → `ه`, strip tatweel/diacritics, collapse whitespace, lowercase
+- Arabic normalization for query: alef variants, `ى` → `ي`, `ة` → `ه`, strip tatweel/diacritics, collapse whitespace, lowercase
 - All-terms AND matching via `ILIKE '%term%'` per normalized term
 - Status-based response filtering: strip private photos, hidden detail, reporter phone
 - `Claim In Progress` label on listing and detail; claim CTA shows login prompt or disabled state until Phase 05
@@ -126,7 +128,7 @@ Explicitly deferred to later phases:
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.3](../SPEC.md#153-browse-search-visibility-and-urls).
+From [SPEC.md Section 15.3](../../SPEC.md#153-browse-search-visibility-and-urls).
 
 - [ ] **Listing scope:** browse and filter requests return `Published` and `Claim In Progress` reports and nothing else
 - [ ] **Claim In Progress presentation:** a `Claim In Progress` report is publicly readable, labelled as having a claim in progress, and its claim action is unavailable
@@ -139,7 +141,7 @@ From [SPEC.md Section 15.3](../SPEC.md#153-browse-search-visibility-and-urls).
 - [ ] Sort: newest published first
 - [ ] Pagination: 20 per page, numbered pages
 - [ ] Logged-out visitors see same content as logged-in on public reports
-- [ ] Action buttons (claim, message) prompt login when logged out
+- [ ] Claim and message action stubs prompt login when logged out (full message/chat in Phase 06)
 
 ---
 

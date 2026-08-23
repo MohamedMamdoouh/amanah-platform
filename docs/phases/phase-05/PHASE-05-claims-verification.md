@@ -3,6 +3,8 @@
 **Status:** Not started  
 **Prerequisites:** Phase 04 — Browse & Discovery
 
+**Incremental implementation:** This phase is broken into 9 sub-phases for step-by-step work. Start at [README.md](./README.md).
+
 ---
 
 ## 1. Summary
@@ -118,8 +120,8 @@ Claimant cannot claim own report. Claim refused on non-`Published` status withou
 | Claim withdrawn by claimant | Reporter | this phase |
 | Claim approved | Claimant | this phase |
 | Claim rejected | Claimant | this phase |
-| Claim closed — report unavailable | Claimant | this phase (manual reporter withdraw only) |
-| Claim cancelled by counterparty | Other party | this phase (stub — full cancel flow in Phase 06) |
+| Claim closed — report unavailable | Claimant | this phase (`ClaimCleanupService` unit-tested; E2E on `Published` withdraw in Phase 07) |
+| Claim cancelled by counterparty | Other party | deferred to Phase 06 (full cancel flow) |
 | Claim auto-withdrawn | Reporter and claimant | deferred to Phase 07 (job) |
 
 ---
@@ -140,7 +142,7 @@ Explicitly deferred to later phases:
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.4](../SPEC.md#154-claiming-and-review).
+From [SPEC.md Section 15.4](../../SPEC.md#154-claiming-and-review).
 
 - [ ] **Claim creation constraints:** a logged-in non-reporter submitting 10–500 characters on a `Published` report creates a `Pending` claim. Claim creation is refused on any other status without consuming an attempt, and refused when that user already has an open `Pending` claim on the report
 - [ ] **Direction-specific prompt:** the claim form asks the finder to describe the item they found on a lost report, and asks the owner to describe and prove the item on a found report
@@ -149,18 +151,18 @@ From [SPEC.md Section 15.4](../SPEC.md#154-claiming-and-review).
 - [ ] **Approval side effects:** the claim becomes `Approved`, the report becomes `Claim In Progress`, a chat thread is created, and all other pending claims become `Rejected` with the reason `Another claim approved`, notified, with no attempt consumed
 - [ ] **Attempt counting:** manual reporter rejections and claimant-initiated cancellations of an approved claim each consume one attempt; reporter-initiated cancellations, claimant withdrawals, **10-day auto-withdrawals**, auto-rejections, auto-closures, and refused claims do not. After 3 counted failures, further claims on that report by that user are blocked with a clear message
 - [ ] **Daily claim quota:** at 5 claim submissions in the current Africa/Cairo day, the next claim is rejected with clear quota messaging
-- [ ] **Pending claim closure:** when a report is withdrawn, expired, or taken down, its pending claims are closed automatically, those claimants are notified, and no attempt is consumed (withdraw tested now; expiry/takedown in Phase 07/08)
+- [ ] **Pending claim closure:** `ClaimCleanupService` closes pending claims with no attempt consumed and sends `ClaimClosedReportUnavailable` (unit/integration test against the service in sub-phase 09). **E2E** closure when a `Published` report is withdrawn, expired, or taken down → Phase 07/08 (withdraw of `Published` is not available until Phase 07)
 
 **Deferred within v1:**
 
-- [ ] **Reporter timeout (10-day auto-withdraw)** → Phase 07. Test via configurable interval or admin trigger stub documented below.
+- [ ] **Reporter timeout (10-day auto-withdraw)** → Phase 07. Test via configurable interval or admin trigger stub documented in sub-phase 09.
 
 ### 10-day timeout test stub
 
 For CI and manual QA before Phase 07 ships the job:
 
 - Environment variable `CLAIM_TIMEOUT_MINUTES` (default: 14400 = 10 days) overrides the timeout interval in non-production
-- Optional admin-only `POST /api/admin/test/trigger-claim-timeout` for integration tests
+- Optional admin-only `POST /api/admin/test/trigger-claim-timeout` for early CI hooks (Phase 07's `POST /api/admin/test/run-job/{jobName}` is the primary test trigger)
 
 ---
 
@@ -177,7 +179,7 @@ For CI and manual QA before Phase 07 ships the job:
 - [ ] 3-attempt limit enforced
 - [ ] Daily quota (5/day)
 - [ ] Claim photo private; pre-signed URL access control
-- [ ] Pending claim closure on reporter withdraw
+- [ ] `ClaimCleanupService.ClosePendingClaimsAsync` (direct service test; not E2E withdraw)
 
 ### Manual smoke checklist
 

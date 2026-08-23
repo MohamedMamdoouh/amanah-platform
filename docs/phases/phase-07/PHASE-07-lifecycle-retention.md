@@ -3,6 +3,8 @@
 **Status:** Not started  
 **Prerequisites:** Phase 06 — Chat, Resolution & Notifications
 
+**Incremental implementation:** This phase is broken into 9 sub-phases for step-by-step work. Start at [README.md](./README.md).
+
 ---
 
 ## 1. Summary
@@ -96,9 +98,10 @@ All jobs use Africa/Cairo day boundaries where applicable. Run on a configurable
 | Config | Purpose |
 | ------ | ------- |
 | `LISTING_EXPIRY_DAYS` | Override 90-day expiry (e.g. `1` for tests) |
+| `LISTING_EXPIRY_WARNING_DAYS_BEFORE` | Override 7-day warning offset (default `7`; warning fires at `LISTING_EXPIRY_DAYS −` this value) |
 | `CLAIM_TIMEOUT_MINUTES` | Override 10-day claim timeout (from Phase 05 stub) |
-| `RETENTION_DAYS_OVERRIDE` | Override 30-day retention windows |
-| `POST /api/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI |
+| `RETENTION_DAYS_OVERRIDE` | Override all 30-day retention windows (rejected reports, chat, sessions, account PII purge) |
+| `POST /api/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI (supersedes Phase 05 `trigger-claim-timeout` stub) |
 
 ---
 
@@ -112,7 +115,7 @@ Server-enforce these matrix rows before marking this phase done:
 | Direct PII (phone, display name) | Purged within 30 days |
 | ModerationAction audit | Survives all deletions |
 
-Withdrawal reason: reporter and admin only.
+Withdrawal reason: reporter and admin only — enforced in Phase 02; regression in Phase 07 withdraw UI/API tests.
 
 ---
 
@@ -139,26 +142,26 @@ Explicitly deferred to later phases:
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.2](../SPEC.md#152-moderation-rejection-and-resubmission) (expiry items deferred from Phase 03).
+From [SPEC.md Section 15.2](../../SPEC.md#152-moderation-rejection-and-resubmission) (expiry items deferred from Phase 03).
 
 - [ ] **Listing expiry warning:** when a `Published` report has **83 cumulative published days** elapsed (7 days before auto-expiry), the reporter receives `ReportExpiringSoon`
 - [ ] **Listing auto-expiry:** after **90 cumulative days** in `Published` (timer paused during `Claim In Progress`), the report becomes `Withdrawn` with `_expired_`; pending claims close; reporter and claimants are notified
 - [ ] **No expiry while in review:** `Pending Review` and `Rejected` reports never auto-expire
 
-From [SPEC.md Section 15.4](../SPEC.md#154-claiming-and-review).
+From [SPEC.md Section 15.4](../../SPEC.md#154-claiming-and-review).
 
 - [ ] **Reporter timeout:** a `Pending` claim is auto-withdrawn after **10 days** without reporter action; no attempt is consumed; the report stays `Published`; both parties are notified
 
-From [SPEC.md Section 15.5](../SPEC.md#155-resolution-and-chat).
+From [SPEC.md Section 15.5](../../SPEC.md#155-resolution-and-chat).
 
 - [ ] **Chat retention:** after cancellation or resolution the thread is read-only and is deleted 30 days later
 
-From [SPEC.md Section 5.1](../SPEC.md#51-authentication) (account deletion).
+From [SPEC.md Section 5.1](../../SPEC.md#51-authentication) (account deletion).
 
 - [ ] Account deletion blocked while user has report in `Claim In Progress` or holds approved claim on another's report
 - [ ] On deletion: `Pending Review`/`Published` reports withdrawn; pending claims withdrawn; signed out immediately; message bodies remain with anonymized sender; PII purged within 30 days
 
-From [SPEC.md Section 15.2](../SPEC.md#152-moderation-rejection-and-resubmission).
+From [SPEC.md Section 15.2](../../SPEC.md#152-moderation-rejection-and-resubmission).
 
 - [ ] **Rejected retention:** a `Rejected` report and its photos are deleted 30 days after rejection when never resubmitted; the moderation decision record survives
 

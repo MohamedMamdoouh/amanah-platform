@@ -3,6 +3,8 @@
 **Status:** Not started  
 **Prerequisites:** Phase 01 — Platform Foundation
 
+**Incremental implementation:** This phase is broken into 10 sub-phases for step-by-step work. Start at [README.md](./README.md).
+
 ---
 
 ## 1. Summary
@@ -105,6 +107,7 @@ Server-enforce these matrix rows before marking this phase done:
 | Reward amount, item-held location | Reporter (own), Admin |
 | Display name of reporter | Reporter (own), Admin |
 | Phone numbers | Own user, Admin |
+| Withdrawal reason | Reporter (own), Admin — returned on `GET /api/reports/{id}` for `Withdrawn` reports only; never on public/browse APIs |
 
 Non-reporter users and public visitors cannot access `Pending Review` reports (not-found).
 
@@ -136,7 +139,7 @@ Explicitly deferred to later phases:
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.1](../SPEC.md#151-report-submission-and-validation).
+From [SPEC.md Section 15.1](../../SPEC.md#151-report-submission-and-validation).
 
 - [ ] **Valid submission creates a pending report:** given a logged-in user with remaining quota, when they submit all required fields including the hidden verification detail, then a report is created with status `Pending Review`
 - [ ] **Date bounds:** a date lost/found in the future, or more than 12 months before today in Africa/Cairo time, is rejected with field-level validation. Today's local date is always accepted

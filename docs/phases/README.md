@@ -10,20 +10,9 @@ This directory breaks [SPEC.md](../SPEC.md) into **8 testable implementation pha
 
 ---
 
-## Phase dependency map
+## Phase dependencies
 
-```mermaid
-flowchart LR
-  P01[Phase01_Foundation] --> P02[Phase02_Reports]
-  P02 --> P03[Phase03_Moderation]
-  P03 --> P04[Phase04_Discovery]
-  P04 --> P05[Phase05_Claims]
-  P05 --> P06[Phase06_ChatResolution]
-  P06 --> P07[Phase07_LifecycleOps]
-  P07 --> P08[Phase08_TrustSafetyLaunch]
-```
-
-Phases are strictly sequential. Do not skip ahead — later phases depend on entities, services, and permissions introduced earlier.
+Phases run in order: **01 → 02 → 03 → 04 → 05 → 06 → 07 → 08**. Phases are strictly sequential. Do not skip ahead — later phases depend on entities, services, and permissions introduced earlier.
 
 ---
 
@@ -31,14 +20,14 @@ Phases are strictly sequential. Do not skip ahead — later phases depend on ent
 
 | Phase | Doc                                                                                      | Goal                                                 | Key exit criteria                           |
 | ----- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------- |
-| 01    | [PHASE-01-platform-foundation.md](./PHASE-01-platform-foundation.md)                     | Monorepo, auth, DB schema, seeds, static pages       | Section 15.7                                |
-| 02    | [PHASE-02-report-submission.md](./PHASE-02-report-submission.md)                         | Lost/found submission, uploads, quotas               | Section 15.1                                |
-| 03    | [PHASE-03-admin-moderation.md](./PHASE-03-admin-moderation.md)                           | Admin queue, approve/reject, resubmit, notifications | Section 15.2 (except expiry)                |
-| 04    | [PHASE-04-browse-discovery.md](./PHASE-04-browse-discovery.md)                           | Public browse, search, filters, detail pages         | Section 15.3                                |
-| 05    | [PHASE-05-claims-verification.md](./PHASE-05-claims-verification.md)                     | Claim lifecycle, reporter review, attempt limits     | Section 15.4 (except timeout job)           |
-| 06    | [PHASE-06-chat-resolution-notifications.md](./PHASE-06-chat-resolution-notifications.md) | SignalR chat, mutual resolution, full notifications  | Section 15.5, Section 15.9                  |
-| 07    | [PHASE-07-lifecycle-retention.md](./PHASE-07-lifecycle-retention.md)                     | Expiry, retention jobs, account deletion             | Section 15.2 expiry, Section 15.5 retention |
-| 08    | [PHASE-08-trust-safety-launch.md](./PHASE-08-trust-safety-launch.md)                     | Abuse, enforcement, permissions audit, launch        | Section 15.6, Section 15.8, full Section 15 |
+| 01    | [phase-01/PHASE-01-platform-foundation.md](./phase-01/PHASE-01-platform-foundation.md) ([sub-phases](./phase-01/README.md)) | Monorepo, auth, DB schema, seeds, static pages       | Section 15.7                                |
+| 02    | [phase-02/PHASE-02-report-submission.md](./phase-02/PHASE-02-report-submission.md) ([sub-phases](./phase-02/README.md)) | Lost/found submission, uploads, quotas               | Section 15.1                                |
+| 03    | [phase-03/PHASE-03-admin-moderation.md](./phase-03/PHASE-03-admin-moderation.md) ([sub-phases](./phase-03/README.md)) | Admin queue, approve/reject, resubmit, notifications | Section 15.2 (except expiry)                |
+| 04    | [phase-04/PHASE-04-browse-discovery.md](./phase-04/PHASE-04-browse-discovery.md) ([sub-phases](./phase-04/README.md)) | Public browse, search, filters, detail pages         | Section 15.3                                |
+| 05    | [phase-05/PHASE-05-claims-verification.md](./phase-05/PHASE-05-claims-verification.md) ([sub-phases](./phase-05/README.md)) | Claim lifecycle, reporter review, attempt limits     | Section 15.4 (except timeout job)           |
+| 06    | [phase-06/PHASE-06-chat-resolution-notifications.md](./phase-06/PHASE-06-chat-resolution-notifications.md) ([sub-phases](./phase-06/README.md)) | SignalR chat, mutual resolution, chat/resolution notifications | Section 15.5, Section 15.9                  |
+| 07    | [phase-07/PHASE-07-lifecycle-retention.md](./phase-07/PHASE-07-lifecycle-retention.md) ([sub-phases](./phase-07/README.md)) | Expiry, retention jobs, account deletion             | Section 15.2 expiry, Section 15.5 retention |
+| 08    | [phase-08/PHASE-08-trust-safety-launch.md](./phase-08/PHASE-08-trust-safety-launch.md) ([sub-phases](./phase-08/README.md)) | Abuse, enforcement, permissions audit, launch        | Section 15.6, Section 15.8, full Section 15 |
 
 ---
 
@@ -46,12 +35,12 @@ Phases are strictly sequential. Do not skip ahead — later phases depend on ent
 
 | SPEC sections                                                                                                     | Phase |
 | ----------------------------------------------------------------------------------------------------------------- | ----- |
-| Section 16–18, Section 21 (foundation), Section 3, Section 5.1, Section 5.8, Section 11 (baseline)                | 01    |
+| Section 16–18, Section 21 (foundation), Section 3, Section 5.1, Section 5.8, Section 7.5 (OTP limits), Section 11 (baseline), Section 20.2 (429 pattern) | 01    |
 | Section 4.1–4.2, Section 5.2–5.4, Section 19, Section 4.8 (partial)                                               | 02    |
-| Section 4.3, Section 5.5, Section 8 (moderation), Section 5.7 (email + report events)                             | 03    |
-| Section 4.4, Section 16 (search), Section 4.8 (partial)                                                           | 04    |
+| Section 4.3, Section 4.8 (My Reports tabs), Section 5.5, Section 8 (moderation), Section 5.7 (email + report events) | 03    |
+| Section 4.4, Section 16 (search), Section 4.8 (Published tab → public URL)                                          | 04    |
 | Section 6, Section 4.5, Section 4.8 (claims)                                                                      | 05    |
-| Section 4.6, Section 5.6–5.7 (full), Section 7.3, Section 20.1                                                    | 06    |
+| Section 4.6, Section 5.6, Section 5.7 (chat/resolution events), Section 7.3, Section 20.1                                                    | 06    |
 | Section 4.7, Section 12, Section 5.1 (deletion), Section 21 (jobs), Section 6.3 (timeout job)                     | 07    |
 | Section 7, Section 8 (enforcement), Section 9 (full audit), Section 10, Section 11, Section 13, Section 15 (full) | 08    |
 
@@ -101,6 +90,6 @@ Every `PHASE-0N-*.md` follows:
 ## Getting started
 
 1. Read [SPEC.md](../SPEC.md) for product and technical requirements
-2. Resolve Section 14 prerequisites for Phase 01 (SMS provider, API error contract)
-3. Implement Phase 01; verify all acceptance criteria and the definition-of-done checklist
-4. Proceed sequentially through Phase 08
+2. Resolve Section 14 prerequisites for Phase 01 (SMS provider, API error contract) — see [sub-phase 01](./phase-01/SUBPHASE-01-01-decisions.md)
+3. Work through [Phase 01 sub-phases](./phase-01/README.md) one at a time; verify each gate before proceeding
+4. Work through each phase's sub-phases in order ([01](./phase-01/README.md) → [08](./phase-08/README.md)); verify each gate before proceeding

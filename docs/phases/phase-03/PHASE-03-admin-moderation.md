@@ -3,6 +3,8 @@
 **Status:** Not started  
 **Prerequisites:** Phase 02 — Report Submission
 
+**Incremental implementation:** This phase is broken into 11 sub-phases for step-by-step work. Start at [README.md](./README.md).
+
 ---
 
 ## 1. Summary
@@ -42,7 +44,7 @@ Resolve **before starting** this phase:
 
 | Item | Notes |
 | ---- | ----- |
-| Transactional email provider | Real provider for admin moderation-queue alerts |
+| Transactional email provider | Real provider for admin moderation-queue alerts — see [Sub-phase 01](./SUBPHASE-03-01-decisions.md) |
 
 ---
 
@@ -65,6 +67,7 @@ Resolve **before starting** this phase:
 | POST | `/api/reports/{id}/resubmit` | Reporter resubmits `Rejected` report → `Pending Review` |
 | PUT | `/api/reports/{id}` | Reporter edits `Rejected` report content |
 | GET | `/api/notifications` | User notification list |
+| GET | `/api/notifications/unread-count` | Unread count for header badge |
 | PATCH | `/api/notifications/{id}/read` | Mark notification read |
 | POST | `/api/notifications/read-all` | Mark all read |
 
@@ -106,11 +109,11 @@ Server-enforce these matrix rows before marking this phase done:
 
 | Data | Roles granted access |
 | ---- | -------------------- |
-| Private photos | Reporter (own), Admin (review/enforcement) |
+| Private photos | Reporter (own), Admin (review only — enforcement investigation in Phase 08) |
 | Hidden verification detail | Reporter (own) only — Admin still **never** sees this |
 | All public report fields | Reporter (own), Admin |
-| Withdrawal reason | Reporter (own), Admin |
-| ModerationAction audit | Admin only |
+| Withdrawal reason | Reporter (own), Admin — enforced in Phase 02 ([sub-phase 06](../phase-02/SUBPHASE-02-06-read-withdraw.md)); regression only in this phase |
+| ModerationAction audit | Admin only (no read API — writes only; vacuously enforced) |
 
 `Pending Review` and `Rejected` reports: not-found for everyone except reporter and admin.
 
@@ -143,11 +146,11 @@ Explicitly deferred to later phases:
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.2](../SPEC.md#152-moderation-rejection-and-resubmission).
+From [SPEC.md Section 15.2](../../SPEC.md#152-moderation-rejection-and-resubmission).
 
 - [ ] **Approve flow:** approving a `Pending Review` report sets it to `Published` and it appears in public listings (API-level verification; browse UI in Phase 04)
 - [ ] **Reject flow:** rejecting sets the status to `Rejected` with the chosen reason and optional note, notifies the reporter, keeps the report and photos, and removes it from the moderation queue. The report is readable by its reporter and the admin, and its URL shows a not-found page to anyone else
-- [ ] **Fix and resubmit:** editing and resubmitting a `Rejected` report sets it to `Pending Review`, does not consume the daily submission quota, and re-runs the contact-info block
+- [ ] **Fix and resubmit:** editing and resubmitting a `Rejected` report sets it to `Pending Review`, does not consume the daily submission quota, does not require a free open-report slot, and re-runs the contact-info block
 - [ ] **Resubmission cap:** after the 3rd resubmission is rejected, further resubmission of that report is refused with a clear message
 - [ ] **Category change on resubmission:** changing a report's category to one with `photosPrivate` makes its existing photos private, and changing to one without makes them public
 - [ ] **No editing outside `Rejected`:** content edit attempts are refused while the report is `Pending Review`, `Published`, `Claim In Progress`, or terminal (including reward flag/amount)

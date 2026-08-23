@@ -3,6 +3,8 @@
 **Status:** Not started  
 **Prerequisites:** Phase 05 — Claims & Verification
 
+**Incremental implementation:** This phase is broken into 10 sub-phases for step-by-step work. Start at [README.md](./README.md).
+
 ---
 
 ## 1. Summary
@@ -43,21 +45,7 @@ Resolve **before starting** this phase:
 
 | Item | Notes |
 | ---- | ----- |
-| SignalR event/payload contract | Define hub methods, client events, and message DTO shape before implementation |
-
-### SignalR contract (to document in `docs/signalr-contract.md` or inline here)
-
-| Direction | Event / method | Payload |
-| --------- | -------------- | ------- |
-| Client → Server | `SendMessage` | `{ threadId, body?, attachmentId? }` |
-| Client → Server | `JoinThread` | `{ threadId }` |
-| Client → Server | `LeaveThread` | `{ threadId }` |
-| Client → Server | `Typing` | `{ threadId }` (optional) |
-| Server → Client | `MessageReceived` | `{ messageId, threadId, senderId, senderDisplayName, body, attachmentUrl?, createdAt }` |
-| Server → Client | `ThreadReadOnly` | `{ threadId, readOnlyAt }` |
-| Server → Client | `ResolutionUpdated` | `{ reportId, reporterConfirmed, claimantConfirmed }` |
-
-Authentication: JWT passed via query string or `accessTokenFactory` on connect.
+| SignalR event/payload contract | See [Sub-phase 01](./SUBPHASE-06-01-signalr-contract.md) |
 
 ---
 
@@ -71,6 +59,7 @@ Authentication: JWT passed via query string or `accessTokenFactory` on connect.
 | GET | `/api/chats/{threadId}` | Thread metadata + message history |
 | POST | `/api/chats/{threadId}/messages` | Send message (REST fallback; primary via SignalR) |
 | POST | `/api/uploads/chat-attachment` | Upload chat photo attachment |
+| GET | `/api/uploads/chat-attachment/{id}/url` | Refresh pre-signed URL for attachment |
 | POST | `/api/claims/{id}/confirm-resolution` | Party confirms item returned |
 | POST | `/api/claims/{id}/cancel` | Cancel approved claim before mutual confirm |
 | Hub | `/hubs/chat` | SignalR real-time messaging |
@@ -149,7 +138,7 @@ Explicitly deferred to later phases:
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.5](../SPEC.md#155-resolution-and-chat).
+From [SPEC.md Section 15.5](../../SPEC.md#155-resolution-and-chat).
 
 - [ ] **Mutual confirmation is the only resolve path:** the report becomes `Resolved` only when both parties have confirmed. Reporter-only close and one-sided timeout resolution do not exist
 - [ ] **Confirmation is irrevocable:** a party who has confirmed cannot un-confirm and cannot cancel the claim; the other party can still confirm or cancel
@@ -161,7 +150,7 @@ From [SPEC.md Section 15.5](../SPEC.md#155-resolution-and-chat).
 
 - [ ] **Chat retention (30-day delete)** → Phase 07
 
-From [SPEC.md Section 15.9](../SPEC.md#159-notifications).
+From [SPEC.md Section 15.9](../../SPEC.md#159-notifications).
 
 - [ ] Each event in the Section 5.7 table produces exactly one in-app notification for each listed recipient, deep-linking to the relevant report, claim, or thread (for all events implemented to date)
 - [ ] A new-message notification is suppressed while the recipient is viewing that same thread

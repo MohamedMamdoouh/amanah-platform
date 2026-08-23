@@ -3,6 +3,8 @@
 **Status:** Not started  
 **Prerequisites:** Phase 07 — Lifecycle, Retention & Account Management
 
+**Incremental implementation:** This phase is broken into 11 sub-phases for step-by-step work. Start at [README.md](./README.md).
+
 ---
 
 ## 1. Summary
@@ -39,7 +41,7 @@ Resolve **before starting** this phase:
 
 | Item | Notes |
 | ---- | ----- |
-| Domain name | Configure custom domain on Railway before launch |
+| Domain name | Configure custom domain on Railway before launch — see [Sub-phase 01](./SUBPHASE-08-01-decisions.md) |
 
 ---
 
@@ -52,15 +54,16 @@ Resolve **before starting** this phase:
 | POST | `/api/reports/{id}/flag` | Flag a publicly visible listing |
 | GET | `/api/reports/{id}/flag` | Get user's open flag on listing (if any) |
 | GET | `/api/admin/abuse` | Abuse report queue |
-| GET | `/api/admin/abuse/{id}` | Abuse report detail (incl. chat/claim access) |
+| GET | `/api/admin/abuse/{id}` | Abuse report detail (flag reason, listing summary — **not** inline chat/claim content) |
 | POST | `/api/admin/abuse/{id}/resolve` | Resolve: no action / takedown / ban |
 | POST | `/api/admin/reports/{id}/takedown` | Take down published report |
 | GET | `/api/admin/users` | User lookup (by display name or phone) |
-| GET | `/api/admin/users/{id}` | User detail |
+| GET | `/api/admin/users/{id}` | User detail (`reportsCount`, ban status) |
 | POST | `/api/admin/users/{id}/ban` | Ban user with reason |
 | POST | `/api/admin/users/{id}/unban` | Unban user |
 | GET | `/api/admin/investigations/{reportId}/chat` | Chat content during flagged-listing investigation |
 | GET | `/api/admin/investigations/{reportId}/claims` | Claim text/photos during investigation |
+| GET | `/api/admin/investigations/{reportId}/photos` | Private report photos during investigation |
 
 ### UI routes
 
@@ -76,7 +79,7 @@ Resolve **before starting** this phase:
 ### Database
 
 - `AbuseReport` with status `Open` → `Resolved`, resolution outcome
-- Ban fields on `User`: `banned`, `banReason`, `bannedAt`
+- Reuse Phase 01 `User.IsBanned`, `User.BanReason`; add `User.BannedAt` if not present
 - Enforcement calls `ReportLifecycleService`, `ClaimCleanupService` from Phase 07
 
 ### Infrastructure
@@ -96,23 +99,7 @@ Resolve **before starting** this phase:
 
 ## 5. Permissions (Section 9)
 
-Full matrix audit — every row must be server-enforced:
-
-| Data | Public | Logged-in | Pending claimant | Approved claimant | Reporter | Admin |
-| ---- | ------ | --------- | ---------------- | ----------------- | -------- | ----- |
-| Title, description, category fields | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Public photos | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Private photos | — | — | — | — | ✓ | ✓ (review/enforcement) |
-| Hidden verification detail | — | — | — | — | ✓ | **never** |
-| Reward, held location | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Display name of reporter | ✓ | ✓ | ✓ | ✓ | own | ✓ |
-| Display name of claimant | — | — | own | own | ✓ | ✓ |
-| Phone numbers | — | own | own | own | own | ✓ |
-| Claim text and photo | — | — | own | own | ✓ | investigation only |
-| Chat thread | — | — | — | ✓ | ✓ | investigation only |
-| Withdrawal reason | — | — | — | — | own | ✓ |
-
-Run automated permission tests for every cell.
+Full matrix audit — every row must be server-enforced. See sub-phase 10.
 
 ---
 
@@ -130,33 +117,13 @@ All prior notification types from Phases 03–07 must still pass regression.
 
 ## 7. Out of scope
 
-Confirm these Section 10 items remain **not implemented**:
-
-- Automated/AI matching
-- Claim rejection appeals
-- Editing published report content
-- In-chat block user
-- Per-photo visibility control
-- Resolution disputes/reopening
-- Display-name edits, phone change, Terms re-acceptance
-- Notification preferences, data export
-- Automated profanity filtering
-- Social link previews
-- In-app payments/escrow
-- Native mobile apps (PWA only)
-- English localization
-- Community moderation
-- Monetization
-- Web push / SMS event notifications
-- Map/GPS location
-- Draft report saving
-- Formal performance targets
+Confirm Section 10 items remain **not implemented** — verified in [Sub-phase 11](./SUBPHASE-08-11-launch-readiness.md).
 
 ---
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.6](../SPEC.md#156-abuse-and-enforcement).
+From [SPEC.md Section 15.6](../../SPEC.md#156-abuse-and-enforcement).
 
 - [ ] **Flagging constraints:** a listing owner cannot flag their own listing, each user can have at most one open flag per listing, a duplicate flag is refused, and the reason must come from the predefined list
 - [ ] **Abuse workflow:** an abuse report moves `Open` → `Resolved` with an outcome of no action taken, report taken down, or user banned, and the flagger is notified of the high-level outcome
@@ -165,79 +132,22 @@ From [SPEC.md Section 15.6](../SPEC.md#156-abuse-and-enforcement).
 - [ ] **Takedown during `Claim In Progress`:** the approved claim is cancelled first, the report becomes `Removed by Admin`, and the chat becomes read-only immediately
 - [ ] **In-chat report shortcut:** a user in a chat thread can open the listing-flag flow for the linked report; if they already have an open flag, the UI shows that flag instead of creating a duplicate
 
-From [SPEC.md Section 15.8](../SPEC.md#158-privacy-and-permissions).
+From [SPEC.md Section 15.8](../../SPEC.md#158-privacy-and-permissions).
 
-- [ ] **Private photos (`photosPrivate`):** categories with `photosPrivate` never expose photos on a public listing or to claimants — only the reporter and admin (during review/enforcement)
-- [ ] **Hidden verification detail:** returned only to its reporter, never to claimant, public, or admin
-- [ ] **Claim text and photos:** visible to own claimant and reporter; admin only during flagged-listing investigation
-- [ ] **Chat access:** only two parties; admin during flagged-listing investigation
+- [ ] **Private photos (`photosPrivate`):** never exposed on public listing or to claimants — reporter and admin only
+- [ ] **Hidden verification detail:** reporter only — never claimant, public, or admin
+- [ ] **Claim text and photos:** claimant + reporter; admin only during flagged-listing investigation
+- [ ] **Chat access:** two parties only; admin during flagged-listing investigation
 - [ ] **Phone numbers:** never returned to another user
 - [ ] **Role enforcement:** every row of Section 9 enforced server-side
 
-### Full Section 15 regression checklist
-
-Run all criteria from Section 15.1–Section 15.9. Any failures block launch.
-
-| Section | Phase introduced | Regression |
-| ------- | ---------------- | ---------- |
-| Section 15.1 | Phase 02 | required |
-| Section 15.2 | Phase 03 + 07 | required |
-| Section 15.3 | Phase 04 | required |
-| Section 15.4 | Phase 05 + 07 | required |
-| Section 15.5 | Phase 06 + 07 | required |
-| Section 15.6 | Phase 08 | required |
-| Section 15.7 | Phase 01 | required |
-| Section 15.8 | Phase 08 | required |
-| Section 15.9 | Phase 06 | required |
-
-### Rate limits (Section 7.5)
-
-- [ ] 3 new reports/day per account
-- [ ] 5 claim submissions/day per account
-- [ ] Max 5 open reports per account
-- [ ] Photo uploads: 5/min, 20/hour
-- [ ] Chat messages: 10/min, 60/hour
-- [ ] OTP send limits (Phase 01)
-- [ ] All return HTTP 429 with `Retry-After`
+Full Section 15.1–15.9 regression: [Sub-phase 11](./SUBPHASE-08-11-launch-readiness.md).
 
 ---
 
 ## 9. Definition of done
 
-### Automated tests
-
-- [ ] Flag listing: constraints, duplicate refused, predefined reasons
-- [ ] Abuse workflow: Open → Resolved with all three outcomes
-- [ ] Takedown: claim cancelled first, chat read-only
-- [ ] Ban: all side effects; sign-in refused with reason
-- [ ] Unban: sign-in restored; content not restored
-- [ ] Admin investigation: chat/claim access only for flagged listings
-- [ ] Hidden detail never in any admin API response
-- [ ] Full Section 9 permission matrix tests
-- [ ] All Section 7.5 rate limits
-- [ ] Full Section 15 regression suite
-
-### Manual smoke checklist
-
-- [ ] Flag a listing from browse; flag from chat header
-- [ ] Admin resolves abuse report with each outcome
-- [ ] Ban user; verify cleanup; unban; verify no restoration
-- [ ] Takedown report in `Claim In Progress`
-- [ ] Custom domain serves HTTPS
-- [ ] Keyboard navigation sanity on browse, submit, claim, chat
-- [ ] WCAG 2.1 AA goal: spot-check core flows
-- [ ] Walk through Section 13 risk table; confirm each mitigation is observable
-
-### Launch checklist
-
-- [ ] Domain configured
-- [ ] SMS provider production credentials
-- [ ] Email provider production credentials
-- [ ] Admin phone bootstrapped
-- [ ] Railway backups enabled
-- [ ] Privacy Policy discloses cross-border hosting and PDPL gaps (Section 5.8)
-- [ ] All Section 10 out-of-scope items confirmed absent
-- [ ] Full Section 15 regression pass
+See sub-phases 10–11 for automated permission tests, rate limit audit, Section 15 regression, and launch checklist.
 
 ### Phase exit gate
 

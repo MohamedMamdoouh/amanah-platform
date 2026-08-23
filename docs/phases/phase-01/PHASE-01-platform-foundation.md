@@ -3,6 +3,8 @@
 **Status:** Not started  
 **Prerequisites:** None (first phase)
 
+**Incremental implementation:** This phase is broken into 12 sub-phases for step-by-step work. Start at [README.md](./README.md).
+
 ---
 
 ## 1. Summary
@@ -109,7 +111,7 @@ Server-enforce these matrix rows before marking this phase done:
 
 | Data | Roles granted access this phase |
 | ---- | ------------------------------- |
-| Phone numbers | Own user, Admin |
+| Phone numbers | Own user via `/api/auth/me`; Admin views **own** phone on `/me` only — admin user lookup (other users' phones) is Phase 08 |
 | Display name | Own user (via `/api/auth/me`) |
 
 All other Section 9 rows are N/A until later phases introduce the underlying features.
@@ -139,12 +141,13 @@ Explicitly deferred to later phases:
 - Abuse reporting and enforcement → Phase 08
 - In-app notification center → Phase 03
 - Photo upload endpoints → Phase 02
+- Account self-deletion → Phase 07 (SPEC §5.1)
 
 ---
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.7](../SPEC.md#157-authentication-otp).
+From [SPEC.md Section 15.7](../../SPEC.md#157-authentication-otp).
 
 - [ ] **Successful send:** given a passed bot check and a phone under the send limits, an SMS is sent and the user can complete signup or login with the code
 - [ ] **Resend cooldown:** a resend requested less than **120 seconds** after the last send is blocked with a clear wait message and no SMS is sent
