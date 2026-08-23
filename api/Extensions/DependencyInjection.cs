@@ -40,8 +40,11 @@ public static class DependencyInjection
     {
         app.UseMiddleware<ExceptionHandlingMiddleware>();
         app.UseMiddleware<RequestLoggingMiddleware>();
-        app.UseMiddleware<RateLimitMiddleware>();
+        // CORS must run before rate limiting: RateLimitMiddleware writes 429 and
+        // returns without calling next. If CORS has not already applied headers,
+        // browsers treat that 429 as a CORS failure and hide the error contract.
         app.UseCors();
+        app.UseMiddleware<RateLimitMiddleware>();
         app.MapControllers();
 
         return app;
