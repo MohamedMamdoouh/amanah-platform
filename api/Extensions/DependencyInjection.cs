@@ -40,8 +40,8 @@ public static class DependencyInjection
     {
         app.UseMiddleware<ExceptionHandlingMiddleware>();
         app.UseMiddleware<RequestLoggingMiddleware>();
-        app.UseMiddleware<RateLimitMiddleware>();
         app.UseCors();
+        app.UseMiddleware<RateLimitMiddleware>();
         app.MapControllers();
 
         return app;
