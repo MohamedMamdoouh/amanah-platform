@@ -1,4 +1,4 @@
-using Amanah.Api.Configuration;
+using Amanah.Api.Options;
 
 namespace Amanah.Api.Extensions;
 

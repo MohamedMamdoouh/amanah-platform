@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
-using Amanah.Api.Configuration;
-using Amanah.Api.Models;
+using Amanah.Api.Options;
+using Amanah.Api.Models.Common;
+using Amanah.Api.Models.Errors;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 

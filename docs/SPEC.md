@@ -701,6 +701,12 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
   - Normalization (applied identically to stored text and to the incoming query): alef variants (`أ إ آ ٱ` → `ا`), `ى` → `ي`, `ة` → `ه`, strip tatweel and Arabic diacritics, collapse whitespace, lowercase.
   - Matching: the query is normalized and split into terms; every term must match the search column (`ILIKE '%term%'`, AND-ed). A trigram index (`pg_trgm` GIN) on the search column keeps this workable.
   - No external search infrastructure. Postgres full-text search (`tsvector`) is a post-v1 upgrade.
+- **Caching:** `HybridCache` (L1 in-process + L2 `MemoryDistributedCache`) behind `ICacheService` (v1, single API instance). Cache-aside for **reference data only** (categories, governorates); explicit invalidation on admin category writes. Built-in stampede protection; fail-open to DB on cache errors. **Browse/search is not cached in v1.** **Do not cache:** OTP send limits (DB-backed), JWT/refresh tokens, pre-signed media URLs. Swap L2 to Redis when running multiple API instances.
+
+  | Cache key | Value | TTL (default) | Invalidation |
+  | --------- | ----- | ------------- | ------------ |
+  | `ref:categories` | Active categories + field defs (`CacheKeys.Categories`) | 1h | Admin category CRUD (Phase 03) |
+  | `ref:governorates` | Governorate list (`CacheKeys.Governorates`) | 24h | Seed change (rare) |
 - **Admin dashboard:** same Angular app behind a role guard at `/admin/`. Screens match section 5.5.
 
 ---
@@ -782,6 +788,7 @@ Per section 7.5. On limit exceed: HTTP `429` with `Retry-After` header.
 - **Scheduled jobs:** retention cleanup (section 12); **listing expiry** and expiry-warning checks (4.7); **pending-claim timeout** (6.3). All business-date logic uses Africa/Cairo day boundaries where applicable.
 - **Backups:** Railway managed Postgres defaults.
 - **Monitoring:** Railway logs only.
+- **Caching:** `HybridCache` via `ICacheService` (Section 16). Config: `Cache:CategoriesTtlSeconds`, `Cache:GovernoratesTtlSeconds` in `appsettings.json`. L2 is memory in v1; Redis when multi-instance.
 - **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: section 14.
 - **Budget:** ~$10/month Railway infrastructure; SMS cost depends on chosen provider (section 14).
 - **Domain:** section 14.

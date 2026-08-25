@@ -49,19 +49,19 @@ Resolve **before starting** this phase:
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| POST | `/api/reports/{id}/flag` | Flag a publicly visible listing |
-| GET | `/api/reports/{id}/flag` | Get user's open flag on listing (if any) |
-| GET | `/api/admin/abuse` | Abuse report queue |
-| GET | `/api/admin/abuse/{id}` | Abuse report detail (flag reason, listing summary - **not** inline chat/claim content) |
-| POST | `/api/admin/abuse/{id}/resolve` | Resolve: no action / takedown / ban |
-| POST | `/api/admin/reports/{id}/takedown` | Take down published report |
-| GET | `/api/admin/users` | User lookup (by display name or phone) |
-| GET | `/api/admin/users/{id}` | User detail (`reportsCount`, ban status) |
-| POST | `/api/admin/users/{id}/ban` | Ban user with reason |
-| POST | `/api/admin/users/{id}/unban` | Unban user |
-| GET | `/api/admin/investigations/{reportId}/chat` | Chat content during flagged-listing investigation |
-| GET | `/api/admin/investigations/{reportId}/claims` | Claim text/photos during investigation |
-| GET | `/api/admin/investigations/{reportId}/photos` | Private report photos during investigation |
+| POST | `/api/v1/reports/{id}/flag` | Flag a publicly visible listing |
+| GET | `/api/v1/reports/{id}/flag` | Get user's open flag on listing (if any) |
+| GET | `/api/v1/admin/abuse` | Abuse report queue |
+| GET | `/api/v1/admin/abuse/{id}` | Abuse report detail (flag reason, listing summary - **not** inline chat/claim content) |
+| POST | `/api/v1/admin/abuse/{id}/resolve` | Resolve: no action / takedown / ban |
+| POST | `/api/v1/admin/reports/{id}/takedown` | Take down published report |
+| GET | `/api/v1/admin/users` | User lookup (by display name or phone) |
+| GET | `/api/v1/admin/users/{id}` | User detail (`reportsCount`, ban status) |
+| POST | `/api/v1/admin/users/{id}/ban` | Ban user with reason |
+| POST | `/api/v1/admin/users/{id}/unban` | Unban user |
+| GET | `/api/v1/admin/investigations/{reportId}/chat` | Chat content during flagged-listing investigation |
+| GET | `/api/v1/admin/investigations/{reportId}/claims` | Claim text/photos during investigation |
+| GET | `/api/v1/admin/investigations/{reportId}/photos` | Private report photos during investigation |
 
 ### UI routes
 

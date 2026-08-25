@@ -2,6 +2,8 @@
 
 Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes via `code`. Implemented in [Phase 01](./PHASE-01-platform-foundation.md).
 
+**Base path:** `/api/v1/...` (URL versioning via `Asp.Versioning.Mvc`).
+
 ```json
 {
   "code": "validation.failed",
@@ -70,7 +72,7 @@ Later phases add `report.*`, `claim.*`, `moderation.*`, etc.
 
 ## Examples
 
-**400 validation** - `POST /api/auth/register`
+**400 validation** - `POST /api/v1/auth/register`
 
 ```json
 {
@@ -80,13 +82,13 @@ Later phases add `report.*`, `claim.*`, `moderation.*`, etc.
 }
 ```
 
-**401** - `GET /api/auth/me`
+**401** - `GET /api/v1/auth/me`
 
 ```json
 { "code": "auth.unauthorized", "message": "Authentication required." }
 ```
 
-**403 banned** - `POST /api/auth/login`
+**403 banned** - `POST /api/v1/auth/login`
 
 ```json
 {
@@ -95,7 +97,7 @@ Later phases add `report.*`, `claim.*`, `moderation.*`, etc.
 }
 ```
 
-**429 cooldown** - `POST /api/auth/otp/send` + header `Retry-After: 87`
+**429 cooldown** - `POST /api/v1/auth/otp/send` + header `Retry-After: 87`
 
 ```json
 {
@@ -104,14 +106,22 @@ Later phases add `report.*`, `claim.*`, `moderation.*`, etc.
 }
 ```
 
-**503 SMS outage** - `POST /api/auth/otp/send`
+**503 SMS outage** - `POST /api/v1/auth/otp/send` (CAPTCHA timeout only)
 
 ```json
 {
   "code": "service.sms_unavailable",
-  "message": "SMS delivery is temporarily unavailable. Please try again later."
+  "message": "Service is temporarily unavailable. Please try again later."
 }
 ```
+
+Used when CAPTCHA verification times out (Turnstile slow/unavailable). SMS provider failures are handled asynchronously by the outbox worker — the API returns **204** after enqueue.
+
+**204 accepted** - `POST /api/v1/auth/otp/send`
+
+The request passed validation and the OTP was enqueued. SMS delivery happens asynchronously via the outbox worker. The user should check their phone; if no SMS arrives within a minute, retry respecting cooldown/limits.
+
+**Residual ambiguity:** If the SMS provider accepts the message but the HTTP response times out, the API returns **503**, keeps the **`otp_codes`** row, and leaves the outbox **`Pending`** for worker retry (idempotency key = outbox Id). The user may still receive the SMS and can try to verify. If the incoming request times out while dispatch continues server-side, the client may see **504** even though the outbox later becomes **`Sent`**.
 
 **500**
 

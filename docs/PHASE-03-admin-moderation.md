@@ -1,4 +1,4 @@
-﻿# Phase 03 - Admin Moderation
+# Phase 03 - Admin Moderation
 
 **Status:** Not started  
 **Prerequisites:** Phase 02 - Report Submission
@@ -52,22 +52,22 @@ Resolve **before starting** this phase:
 
 | Method | Route                                         | Purpose                                                   |
 | ------ | --------------------------------------------- | --------------------------------------------------------- |
-| GET    | `/api/admin/moderation/queue`                 | FIFO pending reports with pending-count                   |
-| GET    | `/api/admin/moderation/reports/{id}`          | Full report for review (incl. private photos)             |
-| POST   | `/api/admin/moderation/reports/{id}/approve`  | Approve -> `Published`                                   |
-| POST   | `/api/admin/moderation/reports/{id}/reject`   | Reject with reason + optional note -> `Rejected`         |
-| GET    | `/api/admin/moderation/search`                | Keyword search incl. Pending/Rejected                     |
-| GET    | `/api/admin/categories`                       | List all categories (incl. inactive)                      |
-| POST   | `/api/admin/categories`                       | Add category                                              |
-| PUT    | `/api/admin/categories/{id}`                  | Edit name, sort order, `photosPrivate`, active flag       |
-| POST   | `/api/admin/categories/{id}/fields`           | Add field definition                                      |
-| PUT    | `/api/admin/categories/{id}/fields/{fieldId}` | Edit field definition                                     |
-| POST   | `/api/reports/{id}/resubmit`                  | Reporter resubmits `Rejected` report -> `Pending Review` |
-| PUT    | `/api/reports/{id}`                           | Reporter edits `Rejected` report content                  |
-| GET    | `/api/notifications`                          | User notification list                                    |
-| GET    | `/api/notifications/unread-count`             | Unread count for header badge                             |
-| PATCH  | `/api/notifications/{id}/read`                | Mark notification read                                    |
-| POST   | `/api/notifications/read-all`                 | Mark all read                                             |
+| GET    | `/api/v1/admin/moderation/queue`                 | FIFO pending reports with pending-count                   |
+| GET    | `/api/v1/admin/moderation/reports/{id}`          | Full report for review (incl. private photos)             |
+| POST   | `/api/v1/admin/moderation/reports/{id}/approve`  | Approve -> `Published`                                   |
+| POST   | `/api/v1/admin/moderation/reports/{id}/reject`   | Reject with reason + optional note -> `Rejected`         |
+| GET    | `/api/v1/admin/moderation/search`                | Keyword search incl. Pending/Rejected                     |
+| GET    | `/api/v1/admin/categories`                       | List all categories (incl. inactive)                      |
+| POST   | `/api/v1/admin/categories`                       | Add category                                              |
+| PUT    | `/api/v1/admin/categories/{id}`                  | Edit name, sort order, `photosPrivate`, active flag       |
+| POST   | `/api/v1/admin/categories/{id}/fields`           | Add field definition                                      |
+| PUT    | `/api/v1/admin/categories/{id}/fields/{fieldId}` | Edit field definition                                     |
+| POST   | `/api/v1/reports/{id}/resubmit`                  | Reporter resubmits `Rejected` report -> `Pending Review` |
+| PUT    | `/api/v1/reports/{id}`                           | Reporter edits `Rejected` report content                  |
+| GET    | `/api/v1/notifications`                          | User notification list                                    |
+| GET    | `/api/v1/notifications/unread-count`             | Unread count for header badge                             |
+| PATCH  | `/api/v1/notifications/{id}/read`                | Mark notification read                                    |
+| POST   | `/api/v1/notifications/read-all`                 | Mark all read                                             |
 
 ### UI routes
 
@@ -91,6 +91,7 @@ Resolve **before starting** this phase:
 
 - Transactional email to admin on new report submission
 - In-app notification center (source of truth for user events)
+- **Cache invalidation:** `ICacheService.RemoveAsync(CacheKeys.Categories)` on every admin category create/update
 
 ### Shared utilities
 
@@ -175,6 +176,7 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [ ] `ModerationAction` record created and survives report deletion
 - [ ] Admin email sent on new submission
 - [ ] Notification center: unread until opened/marked read
+- [ ] Admin category write clears `CacheKeys.Categories` (`ref:categories`)
 
 ### Manual smoke checklist
 

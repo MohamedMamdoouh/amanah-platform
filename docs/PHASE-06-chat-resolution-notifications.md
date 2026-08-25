@@ -53,13 +53,13 @@ Resolve **before starting** this phase:
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| GET | `/api/chats` | List user's chat threads (My Chats) |
-| GET | `/api/chats/{threadId}` | Thread metadata + message history |
-| POST | `/api/chats/{threadId}/messages` | Send message (REST fallback; primary via SignalR) |
-| POST | `/api/uploads/chat-attachment` | Upload chat photo attachment |
-| GET | `/api/uploads/chat-attachment/{id}/url` | Refresh pre-signed URL for attachment |
-| POST | `/api/claims/{id}/confirm-resolution` | Party confirms item returned |
-| POST | `/api/claims/{id}/cancel` | Cancel approved claim before mutual confirm |
+| GET | `/api/v1/chats` | List user's chat threads (My Chats) |
+| GET | `/api/v1/chats/{threadId}` | Thread metadata + message history |
+| POST | `/api/v1/chats/{threadId}/messages` | Send message (REST fallback; primary via SignalR) |
+| POST | `/api/v1/uploads/chat-attachment` | Upload chat photo attachment |
+| GET | `/api/v1/uploads/chat-attachment/{id}/url` | Refresh pre-signed URL for attachment |
+| POST | `/api/v1/claims/{id}/confirm-resolution` | Party confirms item returned |
+| POST | `/api/v1/claims/{id}/cancel` | Cancel approved claim before mutual confirm |
 | Hub | `/hubs/chat` | SignalR real-time messaging |
 
 ### UI routes

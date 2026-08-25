@@ -1,6 +1,6 @@
 # Amanah
 
-Lost-and-found platform for Egypt. [SPEC](docs/SPEC.md) · [Phases](docs/README.md) · [Phase 01](docs/PHASE-01-platform-foundation.md)
+Lost-and-found platform for Egypt. [SPEC](docs/SPEC.md) · [API error contract](docs/api-error-contract.md) · [Phase 01](docs/PHASE-01-platform-foundation.md)
 
 ## Local run
 

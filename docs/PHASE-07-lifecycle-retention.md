@@ -49,9 +49,9 @@ None additional.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| POST | `/api/reports/{id}/withdraw` | Reporter withdraws `Published` report (extend Phase 02 endpoint) |
-| DELETE | `/api/account` | Self-serve account deletion |
-| GET | `/api/account/deletion-status` | Check blockers (active approved claims) |
+| POST | `/api/v1/reports/{id}/withdraw` | Reporter withdraws `Published` report (extend Phase 02 endpoint) |
+| DELETE | `/api/v1/account` | Self-serve account deletion |
+| GET | `/api/v1/account/deletion-status` | Check blockers (active approved claims) |
 
 ### UI routes
 
@@ -81,6 +81,7 @@ All jobs use Africa/Cairo day boundaries where applicable. Run on a configurable
 | `ClaimPhotoCleanup` | On claim terminal status | Delete claim photos |
 | `ChatRetention` | 30 days after read-only | Delete thread + messages |
 | `OtpCleanup` | 24h after expiry | Delete `OtpCode` rows |
+| `OtpSmsOutboxCleanup` | 30 days after `ProcessedAt` | Delete `Sent` and `Failed` rows from `otp_sms_outbox` (limit queries only need recent history) |
 | `SessionCleanup` | 30 days after expiry/revoke | Delete `RefreshToken` rows |
 | `AccountDeletionPurge` | 30 days after deletion request | Purge direct PII; anonymize sender in messages |
 
@@ -99,7 +100,7 @@ All jobs use Africa/Cairo day boundaries where applicable. Run on a configurable
 | `LISTING_EXPIRY_WARNING_DAYS_BEFORE` | Override 7-day warning offset (default `7`; warning fires at `LISTING_EXPIRY_DAYS -` this value) |
 | `CLAIM_TIMEOUT_MINUTES` | Override 10-day claim timeout (from Phase 05 stub) |
 | `RETENTION_DAYS_OVERRIDE` | Override all 30-day retention windows (rejected reports, chat, sessions, account PII purge) |
-| `POST /api/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI (supersedes Phase 05 `trigger-claim-timeout` stub) |
+| `POST /api/v1/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI (supersedes Phase 05 `trigger-claim-timeout` stub) |
 
 ---
 

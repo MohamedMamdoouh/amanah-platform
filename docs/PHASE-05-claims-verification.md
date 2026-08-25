@@ -49,15 +49,15 @@ None additional.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| POST | `/api/reports/{id}/claims` | Submit claim on `Published` report |
-| GET | `/api/reports/{id}/claims` | Reporter: list claims on own report |
-| POST | `/api/claims/{id}/approve` | Reporter approves -> `Claim In Progress` |
-| POST | `/api/claims/{id}/reject` | Reporter rejects claim |
-| POST | `/api/claims/{id}/withdraw` | Claimant withdraws `Pending` claim |
-| GET | `/api/claims/mine` | Claimant's claims (My Claims) |
-| GET | `/api/claims/{id}` | Claim detail (claimant or reporter) |
-| POST | `/api/uploads/claim-photo` | Upload claim photo (private bucket) |
-| GET | `/api/uploads/claim-photo/{id}/url` | Pre-signed URL (claimant, reporter, admin on investigation) |
+| POST | `/api/v1/reports/{id}/claims` | Submit claim on `Published` report |
+| GET | `/api/v1/reports/{id}/claims` | Reporter: list claims on own report |
+| POST | `/api/v1/claims/{id}/approve` | Reporter approves -> `Claim In Progress` |
+| POST | `/api/v1/claims/{id}/reject` | Reporter rejects claim |
+| POST | `/api/v1/claims/{id}/withdraw` | Claimant withdraws `Pending` claim |
+| GET | `/api/v1/claims/mine` | Claimant's claims (My Claims) |
+| GET | `/api/v1/claims/{id}` | Claim detail (claimant or reporter) |
+| POST | `/api/v1/uploads/claim-photo` | Upload claim photo (private bucket) |
+| GET | `/api/v1/uploads/claim-photo/{id}/url` | Pre-signed URL (claimant, reporter, admin on investigation) |
 
 ### UI routes
 
@@ -160,7 +160,7 @@ From [SPEC.md Section 15.4](./SPEC.md#154-claiming-and-review).
 For CI and manual QA before Phase 07 ships the job:
 
 - Environment variable `CLAIM_TIMEOUT_MINUTES` (default: 14400 = 10 days) overrides the timeout interval in non-production
-- Optional admin-only `POST /api/admin/test/trigger-claim-timeout` for early CI hooks (Phase 07's `POST /api/admin/test/run-job/{jobName}` is the primary test trigger)
+- Optional admin-only `POST /api/v1/admin/test/trigger-claim-timeout` for early CI hooks (Phase 07's `POST /api/v1/admin/test/run-job/{jobName}` is the primary test trigger)
 
 ---
 

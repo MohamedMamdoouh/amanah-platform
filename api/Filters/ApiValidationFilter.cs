@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Amanah.Api.Models;
+using Amanah.Api.Models.Errors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 

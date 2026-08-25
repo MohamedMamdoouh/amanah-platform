@@ -9,6 +9,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
 
+    public DbSet<OtpSmsOutboxMessage> OtpSmsOutboxMessages => Set<OtpSmsOutboxMessage>();
+
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

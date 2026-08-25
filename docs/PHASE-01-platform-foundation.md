@@ -10,8 +10,9 @@
 | Decisions & API error contract                     | Yes           |
 | Monorepo scaffold (API + Angular + Postgres)       | Yes           |
 | API plumbing (errors, rate limit, tests)           | Yes           |
-| Auth DB (EF Core entities + migration)             | No - **next** |
-| Utilities, OTP, sessions, schema/seeds, UI, deploy | No            |
+| Auth DB (EF Core entities + migration)             | Yes           |
+| Utilities, OTP, sessions, schema/seeds, UI, deploy | No - **next** |
+| Cache foundation (`ICacheService` + `HybridCache`, no consumers yet) | Yes           |
 
 ---
 
@@ -66,14 +67,14 @@ Resolve **before starting** this phase:
 
 | Method | Route                         | Purpose                                                                 |
 | ------ | ----------------------------- | ----------------------------------------------------------------------- |
-| POST   | `/api/auth/otp/send`          | Send OTP after bot check + send-limit validation                        |
-| POST   | `/api/auth/otp/verify`        | Verify code; returns provisional token if new user                      |
-| POST   | `/api/auth/register`          | Complete signup: display name + ToS acceptance -> create `User`        |
-| POST   | `/api/auth/login`             | Login for returning users (after OTP verify)                            |
-| POST   | `/api/auth/refresh`           | Rotate refresh token; issue new access token                            |
-| POST   | `/api/auth/logout`            | Revoke current refresh token                                            |
-| POST   | `/api/auth/logout-everywhere` | Revoke all refresh tokens for user                                      |
-| GET    | `/api/auth/me`                | Current user profile (display name, role; never expose phone to others) |
+| POST   | `/api/v1/auth/otp/send`          | Send OTP after bot check + send-limit validation                        |
+| POST   | `/api/v1/auth/otp/verify`        | Verify code; returns provisional token if new user                      |
+| POST   | `/api/v1/auth/register`          | Complete signup: display name + ToS acceptance -> create `User`        |
+| POST   | `/api/v1/auth/login`             | Login for returning users (after OTP verify)                            |
+| POST   | `/api/v1/auth/refresh`           | Rotate refresh token; issue new access token                            |
+| POST   | `/api/v1/auth/logout`            | Revoke current refresh token                                            |
+| POST   | `/api/v1/auth/logout-everywhere` | Revoke all refresh tokens for user                                      |
+| GET    | `/api/v1/auth/me`                | Current user profile (display name, role; never expose phone to others) |
 
 ### UI routes
 
@@ -113,6 +114,7 @@ Resolve **before starting** this phase:
 - Global exception -> API error contract mapper
 - Rate-limit middleware returning HTTP 429 with `Retry-After`
 - JWT auth middleware; role-based authorization (`User`, `Admin`)
+- **Cache foundation:** `ICacheService` + `HybridCache` (L1 + L2 memory; fail-open; Debug hit/miss logs). No endpoint consumers until Phase 02. Config: `Cache:CategoriesTtlSeconds`, `GovernoratesTtlSeconds`. Browse not cached in v1.
 - PWA manifest + service worker shell (Arabic RTL layout, footer with legal links)
 
 ---
@@ -190,6 +192,7 @@ From [SPEC.md Section 15.7](./SPEC.md#157-authentication-otp).
 - [ ] Banned user rejected at login and token refresh
 - [ ] Admin bootstrap: seeded phone has `Admin` role
 - [ ] API error contract shape on validation and auth failures
+- [ ] `ICacheService` unit tests: get-or-set and remove (`api.Tests/Infrastructure/CacheServiceTests.cs`)
 
 ### Manual smoke checklist
 

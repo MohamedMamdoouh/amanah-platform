@@ -47,10 +47,10 @@ None additional.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| GET | `/api/reports` | Browse/search: `Published` + `Claim In Progress` only |
-| GET | `/api/reports/{id}/public` | Public detail page data (status-aware) |
-| GET | `/api/lost/{id}` | Alias redirect or shared handler for lost reports |
-| GET | `/api/found/{id}` | Alias redirect or shared handler for found reports |
+| GET | `/api/v1/reports` | Browse/search: `Published` + `Claim In Progress` only |
+| GET | `/api/v1/reports/{id}/public` | Public detail page data (status-aware) |
+| GET | `/api/v1/lost/{id}` | Alias redirect or shared handler for lost reports |
+| GET | `/api/v1/found/{id}` | Alias redirect or shared handler for found reports |
 
 Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (lost/found), `dateFrom`, `dateTo`, `page`, `pageSize` (default 20).
 
@@ -72,7 +72,7 @@ Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (l
 
 ### Infrastructure
 
-- No new infrastructure
+- No browse caching in v1 — `GET /api/v1/reports` queries PostgreSQL on every request. Revisit caching if browse DB load becomes an issue.
 
 ### Shared utilities
 

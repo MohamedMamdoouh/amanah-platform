@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Amanah.Api.Filters;
-using Amanah.Api.Handlers;
 using Amanah.Api.Middleware;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,9 +7,16 @@ namespace Amanah.Api.Extensions;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddApi(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         services.AddDatabase(configuration);
+        services.AddApiCaching(configuration);
+        services.AddHttpTimeouts(configuration);
+        services.AddAuthServices(configuration, environment);
+        services.AddApiVersioningServices();
         services.AddExceptionHandler<ApiExceptionHandler>();
         services.AddProblemDetails();
         services.AddApiRateLimiting(configuration);
@@ -37,6 +43,7 @@ public static class DependencyInjection
         app.UseForwardedHeaders();
         app.UseMiddleware<RequestLoggingMiddleware>();
         app.UseRouting();
+        app.UseHttpTimeouts();
         app.UseCors();
         app.UseRateLimiter();
         app.MapControllers();

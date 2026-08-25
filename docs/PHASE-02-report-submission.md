@@ -51,14 +51,14 @@ None additional - Phase 01 prerequisites must be complete.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| GET | `/api/categories` | Active categories with field definitions |
-| GET | `/api/governorates` | Governorate list |
-| POST | `/api/reports` | Submit lost or found report -> `Pending Review` |
-| GET | `/api/reports/mine` | Reporter's reports (filterable by status tab) |
-| GET | `/api/reports/{id}` | Report detail (reporter + admin only for non-public statuses) |
-| POST | `/api/reports/{id}/withdraw` | Reporter withdraws while `Pending Review` |
-| POST | `/api/uploads/report-photo` | Upload report photo; EXIF strip, thumbnail, bucket routing |
-| GET | `/api/uploads/report-photo/{id}/url` | Pre-signed URL for private photos (reporter/admin only) |
+| GET | `/api/v1/categories` | Active categories with field definitions |
+| GET | `/api/v1/governorates` | Governorate list |
+| POST | `/api/v1/reports` | Submit lost or found report -> `Pending Review` |
+| GET | `/api/v1/reports/mine` | Reporter's reports (filterable by status tab) |
+| GET | `/api/v1/reports/{id}` | Report detail (reporter + admin only for non-public statuses) |
+| POST | `/api/v1/reports/{id}/withdraw` | Reporter withdraws while `Pending Review` |
+| POST | `/api/v1/uploads/report-photo` | Upload report photo; EXIF strip, thumbnail, bucket routing |
+| GET | `/api/v1/uploads/report-photo/{id}/url` | Pre-signed URL for private photos (reporter/admin only) |
 
 ### UI routes
 
@@ -81,6 +81,7 @@ None additional - Phase 01 prerequisites must be complete.
 - Railway Buckets: report photos routed to public or private prefix based on category `photosPrivate`
 - WebP thumbnail generation on upload
 - Upload rate limiting: 5/min, 20/hour per account (Section 7.5)
+- **Cache consumers:** `GET /api/v1/categories` and `GET /api/v1/governorates` use `ICacheService` with `CacheKeys.Categories` (1h TTL) and `CacheKeys.Governorates` (24h TTL)
 
 ### Shared utilities
 
@@ -89,6 +90,7 @@ None additional - Phase 01 prerequisites must be complete.
 - Date validation: not future, not > 12 months ago (Africa/Cairo)
 - Quota service: 3 new reports/day, max 5 open reports (`Pending Review`, `Published`, `Claim In Progress`)
 - Search text builder: title + description + public category fields + area -> normalized column
+- Reference data reads: wrap DB load in `ICacheService.GetOrSetAsync` (see SPEC §16 caching)
 
 ---
 
@@ -105,7 +107,7 @@ Server-enforce these matrix rows before marking this phase done:
 | Reward amount, item-held location | Reporter (own), Admin |
 | Display name of reporter | Reporter (own), Admin |
 | Phone numbers | Own user, Admin |
-| Withdrawal reason | Reporter (own), Admin - returned on `GET /api/reports/{id}` for `Withdrawn` reports only; never on public/browse APIs |
+| Withdrawal reason | Reporter (own), Admin - returned on `GET /api/v1/reports/{id}` for `Withdrawn` reports only; never on public/browse APIs |
 
 Non-reporter users and public visitors cannot access `Pending Review` reports (not-found).
 
@@ -170,6 +172,8 @@ From [SPEC.md Section 15.1](./SPEC.md#151-report-submission-and-validation).
 - [ ] Private photos: pre-signed URL only for reporter/admin
 - [ ] Upload rate limits (5/min, 20/hour)
 - [ ] Search column written correctly with Arabic normalization
+- [ ] `GET /api/v1/categories` and `GET /api/v1/governorates` cache hits (second request avoids duplicate DB load)
+- [ ] Category list reflects DB after cache TTL expires or manual invalidation in tests
 
 ### Manual smoke checklist
 
