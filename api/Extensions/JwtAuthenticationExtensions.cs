@@ -33,8 +33,6 @@ public static class JwtAuthenticationExtensions
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                // Default inbound mapping rewrites `sub` → NameIdentifier, so looking up
-                // AuthClaimTypes.Sub would reject every valid access token.
                 options.MapInboundClaims = false;
 
                 options.TokenValidationParameters = new TokenValidationParameters
