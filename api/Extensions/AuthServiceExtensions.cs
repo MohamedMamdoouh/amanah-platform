@@ -17,11 +17,17 @@ public static class AuthServiceExtensions
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .Validate(
-                options => !string.IsNullOrWhiteSpace(options.SigningKey),
-                $"{JwtOptions.SectionName}:SigningKey is required.")
+                options => !string.IsNullOrWhiteSpace(options.AccessTokenSigningKey),
+                $"{JwtOptions.SectionName}:AccessTokenSigningKey is required.")
             .Validate(
-                options => options.SigningKey.Length >= 32,
-                $"{JwtOptions.SectionName}:SigningKey must be at least 32 characters.")
+                options => options.AccessTokenSigningKey.Length >= 32,
+                $"{JwtOptions.SectionName}:AccessTokenSigningKey must be at least 32 characters.")
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.HandoffTokenSigningKey),
+                $"{JwtOptions.SectionName}:HandoffTokenSigningKey is required.")
+            .Validate(
+                options => options.HandoffTokenSigningKey.Length >= 32,
+                $"{JwtOptions.SectionName}:HandoffTokenSigningKey must be at least 32 characters.")
             .ValidateOnStart();
 
         services.AddOptions<TurnstileOptions>()
@@ -30,6 +36,7 @@ public static class AuthServiceExtensions
                 options => environment.IsDevelopment() || !string.IsNullOrWhiteSpace(options.SecretKey),
                 $"{TurnstileOptions.SectionName}:SecretKey is required outside Development.")
             .ValidateOnStart();
+
         services.AddDataProtection();
         services.AddScoped<OtpSmsOutboxDispatcher>();
         services.AddScoped<HandoffTokenService>();

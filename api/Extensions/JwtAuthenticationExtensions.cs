@@ -1,4 +1,3 @@
-using System.Text;
 using Amanah.Api.Auth;
 using Amanah.Api.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,20 +12,10 @@ public static class JwtAuthenticationExtensions
         IConfiguration configuration)
     {
         var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
-            ?? throw new InvalidOperationException($"{JwtOptions.SectionName} configuration section is required.");
+            ?? new JwtOptions();
 
-        if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey))
-        {
-            throw new InvalidOperationException($"{JwtOptions.SectionName}:SigningKey is required.");
-        }
-
-        if (jwtOptions.SigningKey.Length < 32)
-        {
-            throw new InvalidOperationException(
-                $"{JwtOptions.SectionName}:SigningKey must be at least 32 characters.");
-        }
-
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey));
+        var signingKey = new SymmetricSecurityKey(
+            System.Text.Encoding.UTF8.GetBytes(jwtOptions.AccessTokenSigningKey));
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -43,23 +32,6 @@ public static class JwtAuthenticationExtensions
                     NameClaimType = AuthClaimTypes.Sub,
                     RoleClaimType = AuthClaimTypes.Role,
                 };
-
-                options.Events = new JwtBearerEvents
-                {
-                    OnTokenValidated = context =>
-                    {
-                        var principal = context.Principal;
-                        var sub = principal?.FindFirst(AuthClaimTypes.Sub)?.Value;
-                        var purpose = principal?.FindFirst(AuthClaimTypes.Purpose)?.Value;
-
-                        if (string.IsNullOrEmpty(sub) || purpose is not null)
-                        {
-                            context.Fail("Invalid access token.");
-                        }
-
-                        return Task.CompletedTask;
-                    },
-                };
             });
 
         services.AddAuthorizationBuilder()
@@ -69,5 +41,3 @@ public static class JwtAuthenticationExtensions
         return services;
     }
 }
-
-

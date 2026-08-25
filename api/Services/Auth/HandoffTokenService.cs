@@ -16,7 +16,8 @@ public sealed class HandoffTokenService(
 
     public string Issue(string normalizedPhone, string purpose)
     {
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));
+        var signingKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_options.HandoffTokenSigningKey));
         var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
         var now = timeProvider.GetUtcNow();
 
@@ -41,7 +42,8 @@ public sealed class HandoffTokenService(
             return false;
         }
 
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));
+        var signingKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_options.HandoffTokenSigningKey));
         var validationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,

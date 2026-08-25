@@ -32,7 +32,8 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
                 ["RateLimit:Policies:otp-send:PermitLimit"] = "1000",
                 ["RateLimit:Policies:otp-send:WindowSeconds"] = "3600",
                 ["Otp:OutboxPollIntervalSeconds"] = "1",
-                ["Jwt:SigningKey"] = "test-signing-key-at-least-32-characters-long!",
+                ["Jwt:AccessTokenSigningKey"] = "test-access-signing-key-at-least-32-characters!",
+                ["Jwt:HandoffTokenSigningKey"] = "test-handoff-signing-key-at-least-32-characters!",
             });
         });
 

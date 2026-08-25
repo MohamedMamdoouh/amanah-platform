@@ -21,7 +21,8 @@ public sealed class TokenService(
 
     public string IssueAccessToken(User user)
     {
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));
+        var signingKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_options.AccessTokenSigningKey));
         var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
         var now = timeProvider.GetUtcNow();
 
