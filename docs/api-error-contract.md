@@ -53,7 +53,7 @@ Every `429` includes `Retry-After` (seconds). OTP limits (`otp.cooldown`, `otp.h
 | `auth.invalid_otp`         | 400  | OTP incorrect                 |
 | `auth.otp_expired`         | 400  | OTP expired                   |
 | `auth.otp_void`            | 400  | OTP voided (3 failures)       |
-| `auth.provisional_invalid` | 400  | Signup token invalid          |
+| `auth.handoff_token_invalid` | 400  | Signup/login handoff token invalid |
 | `auth.unauthorized`        | 401  | No valid access token         |
 | `auth.token_expired`       | 401  | Access token expired          |
 | `auth.refresh_invalid`     | 401  | Refresh token invalid/revoked |

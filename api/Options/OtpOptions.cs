@@ -12,6 +12,8 @@ public sealed class OtpOptions
 
     public int CodeLifetimeMinutes { get; init; } = 10;
 
+    public int MaxVerificationAttempts { get; init; } = 3;
+
     public int OutboxPollIntervalSeconds { get; init; } = 30;
 
     public int OutboxMaxAttempts { get; init; } = 5;

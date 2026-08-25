@@ -68,7 +68,7 @@ Resolve **before starting** this phase:
 | Method | Route                         | Purpose                                                                 |
 | ------ | ----------------------------- | ----------------------------------------------------------------------- |
 | POST   | `/api/v1/auth/otp/send`          | Send OTP after bot check + send-limit validation                        |
-| POST   | `/api/v1/auth/otp/verify`        | Verify code; returns provisional token if new user                      |
+| POST   | `/api/v1/auth/otp/verify`        | Verify code; returns signup/login handoff token                       |
 | POST   | `/api/v1/auth/register`          | Complete signup: display name + ToS acceptance -> create `User`        |
 | POST   | `/api/v1/auth/login`             | Login for returning users (after OTP verify)                            |
 | POST   | `/api/v1/auth/refresh`           | Rotate refresh token; issue new access token                            |

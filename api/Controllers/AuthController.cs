@@ -31,4 +31,21 @@ public sealed class AuthController(OtpService otpService) : ControllerBase
 
         return result.ToActionResult();
     }
+
+    [HttpPost("otp/verify")]
+    [EndpointName(nameof(VerifyOtp))]
+    [EndpointSummary("Verify a one-time password and distinguish new vs returning users.")]
+    [ProducesResponseType(typeof(VerifyOtpResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyOtp(
+        [FromBody] VerifyOtpRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await otpService.VerifyAsync(
+            request.Phone,
+            request.Code,
+            cancellationToken);
+
+        return result.ToActionResult();
+    }
 }

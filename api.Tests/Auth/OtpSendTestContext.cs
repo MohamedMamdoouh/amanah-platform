@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Models.Auth;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Services.External;
@@ -45,6 +46,36 @@ public sealed class OtpSendTestContext : IAsyncDisposable
             phone,
             captchaToken,
         });
+    }
+
+    public async Task<(HttpResponseMessage Response, VerifyOtpResponse? Body)> VerifyOtpAsync(
+        string phone,
+        string code)
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/otp/verify", new
+        {
+            phone,
+            code,
+        });
+
+        VerifyOtpResponse? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<VerifyOtpResponse>()
+            : null;
+
+        return (response, body);
+    }
+
+    public async Task<string> SendOtpAndGetCodeAsync(string phone)
+    {
+        var response = await SendOtpAsync(phone);
+        if (response.StatusCode != System.Net.HttpStatusCode.NoContent)
+        {
+            throw new InvalidOperationException(
+                $"OTP send failed with status {response.StatusCode}.");
+        }
+
+        await WaitForSmsCountAsync(1);
+        return SmsSender.SentMessages[^1].Code;
     }
 
     public async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response)

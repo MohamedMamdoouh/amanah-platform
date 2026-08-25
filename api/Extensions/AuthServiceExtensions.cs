@@ -13,9 +13,11 @@ public static class AuthServiceExtensions
     {
         services.AddSingleton(TimeProvider.System);
         services.Configure<OtpOptions>(configuration.GetSection(OtpOptions.SectionName));
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<TurnstileOptions>(configuration.GetSection(TurnstileOptions.SectionName));
         services.AddDataProtection();
         services.AddScoped<OtpSmsOutboxDispatcher>();
+        services.AddScoped<HandoffTokenService>();
         services.AddScoped<OtpService>();
         services.AddHostedService<OtpSmsOutboxProcessor>();
 

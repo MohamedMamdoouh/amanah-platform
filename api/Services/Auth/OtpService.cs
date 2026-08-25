@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Models.Auth;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Models.Results;
 using Amanah.Api.Options;
@@ -16,6 +17,7 @@ public sealed class OtpService(
     AppDbContext dbContext,
     ICaptchaVerifier captchaVerifier,
     IDataProtectionProvider dataProtectionProvider,
+    HandoffTokenService handoffTokenService,
     IOptions<OtpOptions> options,
     TimeProvider timeProvider)
 {
@@ -101,6 +103,112 @@ public sealed class OtpService(
 
         // Caller gets 204 here; OtpSmsOutboxProcessor sends the SMS asynchronously.
         return Result.Ok();
+    }
+
+    public async Task<Result<VerifyOtpResponse>> VerifyAsync(
+        string phone,
+        string code,
+        CancellationToken cancellationToken = default)
+    {
+        if (!PhoneNormalizer.TryNormalize(phone, out var normalizedPhone))
+        {
+            return ResultError.BadRequest(
+                "The phone number format is not accepted.",
+                ErrorCodes.InvalidPhone);
+        }
+
+        if (!OtpCodeNormalizer.TryNormalize(code, out var normalizedCode))
+        {
+            return ResultError.BadRequest(
+                "The OTP code format is not accepted.",
+                ErrorCodes.InvalidOtp);
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var maxAttempts = options.Value.MaxVerificationAttempts;
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        await dbContext.Database.ExecuteSqlAsync(
+            $"SELECT pg_advisory_xact_lock(hashtext({normalizedPhone}))",
+            cancellationToken);
+
+        var otpCode = await dbContext.OtpCodes
+            .Where(existing => existing.Phone == normalizedPhone)
+            .OrderByDescending(existing => existing.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (otpCode is null)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ResultError.BadRequest(
+                "The OTP code has expired. Please request a new code.",
+                ErrorCodes.OtpExpired);
+        }
+
+        if (otpCode.ExpiresAt < now)
+        {
+            dbContext.OtpCodes.Remove(otpCode);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return ResultError.BadRequest(
+                "The OTP code has expired. Please request a new code.",
+                ErrorCodes.OtpExpired);
+        }
+
+        if (otpCode.AttemptCount >= maxAttempts)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ResultError.BadRequest(
+                "The OTP code is no longer valid. Please request a new code.",
+                ErrorCodes.OtpVoid);
+        }
+
+        if (!OtpHasher.Verify(normalizedCode, otpCode.CodeHash))
+        {
+            otpCode.AttemptCount++;
+
+            if (otpCode.AttemptCount >= maxAttempts)
+            {
+                dbContext.OtpCodes.Remove(otpCode);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                return ResultError.BadRequest(
+                    "The OTP code is no longer valid. Please request a new code.",
+                    ErrorCodes.OtpVoid);
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return ResultError.BadRequest(
+                "The OTP code is incorrect.",
+                ErrorCodes.InvalidOtp);
+        }
+
+        dbContext.OtpCodes.Remove(otpCode);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        var userExists = await dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(user => user.NormalizedPhone == normalizedPhone, cancellationToken);
+
+        if (userExists)
+        {
+            return new VerifyOtpResponse
+            {
+                Status = "existing_user",
+                SignupToken = null,
+                LoginToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Login),
+            };
+        }
+
+        return new VerifyOtpResponse
+        {
+            Status = "new_user",
+            SignupToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Signup),
+            LoginToken = null,
+        };
     }
 
     private async Task<Result> EnforceSendLimitsAsync(

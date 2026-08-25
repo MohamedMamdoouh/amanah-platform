@@ -1,0 +1,74 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Amanah.Api.Options;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+
+namespace Amanah.Api.Services.Auth;
+
+public sealed class HandoffTokenService(
+    IOptions<JwtOptions> options,
+    TimeProvider timeProvider)
+{
+    private readonly JwtOptions _options = options.Value;
+
+    public string Issue(string normalizedPhone, string purpose)
+    {
+        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));
+        var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+        var now = timeProvider.GetUtcNow();
+
+        var token = new JwtSecurityToken(
+            claims: [new Claim("phone", normalizedPhone), new Claim("purpose", purpose)],
+            notBefore: now.UtcDateTime,
+            expires: now.AddMinutes(_options.HandoffTokenLifetimeMinutes).UtcDateTime,
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public bool TryValidate(string token, string expectedPurpose, out string normalizedPhone)
+    {
+        normalizedPhone = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));
+        var validationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = signingKey,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+        };
+
+        try
+        {
+            var principal = new JwtSecurityTokenHandler().ValidateToken(
+                token,
+                validationParameters,
+                out _);
+
+            var purpose = principal.FindFirstValue("purpose");
+            var phone = principal.FindFirstValue("phone");
+
+            if (purpose != expectedPurpose || string.IsNullOrEmpty(phone))
+            {
+                return false;
+            }
+
+            normalizedPhone = phone;
+            return true;
+        }
+        catch (SecurityTokenException)
+        {
+            return false;
+        }
+    }
+}
