@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using Amanah.Api.Auth;
 using Amanah.Api.Options;
@@ -32,6 +33,8 @@ public static class JwtAuthenticationExtensions
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                options.MapInboundClaims = false;
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = false,
@@ -49,7 +52,8 @@ public static class JwtAuthenticationExtensions
                     OnTokenValidated = context =>
                     {
                         var principal = context.Principal;
-                        var sub = principal?.FindFirst(AuthClaimTypes.Sub)?.Value;
+                        var sub = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                            ?? principal?.FindFirst(AuthClaimTypes.Sub)?.Value;
                         var purpose = principal?.FindFirst(AuthClaimTypes.Purpose)?.Value;
 
                         if (string.IsNullOrEmpty(sub) || purpose is not null)

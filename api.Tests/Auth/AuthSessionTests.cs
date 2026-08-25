@@ -225,6 +225,18 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         Assert.Equal(ErrorCodes.Unauthorized, error?.Code);
     }
 
+    [Fact]
+    public async Task Me_with_signup_handoff_token_as_bearer_returns_unauthorized()
+    {
+        await using var context = await CreateContextAsync();
+
+        var code = await context.SendOtpAndGetCodeAsync("01012345678");
+        var (_, verifyBody) = await context.VerifyOtpAsync("01012345678", code);
+        var (response, _) = await context.GetMeAsync(verifyBody!.SignupToken);
+
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     private static async Task<(HttpResponseMessage, ApiError?)> RegisterWithErrorAsync(
         OtpSendTestContext context,
         string signupToken,
