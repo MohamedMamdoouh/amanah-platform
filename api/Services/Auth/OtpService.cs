@@ -185,30 +185,32 @@ public sealed class OtpService(
                 ErrorCodes.InvalidOtp);
         }
 
-        dbContext.OtpCodes.Remove(otpCode);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
+        // Issue the handoff token before consuming the OTP. If signing fails
+        // (missing/short Jwt:SigningKey, etc.), disposing the transaction rolls
+        // back and the code can still be retried.
         var userExists = await dbContext.Users
             .AsNoTracking()
             .AnyAsync(user => user.NormalizedPhone == normalizedPhone, cancellationToken);
 
-        if (userExists)
-        {
-            return new VerifyOtpResponse
+        var response = userExists
+            ? new VerifyOtpResponse
             {
                 Status = "existing_user",
                 SignupToken = null,
                 LoginToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Login),
+            }
+            : new VerifyOtpResponse
+            {
+                Status = "new_user",
+                SignupToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Signup),
+                LoginToken = null,
             };
-        }
 
-        return new VerifyOtpResponse
-        {
-            Status = "new_user",
-            SignupToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Signup),
-            LoginToken = null,
-        };
+        dbContext.OtpCodes.Remove(otpCode);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return response;
     }
 
     private async Task<Result> EnforceSendLimitsAsync(
