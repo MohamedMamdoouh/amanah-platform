@@ -67,8 +67,8 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
 
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
-
-        Assert.Equal(ErrorCodes.InvalidPhone, error?.Code);
+        Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
+        Assert.NotNull(error?.Errors?["phone"]);
 
         Assert.Empty(context.SmsSender.SentMessages);
 

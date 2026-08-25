@@ -9,6 +9,9 @@ public static class ErrorCodes
     public const string OtpExpired = "auth.otp_expired";
     public const string OtpVoid = "auth.otp_void";
     public const string HandoffTokenInvalid = "auth.handoff_token_invalid";
+    public const string TokenExpired = "auth.token_expired";
+    public const string RefreshInvalid = "auth.refresh_invalid";
+    public const string Banned = "auth.banned";
     public const string Unauthorized = "auth.unauthorized";
     public const string Forbidden = "auth.forbidden";
     public const string NotFound = "resource.not_found";

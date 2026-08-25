@@ -1,8 +1,8 @@
 namespace Amanah.Api.Models.Auth;
 
-public sealed class VerifyOtpRequest
+public sealed class LoginRequest
 {
     public string Phone { get; init; } = string.Empty;
 
-    public string Code { get; init; } = string.Empty;
+    public string LoginToken { get; init; } = string.Empty;
 }

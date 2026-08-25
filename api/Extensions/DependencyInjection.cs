@@ -16,11 +16,13 @@ public static class DependencyInjection
         services.AddApiCaching(configuration);
         services.AddHttpTimeouts(configuration);
         services.AddAuthServices(configuration, environment);
+        services.AddApiValidation();
+        services.AddJwtAuthentication(configuration);
         services.AddApiVersioningServices();
         services.AddExceptionHandler<ApiExceptionHandler>();
         services.AddProblemDetails();
         services.AddApiRateLimiting(configuration);
-        services.AddApiCors(configuration);
+        services.AddApiCors(configuration, environment);
         services.AddForwardedHeaders(configuration);
 
         services.AddControllers(options => options.Filters.Add<ApiValidationFilter>())
@@ -45,6 +47,8 @@ public static class DependencyInjection
         app.UseRouting();
         app.UseHttpTimeouts();
         app.UseCors();
+        app.UseAuthentication();
+        app.UseAuthorization();
         app.UseRateLimiter();
         app.MapControllers();
 

@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
@@ -76,6 +77,105 @@ public sealed class OtpSendTestContext : IAsyncDisposable
 
         await WaitForSmsCountAsync(1);
         return SmsSender.SentMessages[^1].Code;
+    }
+
+    public async Task<(HttpResponseMessage Response, AuthSessionResponse? Body)> RegisterAsync(
+        string signupToken,
+        string displayName = "Ahmed",
+        bool acceptTerms = true)
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/register", new
+        {
+            signupToken,
+            displayName,
+            acceptTerms,
+        });
+
+        AuthSessionResponse? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<AuthSessionResponse>()
+            : null;
+
+        return (response, body);
+    }
+
+    public async Task<(HttpResponseMessage Response, AuthSessionResponse? Body)> LoginAsync(
+        string phone,
+        string loginToken)
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            phone,
+            loginToken,
+        });
+
+        AuthSessionResponse? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<AuthSessionResponse>()
+            : null;
+
+        return (response, body);
+    }
+
+    public async Task<(HttpResponseMessage Response, AuthSessionResponse? Body)> RefreshAsync(
+        string refreshToken)
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new
+        {
+            refreshToken,
+        });
+
+        AuthSessionResponse? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<AuthSessionResponse>()
+            : null;
+
+        return (response, body);
+    }
+
+    public async Task<HttpResponseMessage> LogoutAsync(string accessToken, string refreshToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/logout")
+        {
+            Content = JsonContent.Create(new { refreshToken }),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        return await Client.SendAsync(request);
+    }
+
+    public async Task<HttpResponseMessage> LogoutEverywhereAsync(string accessToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/logout-everywhere");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        return await Client.SendAsync(request);
+    }
+
+    public async Task<(HttpResponseMessage Response, UserProfileResponse? Body)> GetMeAsync(
+        string? accessToken = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/auth/me");
+        if (accessToken is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        var response = await Client.SendAsync(request);
+        UserProfileResponse? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<UserProfileResponse>()
+            : null;
+
+        return (response, body);
+    }
+
+    public async Task<(AuthSessionResponse Session, string Phone)> RegisterNewUserAsync(string phone = "01012345678")
+    {
+        var code = await SendOtpAndGetCodeAsync(phone);
+        var (_, verifyBody) = await VerifyOtpAsync(phone, code);
+        var (registerResponse, session) = await RegisterAsync(verifyBody!.SignupToken!, "Ahmed");
+
+        if (registerResponse.StatusCode != System.Net.HttpStatusCode.OK || session is null)
+        {
+            throw new InvalidOperationException($"Register failed: {registerResponse.StatusCode}");
+        }
+
+        return (session, phone);
     }
 
     public async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response)

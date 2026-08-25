@@ -13,11 +13,28 @@ public static class AuthServiceExtensions
     {
         services.AddSingleton(TimeProvider.System);
         services.Configure<OtpOptions>(configuration.GetSection(OtpOptions.SectionName));
-        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-        services.Configure<TurnstileOptions>(configuration.GetSection(TurnstileOptions.SectionName));
+
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.SigningKey),
+                $"{JwtOptions.SectionName}:SigningKey is required.")
+            .Validate(
+                options => options.SigningKey.Length >= 32,
+                $"{JwtOptions.SectionName}:SigningKey must be at least 32 characters.")
+            .ValidateOnStart();
+
+        services.AddOptions<TurnstileOptions>()
+            .Bind(configuration.GetSection(TurnstileOptions.SectionName))
+            .Validate(
+                options => environment.IsDevelopment() || !string.IsNullOrWhiteSpace(options.SecretKey),
+                $"{TurnstileOptions.SectionName}:SecretKey is required outside Development.")
+            .ValidateOnStart();
         services.AddDataProtection();
         services.AddScoped<OtpSmsOutboxDispatcher>();
         services.AddScoped<HandoffTokenService>();
+        services.AddScoped<TokenService>();
+        services.AddScoped<AuthService>();
         services.AddScoped<OtpService>();
         services.AddHostedService<OtpSmsOutboxProcessor>();
 

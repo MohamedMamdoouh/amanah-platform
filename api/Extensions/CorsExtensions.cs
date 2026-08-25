@@ -6,23 +6,18 @@ public static class CorsExtensions
 {
     public static IServiceCollection AddApiCors(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
-        var origins = configuration
-            .GetSection(CorsOptions.SectionName)
-            .Get<CorsOptions>()?.AllowedOrigins ?? [];
+        services.AddOptions<CorsOptions>()
+            .Bind(configuration.GetSection(CorsOptions.SectionName))
+            .Validate(
+                options => environment.IsDevelopment() || options.AllowedOrigins.Length > 0,
+                $"{CorsOptions.SectionName}:AllowedOrigins must contain at least one origin outside Development.")
+            .ValidateOnStart();
 
-        services.AddCors(options =>
-        {
-            options.AddDefaultPolicy(policy =>
-            {
-                if (origins.Length > 0)
-                    policy.WithOrigins(origins);
-
-                policy.AllowAnyHeader()
-                      .AllowAnyMethod();
-            });
-        });
+        services.AddCors();
+        services.ConfigureOptions<ConfigureDefaultCorsPolicy>();
 
         return services;
     }

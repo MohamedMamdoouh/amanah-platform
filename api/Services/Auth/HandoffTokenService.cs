@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Amanah.Api.Auth;
 using Amanah.Api.Options;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -20,7 +21,10 @@ public sealed class HandoffTokenService(
         var now = timeProvider.GetUtcNow();
 
         var token = new JwtSecurityToken(
-            claims: [new Claim("phone", normalizedPhone), new Claim("purpose", purpose)],
+            claims: [
+                new Claim(AuthClaimTypes.Phone, normalizedPhone),
+                new Claim(AuthClaimTypes.Purpose, purpose),
+            ],
             notBefore: now.UtcDateTime,
             expires: now.AddMinutes(_options.HandoffTokenLifetimeMinutes).UtcDateTime,
             signingCredentials: credentials);
@@ -55,8 +59,8 @@ public sealed class HandoffTokenService(
                 validationParameters,
                 out _);
 
-            var purpose = principal.FindFirstValue("purpose");
-            var phone = principal.FindFirstValue("phone");
+            var purpose = principal.FindFirstValue(AuthClaimTypes.Purpose);
+            var phone = principal.FindFirstValue(AuthClaimTypes.Phone);
 
             if (purpose != expectedPurpose || string.IsNullOrEmpty(phone))
             {

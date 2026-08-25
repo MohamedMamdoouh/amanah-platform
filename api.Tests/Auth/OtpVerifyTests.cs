@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
@@ -41,7 +42,7 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         {
             Id = Guid.NewGuid(),
             NormalizedPhone = "+201012345678",
-            DisplayName = "أحمد",
+            DisplayName = "Ahmed",
             Role = UserRole.User,
             CreatedAt = now,
         });
@@ -160,7 +161,7 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         var (_, body) = await context.VerifyOtpAsync("01012345678", code);
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(body!.SignupToken);
-        Assert.Equal(AuthTokenPurposes.Signup, jwt.Claims.Single(claim => claim.Type == "purpose").Value);
+        Assert.Equal(AuthTokenPurposes.Signup, jwt.Claims.Single(claim => claim.Type == AuthClaimTypes.Purpose).Value);
     }
 
     [Fact]
