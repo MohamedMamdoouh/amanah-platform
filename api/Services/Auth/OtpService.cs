@@ -1,9 +1,9 @@
 using System.Security.Cryptography;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Models.Auth;
+using Amanah.Contracts.Responses.Auth;
+using Amanah.Contracts.Errors;
 using Amanah.Api.Models.Errors;
-using Amanah.Api.Models.Results;
 using Amanah.Api.Options;
 using Amanah.Api.Services.External;
 using Amanah.Api.Utilities;

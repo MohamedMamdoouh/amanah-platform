@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Amanah.Api.Auth;
-using Amanah.Api.Models.Auth;
+using Amanah.Contracts.Requests.Auth;
+using Amanah.Contracts.Responses.Auth;
+using Amanah.Contracts.Errors;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Auth;
 using Asp.Versioning;

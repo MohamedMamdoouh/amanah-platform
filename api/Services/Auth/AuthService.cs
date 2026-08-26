@@ -1,8 +1,9 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Models.Auth;
+using Amanah.Contracts.Requests.Auth;
+using Amanah.Contracts.Responses.Auth;
+using Amanah.Contracts.Errors;
 using Amanah.Api.Models.Errors;
-using Amanah.Api.Models.Results;
 using Amanah.Api.Utilities;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,7 +46,6 @@ public sealed class AuthService(
             NormalizedPhone = normalizedPhone,
             DisplayName = displayName,
             Role = UserRole.User,
-            TermsAcceptedAt = now,
             CreatedAt = now,
         };
 

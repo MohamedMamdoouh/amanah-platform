@@ -1,5 +1,6 @@
-using Amanah.Api.Models.Auth;
 using Amanah.Api.Services.Auth;
+using Amanah.Contracts.Errors;
+using Amanah.Contracts.Requests.Auth;
 using FluentValidation;
 
 namespace Amanah.Api.Validators.Auth;
@@ -10,12 +11,15 @@ public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
     {
         RuleFor(request => request.Phone)
             .NotEmpty()
+            .WithErrorCode(ErrorCodes.FieldPhoneRequired)
             .WithMessage("Phone number is required.")
             .Must(phone => PhoneNormalizer.TryNormalize(phone, out _))
-            .WithMessage("The phone number format is not accepted.");
+            .WithErrorCode(ErrorCodes.FieldPhoneInvalid)
+            .WithMessage("Phone number format is not valid.");
 
         RuleFor(request => request.LoginToken)
             .NotEmpty()
+            .WithErrorCode(ErrorCodes.FieldLoginTokenRequired)
             .WithMessage("Login token is required.");
     }
 }

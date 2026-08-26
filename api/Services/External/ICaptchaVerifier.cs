@@ -1,4 +1,4 @@
-using Amanah.Api.Models.Results;
+using Amanah.Api.Models.Errors;
 
 namespace Amanah.Api.Services.External;
 

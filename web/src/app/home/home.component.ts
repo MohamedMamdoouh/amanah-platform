@@ -1,13 +1,20 @@
 import { Component } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  template: `<main class="home"><h1>أمانة</h1><p>مرحباً بك في أمانة.</p></main>`,
+  imports: [TranslateModule],
+  template: `
+    <section class="home">
+      <h1>{{ 'app.name' | translate }}</h1>
+      <p>{{ 'home.welcome' | translate }}</p>
+    </section>
+  `,
   styles: `
     .home {
-      padding: 2rem;
       text-align: center;
+      padding: 2rem 0;
     }
   `,
 })

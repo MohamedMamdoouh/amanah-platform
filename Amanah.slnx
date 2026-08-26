@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/api.Tests/">
+    <Project Path="api.Tests/Amanah.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/api/">
+    <Project Path="api/Amanah.Api.csproj" />
+  </Folder>
+  <Folder Name="/contracts/">
+    <Project Path="contracts/Amanah.Contracts.csproj" />
+  </Folder>
+</Solution>

@@ -2,7 +2,7 @@ using Amanah.Api.Data;
 
 using Amanah.Api.Data.Entities;
 
-using Amanah.Api.Models.Errors;
+using Amanah.Contracts.Errors;
 
 using Amanah.Api.Tests.Infrastructure;
 
@@ -68,7 +68,7 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
-        Assert.NotNull(error?.Errors?["phone"]);
+        Assert.Contains("Phone number format is not valid.", error?.Errors?["phone"] ?? []);
 
         Assert.Empty(context.SmsSender.SentMessages);
 

@@ -1,5 +1,6 @@
 using Amanah.Api.Models.Common;
 using Amanah.Api.Models.Errors;
+using Amanah.Contracts.Errors;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace Amanah.Api.Middleware;

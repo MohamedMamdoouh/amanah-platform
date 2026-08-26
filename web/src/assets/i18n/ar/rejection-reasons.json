@@ -1,0 +1,10 @@
+{
+  "rejection.unclear_photos": "صور غير واضحة",
+  "rejection.spam_or_scam": "اشتباه في إعلان مزيف أو احتيال",
+  "rejection.duplicate_report": "بلاغ مكرر لنفس الغرض",
+  "rejection.insufficient_description": "وصف غير كافٍ",
+  "rejection.contact_info": "يحتوي على معلومات تواصل",
+  "rejection.prohibited_item": "غرض محظور أو غير قانوني",
+  "rejection.wrong_category": "فئة غير مناسبة",
+  "rejection.raw_id_number": "يحتوي على رقم هوية أو مستند كامل"
+}

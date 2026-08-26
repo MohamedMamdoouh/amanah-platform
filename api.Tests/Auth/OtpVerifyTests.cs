@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Models.Errors;
+using Amanah.Contracts.Errors;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;

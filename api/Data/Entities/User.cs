@@ -14,10 +14,6 @@ public class User : IEntity
 
     public string? BanReason { get; set; }
 
-    public string? TermsVersion { get; set; }
-
-    public DateTimeOffset? TermsAcceptedAt { get; set; }
-
     public DateTimeOffset CreatedAt { get; set; }
 
     public ICollection<RefreshToken> RefreshTokens { get; set; } = [];

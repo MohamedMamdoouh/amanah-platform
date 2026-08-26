@@ -70,7 +70,7 @@ None additional.
 
 ### Database
 
-- `Claim` records with status, attempt tracking, `countsAsAttempt` flag
+- `Claim` records with status, attempt tracking, `countsAsFailure` flag
 - `ChatThread` record created on claim approval (messaging inert until Phase 06)
 - `Report.status` -> `Claim In Progress` on approval
 - Auto-reject other `Pending` claims with reason `Another claim approved`

@@ -92,6 +92,7 @@ Resolve **before starting** this phase:
 - Transactional email to admin on new report submission
 - In-app notification center (source of truth for user events)
 - **Cache invalidation:** `ICacheService.RemoveAsync(CacheKeys.Categories)` on every admin category create/update
+- **Category translations:** new `code` / `fieldKey` values require matching entries in `web/src/assets/i18n/ar/categories.json` before public deploy (admin UI shows English keys)
 
 ### Shared utilities
 
@@ -176,7 +177,7 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [ ] `ModerationAction` record created and survives report deletion
 - [ ] Admin email sent on new submission
 - [ ] Notification center: unread until opened/marked read
-- [ ] Admin category write clears `CacheKeys.Categories` (`ref:categories`)
+- [ ] Admin category write clears `CacheKeys.Categories` (`catalog:categories`)
 
 ### Manual smoke checklist
 

@@ -1,6 +1,6 @@
 using Amanah.Api.Models.Common;
+using Amanah.Contracts.Errors;
 using Amanah.Api.Models.Errors;
-using Amanah.Api.Models.Results;
 using Amanah.Api.Options;
 using Microsoft.Extensions.Options;
 

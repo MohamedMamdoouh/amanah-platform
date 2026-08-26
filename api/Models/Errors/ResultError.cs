@@ -1,4 +1,4 @@
-using Amanah.Api.Models.Results;
+using Amanah.Contracts.Errors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Amanah.Api.Models.Errors;

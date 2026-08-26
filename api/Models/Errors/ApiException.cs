@@ -1,3 +1,5 @@
+using Amanah.Contracts.Errors;
+
 namespace Amanah.Api.Models.Errors;
 
 public class ApiException : Exception

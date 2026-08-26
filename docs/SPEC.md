@@ -67,11 +67,11 @@ Build a **real product** (not just a portfolio demo) that real people across Egy
 
 - **Real users**, not a simulated/demo audience - the platform is meant to actually be used.
 - **Nationwide launch (all of Egypt).** No single pilot city. Density of overlapping "lost" and "found" reports in the same area is normally the argument for starting narrow, but expected early traffic is low (pre-marketing, solo-founder scale), so that dilution risk is acceptable and manual moderation stays feasible. Revisit with geo-targeted seeding if thin coverage in some governorates becomes a real bottleneck.
-- **Language:** Arabic only for v1 (RTL layout), matching how the target users actually communicate. English localization is explicitly deferred.
+- **Language:** Arabic UI for v1 (RTL layout). Catalog data (categories, governorates, field keys) is stored as English keys in the database; Arabic display labels live in frontend translation files (`assets/i18n/ar/`). User-submitted content (reports, chat, display names) is stored as entered.
 - **Access model:** anyone, including logged-out visitors, can browse, search, and filter all publicly visible reports (see 4.4 for which statuses are publicly visible). **Login is required** to: submit a report, submit a claim, respond to a claim, message another user, confirm a resolution, or flag a listing. Action buttons prompt login on tap.
 - **Logged-out vs logged-in parity:** logged-out visitors see exactly the same content as logged-in users on publicly visible reports.
 - **Public identity:** each user chooses a **display name** at signup, which is shown on their listings and in chat. Display names are **not unique** in v1 and are **not editable** after signup. Phone numbers are **never** shown to other users - admin only.
-- **Eligibility:** users must explicitly accept the Terms of Service and Privacy Policy at signup (version and timestamp recorded). Minimum age stated in Terms: **16**. No separate age verification in v1.
+- **Eligibility:** users must explicitly accept the Terms of Service and Privacy Policy at signup. Minimum age stated in Terms: **16**. No separate age verification in v1.
 - **Time standard:** all `timestamptz` values are stored in **UTC** in the database. **Date-only** fields (date lost/found) are stored as PostgreSQL `date` values representing the **Africa/Cairo calendar day** the user selected. **Day boundaries** for quotas and date validation use the Africa/Cairo calendar. **Displayed** timestamps use Africa/Cairo local time (11.2).
 - **Support channel:** a static contact page, linked from the footer, publishes a support email address. It is reachable by logged-out visitors. Every requirement in this document that refers to "contacting the admin" means this channel.
 
@@ -193,7 +193,7 @@ See section 6.
 - **Outage behavior:** if the verification service is unavailable, signup/login is blocked with a clear temporary-unavailable message.
 - **Banned accounts:** a banned user cannot sign in. The blocked sign-in attempt states that the account is banned and shows the recorded reason (7.2).
 - **Sessions:** users stay signed in across multiple devices. "Log out everywhere" ends all sessions immediately. Sessions expire after a period without use and then require re-authentication.
-- **Terms changes:** the accepted version and timestamp are recorded as an audit trail. There is no re-acceptance flow in v1.
+- **Terms changes:** there is no re-acceptance flow in v1.
 - **Phone change:** out of scope in v1 - neither self-serve nor admin-assisted.
 - **Account deletion:** self-serve, but **blocked** while the user has a report in `Claim In Progress` or holds an approved claim on someone else's report - the claim must be cancelled first (6.7). Once eligible: their reports in `Pending Review` or `Published` are withdrawn (closing any pending claims on them), their own `Pending` claims are withdrawn, and they are signed out immediately. Chat message bodies remain until the normal chat retention deadline while sender identity is anonymized immediately. Direct personal data is purged within **30 days** per section 12.
 - **Roles:** `User`, `Admin`.
@@ -267,7 +267,7 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 - An optional free-text note is shown to the reporter alongside the reason.
 - Admin cannot edit report content - only approve, reject, and take enforcement actions (7.2).
 - **Admin surfaces in v1:** moderation queue, abuse-report queue, user lookup (with ban and unban), and category & field management at `/admin/categories`. There is no admin tool for changing a user's phone number.
-- **Category management:** admins may add categories (Arabic name, slug, sort order, `photosPrivate` flag, active flag), edit names and sort order, deactivate categories, and define per-category fields (key, Arabic label, type `text` or `integer`, validation ranges, required flag). Deactivated categories are hidden from new submissions; existing reports keep their category. Field-definition changes do not retroactively re-validate old reports. Categories referenced by reports cannot be deleted - only deactivated.
+- **Category management:** admins may add categories (English `code`, sort order, `photosPrivate` flag, active flag), edit sort order, deactivate categories, and define per-category fields (`fieldKey`, type `text` or `integer`, validation ranges, required flag). Arabic labels for categories and fields are added in frontend translation files (`categories.json`) and deployed. Deactivated categories are hidden from new submissions; existing reports keep their category. Field-definition changes do not retroactively re-validate old reports. Categories referenced by reports cannot be deleted - only deactivated.
 - **Admin access to private data:**
   - Private photos: during report review and enforcement investigations only.
   - Claim text and claim photos: during flagged-listing abuse or enforcement investigations only.
@@ -508,7 +508,7 @@ Per-field access above. Public visibility by status: section 4.4.
 - **Social link previews and rich share cards** - shared links show a plain URL.
 - **In-app payments/escrow** for rewards - offline negotiation only.
 - **Native mobile apps** - web app only (installable on home screen).
-- **English localization** - Arabic only for v1.
+- **English end-user UI** - Arabic UI only for v1; catalog data uses English keys in DB with Arabic labels in frontend i18n.
 - **Community-assisted moderation** - solo-admin review only.
 - **Monetization** (ads, premium boosts, donations) - fully free in v1.
 - **Web push notifications** - the in-app notification center is the only user-facing event channel.
@@ -701,12 +701,12 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
   - Normalization (applied identically to stored text and to the incoming query): alef variants (`أ إ آ ٱ` → `ا`), `ى` → `ي`, `ة` → `ه`, strip tatweel and Arabic diacritics, collapse whitespace, lowercase.
   - Matching: the query is normalized and split into terms; every term must match the search column (`ILIKE '%term%'`, AND-ed). A trigram index (`pg_trgm` GIN) on the search column keeps this workable.
   - No external search infrastructure. Postgres full-text search (`tsvector`) is a post-v1 upgrade.
-- **Caching:** `HybridCache` (L1 in-process + L2 `MemoryDistributedCache`) behind `ICacheService` (v1, single API instance). Cache-aside for **reference data only** (categories, governorates); explicit invalidation on admin category writes. Built-in stampede protection; fail-open to DB on cache errors. **Browse/search is not cached in v1.** **Do not cache:** OTP send limits (DB-backed), JWT/refresh tokens, pre-signed media URLs. Swap L2 to Redis when running multiple API instances.
+- **Caching:** `HybridCache` (L1 in-process + L2 `MemoryDistributedCache`) behind `ICacheService` (v1, single API instance). Cache-aside for **catalog data only** (categories, governorates); explicit invalidation on admin category writes. Built-in stampede protection; fail-open to DB on cache errors. **Browse/search is not cached in v1.** **Do not cache:** OTP send limits (DB-backed), JWT/refresh tokens, pre-signed media URLs. Swap L2 to Redis when running multiple API instances.
 
   | Cache key | Value | TTL (default) | Invalidation |
   | --------- | ----- | ------------- | ------------ |
-  | `ref:categories` | Active categories + field defs (`CacheKeys.Categories`) | 1h | Admin category CRUD (Phase 03) |
-  | `ref:governorates` | Governorate list (`CacheKeys.Governorates`) | 24h | Seed change (rare) |
+  | `catalog:categories` | Active categories + field defs (`CacheKeys.Categories`) | 1h | Admin category CRUD (Phase 03) |
+  | `catalog:governorates` | Governorate list (`CacheKeys.Governorates`) | 24h | Seed change (rare) |
 - **Admin dashboard:** same Angular app behind a role guard at `/admin/`. Screens match section 5.5.
 
 ---
@@ -716,9 +716,9 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 | Entity                    | Key fields                                                                                                                                                                                                                                                                                                                                |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `User`                    | normalized phone (`+20...`), display name, role, banned flag + reason, ToS version + accepted-at, created-at                                                                                                                                                                                                                              |
-| `Category`                | name (Arabic), slug, sort order, `photosPrivate` flag, active flag                                                                                                                                                                                                                                                                        |
-| `CategoryFieldDefinition` | category ref, field key, Arabic label, type (`text`/`integer`), validation rules, required flag, sort order                                                                                                                                                                                                                               |
-| `Governorate`             | name (Arabic), sort order                                                                                                                                                                                                                                                                                                                 |
+| `Category`                | code (English key), sort order, `photosPrivate` flag, active flag                                                                                                                                                                                                                                                                        |
+| `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`/`integer`), validation rules, required flag, sort order                                                                                                                                                                                                                               |
+| `Governorate`             | code (English key), sort order                                                                                                                                                                                                                                                                                                                 |
 | `Report`                  | type (Lost/Found), category, title, description, date lost/found, governorate, area text, item-held location (found), status, reward flag/amount, hidden-detail text, withdrawal reason, resubmission count, normalized search text, published-at, published-seconds-elapsed, published-timer-resumed-at, expiry-warning-sent, timestamps |
 | `CategoryField`           | report ref, field key, value                                                                                                                                                                                                                                                                                                              |
 | `ReportPhoto`             | report ref, storage key, content type, size, thumbnail ref, sort order                                                                                                                                                                                                                                                                    |

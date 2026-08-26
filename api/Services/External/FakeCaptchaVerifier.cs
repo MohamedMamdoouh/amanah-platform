@@ -1,5 +1,5 @@
+using Amanah.Contracts.Errors;
 using Amanah.Api.Models.Errors;
-using Amanah.Api.Models.Results;
 
 namespace Amanah.Api.Services.External;
 

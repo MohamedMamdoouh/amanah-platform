@@ -2,7 +2,7 @@ namespace Amanah.Api.Services.Infrastructure;
 
 public static class CacheKeys
 {
-    public const string Categories = "ref:categories";
+    public const string Categories = "catalog:categories";
 
-    public const string Governorates = "ref:governorates";
+    public const string Governorates = "catalog:governorates";
 }

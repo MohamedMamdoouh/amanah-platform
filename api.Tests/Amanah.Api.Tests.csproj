@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\contracts\Amanah.Contracts.csproj" />
     <ProjectReference Include="..\api\Amanah.Api.csproj" />
   </ItemGroup>
 

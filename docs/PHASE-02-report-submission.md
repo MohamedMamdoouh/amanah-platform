@@ -51,8 +51,8 @@ None additional - Phase 01 prerequisites must be complete.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| GET | `/api/v1/categories` | Active categories with field definitions |
-| GET | `/api/v1/governorates` | Governorate list |
+| GET | `/api/v1/categories` | Active categories with field definitions (keys only — no localized labels) |
+| GET | `/api/v1/governorates` | Governorate list (`code` + `sortOrder`; Arabic labels from frontend i18n) |
 | POST | `/api/v1/reports` | Submit lost or found report -> `Pending Review` |
 | GET | `/api/v1/reports/mine` | Reporter's reports (filterable by status tab) |
 | GET | `/api/v1/reports/{id}` | Report detail (reporter + admin only for non-public statuses) |
@@ -90,7 +90,15 @@ None additional - Phase 01 prerequisites must be complete.
 - Date validation: not future, not > 12 months ago (Africa/Cairo)
 - Quota service: 3 new reports/day, max 5 open reports (`Pending Review`, `Published`, `Claim In Progress`)
 - Search text builder: title + description + public category fields + area -> normalized column
-- Reference data reads: wrap DB load in `ICacheService.GetOrSetAsync` (see SPEC §16 caching)
+- Catalog data reads: wrap DB load in `ICacheService.GetOrSetAsync` (see SPEC Section 16 caching)
+
+### Catalog data API shapes (keys only)
+
+`GET /api/v1/categories` returns `code`, `sortOrder`, `photosPrivate`, and `fieldDefinitions` with `fieldKey`, `type`, validation bounds — no display labels. Form labels and helper hints come from frontend i18n (`category.{code}`, `category.{code}.fields.{fieldKey}`, `.hint`).
+
+`GET /api/v1/governorates` returns `code` and `sortOrder`. Dropdown labels from `governorate.{code}` in `governorates.json`.
+
+Report payloads use `categoryCode`, `governorateCode`, and `fieldKey` for category field values. User-entered values are stored as submitted.
 
 ---
 

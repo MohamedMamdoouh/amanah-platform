@@ -1,6 +1,6 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Models.Errors;
+using Amanah.Contracts.Errors;
 using Amanah.Api.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +53,9 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
+        Assert.Contains(
+            "You must accept the terms and conditions and privacy policy.",
+            error?.Errors?["acceptTerms"] ?? []);
     }
 
     [Fact]

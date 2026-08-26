@@ -95,7 +95,7 @@ Resolve **before starting** this phase:
 - **Integration tests:** PostgreSQL via Testcontainers (`postgres:16`); `ApiWebApplicationFactory` injects `ConnectionStrings:Default` from the container.
 - **Production:** Railway managed PostgreSQL; migrations on deploy.
 - EF Core migration creating all Section 17 entities: `User`, `Category`, `CategoryFieldDefinition`, `Governorate`, `Report`, `CategoryField`, `ReportPhoto`, `Claim`, `Resolution`, `ChatThread`, `Message`, `Notification`, `OtpCode`, `RefreshToken`, `AbuseReport`, `ModerationAction`
-- Seed migration: 8 default categories + field definitions (Section 5.2), 27 governorates
+- Seed migration: 8 default categories + field definitions (English `code` / `fieldKey` only), 27 governorates (`code` + `sortOrder`); Arabic labels in `web/src/assets/i18n/ar/categories.json` and `governorates.json`
 - Admin user seeded from `ADMIN_PHONE` environment variable at deploy
 - Indexes on `User.normalizedPhone`, `OtpCode.phone`, `RefreshToken.userId`
 

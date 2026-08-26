@@ -1,5 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Amanah.Api.Auth;
@@ -28,9 +27,9 @@ public sealed class TokenService(
 
         var token = new JwtSecurityToken(
             claims: [
-                new Claim(AuthClaimTypes.Sub, user.Id.ToString()),
-                new Claim(AuthClaimTypes.Role, user.Role.ToString()),
-                new Claim(AuthClaimTypes.Jti, Guid.NewGuid().ToString()),
+                new System.Security.Claims.Claim(AuthClaimTypes.Sub, user.Id.ToString()),
+                new System.Security.Claims.Claim(AuthClaimTypes.Role, user.Role.ToString()),
+                new System.Security.Claims.Claim(AuthClaimTypes.Jti, Guid.NewGuid().ToString()),
             ],
             notBefore: now.UtcDateTime,
             expires: now.AddMinutes(_options.AccessTokenLifetimeMinutes).UtcDateTime,

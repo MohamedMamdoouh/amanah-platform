@@ -16,8 +16,23 @@ public static class CorsExtensions
                 $"{CorsOptions.SectionName}:AllowedOrigins must contain at least one origin outside Development.")
             .ValidateOnStart();
 
-        services.AddCors();
-        services.ConfigureOptions<ConfigureDefaultCorsPolicy>();
+        var allowedOrigins = configuration
+            .GetSection(CorsOptions.SectionName)
+            .Get<CorsOptions>()?.AllowedOrigins ?? [];
+
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                if (allowedOrigins.Length > 0)
+                {
+                    policy.WithOrigins(allowedOrigins);
+                }
+
+                policy.AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
 
         return services;
     }

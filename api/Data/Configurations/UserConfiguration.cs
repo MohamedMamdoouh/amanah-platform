@@ -35,11 +35,6 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(user => user.BanReason);
 
-        builder.Property(user => user.TermsVersion)
-            .HasMaxLength(20);
-
-        builder.Property(user => user.TermsAcceptedAt);
-
         builder.Property(user => user.CreatedAt)
             .IsRequired();
     }

@@ -72,7 +72,7 @@ public sealed class HandoffTokenService(
             normalizedPhone = phone;
             return true;
         }
-        catch (SecurityTokenException)
+        catch (Exception)
         {
             return false;
         }
