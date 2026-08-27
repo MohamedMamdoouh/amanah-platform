@@ -1,0 +1,37 @@
+import { Component } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-safety',
+  standalone: true,
+  imports: [TranslateModule],
+  template: `
+    <article class="legal-page">
+      <header class="legal-page__masthead">
+        <h1>{{ 'pages.safety.title' | translate }}</h1>
+        <p class="legal-page__lead">{{ 'pages.safety.lead' | translate }}</p>
+      </header>
+
+      <section class="legal-page__section">
+        <h2>{{ 'pages.safety.handover.title' | translate }}</h2>
+        <p>{{ 'pages.safety.handover.body' | translate }}</p>
+        <ul>
+          <li>{{ 'pages.safety.handover.item_public' | translate }}</li>
+          <li>{{ 'pages.safety.handover.item_meet' | translate }}</li>
+          <li>{{ 'pages.safety.handover.item_verify' | translate }}</li>
+        </ul>
+      </section>
+
+      <section class="legal-page__section">
+        <h2>{{ 'pages.safety.abuse.title' | translate }}</h2>
+        <p>{{ 'pages.safety.abuse.body' | translate }}</p>
+      </section>
+
+      <section class="legal-page__section">
+        <h2>{{ 'pages.safety.report.title' | translate }}</h2>
+        <p>{{ 'pages.safety.report.body' | translate }}</p>
+      </section>
+    </article>
+  `,
+})
+export class SafetyComponent {}

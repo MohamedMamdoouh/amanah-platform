@@ -1,7 +1,10 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './home/home.component';
 import { AppShellComponent } from './layout/app-shell.component';
-import { StaticPageComponent } from './pages/static-page.component';
+import { PrivacyComponent } from './pages/privacy.component';
+import { SafetyComponent } from './pages/safety.component';
+import { SupportComponent } from './pages/support.component';
+import { TermsComponent } from './pages/terms.component';
 
 export const routes: Routes = [
   {
@@ -9,38 +12,10 @@ export const routes: Routes = [
     component: AppShellComponent,
     children: [
       { path: '', component: HomeComponent },
-      {
-        path: 'terms',
-        component: StaticPageComponent,
-        data: {
-          titleKey: 'pages.terms.title',
-          bodyKey: 'pages.terms.body',
-        },
-      },
-      {
-        path: 'privacy',
-        component: StaticPageComponent,
-        data: {
-          titleKey: 'pages.privacy.title',
-          bodyKey: 'pages.privacy.body',
-        },
-      },
-      {
-        path: 'safety',
-        component: StaticPageComponent,
-        data: {
-          titleKey: 'pages.safety.title',
-          bodyKey: 'pages.safety.body',
-        },
-      },
-      {
-        path: 'support',
-        component: StaticPageComponent,
-        data: {
-          titleKey: 'pages.support.title',
-          bodyKey: 'pages.support.body',
-        },
-      },
+      { path: 'terms', component: TermsComponent },
+      { path: 'privacy', component: PrivacyComponent },
+      { path: 'safety', component: SafetyComponent },
+      { path: 'support', component: SupportComponent },
     ],
   },
 ];

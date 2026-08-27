@@ -1,28 +1,19 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { RouterOutlet } from '@angular/router';
+import { FooterComponent } from './footer.component';
+import { HeaderComponent } from './header.component';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, TranslateModule],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent],
   template: `
     <div class="shell">
-      <header class="shell__header">
-        <a routerLink="/" class="shell__brand">{{ 'app.name' | translate }}</a>
-        <nav class="shell__nav">
-          <a routerLink="/login">{{ 'nav.login' | translate }}</a>
-        </nav>
-      </header>
-      <main class="shell__main">
+      <app-header />
+      <main class="shell__main" id="main-content">
         <router-outlet />
       </main>
-      <footer class="shell__footer">
-        <a routerLink="/terms">{{ 'footer.terms' | translate }}</a>
-        <a routerLink="/privacy">{{ 'footer.privacy' | translate }}</a>
-        <a routerLink="/safety">{{ 'footer.safety' | translate }}</a>
-        <a routerLink="/support">{{ 'footer.support' | translate }}</a>
-      </footer>
+      <app-footer />
     </div>
   `,
   styles: `
@@ -32,41 +23,18 @@ import { TranslateModule } from '@ngx-translate/core';
       flex-direction: column;
     }
 
-    .shell__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid #e5e5e5;
-    }
-
-    .shell__brand {
-      font-weight: 700;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .shell__nav a {
-      text-decoration: none;
-      color: inherit;
-    }
-
     .shell__main {
       flex: 1;
-      padding: 1.5rem;
+      width: 100%;
+      max-width: var(--shell-width);
+      margin-inline: auto;
+      padding: var(--space-lg);
     }
 
-    .shell__footer {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      padding: 1rem 1.5rem;
-      border-top: 1px solid #e5e5e5;
-      font-size: 0.9rem;
-    }
-
-    .shell__footer a {
-      color: inherit;
+    @media (min-width: 48rem) {
+      .shell__main {
+        padding: var(--space-xl) var(--space-lg);
+      }
     }
   `,
 })

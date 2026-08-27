@@ -8,7 +8,7 @@ Prerequisites: PostgreSQL 16+ on Windows (db `amanah`, user `amanah`, password `
 
 ```bash
 cd api && dotnet run
-cd web && npm start           # http://localhost:4200
+cd web && npm start
 ```
 
 Copy `.env.example` for reference. Connection string in `api/appsettings.Development.json`.

@@ -1,23 +1,38 @@
-# .NET
-api/bin/
-api/obj/
+# .NET build output
+**/bin/
+**/obj/
+**/TestResults/
 api/storage/
-contracts/bin/
-contracts/obj/
 
-# Tests
-api.Tests/bin/
-api.Tests/obj/
+# .NET user-specific
+*.user
+*.suo
+*.rsuser
 
 # Node
 web/node_modules/
 web/dist/
 web/.angular/
 
+# Test coverage
+coverage/
+
 # Environment
 .env
+.env.local
+.env.*.local
 
 # IDE
 .vs/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
 .idea/
 .cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

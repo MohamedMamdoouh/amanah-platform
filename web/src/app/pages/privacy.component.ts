@@ -1,0 +1,43 @@
+import { Component } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-privacy',
+  standalone: true,
+  imports: [TranslateModule],
+  template: `
+    <article class="legal-page">
+      <header class="legal-page__masthead">
+        <h1>{{ 'pages.privacy.title' | translate }}</h1>
+        <p class="legal-page__lead">{{ 'pages.privacy.lead' | translate }}</p>
+      </header>
+
+      <section class="legal-page__section">
+        <h2>{{ 'pages.privacy.collect.title' | translate }}</h2>
+        <p>{{ 'pages.privacy.collect.body' | translate }}</p>
+      </section>
+
+      <section class="legal-page__section">
+        <h2>{{ 'pages.privacy.hosting.title' | translate }}</h2>
+        <p>{{ 'pages.privacy.hosting.body' | translate }}</p>
+      </section>
+
+      <section class="legal-page__section">
+        <h2>{{ 'pages.privacy.rights.title' | translate }}</h2>
+        <p>{{ 'pages.privacy.rights.body' | translate }}</p>
+        <ul>
+          <li>{{ 'pages.privacy.rights.item_correction' | translate }}</li>
+          <li>{{ 'pages.privacy.rights.item_access' | translate }}</li>
+          <li>{{ 'pages.privacy.rights.item_export' | translate }}</li>
+          <li>{{ 'pages.privacy.rights.item_deletion' | translate }}</li>
+        </ul>
+      </section>
+
+      <section class="legal-page__section">
+        <h2>{{ 'pages.privacy.retention.title' | translate }}</h2>
+        <p>{{ 'pages.privacy.retention.body' | translate }}</p>
+      </section>
+    </article>
+  `,
+})
+export class PrivacyComponent {}
