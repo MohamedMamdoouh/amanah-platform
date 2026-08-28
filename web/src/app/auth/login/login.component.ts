@@ -213,45 +213,46 @@ export class LoginComponent implements OnDestroy {
     );
     this.submitting.set(false);
     this.startResendCooldown(120);
+    this.refreshCaptcha();
   }
 
   private handleSendOtpError(error: unknown): void {
-    this.handleError(error, () => this.resetCaptchaOnFailure(error));
+    this.handleError(error, () => this.refreshCaptcha());
   }
 
-  private resetCaptchaOnFailure(error: unknown): void {
-    if (error instanceof HttpErrorResponse && this.isCaptchaFailure(error)) {
-      this.turnstile()?.reset();
-      this.captchaToken.set(null);
-    }
+  private refreshCaptcha(): void {
+    this.captchaToken.set(null);
+    this.turnstile()?.reset();
   }
 
   private handleError(error: unknown, onHandled?: () => void): void {
     this.submitting.set(false);
 
-    if (!(error instanceof HttpErrorResponse)) {
-      this.summaryError.set(this.unexpectedError());
-      return;
-    }
-
-    const apiError = this.parseApiError(error);
-    if (!apiError) {
-      this.summaryError.set(this.unexpectedError());
-      return;
-    }
-
-    this.summaryError.set(this.apiErrors.summary(apiError));
-    this.fieldErrors.set(this.apiErrors.fieldErrors(apiError));
-
-    const retryAfter = error.headers.get('Retry-After');
-    if (error.status === 429 && retryAfter) {
-      const seconds = Number.parseInt(retryAfter, 10);
-      if (!Number.isNaN(seconds)) {
-        this.startResendCooldown(seconds);
+    try {
+      if (!(error instanceof HttpErrorResponse)) {
+        this.summaryError.set(this.unexpectedError());
+        return;
       }
-    }
 
-    onHandled?.();
+      const apiError = this.parseApiError(error);
+      if (!apiError) {
+        this.summaryError.set(this.unexpectedError());
+        return;
+      }
+
+      this.summaryError.set(this.apiErrors.summary(apiError));
+      this.fieldErrors.set(this.apiErrors.fieldErrors(apiError));
+
+      const retryAfter = error.headers.get('Retry-After');
+      if (error.status === 429 && retryAfter) {
+        const seconds = Number.parseInt(retryAfter, 10);
+        if (!Number.isNaN(seconds)) {
+          this.startResendCooldown(seconds);
+        }
+      }
+    } finally {
+      onHandled?.();
+    }
   }
 
   private parseApiError(error: HttpErrorResponse): ApiErrorBody | null {
@@ -265,11 +266,6 @@ export class LoginComponent implements OnDestroy {
     }
 
     return null;
-  }
-
-  private isCaptchaFailure(error: HttpErrorResponse): boolean {
-    const apiError = this.parseApiError(error);
-    return apiError?.code === 'auth.captcha_failed';
   }
 
   private clearErrors(): void {
