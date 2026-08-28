@@ -1,6 +1,7 @@
 using Amanah.Api.Data;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Contracts.Errors;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,16 +23,16 @@ public class AuthValidationTests(ApiWebApplicationFactory factory) : IClassFixtu
     }
 
     [Fact]
-    public async Task Refresh_with_empty_refresh_token_returns_api_error_with_field_codes()
+    public async Task Refresh_without_cookie_returns_refresh_invalid()
     {
         await using var context = await CreateContextAsync();
 
-        var (response, _) = await context.RefreshAsync(string.Empty);
+        var (response, body) = await context.RefreshAsync();
         var error = await context.ReadErrorAsync(response);
 
-        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
-        Assert.Contains("Refresh token is required.", error?.Errors?["refreshToken"] ?? []);
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(ErrorCodes.RefreshInvalid, error?.Code);
+        Assert.Null(body);
     }
 
     [Fact]
@@ -56,17 +57,20 @@ public class AuthValidationTests(ApiWebApplicationFactory factory) : IClassFixtu
     }
 
     [Fact]
-    public async Task Logout_with_empty_refresh_token_returns_api_error_with_field_codes()
+    public async Task Logout_without_cookie_returns_refresh_invalid()
     {
         await using var context = await CreateContextAsync();
 
         var (session, _) = await context.RegisterNewUserAsync();
-        var response = await context.LogoutAsync(session.AccessToken, string.Empty);
+        var clientWithoutCookies = factory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/logout");
+        request.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", session.AccessToken);
+        var response = await clientWithoutCookies.SendAsync(request);
         var error = await context.ReadErrorAsync(response);
 
-        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
-        Assert.Contains("Refresh token is required.", error?.Errors?["refreshToken"] ?? []);
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(ErrorCodes.RefreshInvalid, error?.Code);
     }
 
     private async Task<OtpSendTestContext> CreateContextAsync()
@@ -81,7 +85,11 @@ public class AuthValidationTests(ApiWebApplicationFactory factory) : IClassFixtu
         await setupContext.Database.MigrateAsync();
 
         var scope = factory.Services.CreateAsyncScope();
-        var client = factory.CreateClient();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = true,
+        });
+
         return new OtpSendTestContext(
             client,
             factory.SmsSender,

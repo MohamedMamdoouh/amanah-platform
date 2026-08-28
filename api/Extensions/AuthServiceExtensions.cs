@@ -1,3 +1,4 @@
+using Amanah.Api.Auth;
 using Amanah.Api.Options;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Services.External;
@@ -38,6 +39,7 @@ public static class AuthServiceExtensions
             .ValidateOnStart();
 
         services.AddDataProtection();
+        services.AddSingleton<RefreshTokenCookieManager>();
         services.AddScoped<OtpSmsOutboxDispatcher>();
         services.AddScoped<HandoffTokenService>();
         services.AddScoped<TokenService>();

@@ -10,11 +10,20 @@ public sealed class TurnstileCaptchaVerifier(
     HttpClient httpClient,
     IOptions<TurnstileOptions> options) : ICaptchaVerifier
 {
+    private const string DevCaptchaToken = "dev-captcha-token";
+
     private static readonly string _cloudflareTurnstileUrl
         = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
     public async Task<Result> VerifyAsync(string token, CancellationToken cancellationToken = default)
     {
+        if (string.Equals(token, DevCaptchaToken, StringComparison.Ordinal))
+        {
+            return ResultError.BadRequest(
+                "CAPTCHA verification failed.",
+                ErrorCodes.CaptchaFailed);
+        }
+
         var secretKey = options.Value.SecretKey;
         if (string.IsNullOrWhiteSpace(secretKey) || string.IsNullOrWhiteSpace(token))
         {

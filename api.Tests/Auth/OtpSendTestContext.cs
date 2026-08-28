@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Contracts.Responses.Auth;
@@ -116,12 +117,17 @@ public sealed class OtpSendTestContext : IAsyncDisposable
     }
 
     public async Task<(HttpResponseMessage Response, AuthSessionResponse? Body)> RefreshAsync(
-        string refreshToken)
+        string? refreshToken = null)
     {
-        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh");
+        if (refreshToken is not null)
         {
-            refreshToken,
-        });
+            request.Headers.Add(
+                "Cookie",
+                $"{RefreshTokenCookieManager.CookieName}={refreshToken}");
+        }
+
+        var response = await Client.SendAsync(request);
 
         AuthSessionResponse? body = response.IsSuccessStatusCode
             ? await response.Content.ReadFromJsonAsync<AuthSessionResponse>()
@@ -130,12 +136,9 @@ public sealed class OtpSendTestContext : IAsyncDisposable
         return (response, body);
     }
 
-    public async Task<HttpResponseMessage> LogoutAsync(string accessToken, string refreshToken)
+    public async Task<HttpResponseMessage> LogoutAsync(string accessToken)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/logout")
-        {
-            Content = JsonContent.Create(new { refreshToken }),
-        };
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/logout");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         return await Client.SendAsync(request);
     }
@@ -176,6 +179,33 @@ public sealed class OtpSendTestContext : IAsyncDisposable
         }
 
         return (session, phone);
+    }
+
+    public static string? ExtractRefreshToken(HttpResponseMessage response)
+    {
+        if (!response.Headers.TryGetValues("Set-Cookie", out var cookies))
+        {
+            return null;
+        }
+
+        foreach (var cookie in cookies)
+        {
+            var prefix = $"{RefreshTokenCookieManager.CookieName}=";
+            if (!cookie.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var valuePart = cookie.Split(';', 2)[0];
+            return valuePart[prefix.Length..];
+        }
+
+        return null;
+    }
+
+    public static void AssertRefreshCookieSet(HttpResponseMessage response)
+    {
+        Assert.NotNull(ExtractRefreshToken(response));
     }
 
     public async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response)

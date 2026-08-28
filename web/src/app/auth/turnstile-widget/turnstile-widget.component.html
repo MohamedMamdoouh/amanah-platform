@@ -1,0 +1,5 @@
+@if (useDevMode) {
+  <p class="turnstile__dev-note">{{ 'auth.login.captcha_dev' | translate }}</p>
+} @else {
+  <div #turnstileContainer class="turnstile__container"></div>
+}

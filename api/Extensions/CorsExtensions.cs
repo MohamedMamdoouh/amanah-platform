@@ -30,7 +30,8 @@ public static class CorsExtensions
                 }
 
                 policy.AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             });
         });
 

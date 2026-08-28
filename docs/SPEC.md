@@ -578,13 +578,13 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 
 ## 14. Deferred Decisions
 
-| Item                                          | Status                            |
-| --------------------------------------------- | --------------------------------- |
+| Item                                          | Status                                                                                                               |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | OTP / SMS provider                            | **Partial** - `ISmsSender` defined in [Phase 01](./PHASE-01-platform-foundation.md); vendor chosen at Railway deploy |
-| API error contract appendix                   | **Resolved** - [api-error-contract.md](./api-error-contract.md) |
-| SignalR event/payload contract                | **Pending** before implementation |
-| Transactional email provider for admin alerts | **To be chosen** before launch    |
-| Domain name                                   | **To be chosen** before launch    |
+| API error contract appendix                   | **Resolved** - [api-error-contract.md](./api-error-contract.md)                                                      |
+| SignalR event/payload contract                | **Pending** before implementation                                                                                    |
+| Transactional email provider for admin alerts | **To be chosen** before launch                                                                                       |
+| Domain name                                   | **To be chosen** before launch                                                                                       |
 
 ---
 
@@ -703,10 +703,11 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
   - No external search infrastructure. Postgres full-text search (`tsvector`) is a post-v1 upgrade.
 - **Caching:** `HybridCache` (L1 in-process + L2 `MemoryDistributedCache`) behind `ICacheService` (v1, single API instance). Cache-aside for **catalog data only** (categories, governorates); explicit invalidation on admin category writes. Built-in stampede protection; fail-open to DB on cache errors. **Browse/search is not cached in v1.** **Do not cache:** OTP send limits (DB-backed), JWT/refresh tokens, pre-signed media URLs. Swap L2 to Redis when running multiple API instances.
 
-  | Cache key | Value | TTL (default) | Invalidation |
-  | --------- | ----- | ------------- | ------------ |
-  | `catalog:categories` | Active categories + field defs (`CacheKeys.Categories`) | 1h | Admin category CRUD (Phase 03) |
-  | `catalog:governorates` | Governorate list (`CacheKeys.Governorates`) | 24h | Seed change (rare) |
+  | Cache key              | Value                                                   | TTL (default) | Invalidation                   |
+  | ---------------------- | ------------------------------------------------------- | ------------- | ------------------------------ |
+  | `catalog:categories`   | Active categories + field defs (`CacheKeys.Categories`) | 1h            | Admin category CRUD (Phase 03) |
+  | `catalog:governorates` | Governorate list (`CacheKeys.Governorates`)             | 24h           | Seed change (rare)             |
+
 - **Admin dashboard:** same Angular app behind a role guard at `/admin/`. Screens match section 5.5.
 
 ---
@@ -716,9 +717,9 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 | Entity                    | Key fields                                                                                                                                                                                                                                                                                                                                |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `User`                    | normalized phone (`+20...`), display name, role, banned flag + reason, ToS version + accepted-at, created-at                                                                                                                                                                                                                              |
-| `Category`                | code (English key), sort order, `photosPrivate` flag, active flag                                                                                                                                                                                                                                                                        |
-| `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`/`integer`), validation rules, required flag, sort order                                                                                                                                                                                                                               |
-| `Governorate`             | code (English key), sort order                                                                                                                                                                                                                                                                                                                 |
+| `Category`                | code (English key), sort order, `photosPrivate` flag, active flag                                                                                                                                                                                                                                                                         |
+| `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`/`integer`), validation rules, required flag, sort order                                                                                                                                                                                                                                |
+| `Governorate`             | code (English key), sort order                                                                                                                                                                                                                                                                                                            |
 | `Report`                  | type (Lost/Found), category, title, description, date lost/found, governorate, area text, item-held location (found), status, reward flag/amount, hidden-detail text, withdrawal reason, resubmission count, normalized search text, published-at, published-seconds-elapsed, published-timer-resumed-at, expiry-warning-sent, timestamps |
 | `CategoryField`           | report ref, field key, value                                                                                                                                                                                                                                                                                                              |
 | `ReportPhoto`             | report ref, storage key, content type, size, thumbnail ref, sort order                                                                                                                                                                                                                                                                    |

@@ -1,0 +1,43 @@
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero__pattern" aria-hidden="true"></div>
+  <div class="hero__content">
+    <p class="hero__eyebrow">{{ 'home.eyebrow' | translate }}</p>
+    <h1 id="hero-title" class="hero__title">{{ 'home.title' | translate }}</h1>
+    <p class="hero__subtitle">{{ 'home.subtitle' | translate }}</p>
+    <div class="hero__actions">
+      <span class="hero__cta-placeholder">{{ 'home.cta_browse' | translate }}</span>
+      <span class="hero__cta-placeholder hero__cta-placeholder--secondary">
+        {{ 'home.cta_report' | translate }}
+      </span>
+    </div>
+  </div>
+  <aside class="hero__aside" [attr.aria-label]="'home.aside_label' | translate">
+    <ul class="hero__principles">
+      <li>
+        <span class="hero__principle-label">{{ 'home.principle_moderation' | translate }}</span>
+        <span class="hero__principle-desc">{{ 'home.principle_moderation_desc' | translate }}</span>
+      </li>
+      <li>
+        <span class="hero__principle-label">{{ 'home.principle_verify' | translate }}</span>
+        <span class="hero__principle-desc">{{ 'home.principle_verify_desc' | translate }}</span>
+      </li>
+      <li>
+        <span class="hero__principle-label">{{ 'home.principle_chat' | translate }}</span>
+        <span class="hero__principle-desc">{{ 'home.principle_chat_desc' | translate }}</span>
+      </li>
+    </ul>
+  </aside>
+</section>
+<section class="home-links" aria-labelledby="home-links-title">
+  <h2 id="home-links-title" class="home-links__title">{{ 'home.links_title' | translate }}</h2>
+  <div class="home-links__grid">
+    <a routerLink="/safety" class="home-links__card">
+      <span class="home-links__card-title">{{ 'footer.safety' | translate }}</span>
+      <span class="home-links__card-desc">{{ 'home.safety_card' | translate }}</span>
+    </a>
+    <a routerLink="/support" class="home-links__card">
+      <span class="home-links__card-title">{{ 'footer.support' | translate }}</span>
+      <span class="home-links__card-desc">{{ 'home.support_card' | translate }}</span>
+    </a>
+  </div>
+</section>

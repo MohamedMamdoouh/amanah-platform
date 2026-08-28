@@ -1,7 +1,8 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Contracts.Errors;
 using Amanah.Api.Tests.Infrastructure;
+using Amanah.Contracts.Errors;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +21,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(session?.AccessToken);
-        Assert.NotNull(session.RefreshToken);
+        OtpSendTestContext.AssertRefreshCookieSet(response);
         Assert.Equal("Ahmed", session.User.DisplayName);
         Assert.Equal("User", session.User.Role);
         Assert.Equal(1, await context.DbContext.Users.CountAsync());
@@ -98,7 +99,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(session?.AccessToken);
-        Assert.NotNull(session.RefreshToken);
+        OtpSendTestContext.AssertRefreshCookieSet(response);
     }
 
     [Fact]
@@ -137,14 +138,19 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
     {
         await using var context = await CreateContextAsync();
 
-        var (session, _) = await context.RegisterNewUserAsync();
-        var oldRefresh = session.RefreshToken;
+        var code = await context.SendOtpAndGetCodeAsync("01012345678");
+        var (_, verifyBody) = await context.VerifyOtpAsync("01012345678", code);
+        var (registerResponse, _) = await context.RegisterAsync(verifyBody!.SignupToken!, "Ahmed");
+        var oldRefresh = OtpSendTestContext.ExtractRefreshToken(registerResponse);
+        Assert.NotNull(oldRefresh);
 
-        var (refreshResponse, newSession) = await context.RefreshAsync(oldRefresh);
+        var (refreshResponse, newSession) = await context.RefreshAsync();
 
         Assert.Equal(System.Net.HttpStatusCode.OK, refreshResponse.StatusCode);
         Assert.NotNull(newSession?.AccessToken);
-        Assert.NotEqual(oldRefresh, newSession.RefreshToken);
+        var newRefresh = OtpSendTestContext.ExtractRefreshToken(refreshResponse);
+        Assert.NotNull(newRefresh);
+        Assert.NotEqual(oldRefresh, newRefresh);
 
         var (retryResponse, retryError) = await RefreshWithErrorAsync(context, oldRefresh);
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, retryResponse.StatusCode);
@@ -152,21 +158,38 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Refresh_without_cookie_returns_refresh_invalid()
+    {
+        await using var context = await CreateContextAsync();
+
+        var (response, error) = await RefreshWithErrorAsync(context, refreshToken: null);
+
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(ErrorCodes.RefreshInvalid, error?.Code);
+    }
+
+    [Fact]
     public async Task Refresh_banned_user_returns_banned()
     {
         await using var context = await CreateContextAsync();
 
-        var (session, _) = await context.RegisterNewUserAsync();
+        var code = await context.SendOtpAndGetCodeAsync("01012345678");
+        var (_, verifyBody) = await context.VerifyOtpAsync("01012345678", code);
+        var (registerResponse, session) = await context.RegisterAsync(verifyBody!.SignupToken!, "Ahmed");
+        var refreshToken = OtpSendTestContext.ExtractRefreshToken(registerResponse);
+        Assert.NotNull(refreshToken);
+
         var user = await context.DbContext.Users.SingleAsync();
         user.IsBanned = true;
         user.BanReason = "abuse";
         await context.DbContext.SaveChangesAsync();
         context.DbContext.ChangeTracker.Clear();
 
-        var (response, error) = await RefreshWithErrorAsync(context, session.RefreshToken);
+        var (response, error) = await RefreshWithErrorAsync(context, refreshToken);
 
         Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Equal(ErrorCodes.Banned, error?.Code);
+        Assert.NotNull(session);
     }
 
     [Fact]
@@ -174,12 +197,17 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
     {
         await using var context = await CreateContextAsync();
 
-        var (session, _) = await context.RegisterNewUserAsync();
-        var logoutResponse = await context.LogoutAsync(session.AccessToken, session.RefreshToken);
+        var code = await context.SendOtpAndGetCodeAsync("01012345678");
+        var (_, verifyBody) = await context.VerifyOtpAsync("01012345678", code);
+        var (registerResponse, session) = await context.RegisterAsync(verifyBody!.SignupToken!, "Ahmed");
+        var refreshToken = OtpSendTestContext.ExtractRefreshToken(registerResponse);
+        Assert.NotNull(refreshToken);
+
+        var logoutResponse = await context.LogoutAsync(session!.AccessToken);
 
         Assert.Equal(System.Net.HttpStatusCode.NoContent, logoutResponse.StatusCode);
 
-        var (refreshResponse, error) = await RefreshWithErrorAsync(context, session.RefreshToken);
+        var (refreshResponse, error) = await RefreshWithErrorAsync(context, refreshToken);
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, refreshResponse.StatusCode);
         Assert.Equal(ErrorCodes.RefreshInvalid, error?.Code);
     }
@@ -189,14 +217,22 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
     {
         await using var context = await CreateContextAsync();
 
-        var (session, _) = await context.RegisterNewUserAsync();
-        var (_, session2) = await context.RefreshAsync(session.RefreshToken);
+        var code = await context.SendOtpAndGetCodeAsync("01012345678");
+        var (_, verifyBody) = await context.VerifyOtpAsync("01012345678", code);
+        var (registerResponse, session) = await context.RegisterAsync(verifyBody!.SignupToken!, "Ahmed");
+        var firstRefresh = OtpSendTestContext.ExtractRefreshToken(registerResponse);
+        Assert.NotNull(firstRefresh);
 
-        var logoutResponse = await context.LogoutEverywhereAsync(session2!.AccessToken);
+        var (refreshResponse, session2) = await context.RefreshAsync();
+        var secondRefresh = OtpSendTestContext.ExtractRefreshToken(refreshResponse);
+        Assert.NotNull(secondRefresh);
+        Assert.NotNull(session2);
+
+        var logoutResponse = await context.LogoutEverywhereAsync(session2.AccessToken);
         Assert.Equal(System.Net.HttpStatusCode.NoContent, logoutResponse.StatusCode);
 
-        var (refresh1, _) = await RefreshWithErrorAsync(context, session.RefreshToken);
-        var (refresh2, _) = await RefreshWithErrorAsync(context, session2.RefreshToken);
+        var (refresh1, _) = await RefreshWithErrorAsync(context, firstRefresh);
+        var (refresh2, _) = await RefreshWithErrorAsync(context, secondRefresh);
 
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, refresh1.StatusCode);
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, refresh2.StatusCode);
@@ -263,7 +299,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
 
     private static async Task<(HttpResponseMessage, ApiError?)> RefreshWithErrorAsync(
         OtpSendTestContext context,
-        string refreshToken)
+        string? refreshToken)
     {
         var (response, _) = await context.RefreshAsync(refreshToken);
         var error = await context.ReadErrorAsync(response);
@@ -294,8 +330,13 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         await setupContext.Users.ExecuteDeleteAsync();
 
         var scope = factory.Services.CreateAsyncScope();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = true,
+        });
+
         return new OtpSendTestContext(
-            factory.CreateClient(),
+            client,
             factory.SmsSender,
             factory.CaptchaVerifier,
             scope);

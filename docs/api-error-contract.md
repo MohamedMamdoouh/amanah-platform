@@ -130,3 +130,17 @@ The request passed validation and the OTP was enqueued. SMS delivery happens asy
 ```
 
 No stack traces, phone numbers, or OTP codes in error bodies.
+
+---
+
+## Session tokens (Phase 01)
+
+| Token | Transport | Client storage |
+| ----- | ----------- | -------------- |
+| Access token (15 min) | JSON body on `register`, `login`, `refresh` | Angular memory only |
+| Refresh token (30 days) | `Set-Cookie` `amanah_refresh` (`HttpOnly`, `SameSite=Lax`, `Path=/api/v1/auth`) | Browser cookie jar — not readable by JS |
+
+- `POST /api/v1/auth/refresh` — no body; refresh cookie sent automatically (`withCredentials: true` on web client).
+- `POST /api/v1/auth/logout` — no body; revokes cookie token and clears cookie.
+- `AuthSessionResponse` JSON: `{ accessToken, user }` only — no `refreshToken` field.
+- CORS: `AllowCredentials` with explicit `Cors:AllowedOrigins` (e.g. `http://localhost:4200` in Development).

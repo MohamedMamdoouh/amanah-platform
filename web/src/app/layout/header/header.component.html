@@ -1,0 +1,27 @@
+<header class="header">
+  <a
+    routerLink="/"
+    class="header__brand"
+    [attr.aria-label]="'nav.home' | translate"
+  >
+    <span class="header__mark" aria-hidden="true"></span>
+    <span class="header__name">{{ 'app.name' | translate }}</span>
+  </a>
+  <nav class="header__nav">
+    @if (auth.isLoggedIn()) {
+      <span class="header__user">{{ auth.currentUser()?.displayName }}</span>
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin" class="header__link">{{
+          'nav.admin' | translate
+        }}</a>
+      }
+      <button type="button" class="header__button" (click)="logout()">
+        {{ 'nav.logout' | translate }}
+      </button>
+    } @else {
+      <a routerLink="/login" class="header__link">{{
+        'nav.login' | translate
+      }}</a>
+    }
+  </nav>
+</header>

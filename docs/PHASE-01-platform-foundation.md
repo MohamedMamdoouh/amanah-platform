@@ -5,14 +5,14 @@
 
 ## Progress
 
-| Step                                               | Done          |
-| -------------------------------------------------- | ------------- |
-| Decisions & API error contract                     | Yes           |
-| Monorepo scaffold (API + Angular + Postgres)       | Yes           |
-| API plumbing (errors, rate limit, tests)           | Yes           |
-| Auth DB (EF Core entities + migration)             | Yes           |
-| Utilities, OTP, sessions, schema/seeds, UI, deploy | No - **next** |
-| Cache foundation (`ICacheService` + `HybridCache`, no consumers yet) | Yes           |
+| Step                                                                 | Done                                |
+| -------------------------------------------------------------------- | ----------------------------------- |
+| Decisions & API error contract                                       | Yes                                 |
+| Monorepo scaffold (API + Angular + Postgres)                         | Yes                                 |
+| API plumbing (errors, rate limit, tests)                             | Yes                                 |
+| Auth DB (EF Core entities + migration)                               | Yes                                 |
+| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — auth UI done; deploy next |
+| Cache foundation (`ICacheService` + `HybridCache`, no consumers yet) | Yes                                 |
 
 ---
 
@@ -65,11 +65,11 @@ Resolve **before starting** this phase:
 
 ### API
 
-| Method | Route                         | Purpose                                                                 |
-| ------ | ----------------------------- | ----------------------------------------------------------------------- |
+| Method | Route                            | Purpose                                                                 |
+| ------ | -------------------------------- | ----------------------------------------------------------------------- |
 | POST   | `/api/v1/auth/otp/send`          | Send OTP after bot check + send-limit validation                        |
-| POST   | `/api/v1/auth/otp/verify`        | Verify code; returns signup/login handoff token                       |
-| POST   | `/api/v1/auth/register`          | Complete signup: display name + ToS acceptance -> create `User`        |
+| POST   | `/api/v1/auth/otp/verify`        | Verify code; returns signup/login handoff token                         |
+| POST   | `/api/v1/auth/register`          | Complete signup: display name + ToS acceptance -> create `User`         |
 | POST   | `/api/v1/auth/login`             | Login for returning users (after OTP verify)                            |
 | POST   | `/api/v1/auth/refresh`           | Rotate refresh token; issue new access token                            |
 | POST   | `/api/v1/auth/logout`            | Revoke current refresh token                                            |
@@ -123,10 +123,10 @@ Resolve **before starting** this phase:
 
 Server-enforce these matrix rows before marking this phase done:
 
-| Data          | Roles granted access this phase                                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Data          | Roles granted access this phase                                                                                            |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Phone numbers | Own user via `/api/auth/me`; Admin views **own** phone on `/me` only - admin user lookup (other users' phones) is Phase 08 |
-| Display name  | Own user (via `/api/auth/me`)                                                                                                |
+| Display name  | Own user (via `/api/auth/me`)                                                                                              |
 
 All other Section 9 rows are N/A until later phases introduce the underlying features.
 
@@ -136,7 +136,7 @@ All other Section 9 rows are N/A until later phases introduce the underlying fea
 
 | Event | Recipient | Introduced                               |
 | ----- | --------- | ---------------------------------------- |
-| -   | -       | Notification center deferred to Phase 03 |
+| -     | -         | Notification center deferred to Phase 03 |
 
 Auth error messages (OTP limits, ban reason, provider outage) are returned inline in API responses only.
 

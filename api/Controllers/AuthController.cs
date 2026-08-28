@@ -17,7 +17,8 @@ namespace Amanah.Api.Controllers;
 [Route("api/v{version:apiVersion}/auth")]
 public sealed class AuthController(
     OtpService otpService,
-    AuthService authService) : ControllerBase
+    AuthService authService,
+    RefreshTokenCookieManager refreshTokenCookies) : ControllerBase
 {
     [HttpPost("otp/send")]
     [EnableRateLimiting("otp-send")]
@@ -67,7 +68,13 @@ public sealed class AuthController(
         CancellationToken cancellationToken)
     {
         var result = await authService.RegisterAsync(request, cancellationToken);
-        return result.ToActionResult();
+        if (!result.IsSuccess)
+        {
+            return result.ToActionResult();
+        }
+
+        refreshTokenCookies.Set(Response, result.Value.RawRefreshToken);
+        return Ok(result.Value.Session);
     }
 
     [HttpPost("login")]
@@ -81,7 +88,13 @@ public sealed class AuthController(
         CancellationToken cancellationToken)
     {
         var result = await authService.LoginAsync(request, cancellationToken);
-        return result.ToActionResult();
+        if (!result.IsSuccess)
+        {
+            return result.ToActionResult();
+        }
+
+        refreshTokenCookies.Set(Response, result.Value.RawRefreshToken);
+        return Ok(result.Value.Session);
     }
 
     [HttpPost("refresh")]
@@ -90,12 +103,24 @@ public sealed class AuthController(
     [ProducesResponseType(typeof(AuthSessionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> Refresh(
-        [FromBody] RefreshRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
     {
-        var result = await authService.RefreshAsync(request.RefreshToken, cancellationToken);
-        return result.ToActionResult();
+        var rawRefreshToken = refreshTokenCookies.Get(Request);
+        if (string.IsNullOrWhiteSpace(rawRefreshToken))
+        {
+            return ResultError.Unauthorized(
+                "The refresh token is invalid or has been revoked.",
+                ErrorCodes.RefreshInvalid).ToActionResult();
+        }
+
+        var result = await authService.RefreshAsync(rawRefreshToken, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return result.ToActionResult();
+        }
+
+        refreshTokenCookies.Set(Response, result.Value.RawRefreshToken);
+        return Ok(result.Value.Session);
     }
 
     [HttpPost("logout")]
@@ -104,9 +129,7 @@ public sealed class AuthController(
     [EndpointSummary("Revoke the current refresh token.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Logout(
-        [FromBody] LogoutRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
         {
@@ -115,7 +138,21 @@ public sealed class AuthController(
                 ErrorCodes.Unauthorized).ToActionResult();
         }
 
-        var result = await authService.LogoutAsync(userId, request.RefreshToken, cancellationToken);
+        var rawRefreshToken = refreshTokenCookies.Get(Request);
+        if (string.IsNullOrWhiteSpace(rawRefreshToken))
+        {
+            refreshTokenCookies.Clear(Response);
+            return ResultError.Unauthorized(
+                "The refresh token is invalid or has been revoked.",
+                ErrorCodes.RefreshInvalid).ToActionResult();
+        }
+
+        var result = await authService.LogoutAsync(userId, rawRefreshToken, cancellationToken);
+        if (result.IsSuccess)
+        {
+            refreshTokenCookies.Clear(Response);
+        }
+
         return result.ToActionResult();
     }
 
@@ -135,6 +172,11 @@ public sealed class AuthController(
         }
 
         var result = await authService.LogoutEverywhereAsync(userId, cancellationToken);
+        if (result.IsSuccess)
+        {
+            refreshTokenCookies.Clear(Response);
+        }
+
         return result.ToActionResult();
     }
 

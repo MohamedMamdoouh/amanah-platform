@@ -1,0 +1,12 @@
+@use '../shared/legal-page';
+
+.support-email {
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.support-email:hover {
+  text-decoration: underline;
+}

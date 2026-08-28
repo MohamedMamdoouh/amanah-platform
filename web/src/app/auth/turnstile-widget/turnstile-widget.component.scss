@@ -1,0 +1,13 @@
+.turnstile__container {
+  min-height: 4rem;
+}
+
+.turnstile__dev-note {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  background: var(--color-accent-soft);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+}

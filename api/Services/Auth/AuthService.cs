@@ -15,7 +15,7 @@ public sealed class AuthService(
     TokenService tokenService,
     TimeProvider timeProvider)
 {
-    public async Task<Result<AuthSessionResponse>> RegisterAsync(
+    public async Task<Result<(AuthSessionResponse Session, string RawRefreshToken)>> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -55,7 +55,7 @@ public sealed class AuthService(
         return await IssueSessionAsync(user, cancellationToken);
     }
 
-    public async Task<Result<AuthSessionResponse>> LoginAsync(
+    public async Task<Result<(AuthSessionResponse Session, string RawRefreshToken)>> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -102,7 +102,7 @@ public sealed class AuthService(
         return await IssueSessionAsync(user, cancellationToken);
     }
 
-    public async Task<Result<AuthSessionResponse>> RefreshAsync(
+    public async Task<Result<(AuthSessionResponse Session, string RawRefreshToken)>> RefreshAsync(
         string rawRefreshToken,
         CancellationToken cancellationToken = default)
     {
@@ -174,19 +174,20 @@ public sealed class AuthService(
         return MapProfile(user);
     }
 
-    private async Task<AuthSessionResponse> IssueSessionAsync(
+    private async Task<(AuthSessionResponse Session, string RawRefreshToken)> IssueSessionAsync(
         User user,
         CancellationToken cancellationToken)
     {
         var accessToken = tokenService.IssueAccessToken(user);
         var (rawRefreshToken, _) = await tokenService.IssueRefreshTokenAsync(user, cancellationToken);
 
-        return new AuthSessionResponse
-        {
-            AccessToken = accessToken,
-            RefreshToken = rawRefreshToken,
-            User = MapProfile(user),
-        };
+        return (
+            new AuthSessionResponse
+            {
+                AccessToken = accessToken,
+                User = MapProfile(user),
+            },
+            rawRefreshToken);
     }
 
     private static UserProfileResponse MapProfile(User user) =>
