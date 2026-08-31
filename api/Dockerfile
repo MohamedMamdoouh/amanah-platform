@@ -8,7 +8,7 @@ COPY web/ ./
 
 ARG TURNSTILE_SITE_KEY=
 ENV TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY
-RUN node -e "const fs=require('fs');const k=process.env.TURNSTILE_SITE_KEY||'';const esc=k.replace(/\\/g,'\\\\').replace(/'/g,'\\''');fs.writeFileSync('src/environments/environment.production.ts',`export const environment = {\n  production: true,\n  apiBaseUrl: '/api/v1',\n  turnstileSiteKey: '${esc}',\n};\n`)" \
+RUN node scripts/generate-production-env.mjs \
     && npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-build
