@@ -2,8 +2,6 @@ using Amanah.Api.Auth;
 using Amanah.Api.Options;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Services.External;
-using Microsoft.Extensions.Options;
-using UniSdk;
 
 namespace Amanah.Api.Extensions;
 
@@ -63,14 +61,8 @@ public static class AuthServiceExtensions
         }
         else
         {
-            services.AddSingleton(sp =>
-            {
-                var apiKey = sp.GetRequiredService<IOptions<SmsOptions>>().Value.ApiKey!;
-                return new UniClient(apiKey);
-            });
-            services.AddSingleton<IUnimtxClient, UnimtxSdkClient>();
             services.AddHttpClient<ICaptchaVerifier, TurnstileCaptchaVerifier>();
-            services.AddSingleton<ISmsSender, UnimtxSmsSender>();
+            services.AddHttpClient<ISmsSender, UnimtxSmsSender>();
         }
 
         return services;
