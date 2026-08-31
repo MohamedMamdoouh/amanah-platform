@@ -15,7 +15,7 @@ public class UnimtxSmsSenderTests
     private static readonly Guid IdempotencyKey = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     [Fact]
-    public async Task SendOtpAsync_sends_sms_message_request_with_expected_payload()
+    public async Task SendOtpAsync_sends_otp_send_request_with_expected_payload()
     {
         string? capturedBody = null;
         HttpRequestMessage? capturedRequest = null;
@@ -25,23 +25,7 @@ public class UnimtxSmsSenderTests
             capturedBody = request.Content is null
                 ? null
                 : await request.Content.ReadAsStringAsync();
-            return CreateJsonResponse(HttpStatusCode.OK, """
-                {
-                  "code": "0",
-                  "message": "Success",
-                  "data": {
-                    "messages": [
-                      {
-                        "id": "msg-1",
-                        "to": "+201012345678",
-                        "iso": "EG",
-                        "parts": 1,
-                        "price": "0.135000"
-                      }
-                    ]
-                  }
-                }
-                """);
+            return CreateJsonResponse(HttpStatusCode.OK, """{"code":"0","message":"Success"}""");
         });
 
         var sender = CreateSender(handler);
@@ -50,16 +34,17 @@ public class UnimtxSmsSenderTests
 
         Assert.NotNull(capturedRequest);
         Assert.Equal(HttpMethod.Post, capturedRequest!.Method);
-        Assert.Contains("action=sms.message.send", capturedRequest.RequestUri!.Query);
+        Assert.Contains("action=otp.send", capturedRequest.RequestUri!.Query);
         Assert.Contains($"accessKeyId={TestApiKey}", capturedRequest.RequestUri.Query);
 
         Assert.NotNull(capturedBody);
         using var document = JsonDocument.Parse(capturedBody!);
         var root = document.RootElement;
         Assert.Equal(TestPhone, root.GetProperty("to").GetString());
-        Assert.Equal("pub_verif_en_ttl", root.GetProperty("templateId").GetString());
-        Assert.Equal(TestCode, root.GetProperty("templateData").GetProperty("code").GetString());
-        Assert.Equal("10", root.GetProperty("templateData").GetProperty("ttl").GetString());
+        Assert.Equal(TestCode, root.GetProperty("code").GetString());
+        Assert.Equal(6, root.GetProperty("digits").GetInt32());
+        Assert.Equal(600, root.GetProperty("ttl").GetInt32());
+        Assert.Equal("sms", root.GetProperty("channel").GetString());
     }
 
     [Fact]
