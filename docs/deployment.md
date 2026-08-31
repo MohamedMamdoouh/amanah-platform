@@ -71,15 +71,15 @@ Set on Render as `ConnectionStrings__Default`.
 
 Create a **Web Service** in the [Render dashboard](https://dashboard.render.com/) (**New → Web Service** → connect `MohamedMamdoouh/amanah-platform`):
 
-| Setting           | Value                                                                    |
-| ----------------- | ------------------------------------------------------------------------ |
+| Setting           | Value                                                                  |
+| ----------------- | ---------------------------------------------------------------------- |
 | Service name      | `amanah` (Render assigns URL, e.g. `https://amanah-egh5.onrender.com`) |
-| Runtime           | Docker                                                                   |
-| Dockerfile path   | `api/Dockerfile`                                                         |
-| Docker context    | repository root (`.`)                                                    |
-| Plan              | `free`                                                                   |
-| Region            | `frankfurt` (EU)                                                         |
-| Health check path | `/health`                                                                |
+| Runtime           | Docker                                                                 |
+| Dockerfile path   | `api/Dockerfile`                                                       |
+| Docker context    | repository root (`.`)                                                  |
+| Plan              | `free`                                                                 |
+| Region            | `frankfurt` (EU)                                                       |
+| Health check path | `/health`                                                              |
 
 A payment method is required on the Render account before creating services (free plan still applies).
 
@@ -111,7 +111,7 @@ curl https://amanah-egh5.onrender.com/login
 | `Bucket__AccessKey`           | Phase 01 config | R2 access key                                                       |
 | `Bucket__SecretKey`           | Phase 01 config | R2 secret key                                                       |
 | `Bucket__Name`                | Phase 01 config | R2 bucket name                                                      |
-| `Sms__ApiKey`                 | Yes             | Unimtx AccessKey ID (Console → Credentials)                           |
+| `Sms__ApiKey`                 | Yes             | Unimtx AccessKey ID (Console → Credentials)                         |
 
 Add `Cors__AllowedOrigins__1` for additional origins (custom domain later).
 
@@ -140,18 +140,18 @@ Use prefixes `public/` and `private/` when upload endpoints ship in Phase 02.
 
 ## Unimtx (SMS / OTP)
 
-Production uses [Unimtx](https://www.unimtx.com/sms/eg) via `UnimtxSmsSender` (`ISmsSender`), calling the [OTP Send API](https://www.unimtx.com/docs/api/send-otp) (`otp.send`). Pay-as-you-go balance top-up; Egypt OTP is ~$0.135 per SMS.
+Production uses [Unimtx](https://www.unimtx.com/sms/eg) via `UnimtxSmsSender` (`ISmsSender`), using the official [UniSdk .NET package](https://www.unimtx.com/docs/sdk/dotnet) with template `pub_verif_en_ttl`. Pay-as-you-go balance top-up; Egypt OTP is ~$0.135 per SMS.
 
 1. Create an account at [unimtx.com](https://www.unimtx.com).
 2. Copy your **AccessKey ID** from Console → Credentials.
 3. Top up your account balance.
 4. Set on Render:
 
-| Variable      | Source                              |
-| ------------- | ----------------------------------- |
+| Variable      | Source                                      |
+| ------------- | ------------------------------------------- |
 | `Sms__ApiKey` | Unimtx Console → Credentials → AccessKey ID |
 
-OTP delivery uses Unimtx's built-in OTP template (not a custom Arabic message). Amanah still generates and verifies codes locally.
+OTP delivery uses Unimtx template `pub_verif_en_ttl` with the locally generated code. Amanah still verifies codes locally.
 
 Local development continues to log OTP codes to the console (`ConsoleSmsSender`).
 
@@ -208,13 +208,13 @@ When wiring a real `ISmsSender`:
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Fix |
-| ------- | ------------ | --- |
-| `Failed to connect to [2a05:...]:5432` / `Network is unreachable` | Supabase **direct** connection uses IPv6; Render cannot reach it | Use **Session pooler** connection string on Render |
-| `inotify instances has been reached` at startup | Config file watching in Docker | Set in `api/Dockerfile`: `ENV DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false` |
-| Docker build fails on `node -e` / Angular env | Inline shell escaping | Uses `web/scripts/generate-production-env.mjs` — ensure latest `api/Dockerfile` is deployed |
-| Turnstile invalid domain | Widget domains don't match Render URL | Add your `*.onrender.com` hostname in Cloudflare Turnstile |
-| CORS errors in browser | `Cors__AllowedOrigins__0` mismatch | Must exactly match your Render URL (scheme + host, no trailing slash) |
+| Symptom                                                           | Likely cause                                                     | Fix                                                                                         |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `Failed to connect to [2a05:...]:5432` / `Network is unreachable` | Supabase **direct** connection uses IPv6; Render cannot reach it | Use **Session pooler** connection string on Render                                          |
+| `inotify instances has been reached` at startup                   | Config file watching in Docker                                   | Set in `api/Dockerfile`: `ENV DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false`               |
+| Docker build fails on `node -e` / Angular env                     | Inline shell escaping                                            | Uses `web/scripts/generate-production-env.mjs` — ensure latest `api/Dockerfile` is deployed |
+| Turnstile invalid domain                                          | Widget domains don't match Render URL                            | Add your `*.onrender.com` hostname in Cloudflare Turnstile                                  |
+| CORS errors in browser                                            | `Cors__AllowedOrigins__0` mismatch                               | Must exactly match your Render URL (scheme + host, no trailing slash)                       |
 
 ---
 
