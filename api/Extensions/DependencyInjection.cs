@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Amanah.Api.Filters;
 using Amanah.Api.Middleware;
+using Amanah.Api.Options;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Amanah.Api.Extensions;
@@ -14,6 +15,8 @@ public static class DependencyInjection
     {
         services.AddDatabase(configuration);
         services.AddApiCaching(configuration);
+        services.AddOptions<BucketOptions>()
+            .Bind(configuration.GetSection(BucketOptions.SectionName));
         services.AddHttpTimeouts(configuration);
         services.AddAuthServices(configuration, environment);
         services.AddApiValidation();
@@ -44,6 +47,13 @@ public static class DependencyInjection
         app.UseExceptionHandler();
         app.UseForwardedHeaders();
         app.UseMiddleware<RequestLoggingMiddleware>();
+
+        if (app.Environment.IsProduction())
+        {
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+        }
+
         app.UseRouting();
         app.UseHttpTimeouts();
         app.UseCors();
@@ -51,6 +61,11 @@ public static class DependencyInjection
         app.UseAuthorization();
         app.UseRateLimiter();
         app.MapControllers();
+
+        if (app.Environment.IsProduction())
+        {
+            app.MapFallbackToFile("index.html");
+        }
 
         return app;
     }

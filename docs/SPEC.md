@@ -580,7 +580,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 
 | Item                                          | Status                                                                                                               |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| OTP / SMS provider                            | **Partial** - `ISmsSender` defined in [Phase 01](./PHASE-01-platform-foundation.md); vendor chosen at Railway deploy |
+| OTP / SMS provider                            | **Partial** - `ISmsSender` defined in [Phase 01](./PHASE-01-platform-foundation.md); vendor chosen at production deploy |
 | API error contract appendix                   | **Resolved** - [api-error-contract.md](./api-error-contract.md)                                                      |
 | SignalR event/payload contract                | **Pending** before implementation                                                                                    |
 | Transactional email provider for admin alerts | **To be chosen** before launch                                                                                       |
@@ -690,9 +690,9 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 - **Frontend:** Angular, built as an installable PWA, Arabic-first RTL layout. Plain client-side rendering - no SSR in v1.
 - **Backend:** ASP.NET Core Web API, with SignalR for real-time chat (5.6).
-- **Database:** PostgreSQL (EF Core + Npgsql). Hosted on **Railway** in production (managed Postgres service). Local dev uses native PostgreSQL on Windows; integration tests use PostgreSQL via Testcontainers.
-- **Hosting:** **Railway** for the API and Angular build/serving - DB, API, and object storage on one platform for v1 simplicity.
-- **Object storage:** **Railway Buckets** (S3-compatible) - separate buckets/prefixes for public vs private media.
+- **Database:** PostgreSQL (EF Core + Npgsql). Hosted on **Supabase** in production (managed Postgres). Local dev uses native PostgreSQL on Windows; integration tests use PostgreSQL via Testcontainers.
+- **Hosting:** **Render** Free Docker web service — serves Angular PWA and .NET API from one origin. See [deployment.md](./deployment.md).
+- **Object storage:** **Cloudflare R2** (S3-compatible) - `public/` and `private/` prefixes for media.
 - **Private media access:** private report photos (`photosPrivate` categories) and claim photos are served via short-lived **pre-signed URLs (5-minute expiry)**, generated per request after the access-control check in section 9. Authorized viewers: reporter and admin for report photos; claimant, reporter, and (during a flagged-listing investigation) admin for claim photos.
 - **Expired private URL behavior:** if a private image URL expires while viewing, the client silently requests a fresh authorized URL and retries.
 - **Timezone storage:** per section 3 - `timestamptz` in UTC; `date` fields as Cairo calendar days; quotas and validation use Africa/Cairo; display in Africa/Cairo (11.2).
@@ -784,13 +784,13 @@ Per section 7.5. On limit exceed: HTTP `429` with `Retry-After` header.
 - **Database:** PostgreSQL everywhere.
   - **Local dev:** native PostgreSQL 16+ on Windows (`localhost:5432`; connection string in `api/appsettings.Development.json`).
   - **Integration tests:** PostgreSQL 16 via Testcontainers (`postgres:16`); `IClassFixture` web application factories override `ConnectionStrings:Default`. Requires Docker; no docker-compose in repo.
-  - **Production:** Railway managed PostgreSQL.
-- **Migrations:** EF Core migrations on deploy.
+  - **Production:** Supabase managed PostgreSQL (direct connection, SSL).
+- **Migrations:** EF Core migrations on API startup.
 - **Scheduled jobs:** retention cleanup (section 12); **listing expiry** and expiry-warning checks (4.7); **pending-claim timeout** (6.3). All business-date logic uses Africa/Cairo day boundaries where applicable.
-- **Backups:** Railway managed Postgres defaults.
-- **Monitoring:** Railway logs only.
+- **Backups:** Supabase managed Postgres defaults.
+- **Monitoring:** Render logs.
 - **Caching:** `HybridCache` via `ICacheService` (Section 16). Config: `Cache:CategoriesTtlSeconds`, `Cache:GovernoratesTtlSeconds` in `appsettings.json`. L2 is memory in v1; Redis when multi-instance.
 - **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: section 14.
-- **Budget:** ~$10/month Railway infrastructure; SMS cost depends on chosen provider (section 14).
+- **Budget:** ~$0/month infra for MVP testing (Render + Supabase free tiers); ~$5/month recommended before public launch for always-on API. SMS cost depends on chosen provider (section 14).
 - **Domain:** section 14.
-- **Hosting:** Railway, outside Egypt (section 5.8).
+- **Hosting:** Render (API + static frontend) + Supabase Postgres + Cloudflare R2, outside Egypt (section 5.8). See [deployment.md](./deployment.md).

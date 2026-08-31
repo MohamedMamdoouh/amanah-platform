@@ -1,0 +1,12 @@
+**/.git
+**/.cursor
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+api.Tests/
+docs/
+.cursor/

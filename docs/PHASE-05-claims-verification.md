@@ -77,7 +77,7 @@ None additional.
 
 ### Infrastructure
 
-- Private bucket for claim photos
+- Cloudflare R2 `private/` prefix for claim photos
 - Pre-signed URLs (5-minute expiry) for claim photo access
 
 ### Shared utilities

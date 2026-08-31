@@ -11,14 +11,14 @@
 | Monorepo scaffold (API + Angular + Postgres)                         | Yes                                 |
 | API plumbing (errors, rate limit, tests)                             | Yes                                 |
 | Auth DB (EF Core entities + migration)                               | Yes                                 |
-| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — auth UI done; deploy next |
+| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — deploy config + Twilio SMS done; cloud apply pending |
 | Cache foundation (`ICacheService` + `HybridCache`, no consumers yet) | Yes                                 |
 
 ---
 
 ## 1. Summary
 
-Establish the runnable monorepo on Railway: Angular PWA (Arabic RTL), ASP.NET Core API, PostgreSQL, and object storage. Ship the full database schema via EF Core migrations, phone OTP authentication with JWT sessions, admin bootstrap, seed data (categories and governorates), static legal/support pages, and shared foundations (timezone helpers, text normalization, rate-limit response pattern). When complete, signup/login/logout flows are testable end-to-end with a real SMS provider.
+Establish the runnable monorepo on Render (single Docker service for API + Angular), Supabase Postgres, and Cloudflare R2 config: Arabic RTL PWA, ASP.NET Core API, phone OTP authentication with JWT sessions, admin bootstrap, seed data, static legal pages, and shared foundations. When complete, signup/login/logout flows are testable end-to-end with a real SMS provider.
 
 ---
 
@@ -38,7 +38,7 @@ Establish the runnable monorepo on Railway: Angular PWA (Arabic RTL), ASP.NET Co
 | Section 17   | Full data model (all entities migrated; feature tables may be empty)            |
 | Section 18   | Authentication and sessions implementation                                      |
 | Section 20.2 | HTTP 429 + `Retry-After` rate-limit response pattern                            |
-| Section 21   | Infrastructure (Railway deploy, EF migrations, production-only env)             |
+| Section 21   | Infrastructure (production deploy, EF migrations, production-only env)             |
 
 **Part II (technical):** Section 16, Section 17, Section 18, Section 20.2, Section 21
 
@@ -93,7 +93,7 @@ Resolve **before starting** this phase:
 - **Engine:** PostgreSQL 16+ everywhere (dev, tests, production). EF Core with `Npgsql.EntityFrameworkCore.PostgreSQL`.
 - **Local dev:** native PostgreSQL on Windows (`localhost:5432`, db `amanah` — see root `README.md`).
 - **Integration tests:** PostgreSQL via Testcontainers (`postgres:16`); `ApiWebApplicationFactory` injects `ConnectionStrings:Default` from the container.
-- **Production:** Railway managed PostgreSQL; migrations on deploy.
+- **Production:** Supabase managed PostgreSQL; migrations on API startup.
 - EF Core migration creating all Section 17 entities: `User`, `Category`, `CategoryFieldDefinition`, `Governorate`, `Report`, `CategoryField`, `ReportPhoto`, `Claim`, `Resolution`, `ChatThread`, `Message`, `Notification`, `OtpCode`, `RefreshToken`, `AbuseReport`, `ModerationAction`
 - Seed migration: 8 default categories + field definitions (English `code` / `fieldKey` only), 27 governorates (`code` + `sortOrder`); Arabic labels in `web/src/assets/i18n/ar/categories.json` and `governorates.json`
 - Admin user seeded from `ADMIN_PHONE` environment variable at deploy
@@ -101,10 +101,11 @@ Resolve **before starting** this phase:
 
 ### Infrastructure
 
-- Railway project: PostgreSQL service, API service, static Angular build
-- Railway Buckets: public and private bucket/prefix wiring (no upload endpoints yet)
-- EF Core migrations run on deploy
-- Environment variables documented: DB connection, JWT secrets, SMS credentials, `ADMIN_PHONE`, bucket credentials
+- Render: one Docker web service (`api/Dockerfile`) serves API + Angular `wwwroot`
+- Supabase: managed PostgreSQL (not Render Postgres)
+- Cloudflare R2: public and private prefix wiring via `Bucket__*` env vars (no upload endpoints yet)
+- EF Core migrations run on API startup
+- Environment variables documented in [deployment.md](./deployment.md)
 
 ### Shared utilities
 
@@ -196,7 +197,7 @@ From [SPEC.md Section 15.7](./SPEC.md#157-authentication-otp).
 
 ### Manual smoke checklist
 
-- [ ] Deploy to Railway; migrations apply cleanly
+- [ ] Deploy to production stack; migrations apply cleanly (see [deployment.md](./deployment.md))
 - [ ] Receive real SMS OTP on Egyptian mobile number
 - [ ] Complete signup with Arabic display name; RTL layout renders correctly
 - [ ] Terms, Privacy, Safety, Support pages reachable from footer (logged out)

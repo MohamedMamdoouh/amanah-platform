@@ -78,7 +78,7 @@ None additional - Phase 01 prerequisites must be complete.
 
 ### Infrastructure
 
-- Railway Buckets: report photos routed to public or private prefix based on category `photosPrivate`
+- Cloudflare R2: report photos routed to `public/` or `private/` prefix based on category `photosPrivate`
 - WebP thumbnail generation on upload
 - Upload rate limiting: 5/min, 20/hour per account (Section 7.5)
 - **Cache consumers:** `GET /api/v1/categories` and `GET /api/v1/governorates` use `ICacheService` with `CacheKeys.Categories` (1h TTL) and `CacheKeys.Governorates` (24h TTL)

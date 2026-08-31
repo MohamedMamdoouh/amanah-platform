@@ -38,6 +38,13 @@ public static class AuthServiceExtensions
                 $"{TurnstileOptions.SectionName}:SecretKey is required outside Development.")
             .ValidateOnStart();
 
+        services.AddOptions<SmsOptions>()
+            .Bind(configuration.GetSection(SmsOptions.SectionName))
+            .Validate(
+                options => environment.IsDevelopment() || options.IsConfigured,
+                $"{SmsOptions.SectionName} requires ApiKey and SenderId outside Development.")
+            .ValidateOnStart();
+
         services.AddDataProtection();
         services.AddSingleton<RefreshTokenCookieManager>();
         services.AddScoped<OtpSmsOutboxDispatcher>();
@@ -55,7 +62,7 @@ public static class AuthServiceExtensions
         else
         {
             services.AddHttpClient<ICaptchaVerifier, TurnstileCaptchaVerifier>();
-            services.AddSingleton<ISmsSender, ConsoleSmsSender>();
+            services.AddHttpClient<ISmsSender, EsmsAfricaSmsSender>();
         }
 
         return services;

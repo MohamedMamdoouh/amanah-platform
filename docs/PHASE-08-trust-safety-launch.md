@@ -39,7 +39,7 @@ Resolve **before starting** this phase:
 
 | Item | Notes |
 | ---- | ----- |
-| Domain name | Configure custom domain on Railway before launch |
+| Domain name | Configure custom domain on Render before launch |
 
 ---
 
@@ -82,7 +82,7 @@ Resolve **before starting** this phase:
 
 ### Infrastructure
 
-- Custom domain configured on Railway
+- Custom domain configured on Render (`Cors__AllowedOrigins__1`)
 - Final production environment review (secrets, CORS, HTTPS)
 
 ### Shared utilities
