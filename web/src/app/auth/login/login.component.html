@@ -92,10 +92,23 @@
           {{ "auth.login.otp_submit" | translate }}
         </button>
 
+        <app-turnstile-widget
+          #turnstile
+          (tokenResolved)="onCaptchaToken($event)"
+          (tokenExpired)="onCaptchaExpired()"
+          (tokenErrored)="onCaptchaErrored()"
+        />
+
+        @if (fieldError("captchaToken")) {
+          <span class="auth-form__field-error" role="alert">{{
+            fieldError("captchaToken")
+          }}</span>
+        }
+
         <button
           type="button"
           class="auth-form__secondary"
-          [disabled]="resendCooldown() > 0 || submitting()"
+          [disabled]="resendCooldown() > 0 || submitting() || !captchaToken()"
           (click)="resendOtp()"
         >
           @if (resendCooldown() > 0) {
