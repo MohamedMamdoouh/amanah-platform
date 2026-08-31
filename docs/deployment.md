@@ -161,15 +161,13 @@ Local development continues to log OTP codes to the console (`ConsoleSmsSender`)
 
 ---
 
-## Keepalive cron (free tier mitigation)
+## Keepalive (free tier mitigation)
 
-During active development and Phase 01 gate testing, use [cron-job.org](https://cron-job.org) (or similar):
+`.github/workflows/keepalive.yml` pings `/health` every 10 minutes on `https://amanah-egh5.onrender.com`. Update `KEEPALIVE_URL` in that file if your Render URL changes.
 
-| Target                               | Interval            | Purpose                                                          |
-| ------------------------------------ | ------------------- | ---------------------------------------------------------------- |
-| `https://<your-service>.onrender.com/health` | Every 10–14 minutes | Mitigate Render cold sleep + Supabase pause (DB-touching health) |
+After pushing, use **Actions → Keepalive → Run workflow** to test. The workflow fails visibly if `/health` is not HTTP 200.
 
-**Not production-grade.** Cold starts can still occur between cron ticks. Budget ~$5/month for always-on API before public launch.
+**Not production-grade.** Cold starts can still occur between ticks. Budget ~$5/month for always-on API before public launch.
 
 ---
 
