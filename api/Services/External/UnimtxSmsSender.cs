@@ -11,6 +11,11 @@ public sealed class UnimtxSmsSender(
 {
     private const string VerificationTemplateId = "pub_verif_en_ttl";
 
+    // UniSdk wraps timeouts/network/parse failures as UniException("-1") with no
+    // inner exception. Map those to TimeoutException so the outbox retries instead
+    // of marking Failed and deleting the OTP.
+    private const string SdkTransportErrorCode = "-1";
+
     public async Task SendOtpAsync(
         string normalizedPhone,
         string code,
@@ -43,6 +48,13 @@ public sealed class UnimtxSmsSender(
                 idempotencyKey,
                 ex.ErrorCode,
                 ex.ErrorMessage);
+
+            if (ex.ErrorCode == SdkTransportErrorCode)
+            {
+                throw new TimeoutException(
+                    $"Unimtx SMS send failed with a transport error: {ex.ErrorMessage}.",
+                    ex);
+            }
 
             throw new HttpRequestException(
                 $"Unimtx SMS send failed with code {ex.ErrorCode}: {ex.ErrorMessage}.",

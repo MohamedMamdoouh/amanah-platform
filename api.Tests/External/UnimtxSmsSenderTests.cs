@@ -58,6 +58,21 @@ public class UnimtxSmsSenderTests
         Assert.Contains("InsufficientFunds", exception.Message);
     }
 
+    [Fact]
+    public async Task SendOtpAsync_throws_timeout_when_sdk_raises_transport_error()
+    {
+        var sender = CreateSender(new FakeUnimtxClient
+        {
+            ExceptionToThrow = new UniException("The request timed out.", "-1"),
+        });
+
+        var exception = await Assert.ThrowsAsync<TimeoutException>(() =>
+            sender.SendOtpAsync(TestPhone, TestCode, IdempotencyKey));
+
+        Assert.Contains("transport error", exception.Message);
+        Assert.IsType<UniException>(exception.InnerException);
+    }
+
     private static UnimtxSmsSender CreateSender(FakeUnimtxClient client)
     {
         var otpOptions = Microsoft.Extensions.Options.Options.Create(new OtpOptions { CodeLifetimeMinutes = 10 });
