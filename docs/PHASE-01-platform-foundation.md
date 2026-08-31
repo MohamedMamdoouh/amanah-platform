@@ -11,7 +11,7 @@
 | Monorepo scaffold (API + Angular + Postgres)                         | Yes                                 |
 | API plumbing (errors, rate limit, tests)                             | Yes                                 |
 | Auth DB (EF Core entities + migration)                               | Yes                                 |
-| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — deploy config + Twilio SMS done; cloud apply pending |
+| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — Render service live; eSMS Africa SMS; acceptance testing pending |
 | Cache foundation (`ICacheService` + `HybridCache`, no consumers yet) | Yes                                 |
 
 ---
@@ -93,7 +93,7 @@ Resolve **before starting** this phase:
 - **Engine:** PostgreSQL 16+ everywhere (dev, tests, production). EF Core with `Npgsql.EntityFrameworkCore.PostgreSQL`.
 - **Local dev:** native PostgreSQL on Windows (`localhost:5432`, db `amanah` — see root `README.md`).
 - **Integration tests:** PostgreSQL via Testcontainers (`postgres:16`); `ApiWebApplicationFactory` injects `ConnectionStrings:Default` from the container.
-- **Production:** Supabase managed PostgreSQL; migrations on API startup.
+- **Production:** Supabase managed PostgreSQL; **Session pooler** on Render (IPv4), direct connection for local dev.
 - EF Core migration creating all Section 17 entities: `User`, `Category`, `CategoryFieldDefinition`, `Governorate`, `Report`, `CategoryField`, `ReportPhoto`, `Claim`, `Resolution`, `ChatThread`, `Message`, `Notification`, `OtpCode`, `RefreshToken`, `AbuseReport`, `ModerationAction`
 - Seed migration: 8 default categories + field definitions (English `code` / `fieldKey` only), 27 governorates (`code` + `sortOrder`); Arabic labels in `web/src/assets/i18n/ar/categories.json` and `governorates.json`
 - Admin user seeded from `ADMIN_PHONE` environment variable at deploy

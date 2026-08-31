@@ -23,4 +23,4 @@ dotnet test api.Tests/Amanah.Api.Tests.csproj
 
 ## Production deploy
 
-Single **Render** Docker service (API + Angular) + **Supabase** Postgres + **Cloudflare R2**. See [docs/deployment.md](docs/deployment.md).
+Single **Render** Docker service (API + Angular) + **Supabase** Postgres (Session pooler on Render) + **Cloudflare R2**. Dashboard setup only — no `render.yaml`. See [docs/deployment.md](docs/deployment.md).

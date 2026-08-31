@@ -562,7 +562,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 | Reporter never reviews claims                                   | Action-required in-app notifications + claim visibility in My Reports; **10-day auto-withdraw** of pending claims (6.3)                                                 |
 | Reunions never confirmed, so the primary metric undercounts     | Confirmation prompts in chat + counterparty-confirmed notification + optional withdrawal reasons (4.7)                                                                  |
 | Spam / fake accounts                                            | Phone OTP + bot check + admin review + daily quotas                                                                                                                     |
-| OTP cost / OTP bombing                                          | Bot check + per-phone send limits (5.1) + cost monitoring; SMS provider TBD (section 14)                                                                                |
+| OTP cost / OTP bombing                                          | Bot check + per-phone send limits (5.1) + cost monitoring; eSMS Africa wallet balance |
 | PII exposure (especially IDs)                                   | `photosPrivate` category photos private to reporter and admin only; no raw ID numbers; first name only, never a full name; photo metadata removed on upload             |
 | Contact info bypassing verification                             | Users posting phones/links in public fields to skip claim flow; mitigated by contact-pattern block (4.1.3) + admin rejection reason 5; chat exempt after claim approved |
 | Harassment / extortion via chat                                 | Listing-level abuse reporting (including from chat), safety guidance, anti-extortion Terms, admin ban capability, published support channel                             |
@@ -580,7 +580,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 
 | Item                                          | Status                                                                                                               |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| OTP / SMS provider                            | **Partial** - `ISmsSender` defined in [Phase 01](./PHASE-01-platform-foundation.md); vendor chosen at production deploy |
+| OTP / SMS provider                            | **Done** - [eSMS Africa](https://esmsafrica.io/) via `EsmsAfricaSmsSender` ([deployment.md](./deployment.md)) |
 | API error contract appendix                   | **Resolved** - [api-error-contract.md](./api-error-contract.md)                                                      |
 | SignalR event/payload contract                | **Pending** before implementation                                                                                    |
 | Transactional email provider for admin alerts | **To be chosen** before launch                                                                                       |
@@ -746,7 +746,7 @@ Implementation notes:
 
 Implementation for section 5.1:
 
-- **OTP:** SMS delivery provider **deferred** (section 14) - implement behind an abstracted interface; concrete provider chosen before launch. v1 still requires SMS OTP per section 5.1.
+- **OTP:** eSMS Africa via `EsmsAfricaSmsSender` in production; `ConsoleSmsSender` in local dev. See [deployment.md](./deployment.md).
 - **Account creation:** `User` row created only when display name and Terms are submitted.
 - **Session:** JWT access token (15 minutes) + refresh token (30 days), rotating on refresh. Multi-device allowed.
 - **Logout everywhere:** revokes all refresh tokens; active access tokens expire within one access-token lifetime.
@@ -784,13 +784,13 @@ Per section 7.5. On limit exceed: HTTP `429` with `Retry-After` header.
 - **Database:** PostgreSQL everywhere.
   - **Local dev:** native PostgreSQL 16+ on Windows (`localhost:5432`; connection string in `api/appsettings.Development.json`).
   - **Integration tests:** PostgreSQL 16 via Testcontainers (`postgres:16`); `IClassFixture` web application factories override `ConnectionStrings:Default`. Requires Docker; no docker-compose in repo.
-  - **Production:** Supabase managed PostgreSQL (direct connection, SSL).
+  - **Production:** Supabase managed PostgreSQL. On Render use **Session pooler** (IPv4); local dev uses direct connection (SSL).
 - **Migrations:** EF Core migrations on API startup.
 - **Scheduled jobs:** retention cleanup (section 12); **listing expiry** and expiry-warning checks (4.7); **pending-claim timeout** (6.3). All business-date logic uses Africa/Cairo day boundaries where applicable.
 - **Backups:** Supabase managed Postgres defaults.
 - **Monitoring:** Render logs.
 - **Caching:** `HybridCache` via `ICacheService` (Section 16). Config: `Cache:CategoriesTtlSeconds`, `Cache:GovernoratesTtlSeconds` in `appsettings.json`. L2 is memory in v1; Redis when multi-instance.
 - **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: section 14.
-- **Budget:** ~$0/month infra for MVP testing (Render + Supabase free tiers); ~$5/month recommended before public launch for always-on API. SMS cost depends on chosen provider (section 14).
+- **Budget:** ~$0/month infra for MVP testing (Render + Supabase free tiers); ~$5/month recommended before public launch for always-on API. SMS via eSMS Africa (pay-as-you-go).
 - **Domain:** section 14.
 - **Hosting:** Render (API + static frontend) + Supabase Postgres + Cloudflare R2, outside Egypt (section 5.8). See [deployment.md](./deployment.md).

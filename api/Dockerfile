@@ -27,6 +27,8 @@ COPY --from=web-build /src/web/dist/web/browser /app/publish/wwwroot
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
+ENV DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
+
 COPY --from=api-build /app/publish .
 
 EXPOSE 8080
