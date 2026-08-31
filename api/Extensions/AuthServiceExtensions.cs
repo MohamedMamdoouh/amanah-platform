@@ -42,7 +42,7 @@ public static class AuthServiceExtensions
             .Bind(configuration.GetSection(SmsOptions.SectionName))
             .Validate(
                 options => environment.IsDevelopment() || options.IsConfigured,
-                $"{SmsOptions.SectionName} requires ApiKey and SenderId outside Development.")
+                $"{SmsOptions.SectionName} requires ApiKey outside Development.")
             .ValidateOnStart();
 
         services.AddDataProtection();
@@ -62,7 +62,7 @@ public static class AuthServiceExtensions
         else
         {
             services.AddHttpClient<ICaptchaVerifier, TurnstileCaptchaVerifier>();
-            services.AddHttpClient<ISmsSender, EsmsAfricaSmsSender>();
+            services.AddHttpClient<ISmsSender, UnimtxSmsSender>();
         }
 
         return services;

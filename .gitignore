@@ -21,12 +21,11 @@ coverage/
 .env
 .env.local
 .env.*.local
+.wrangler/
 
 # IDE
 .vs/
 .vscode/
-!.vscode/tasks.json
-!.vscode/launch.json
 .idea/
 .cursor/
 

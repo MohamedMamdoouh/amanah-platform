@@ -11,7 +11,7 @@
 | Monorepo scaffold (API + Angular + Postgres)                         | Yes                                 |
 | API plumbing (errors, rate limit, tests)                             | Yes                                 |
 | Auth DB (EF Core entities + migration)                               | Yes                                 |
-| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — Render service live; eSMS Africa SMS; acceptance testing pending |
+| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — Render service live; Unimtx SMS; acceptance testing pending |
 | Cache foundation (`ICacheService` + `HybridCache`, no consumers yet) | Yes                                 |
 
 ---

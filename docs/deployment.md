@@ -34,7 +34,7 @@ One origin serves the Angular app and API. Production uses `apiBaseUrl: '/api/v1
 1. **Supabase** — create project; enable `pg_trgm`; note connection string
 2. **Render** — create Docker web service in the dashboard; set env vars; verify `/health` and SPA routes
 3. **Cloudflare R2** — create bucket; set `Bucket__*` on Render
-4. **eSMS Africa SMS** — create account, register sender ID, top up wallet, set `Sms__*` on Render
+4. **Unimtx SMS** — create account, copy AccessKey ID, top up balance, set `Sms__ApiKey` on Render
 5. **Keepalive cron** — optional during active testing (see below)
 6. Run Phase 01 acceptance checklist on the Render URL
 
@@ -111,8 +111,7 @@ curl https://amanah-egh5.onrender.com/login
 | `Bucket__AccessKey`           | Phase 01 config | R2 access key                                                       |
 | `Bucket__SecretKey`           | Phase 01 config | R2 secret key                                                       |
 | `Bucket__Name`                | Phase 01 config | R2 bucket name                                                      |
-| `Sms__ApiKey`                 | Yes             | eSMS Africa API key (`esms_live_...` or `esms_test_...`)            |
-| `Sms__SenderId`               | Yes             | Approved alphanumeric sender ID for Egypt (e.g. `Amanah`)           |
+| `Sms__ApiKey`                 | Yes             | Unimtx AccessKey ID (Console → Credentials)                           |
 
 Add `Cors__AllowedOrigins__1` for additional origins (custom domain later).
 
@@ -139,26 +138,26 @@ Use prefixes `public/` and `private/` when upload endpoints ship in Phase 02.
 
 ---
 
-## eSMS Africa (SMS / OTP)
+## Unimtx (SMS / OTP)
 
-Production uses [eSMS Africa](https://esmsafrica.io/sms/egypt) via `EsmsAfricaSmsSender` (`ISmsSender`). Pay-as-you-go wallet top-up; Egypt OTP is ~EGP 0.62–0.73 per SMS (~$0.012–0.015).
+Production uses [Unimtx](https://www.unimtx.com/sms/eg) via `UnimtxSmsSender` (`ISmsSender`), calling the [OTP Send API](https://www.unimtx.com/docs/api/send-otp) (`otp.send`). Pay-as-you-go balance top-up; Egypt OTP is ~$0.135 per SMS.
 
-1. Create an account at [auth.esmsafrica.io](https://auth.esmsafrica.io).
-2. Create an API key (start with `test` for staging; use `live` for production).
-3. Register an alphanumeric sender ID for Egypt (e.g. `Amanah`); NTRA approval may take a few days.
-4. Top up your wallet (minimum EGP 50).
-5. Set on Render:
+1. Create an account at [unimtx.com](https://www.unimtx.com).
+2. Copy your **AccessKey ID** from Console → Credentials.
+3. Top up your account balance.
+4. Set on Render:
 
-| Variable        | Source                           |
-| --------------- | -------------------------------- |
-| `Sms__ApiKey`   | eSMS Africa dashboard → API Keys |
-| `Sms__SenderId` | Your approved sender ID          |
+| Variable      | Source                              |
+| ------------- | ----------------------------------- |
+| `Sms__ApiKey` | Unimtx Console → Credentials → AccessKey ID |
 
-OTP message body (Arabic): `رمز التحقق من أمانة: {code}`.
+OTP delivery uses Unimtx's built-in OTP template (not a custom Arabic message). Amanah still generates and verifies codes locally.
 
 Local development continues to log OTP codes to the console (`ConsoleSmsSender`).
 
-**Low balance:** API returns HTTP 422 when wallet balance is too low; top up and retry failed outbox rows if needed.
+**Low balance:** API returns error code `105400` (`InsufficientFunds`); top up and retry failed outbox rows if needed.
+
+**IP restriction:** If enabled in the Unimtx console, allowlist your Render service egress IP.
 
 ---
 
@@ -180,7 +179,7 @@ During active development and Phase 01 gate testing, use [cron-job.org](https://
 | ----------------- | ---------------------------------------------------- | ----------------------------------------------- |
 | Render cold start | 30–60s delay after ~15 min idle; OTP may feel broken | Keepalive cron during testing; upgrade API tier |
 | Supabase pause    | DB unavailable after ~1 week idle                    | Keepalive with DB-touching `/health`            |
-| SMS cost          | Independent of hosting; grows with OTP traffic       | Monitor eSMS Africa wallet balance              |
+| SMS cost          | Independent of hosting; grows with OTP traffic       | Monitor Unimtx account balance                  |
 
 ---
 
