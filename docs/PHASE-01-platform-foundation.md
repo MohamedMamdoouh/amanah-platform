@@ -11,14 +11,14 @@
 | Monorepo scaffold (API + Angular + Postgres)                         | Yes                                 |
 | API plumbing (errors, rate limit, tests)                             | Yes                                 |
 | Auth DB (EF Core entities + migration)                               | Yes                                 |
-| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — Render service live; Unimtx SMS; acceptance testing pending |
+| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — Render live; Unimtx SMS wired; acceptance testing pending |
 | Cache foundation (`ICacheService` + `HybridCache`, no consumers yet) | Yes                                 |
 
 ---
 
 ## 1. Summary
 
-Establish the runnable monorepo on Render (single Docker service for API + Angular), Supabase Postgres, and Cloudflare R2 config: Arabic RTL PWA, ASP.NET Core API, phone OTP authentication with JWT sessions, admin bootstrap, seed data, static legal pages, and shared foundations. When complete, signup/login/logout flows are testable end-to-end with a real SMS provider.
+Establish the runnable monorepo on Render (single Docker service for API + Angular), Supabase Postgres, and Cloudflare R2 config: Arabic RTL Angular SPA, ASP.NET Core API, phone OTP authentication with JWT sessions, admin bootstrap, seed data, static legal pages, and shared foundations. When complete, signup/login/logout flows are testable end-to-end with a real SMS provider.
 
 ---
 
@@ -56,7 +56,7 @@ Resolve **before starting** this phase:
 
 | Item                        | Notes                                                                                   |
 | --------------------------- | --------------------------------------------------------------------------------------- |
-| OTP / SMS provider          | Real provider required; implement behind `ISmsSender` abstraction                       |
+| OTP / SMS provider          | **Done** — [Unimtx](https://www.unimtx.com/) via `UnimtxSmsSender` ([deployment.md](./deployment.md)) |
 | API error contract appendix | Define standard error shape (`code`, `message`, field errors) before any endpoints ship |
 
 ---
@@ -80,7 +80,7 @@ Resolve **before starting** this phase:
 
 | Route      | Access | Purpose                                    |
 | ---------- | ------ | ------------------------------------------ |
-| `/`        | Public | Landing / placeholder home                 |
+| `/`        | Public | Landing page (browse/report CTAs deferred to Phase 02) |
 | `/login`   | Public | Phone + OTP signup/login flow              |
 | `/terms`   | Public | Terms of Service (static)                  |
 | `/privacy` | Public | Privacy Policy (static)                    |
@@ -116,7 +116,7 @@ Resolve **before starting** this phase:
 - Rate-limit middleware returning HTTP 429 with `Retry-After`
 - JWT auth middleware; role-based authorization (`User`, `Admin`)
 - **Cache foundation:** `ICacheService` + `HybridCache` (L1 + L2 memory; fail-open; Debug hit/miss logs). No endpoint consumers until Phase 02. Config: `Cache:CategoriesTtlSeconds`, `GovernoratesTtlSeconds`. Browse not cached in v1.
-- PWA manifest + service worker shell (Arabic RTL layout, footer with legal links)
+- Arabic RTL layout + footer with legal links
 
 ---
 
@@ -126,8 +126,8 @@ Server-enforce these matrix rows before marking this phase done:
 
 | Data          | Roles granted access this phase                                                                                            |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Phone numbers | Own user via `/api/auth/me`; Admin views **own** phone on `/me` only - admin user lookup (other users' phones) is Phase 08 |
-| Display name  | Own user (via `/api/auth/me`)                                                                                              |
+| Phone numbers | Own user via `/api/v1/auth/me`; Admin views **own** phone on `/me` only - admin user lookup (other users' phones) is Phase 08 |
+| Display name  | Own user (via `/api/v1/auth/me`)                                                                                           |
 
 All other Section 9 rows are N/A until later phases introduce the underlying features.
 

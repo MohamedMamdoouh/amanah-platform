@@ -4,7 +4,7 @@ Production uses a **$0/month stack** for Phase 01 MVP and pre-launch testing. Se
 
 | Component              | Provider             | Monthly cost |
 | ---------------------- | -------------------- | ------------ |
-| Angular PWA + .NET API | Render Free (Docker) | $0           |
+| Angular SPA + .NET API | Render Free (Docker) | $0           |
 | PostgreSQL             | Supabase Free        | $0           |
 | Object storage         | Cloudflare R2        | $0           |
 
@@ -69,7 +69,7 @@ Set on Render as `ConnectionStrings__Default`.
 
 ## Render (API + frontend)
 
-Create a **Web Service** in the [Render dashboard](https://dashboard.render.com/) (**New → Web Service** → connect `MohamedMamdoouh/amanah-platform`):
+Create a **Web Service** in the [Render dashboard](https://dashboard.render.com/) (**New → Web Service** → connect your GitHub repo):
 
 | Setting           | Value                                                                    |
 | ----------------- | ------------------------------------------------------------------------ |
@@ -83,7 +83,7 @@ Create a **Web Service** in the [Render dashboard](https://dashboard.render.com/
 
 A payment method is required on the Render account before creating services (free plan still applies).
 
-The Docker image builds Angular (`web/`) via `web/scripts/generate-production-env.mjs` (injects `TURNSTILE_SITE_KEY` into the production build), copies output to `wwwroot`, then publishes the .NET API. The runtime image sets `DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false` to avoid inotify limits on Render. Migrations run on startup (`Database:AutoMigrate: true`).
+The Docker image builds Angular (`web/`) with **Node 22** via `web/scripts/generate-production-env.mjs` (injects `TURNSTILE_SITE_KEY` into the production build), copies output to `wwwroot`, then publishes the **.NET 10** API. The runtime image binds to `0.0.0.0:$PORT` (default `8080`) and sets `DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false` to avoid inotify limits on Render. Migrations run on startup (`Database:AutoMigrate: true`).
 
 Use your **actual Render URL** (top of the service page) for `Cors__AllowedOrigins__0` and Cloudflare Turnstile widget domains.
 
@@ -107,10 +107,10 @@ curl https://amanah-egh5.onrender.com/login
 | `Turnstile__SecretKey`        | Yes             | Cloudflare Turnstile server secret                                  |
 | `ADMIN_PHONE`                 | Yes             | Admin bootstrap phone (`+20...`)                                    |
 | `Cors__AllowedOrigins__0`     | Yes             | Your Render service URL (e.g. `https://amanah-egh5.onrender.com`)   |
-| `Bucket__Endpoint`            | Phase 01 config | R2 S3 endpoint                                                      |
-| `Bucket__AccessKey`           | Phase 01 config | R2 access key                                                       |
-| `Bucket__SecretKey`           | Phase 01 config | R2 secret key                                                       |
-| `Bucket__Name`                | Phase 01 config | R2 bucket name                                                      |
+| `Bucket__Endpoint`            | Yes (config only) | R2 S3 endpoint — no upload endpoints until Phase 02                  |
+| `Bucket__AccessKey`           | Yes (config only) | R2 access key                                                        |
+| `Bucket__SecretKey`           | Yes (config only) | R2 secret key                                                        |
+| `Bucket__Name`                | Yes (config only) | R2 bucket name                                                       |
 | `Sms__ApiKey`                 | Yes             | Unimtx AccessKey ID (Console → Credentials)                           |
 
 Add `Cors__AllowedOrigins__1` for additional origins (custom domain later).
@@ -195,14 +195,15 @@ Before opening to real users:
 
 ## OTP / SMS operational risks
 
-When wiring a real `ISmsSender`:
+Production uses `UnimtxSmsSender` behind `ISmsSender`. OTP send enqueues to `OtpSmsOutboxMessages`; `OtpSmsOutboxProcessor` dispatches asynchronously with the outbox Id as the Unimtx idempotency key.
 
 | Risk                                | Mitigation                                                                                                                    |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| SMS accepted but HTTP response lost | Outbox stays `Pending`; worker retries with outbox Id as idempotency key. Client may see 503; user can verify if SMS arrived. |
-| Client timeout after SMS sent       | Dispatch uses `CancellationToken.None` after DB commit.                                                                       |
+| SMS accepted but HTTP response lost | Outbox stays `Pending`; worker retries with outbox Id as idempotency key. Client already got **204**; user can verify if SMS arrived. |
+| Client timeout after enqueue        | Dispatch uses `CancellationToken.None` after DB commit.                                                                        |
 | Stale outbox row after crash        | Atomic Pending → Dispatching claim; stale Dispatching reclaimed.                                                              |
 | `Sent` update fails after delivery  | Rare; limits may under-count by one. Monitor logs.                                                                            |
+| Unimtx low balance (`105400`)       | Top up account; retry failed outbox rows if needed.                                                                           |
 
 ---
 

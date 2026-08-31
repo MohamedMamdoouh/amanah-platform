@@ -507,7 +507,8 @@ Per-field access above. Public visibility by status: section 4.4.
 - **Automated profanity filtering** - moderation and abuse reporting only.
 - **Social link previews and rich share cards** - shared links show a plain URL.
 - **In-app payments/escrow** for rewards - offline negotiation only.
-- **Native mobile apps** - web app only (installable on home screen).
+- **Native mobile apps** - browser-only web app (no installable PWA).
+- **PWA / service worker** - no manifest, offline caching, or add-to-home-screen in v1.
 - **English end-user UI** - Arabic UI only for v1; catalog data uses English keys in DB with Arabic labels in frontend i18n.
 - **Community-assisted moderation** - solo-admin review only.
 - **Monetization** (ads, premium boosts, donations) - fully free in v1.
@@ -688,10 +689,10 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 ## 16. Architecture & Stack
 
-- **Frontend:** Angular, built as an installable PWA, Arabic-first RTL layout. Plain client-side rendering - no SSR in v1.
-- **Backend:** ASP.NET Core Web API, with SignalR for real-time chat (5.6).
+- **Frontend:** Angular 19 SPA, Arabic-first RTL layout. Plain client-side rendering - no SSR in v1.
+- **Backend:** ASP.NET Core 10 Web API, with SignalR for real-time chat (5.6).
 - **Database:** PostgreSQL (EF Core + Npgsql). Hosted on **Supabase** in production (managed Postgres). Local dev uses native PostgreSQL on Windows; integration tests use PostgreSQL via Testcontainers.
-- **Hosting:** **Render** Free Docker web service — serves Angular PWA and .NET API from one origin. See [deployment.md](./deployment.md).
+- **Hosting:** **Render** Free Docker web service — serves Angular SPA and .NET API from one origin. See [deployment.md](./deployment.md).
 - **Object storage:** **Cloudflare R2** (S3-compatible) - `public/` and `private/` prefixes for media.
 - **Private media access:** private report photos (`photosPrivate` categories) and claim photos are served via short-lived **pre-signed URLs (5-minute expiry)**, generated per request after the access-control check in section 9. Authorized viewers: reporter and admin for report photos; claimant, reporter, and (during a flagged-listing investigation) admin for claim photos.
 - **Expired private URL behavior:** if a private image URL expires while viewing, the client silently requests a fresh authorized URL and retries.
@@ -716,7 +717,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 | Entity                    | Key fields                                                                                                                                                                                                                                                                                                                                |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `User`                    | normalized phone (`+20...`), display name, role, banned flag + reason, ToS version + accepted-at, created-at                                                                                                                                                                                                                              |
+| `User`                    | normalized phone (`+20...`), display name, role, banned flag + reason, created-at                                                                                                                                                                                                                                                         |
 | `Category`                | code (English key), sort order, `photosPrivate` flag, active flag                                                                                                                                                                                                                                                                         |
 | `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`/`integer`), validation rules, required flag, sort order                                                                                                                                                                                                                                |
 | `Governorate`             | code (English key), sort order                                                                                                                                                                                                                                                                                                            |

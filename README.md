@@ -6,6 +6,8 @@ Lost-and-found platform for Egypt. [SPEC](docs/SPEC.md) · [API error contract](
 
 Prerequisites: PostgreSQL 16+ on Windows (db `amanah`, user `amanah`, password `amanah_dev`).
 
+Stack: **.NET 10** API, **Angular 19** SPA, **PostgreSQL 16**.
+
 ```bash
 cd api && dotnet run          # http://localhost:5000
 cd web && npm start           # http://localhost:4200 — proxies /api to the API
