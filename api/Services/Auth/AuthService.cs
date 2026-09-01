@@ -113,6 +113,12 @@ public sealed class AuthService(
                 ErrorCodes.HandoffTokenInvalid);
         }
 
+        var banResult = CheckBan(user);
+        if (banResult is not null)
+        {
+            return banResult;
+        }
+
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
         await tokenService.RevokeAllRefreshTokensAsync(user.Id, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
