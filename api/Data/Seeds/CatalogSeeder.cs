@@ -65,6 +65,7 @@ public sealed class CatalogSeeder(
                         MaxInt = fieldSeed.MaxInt,
                         Required = fieldSeed.Required,
                         SortOrder = fieldSeed.SortOrder,
+                        TextFormat = fieldSeed.TextFormat,
                     });
                 }
                 else
@@ -76,6 +77,7 @@ public sealed class CatalogSeeder(
                     existingField.MaxInt = fieldSeed.MaxInt;
                     existingField.Required = fieldSeed.Required;
                     existingField.SortOrder = fieldSeed.SortOrder;
+                    existingField.TextFormat = fieldSeed.TextFormat;
                 }
             }
         }

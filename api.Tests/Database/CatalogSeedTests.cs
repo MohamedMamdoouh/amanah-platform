@@ -122,6 +122,18 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
   }
 
   [Fact]
+  public async Task Documents_ids_first_name_field_has_letters_and_spaces_text_format()
+  {
+    await RunWithSeededContextAsync(async context =>
+    {
+      var firstNameField = await context.CategoryFieldDefinitions
+        .SingleAsync(field => field.FieldKey == "first_name_on_document");
+
+      Assert.Equal(CategoryTextFormat.LettersAndSpaces, firstNameField.TextFormat);
+    });
+  }
+
+  [Fact]
   public async Task Re_running_seed_is_idempotent()
   {
     await using var scope = factory.Services.CreateAsyncScope();

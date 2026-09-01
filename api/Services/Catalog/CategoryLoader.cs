@@ -30,6 +30,9 @@ public sealed class CategoryLoader(AppDbContext dbContext) : ICategoryLoader
                         MaxLength = field.MaxLength,
                         MinInt = field.MinInt,
                         MaxInt = field.MaxInt,
+                        TextFormat = field.TextFormat == CategoryTextFormat.LettersAndSpaces
+                            ? "letters_and_spaces"
+                            : null,
                     })
                     .ToList(),
             })

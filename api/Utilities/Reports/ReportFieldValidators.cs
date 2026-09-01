@@ -30,9 +30,6 @@ public static class ReportDateValidator
 // Category-specific field validation from DB definitions.
 public static class CategoryFieldValidator
 {
-    // Letters and spaces only; not modeled in CategoryFieldDefinition.
-    private const string FirstNameOnDocumentFieldKey = "first_name_on_document";
-
     public static Dictionary<string, string[]> Validate(
         IReadOnlyList<CategoryFieldDefinition> definitions,
         IReadOnlyDictionary<string, string> submittedValues)
@@ -97,8 +94,7 @@ public static class CategoryFieldValidator
             return;
         }
 
-        // Field-specific rule beyond min/max length.
-        if (definition.FieldKey == FirstNameOnDocumentFieldKey
+        if (definition.TextFormat == CategoryTextFormat.LettersAndSpaces
             && !normalized.All(character => char.IsLetter(character) || character == ' '))
         {
             AddError(errors, definition.FieldKey, "Must contain letters and spaces only.");

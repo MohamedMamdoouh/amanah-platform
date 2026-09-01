@@ -49,6 +49,9 @@ public class CatalogApiTests(ApiWebApplicationFactory factory) : IClassFixture<A
 
         var documents = body.Items.Single(category => category.Code == "documents-ids");
         Assert.True(documents.PhotosPrivate);
+        var firstNameField = documents.FieldDefinitions.Single(field => field.FieldKey == "first_name_on_document");
+        Assert.Equal("letters_and_spaces", firstNameField.TextFormat);
+        Assert.Null(documents.FieldDefinitions.Single(field => field.FieldKey == "document_type").TextFormat);
 
         var keys = body.Items.Single(category => category.Code == "keys");
         var keyCount = keys.FieldDefinitions.Single(field => field.FieldKey == "key_count");

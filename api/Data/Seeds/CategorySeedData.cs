@@ -1,5 +1,7 @@
 namespace Amanah.Api.Data.Seeds;
 
+using Amanah.Api.Data.Entities;
+
 internal static class CategorySeedData
 {
     internal sealed record FieldSeed(
@@ -10,7 +12,8 @@ internal static class CategorySeedData
         int? MinLength = null,
         int? MaxLength = null,
         int? MinInt = null,
-        int? MaxInt = null);
+        int? MaxInt = null,
+        CategoryTextFormat? TextFormat = null);
 
     internal sealed record CategorySeed(
         string Code,
@@ -25,7 +28,7 @@ internal static class CategorySeedData
         ]),
         new("documents-ids", 2, true, [
             new FieldSeed("document_type", "Text", true, 1, 2, 80),
-            new FieldSeed("first_name_on_document", "Text", true, 2, 2, 40),
+            new FieldSeed("first_name_on_document", "Text", true, 2, 2, 40, TextFormat: CategoryTextFormat.LettersAndSpaces),
         ]),
         new("wallets", 3, false, [
             new FieldSeed("wallet_type", "Text", true, 1, 2, 80),

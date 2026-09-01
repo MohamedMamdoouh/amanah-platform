@@ -23,4 +23,6 @@ public class CategoryFieldDefinition : IEntity
     public bool Required { get; set; }
 
     public int SortOrder { get; set; }
+
+    public CategoryTextFormat? TextFormat { get; set; }
 }

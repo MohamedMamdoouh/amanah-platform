@@ -27,6 +27,10 @@ public sealed class CategoryFieldDefinitionConfiguration : IEntityTypeConfigurat
             .HasConversion<string>()
             .IsRequired();
 
+        builder.Property(definition => definition.TextFormat)
+            .HasMaxLength(20)
+            .HasConversion<string>();
+
         builder.Property(definition => definition.Required)
             .HasDefaultValue(true);
 

@@ -155,6 +155,7 @@ public class CategoryFieldValidatorTests
                 Required = true,
                 MinLength = 2,
                 MaxLength = 40,
+                TextFormat = CategoryTextFormat.LettersAndSpaces,
             },
         };
 
@@ -174,6 +175,29 @@ public class CategoryFieldValidatorTests
         {
             ["brand_model"] = "iPhone 14",
             ["colour"] = "black",
+        });
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void Validate_accepts_digits_when_text_format_is_not_set()
+    {
+        var definitions = new List<CategoryFieldDefinition>
+        {
+            new()
+            {
+                FieldKey = "model_number",
+                Type = CategoryFieldType.Text,
+                Required = true,
+                MinLength = 2,
+                MaxLength = 80,
+            },
+        };
+
+        var errors = CategoryFieldValidator.Validate(definitions, new Dictionary<string, string>
+        {
+            ["model_number"] = "ABC123",
         });
 
         Assert.Empty(errors);
