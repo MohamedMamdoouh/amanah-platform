@@ -7,6 +7,7 @@ import {
   AuthSession,
   LoginRequest,
   RegisterRequest,
+  ResetPasswordRequest,
   SendOtpRequest,
   UserProfile,
   VerifyOtpRequest,
@@ -79,6 +80,16 @@ export class AuthService {
     return this.http
       .post<AuthSession>(
         `${this.authBaseUrl}/login`,
+        request,
+        AUTH_HTTP_OPTIONS,
+      )
+      .pipe(tap((session) => this.applySession(session)));
+  }
+
+  resetPassword(request: ResetPasswordRequest): Observable<AuthSession> {
+    return this.http
+      .post<AuthSession>(
+        `${this.authBaseUrl}/password/reset`,
         request,
         AUTH_HTTP_OPTIONS,
       )

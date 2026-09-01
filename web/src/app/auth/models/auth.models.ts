@@ -10,29 +10,41 @@ export interface AuthSession {
   user: UserProfile;
 }
 
+export type OtpPurpose = 'signup' | 'password_reset';
+
+export type AuthMode = 'signin' | 'signup' | 'forgot';
+
 export interface VerifyOtpResult {
-  status: 'new_user' | 'existing_user';
+  status: 'signup_ready' | 'reset_ready';
   signupToken?: string;
-  loginToken?: string;
+  resetToken?: string;
 }
 
 export interface SendOtpRequest {
   phone: string;
   captchaToken: string;
+  purpose: OtpPurpose;
 }
 
 export interface VerifyOtpRequest {
   phone: string;
   code: string;
+  purpose: OtpPurpose;
 }
 
 export interface RegisterRequest {
   signupToken: string;
   displayName: string;
+  password: string;
   acceptTerms: boolean;
 }
 
 export interface LoginRequest {
   phone: string;
-  loginToken: string;
+  password: string;
+}
+
+export interface ResetPasswordRequest {
+  resetToken: string;
+  password: string;
 }

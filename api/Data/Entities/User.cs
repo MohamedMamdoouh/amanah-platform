@@ -6,6 +6,8 @@ public class User : IEntity
 
     public required string NormalizedPhone { get; set; }
 
+    public required string PasswordHash { get; set; }
+
     public string? DisplayName { get; set; }
 
     public UserRole Role { get; set; }

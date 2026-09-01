@@ -1,15 +1,34 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnDestroy, signal, viewChild } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
 import { AuthService } from '../auth.service';
+import { AuthMode, OtpPurpose } from '../models/auth.models';
 import { TurnstileWidgetComponent } from '../turnstile-widget/turnstile-widget.component';
 
-type LoginStep = 'phone' | 'otp' | 'register';
+type AuthStep = 'phone' | 'otp' | 'register' | 'reset';
+
+const PASSWORD_MIN_LENGTH = 8;
+
+function passwordsMatch(control: AbstractControl): ValidationErrors | null {
+  const password = control.parent?.get('password')?.value;
+  const confirmPassword = control.value;
+  if (!password || !confirmPassword) {
+    return null;
+  }
+
+  return password === confirmPassword ? null : { passwordMismatch: true };
+}
 
 @Component({
   selector: 'app-login',
@@ -32,7 +51,8 @@ export class LoginComponent implements OnDestroy {
 
   private readonly turnstile = viewChild<TurnstileWidgetComponent>('turnstile');
 
-  readonly step = signal<LoginStep>('phone');
+  readonly mode = signal<AuthMode>('signin');
+  readonly step = signal<AuthStep>('phone');
   readonly submitting = signal(false);
   readonly summaryError = signal<string | null>(null);
   readonly fieldErrors = signal<Record<string, string[]>>({});
@@ -41,8 +61,13 @@ export class LoginComponent implements OnDestroy {
 
   private phone = '';
   private signupToken: string | null = null;
-  private loginToken: string | null = null;
+  private resetToken: string | null = null;
   private cooldownTimer: ReturnType<typeof setInterval> | null = null;
+
+  readonly signInForm = this.fb.nonNullable.group({
+    phone: ['', [Validators.required, Validators.minLength(10)]],
+    password: ['', [Validators.required]],
+  });
 
   readonly phoneForm = this.fb.nonNullable.group({
     phone: ['', [Validators.required, Validators.minLength(10)]],
@@ -57,10 +82,47 @@ export class LoginComponent implements OnDestroy {
 
   readonly registerForm = this.fb.nonNullable.group({
     displayName: ['', [Validators.required, Validators.minLength(3)]],
+    password: [
+      '',
+      [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)],
+    ],
+    confirmPassword: ['', [Validators.required, passwordsMatch]],
     acceptTerms: [false, Validators.requiredTrue],
   });
 
+  readonly resetForm = this.fb.nonNullable.group({
+    password: [
+      '',
+      [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)],
+    ],
+    confirmPassword: ['', [Validators.required, passwordsMatch]],
+  });
+
+  constructor() {
+    this.registerForm.controls.password.valueChanges.subscribe(() => {
+      this.registerForm.controls.confirmPassword.updateValueAndValidity();
+    });
+    this.resetForm.controls.password.valueChanges.subscribe(() => {
+      this.resetForm.controls.confirmPassword.updateValueAndValidity();
+    });
+  }
+
+  setMode(mode: AuthMode): void {
+    this.mode.set(mode);
+    this.step.set('phone');
+    this.clearErrors();
+    this.phone = '';
+    this.signupToken = null;
+    this.resetToken = null;
+    this.captchaToken.set(null);
+    this.turnstile()?.reset();
+  }
+
   stepLabelKey(): string {
+    if (this.mode() === 'signin') {
+      return 'auth.login.step_signin';
+    }
+
     switch (this.step()) {
       case 'phone':
         return 'auth.login.step_phone';
@@ -68,6 +130,19 @@ export class LoginComponent implements OnDestroy {
         return 'auth.login.step_otp';
       case 'register':
         return 'auth.login.step_profile';
+      case 'reset':
+        return 'auth.login.step_reset';
+    }
+  }
+
+  titleKey(): string {
+    switch (this.mode()) {
+      case 'signin':
+        return 'auth.login.title_signin';
+      case 'signup':
+        return 'auth.login.title_signup';
+      case 'forgot':
+        return 'auth.login.title_forgot';
     }
   }
 
@@ -87,6 +162,28 @@ export class LoginComponent implements OnDestroy {
   onCaptchaErrored(): void {
     this.captchaToken.set(null);
     this.summaryError.set(this.translate.instant('error.auth.captcha_failed'));
+  }
+
+  async submitSignIn(): Promise<void> {
+    if (this.signInForm.invalid) {
+      return;
+    }
+
+    this.clearErrors();
+    this.submitting.set(true);
+
+    try {
+      await firstValueFrom(
+        this.auth.login({
+          phone: this.signInForm.controls.phone.value.trim(),
+          password: this.signInForm.controls.password.value,
+        }),
+      );
+      this.submitting.set(false);
+      await this.router.navigate(['/']);
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   async submitPhone(): Promise<void> {
@@ -119,18 +216,20 @@ export class LoginComponent implements OnDestroy {
         this.auth.verifyOtp({
           phone: this.phone,
           code: this.otpForm.controls.code.value.trim(),
+          purpose: this.otpPurpose(),
         }),
       );
 
-      if (result.status === 'new_user') {
+      if (result.status === 'signup_ready') {
         this.signupToken = result.signupToken ?? null;
         this.submitting.set(false);
         this.step.set('register');
         return;
       }
 
-      this.loginToken = result.loginToken ?? null;
-      await this.completeLogin();
+      this.resetToken = result.resetToken ?? null;
+      this.submitting.set(false);
+      this.step.set('reset');
     } catch (error) {
       this.handleError(error);
     }
@@ -164,7 +263,30 @@ export class LoginComponent implements OnDestroy {
         this.auth.register({
           signupToken: this.signupToken,
           displayName: this.registerForm.controls.displayName.value.trim(),
+          password: this.registerForm.controls.password.value,
           acceptTerms: this.registerForm.controls.acceptTerms.value,
+        }),
+      );
+      this.submitting.set(false);
+      await this.router.navigate(['/']);
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async submitReset(): Promise<void> {
+    if (this.resetForm.invalid || !this.resetToken) {
+      return;
+    }
+
+    this.clearErrors();
+    this.submitting.set(true);
+
+    try {
+      await firstValueFrom(
+        this.auth.resetPassword({
+          resetToken: this.resetToken,
+          password: this.resetForm.controls.password.value,
         }),
       );
       this.submitting.set(false);
@@ -181,27 +303,8 @@ export class LoginComponent implements OnDestroy {
     }
   }
 
-  private async completeLogin(): Promise<void> {
-    if (!this.loginToken) {
-      this.submitting.set(false);
-      this.summaryError.set(
-        this.translate.instant('error.field.login_token.required'),
-      );
-      return;
-    }
-
-    try {
-      await firstValueFrom(
-        this.auth.login({
-          phone: this.phone,
-          loginToken: this.loginToken,
-        }),
-      );
-      this.submitting.set(false);
-      await this.router.navigate(['/']);
-    } catch (error) {
-      this.handleError(error);
-    }
+  private otpPurpose(): OtpPurpose {
+    return this.mode() === 'forgot' ? 'password_reset' : 'signup';
   }
 
   private async sendOtp(): Promise<void> {
@@ -209,6 +312,7 @@ export class LoginComponent implements OnDestroy {
       this.auth.sendOtp({
         phone: this.phone,
         captchaToken: this.captchaToken()!,
+        purpose: this.otpPurpose(),
       }),
     );
     this.submitting.set(false);

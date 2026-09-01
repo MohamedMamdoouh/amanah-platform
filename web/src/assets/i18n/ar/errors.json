@@ -6,6 +6,8 @@
   "error.auth.otp_expired": "انتهت صلاحية رمز التحقق.",
   "error.auth.otp_void": "تم إلغاء رمز التحقق بعد محاولات فاشلة.",
   "error.auth.handoff_token_invalid": "انتهت صلاحية خطوة التسجيل. أعد المحاولة.",
+  "error.auth.invalid_credentials": "رقم الهاتف أو كلمة المرور غير صحيحة.",
+  "error.auth.account_exists": "يوجد حساب بهذا الرقم. سجّل الدخول بدلاً من ذلك.",
   "error.auth.unauthorized": "يلزم تسجيل الدخول.",
   "error.auth.token_expired": "انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.",
   "error.auth.refresh_invalid": "انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.",
@@ -24,8 +26,15 @@
   "error.field.accept_terms.required": "يجب الموافقة على الشروط والأحكام وسياسة الخصوصية.",
   "error.field.signup_token.required": "رمز التسجيل مطلوب.",
   "error.field.captcha_token.required": "يلزم إكمال التحقق من الروبوت.",
-  "error.field.login_token.required": "رمز تسجيل الدخول مطلوب.",
+  "error.field.password.required": "كلمة المرور مطلوبة.",
+  "error.field.password.too_short": "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
+  "error.field.password.invalid": "كلمة المرور غير مقبولة.",
+  "error.field.reset_token.required": "رمز إعادة التعيين مطلوب.",
+  "error.field.otp_purpose.required": "غرض رمز التحقق مطلوب.",
+  "error.field.otp_purpose.invalid": "غرض رمز التحقق غير مقبول.",
   "error.field.refresh_token.required": "رمز التحديث مطلوب.",
   "error.field.otp_code.required": "رمز التحقق مطلوب.",
-  "error.field.otp_code.invalid": "تنسيق رمز التحقق غير مقبول."
+  "error.field.otp_code.invalid": "تنسيق رمز التحقق غير مقبول.",
+  "error.report.daily_quota": "تجاوزت الحد اليومي لتقديم البلاغات (3 بلاغات في اليوم).",
+  "error.report.open_cap": "لديك الحد الأقصى من البلاغات المفتوحة (5). أغلق بلاغاً قبل تقديم بلاغ جديد."
 }

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace Amanah.Api.Services.Auth;
 
+// This class sends and verifies SMS OTP codes for signup and password reset.
 public sealed class OtpService(
     AppDbContext dbContext,
     ICaptchaVerifier captchaVerifier,
@@ -24,6 +25,7 @@ public sealed class OtpService(
     public async Task<Result> SendAsync(
         string phone,
         string captchaToken,
+        string purpose,
         CancellationToken cancellationToken = default)
     {
         // Reject input that cannot be normalized to E.164 (e.g. invalid Egyptian mobile).
@@ -32,6 +34,25 @@ public sealed class OtpService(
             return ResultError.BadRequest(
                 "The phone number format is not accepted.",
                 ErrorCodes.InvalidPhone);
+        }
+
+        // Purpose-specific guards run before captcha/SMS work to avoid leaking account state via timing.
+        var userExists = await dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(user => user.NormalizedPhone == normalizedPhone, cancellationToken);
+
+        // Signup OTP is only for new phones; existing users must sign in with password.
+        if (purpose == OtpPurposes.Signup && userExists)
+        {
+            return ResultError.Conflict(
+                "An account already exists for this phone number. Sign in instead.",
+                ErrorCodes.AccountExists);
+        }
+
+        // Password-reset OTP for unknown phones returns 204 without SMS to prevent account enumeration.
+        if (purpose == OtpPurposes.PasswordReset && !userExists)
+        {
+            return Result.Ok();
         }
 
         // Block automated abuse before any OTP work or DB writes.
@@ -105,9 +126,11 @@ public sealed class OtpService(
         return Result.Ok();
     }
 
+    // This method verifies an SMS OTP code for signup or password reset.
     public async Task<Result<VerifyOtpResponse>> VerifyAsync(
         string phone,
         string code,
+        string purpose,
         CancellationToken cancellationToken = default)
     {
         if (!PhoneNormalizer.TryNormalize(phone, out var normalizedPhone))
@@ -129,6 +152,7 @@ public sealed class OtpService(
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
+        // Serialize concurrent verify requests for the same phone (attempt counting + consume).
         await dbContext.Database.ExecuteSqlAsync(
             $"SELECT pg_advisory_xact_lock(hashtext({normalizedPhone}))",
             cancellationToken);
@@ -185,29 +209,47 @@ public sealed class OtpService(
                 ErrorCodes.InvalidOtp);
         }
 
+        // Single-use: a verified code is consumed immediately and cannot be replayed.
         dbContext.OtpCodes.Remove(otpCode);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
+        // Issue a short-lived handoff token so the next step (register or reset) can prove OTP success.
         var userExists = await dbContext.Users
             .AsNoTracking()
             .AnyAsync(user => user.NormalizedPhone == normalizedPhone, cancellationToken);
 
-        if (userExists)
+        if (purpose == OtpPurposes.Signup)
         {
+            // Race guard: account may have been created between send and verify.
+            if (userExists)
+            {
+                return ResultError.Conflict(
+                    "An account already exists for this phone number. Sign in instead.",
+                    ErrorCodes.AccountExists);
+            }
+
             return new VerifyOtpResponse
             {
-                Status = "existing_user",
-                SignupToken = null,
-                LoginToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Login),
+                Status = "signup_ready",
+                SignupToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Signup),
+                ResetToken = null,
             };
+        }
+
+        // Password reset: phone must belong to an existing account.
+        if (!userExists)
+        {
+            return ResultError.BadRequest(
+                "The OTP code has expired. Please request a new code.",
+                ErrorCodes.OtpExpired);
         }
 
         return new VerifyOtpResponse
         {
-            Status = "new_user",
-            SignupToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Signup),
-            LoginToken = null,
+            Status = "reset_ready",
+            SignupToken = null,
+            ResetToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Reset),
         };
     }
 

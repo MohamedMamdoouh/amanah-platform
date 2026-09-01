@@ -13,6 +13,7 @@ public sealed class AuthService(
     AppDbContext dbContext,
     HandoffTokenService handoffTokenService,
     TokenService tokenService,
+    UserPasswordHasher passwordHasher,
     TimeProvider timeProvider)
 {
     public async Task<Result<(AuthSessionResponse Session, string RawRefreshToken)>> RegisterAsync(
@@ -47,7 +48,9 @@ public sealed class AuthService(
             DisplayName = displayName,
             Role = UserRole.User,
             CreatedAt = now,
+            PasswordHash = string.Empty,
         };
+        user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -66,20 +69,37 @@ public sealed class AuthService(
                 ErrorCodes.InvalidPhone);
         }
 
-        if (!handoffTokenService.TryValidate(
-                request.LoginToken,
-                AuthTokenPurposes.Login,
-                out var tokenPhone))
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(u => u.NormalizedPhone == normalizedPhone, cancellationToken);
+
+        if (user is null
+            || !passwordHasher.VerifyPassword(user, request.Password, user.PasswordHash))
         {
             return ResultError.BadRequest(
-                "The login token is invalid or has expired.",
-                ErrorCodes.HandoffTokenInvalid);
+                "Phone number or password is incorrect.",
+                ErrorCodes.InvalidCredentials);
         }
 
-        if (tokenPhone != normalizedPhone)
+        var banResult = CheckBan(user);
+        if (banResult is not null)
+        {
+            return banResult;
+        }
+
+        return await IssueSessionAsync(user, cancellationToken);
+    }
+
+    public async Task<Result<(AuthSessionResponse Session, string RawRefreshToken)>> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!handoffTokenService.TryValidate(
+                request.ResetToken,
+                AuthTokenPurposes.Reset,
+                out var normalizedPhone))
         {
             return ResultError.BadRequest(
-                "The login token is invalid or has expired.",
+                "The reset token is invalid or has expired.",
                 ErrorCodes.HandoffTokenInvalid);
         }
 
@@ -89,15 +109,13 @@ public sealed class AuthService(
         if (user is null)
         {
             return ResultError.BadRequest(
-                "The login token is invalid or has expired.",
+                "The reset token is invalid or has expired.",
                 ErrorCodes.HandoffTokenInvalid);
         }
 
-        var banResult = CheckBan(user);
-        if (banResult is not null)
-        {
-            return banResult;
-        }
+        user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
+        await tokenService.RevokeAllRefreshTokensAsync(user.Id, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         return await IssueSessionAsync(user, cancellationToken);
     }

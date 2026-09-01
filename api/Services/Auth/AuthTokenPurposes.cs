@@ -4,5 +4,5 @@ public static class AuthTokenPurposes
 {
     public const string Signup = "signup";
 
-    public const string Login = "login";
+    public const string Reset = "reset";
 }

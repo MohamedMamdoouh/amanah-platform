@@ -1,5 +1,14 @@
 namespace Amanah.Contracts.Responses.Auth;
 
+public sealed class VerifyOtpResponse
+{
+    public required string Status { get; init; }
+
+    public string? SignupToken { get; init; }
+
+    public string? ResetToken { get; init; }
+}
+
 public sealed class AuthSessionResponse
 {
     public required string AccessToken { get; init; }

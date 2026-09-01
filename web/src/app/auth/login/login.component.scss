@@ -12,6 +12,31 @@
   margin-bottom: var(--space-lg);
 }
 
+.auth-card__modes {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.auth-card__mode {
+  flex: 1;
+  padding: var(--space-xs) var(--space-sm);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.auth-card__mode--active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: #fff8f3;
+}
+
 .auth-card__step {
   margin: 0 0 var(--space-xs);
   font-size: 0.8125rem;

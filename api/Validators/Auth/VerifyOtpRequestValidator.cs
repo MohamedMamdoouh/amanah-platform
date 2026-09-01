@@ -7,6 +7,12 @@ namespace Amanah.Api.Validators.Auth;
 
 public sealed class VerifyOtpRequestValidator : AbstractValidator<VerifyOtpRequest>
 {
+    private static readonly HashSet<string> AllowedPurposes =
+    [
+        OtpPurposes.Signup,
+        OtpPurposes.PasswordReset,
+    ];
+
     public VerifyOtpRequestValidator()
     {
         RuleFor(request => request.Phone)
@@ -24,5 +30,13 @@ public sealed class VerifyOtpRequestValidator : AbstractValidator<VerifyOtpReque
             .Must(code => OtpCodeNormalizer.TryNormalize(code, out _))
             .WithErrorCode(ErrorCodes.FieldOtpCodeInvalid)
             .WithMessage("Verification code format is not valid.");
+
+        RuleFor(request => request.Purpose)
+            .NotEmpty()
+            .WithErrorCode(ErrorCodes.FieldOtpPurposeRequired)
+            .WithMessage("OTP purpose is required.")
+            .Must(AllowedPurposes.Contains)
+            .WithErrorCode(ErrorCodes.FieldOtpPurposeInvalid)
+            .WithMessage("OTP purpose is not valid.");
     }
 }

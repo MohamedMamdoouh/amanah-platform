@@ -178,11 +178,18 @@ See section 6.
 
 ### 5.1 Authentication
 
-- **Method:** phone number + OTP as the sole signup/login method.
+- **Method:** phone number + password for sign-in; OTP verifies phone ownership on first signup and on password reset only.
+- **Sign-in:** returning users authenticate with phone + password. No OTP is sent on login.
+- **Sign-up:** new users pass a bot check, receive an SMS OTP (`purpose=signup`), verify the code, then submit display name + password + Terms acceptance to create the account.
+- **Password reset:** users pass a bot check, receive an SMS OTP (`purpose=password_reset`), verify the code, then set a new password. All existing sessions are revoked on reset.
+- **Password rules:** minimum **8** characters; validated server-side and client-side.
 - **Accepted phone inputs:** Egyptian mobile numbers only (`01XXXXXXXXX` or international `+20XXXXXXXXXX`). Formatting variants of the same number count as one identity for uniqueness and OTP send limits.
 - **Display name rules:** required at signup, 3-40 chars, Arabic/Latin letters + digits + spaces + `- _ .`; not unique; not editable after signup in v1.
-- **Account creation point:** an account exists only once the user has submitted a display name and accepted the Terms. Abandoning signup after OTP verification leaves no account behind.
-- **OTP delivery:** SMS one-time code.
+- **Account creation point:** an account exists only once the user has submitted a display name, password, and accepted the Terms. Abandoning signup after OTP verification leaves no account behind.
+- **OTP delivery:** SMS one-time code (signup and password reset only).
+- **OTP send rules:**
+  - `purpose=signup`: rejected with `auth.account_exists` if the phone already has an account.
+  - `purpose=password_reset`: returns success without sending SMS if the phone has no account (prevents enumeration).
 - **Code rules:** 6-digit code, valid **10 minutes**; up to **3** entry attempts per code; after 3 failures the code is void and the user must request a new one (which counts toward send limits).
 - **Send limits (per phone, rolling windows):**
   - New code / resend only after **120 seconds** since the last send.
@@ -197,7 +204,7 @@ See section 6.
 - **Phone change:** out of scope in v1 - neither self-serve nor admin-assisted.
 - **Account deletion:** self-serve, but **blocked** while the user has a report in `Claim In Progress` or holds an approved claim on someone else's report - the claim must be cancelled first (6.7). Once eligible: their reports in `Pending Review` or `Published` are withdrawn (closing any pending claims on them), their own `Pending` claims are withdrawn, and they are signed out immediately. Chat message bodies remain until the normal chat retention deadline while sender identity is anonymized immediately. Direct personal data is purged within **30 days** per section 12.
 - **Roles:** `User`, `Admin`.
-- **Admin bootstrap:** the initial admin account is provisioned at launch; no in-app admin promotion in v1.
+- **Admin bootstrap:** the initial admin account is provisioned at launch from `ADMIN_PHONE` + `ADMIN_PASSWORD` environment variables; no in-app admin promotion in v1.
 
 ### 5.2 Report categories & fields
 
@@ -581,8 +588,8 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 
 | Item                                          | Status                                                                                                               |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| OTP / SMS provider                            | **Done** - [Unimtx](https://www.unimtx.com/) via `UnimtxSmsSender` ([deployment.md](./deployment.md)) |
-| API error contract appendix                   | **Resolved** - [api-error-contract.md](./api-error-contract.md)                                                      |
+| OTP / SMS provider                            | **Done** - [Unimtx](https://www.unimtx.com/) via `UnimtxSmsSender` ([deployment.md](../docs/deployment.md)) |
+| API error contract appendix                   | **Resolved** - [00-api-conventions.md](./00-api-conventions.md)                                                      |
 | SignalR event/payload contract                | **Pending** before implementation                                                                                    |
 | Transactional email provider for admin alerts | **To be chosen** before launch                                                                                       |
 | Domain name                                   | **To be chosen** before launch                                                                                       |
@@ -654,16 +661,21 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 - **Takedown during `Claim In Progress`:** the approved claim is cancelled first, the report becomes `Removed by Admin`, and the chat becomes read-only immediately.
 - **In-chat report shortcut:** a user in a chat thread can open the listing-flag flow for the linked report; if they already have an open flag, the UI shows that flag instead of creating a duplicate.
 
-### 15.7 Authentication (OTP)
+### 15.7 Authentication
 
-- **Successful send:** given a passed bot check and a phone under the send limits, an SMS is sent and the user can complete signup or login with the code.
+- **Sign-in:** returning users authenticate with phone + password; wrong credentials return a generic `auth.invalid_credentials` message.
+- **Sign-up OTP:** given a passed bot check, an unregistered phone under send limits, and `purpose=signup`, an SMS is sent and the user can verify to receive a signup handoff token.
+- **Sign-up completion:** after OTP verification the user submits display name + password + Terms acceptance to create the account.
+- **Password reset:** given a registered phone, `purpose=password_reset`, and passed bot check, an SMS is sent; after verification the user sets a new password and all sessions are revoked.
+- **Signup blocked for existing phone:** OTP send with `purpose=signup` for a registered phone returns `auth.account_exists` and no SMS is sent.
+- **Reset opaque for unknown phone:** OTP send with `purpose=password_reset` for an unregistered phone returns **204** without sending SMS.
 - **Resend cooldown:** a resend requested less than **120 seconds** after the last send is blocked with a clear wait message and no SMS is sent.
 - **Hourly send limit:** after **2** sends for the same phone in the rolling hour, further requests are blocked with a clear limit message and no SMS is sent.
 - **Daily send limit:** after **3** sends for the same phone in the rolling day, further requests are blocked with a clear limit message and no SMS is sent.
 - **Verification attempt limit:** after **3** failed entries the code is void and a new code must be requested.
-- **Account creation point:** abandoning signup after OTP verification but before submitting a display name and accepting the Terms leaves no account, and the same phone can start signup again.
+- **Account creation point:** abandoning signup after OTP verification but before submitting display name, password, and Terms leaves no account, and the same phone can start signup again.
 - **Banned sign-in:** a banned user's sign-in is refused with the recorded ban reason.
-- **Provider outage:** when the verification service is unavailable, signup/login is blocked with a clear temporary-unavailable message and no access is granted.
+- **Provider outage:** when the verification service is unavailable, signup/password-reset OTP is blocked with a clear temporary-unavailable message and no access is granted.
 
 ### 15.8 Privacy and permissions
 
@@ -692,7 +704,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 - **Frontend:** Angular 19 SPA, Arabic-first RTL layout. Plain client-side rendering - no SSR in v1.
 - **Backend:** ASP.NET Core 10 Web API, with SignalR for real-time chat (5.6).
 - **Database:** PostgreSQL (EF Core + Npgsql). Hosted on **Supabase** in production (managed Postgres). Local dev uses native PostgreSQL on Windows; integration tests use PostgreSQL via Testcontainers.
-- **Hosting:** **Render** Free Docker web service — serves Angular SPA and .NET API from one origin. See [deployment.md](./deployment.md).
+- **Hosting:** **Render** Free Docker web service — serves Angular SPA and .NET API from one origin. See [deployment.md](../docs/deployment.md).
 - **Object storage:** **Cloudflare R2** (S3-compatible) - `public/` and `private/` prefixes for media.
 - **Private media access:** private report photos (`photosPrivate` categories) and claim photos are served via short-lived **pre-signed URLs (5-minute expiry)**, generated per request after the access-control check in section 9. Authorized viewers: reporter and admin for report photos; claimant, reporter, and (during a flagged-listing investigation) admin for claim photos.
 - **Expired private URL behavior:** if a private image URL expires while viewing, the client silently requests a fresh authorized URL and retries.
@@ -747,7 +759,7 @@ Implementation notes:
 
 Implementation for section 5.1:
 
-- **OTP:** Unimtx via `UnimtxSmsSender` in production; `ConsoleSmsSender` in local dev. See [deployment.md](./deployment.md).
+- **OTP:** Unimtx via `UnimtxSmsSender` in production; `ConsoleSmsSender` in local dev. See [deployment.md](../docs/deployment.md).
 - **Account creation:** `User` row created only when display name and Terms are submitted.
 - **Session:** JWT access token (15 minutes) + refresh token (30 days), rotating on refresh. Multi-device allowed.
 - **Logout everywhere:** revokes all refresh tokens; active access tokens expire within one access-token lifetime.
@@ -794,4 +806,4 @@ Per section 7.5. On limit exceed: HTTP `429` with `Retry-After` header.
 - **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: section 14.
 - **Budget:** ~$0/month infra for MVP testing (Render + Supabase free tiers); ~$5/month recommended before public launch for always-on API. SMS via Unimtx (pay-as-you-go, ~$0.135/SMS in Egypt).
 - **Domain:** section 14.
-- **Hosting:** Render (API + static frontend) + Supabase Postgres + Cloudflare R2, outside Egypt (section 5.8). See [deployment.md](./deployment.md).
+- **Hosting:** Render (API + static frontend) + Supabase Postgres + Cloudflare R2, outside Egypt (section 5.8). See [deployment.md](../docs/deployment.md).

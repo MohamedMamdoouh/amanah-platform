@@ -1,6 +1,6 @@
 ﻿# Phase 01 - Platform Foundation
 
-**Status:** In progress  
+**Status:** Complete  
 **Prerequisites:** None (first phase)
 
 ## Progress
@@ -11,7 +11,7 @@
 | Monorepo scaffold (API + Angular + Postgres)                         | Yes                                 |
 | API plumbing (errors, rate limit, tests)                             | Yes                                 |
 | Auth DB (EF Core entities + migration)                               | Yes                                 |
-| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Partial — Render live; Unimtx SMS wired; acceptance testing pending |
+| Utilities, OTP, sessions, schema/seeds, UI, deploy                   | Yes                                 |
 | Cache foundation (`ICacheService` + `HybridCache`, no consumers yet) | Yes                                 |
 
 ---
@@ -56,7 +56,7 @@ Resolve **before starting** this phase:
 
 | Item                        | Notes                                                                                   |
 | --------------------------- | --------------------------------------------------------------------------------------- |
-| OTP / SMS provider          | **Done** — [Unimtx](https://www.unimtx.com/) via `UnimtxSmsSender` ([deployment.md](./deployment.md)) |
+| OTP / SMS provider          | **Done** — [Unimtx](https://www.unimtx.com/) via `UnimtxSmsSender` ([deployment.md](../docs/deployment.md)) |
 | API error contract appendix | Define standard error shape (`code`, `message`, field errors) before any endpoints ship |
 
 ---
@@ -67,10 +67,11 @@ Resolve **before starting** this phase:
 
 | Method | Route                            | Purpose                                                                 |
 | ------ | -------------------------------- | ----------------------------------------------------------------------- |
-| POST   | `/api/v1/auth/otp/send`          | Send OTP after bot check + send-limit validation                        |
-| POST   | `/api/v1/auth/otp/verify`        | Verify code; returns signup/login handoff token                         |
-| POST   | `/api/v1/auth/register`          | Complete signup: display name + ToS acceptance -> create `User`         |
-| POST   | `/api/v1/auth/login`             | Login for returning users (after OTP verify)                            |
+| POST   | `/api/v1/auth/otp/send`          | Send OTP (`purpose`: `signup` or `password_reset`) after bot check + send-limit validation |
+| POST   | `/api/v1/auth/otp/verify`        | Verify code; returns signup or reset handoff token                                         |
+| POST   | `/api/v1/auth/register`          | Complete signup: display name + password + ToS acceptance -> create `User`                 |
+| POST   | `/api/v1/auth/login`             | Sign in with phone + password                                                              |
+| POST   | `/api/v1/auth/password/reset`    | Set new password after OTP verification; revokes all sessions                              |
 | POST   | `/api/v1/auth/refresh`           | Rotate refresh token; issue new access token                            |
 | POST   | `/api/v1/auth/logout`            | Revoke current refresh token                                            |
 | POST   | `/api/v1/auth/logout-everywhere` | Revoke all refresh tokens for user                                      |
@@ -81,7 +82,7 @@ Resolve **before starting** this phase:
 | Route      | Access | Purpose                                    |
 | ---------- | ------ | ------------------------------------------ |
 | `/`        | Public | Landing page (browse/report CTAs deferred to Phase 02) |
-| `/login`   | Public | Phone + OTP signup/login flow              |
+| `/login`   | Public | Sign-in, sign-up (OTP + profile), and forgot-password flow |
 | `/terms`   | Public | Terms of Service (static)                  |
 | `/privacy` | Public | Privacy Policy (static)                    |
 | `/safety`  | Public | Safety guidance (static)                   |
@@ -96,7 +97,7 @@ Resolve **before starting** this phase:
 - **Production:** Supabase managed PostgreSQL; **Session pooler** on Render (IPv4), direct connection for local dev.
 - EF Core migration creating all Section 17 entities: `User`, `Category`, `CategoryFieldDefinition`, `Governorate`, `Report`, `CategoryField`, `ReportPhoto`, `Claim`, `Resolution`, `ChatThread`, `Message`, `Notification`, `OtpCode`, `RefreshToken`, `AbuseReport`, `ModerationAction`
 - Seed migration: 8 default categories + field definitions (English `code` / `fieldKey` only), 27 governorates (`code` + `sortOrder`); Arabic labels in `web/src/assets/i18n/ar/categories.json` and `governorates.json`
-- Admin user seeded from `ADMIN_PHONE` environment variable at deploy
+- Admin user seeded from `ADMIN_PHONE` + `ADMIN_PASSWORD` environment variables at deploy
 - Indexes on `User.normalizedPhone`, `OtpCode.phone`, `RefreshToken.userId`
 
 ### Infrastructure
@@ -105,7 +106,7 @@ Resolve **before starting** this phase:
 - Supabase: managed PostgreSQL (not Render Postgres)
 - Cloudflare R2: public and private prefix wiring via `Bucket__*` env vars (no upload endpoints yet)
 - EF Core migrations run on API startup
-- Environment variables documented in [deployment.md](./deployment.md)
+- Environment variables documented in [deployment.md](../docs/deployment.md)
 
 ### Shared utilities
 
@@ -162,23 +163,28 @@ Explicitly deferred to later phases:
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.7](./SPEC.md#157-authentication-otp).
+From [SPEC.md Section 15.7](./SPEC.md#157-authentication).
 
-- [ ] **Successful send:** given a passed bot check and a phone under the send limits, an SMS is sent and the user can complete signup or login with the code
-- [ ] **Resend cooldown:** a resend requested less than **120 seconds** after the last send is blocked with a clear wait message and no SMS is sent
-- [ ] **Hourly send limit:** after **2** sends for the same phone in the rolling hour, further requests are blocked with a clear limit message and no SMS is sent
-- [ ] **Daily send limit:** after **3** sends for the same phone in the rolling day, further requests are blocked with a clear limit message and no SMS is sent
-- [ ] **Verification attempt limit:** after **3** failed entries the code is void and a new code must be requested
-- [ ] **Account creation point:** abandoning signup after OTP verification but before submitting a display name and accepting the Terms leaves no account, and the same phone can start signup again
-- [ ] **Banned sign-in:** a banned user's sign-in is refused with the recorded ban reason
-- [ ] **Provider outage:** when the verification service is unavailable, signup/login is blocked with a clear temporary-unavailable message and no access is granted
+- [x] **Sign-in:** returning users authenticate with phone + password; wrong credentials return generic `auth.invalid_credentials`
+- [x] **Sign-up OTP:** given a passed bot check, unregistered phone under send limits, and `purpose=signup`, an SMS is sent and verification returns a signup handoff token
+- [x] **Sign-up completion:** after OTP verification the user submits display name + password + Terms acceptance to create the account
+- [x] **Password reset:** registered phone + `purpose=password_reset` sends OTP; after verification user sets new password and all sessions are revoked
+- [x] **Signup blocked for existing phone:** OTP send with `purpose=signup` for registered phone returns `auth.account_exists` with no SMS
+- [x] **Reset opaque for unknown phone:** OTP send with `purpose=password_reset` for unregistered phone returns 204 without SMS
+- [x] **Resend cooldown:** a resend requested less than **120 seconds** after the last send is blocked with a clear wait message and no SMS is sent
+- [x] **Hourly send limit:** after **2** sends for the same phone in the rolling hour, further requests are blocked with a clear limit message and no SMS is sent
+- [x] **Daily send limit:** after **3** sends for the same phone in the rolling day, further requests are blocked with a clear limit message and no SMS is sent
+- [x] **Verification attempt limit:** after **3** failed entries the code is void and a new code must be requested
+- [x] **Account creation point:** abandoning signup after OTP verification but before submitting display name, password, and Terms leaves no account, and the same phone can start signup again
+- [x] **Banned sign-in:** a banned user's sign-in is refused with the recorded ban reason
+- [x] **Provider outage:** when the verification service is unavailable, signup/password-reset OTP is blocked with a clear temporary-unavailable message and no access is granted
 
 **Additional phase gate:**
 
-- [ ] Admin role guard blocks non-admin access to `/admin`
-- [ ] JWT access token (15 min) + refresh token (30 days) with rotation on refresh
-- [ ] Logout everywhere revokes all refresh tokens
-- [ ] Seed data: 8 categories with field defs, 27 governorates present after migration
+- [x] Admin role guard blocks non-admin access to `/admin`
+- [x] JWT access token (15 min) + refresh token (30 days) with rotation on refresh
+- [x] Logout everywhere revokes all refresh tokens
+- [x] Seed data: 8 categories with field defs, 27 governorates present after migration
 
 ---
 
@@ -186,23 +192,23 @@ From [SPEC.md Section 15.7](./SPEC.md#157-authentication-otp).
 
 ### Automated tests
 
-- [ ] OTP send limits (cooldown, hourly, daily) with no SMS sent when blocked
-- [ ] OTP verification: success, 3-attempt void, expired code rejection
-- [ ] Account created only after display name + ToS; abandoned signup leaves no `User` row
-- [ ] JWT issue, refresh rotation, logout, logout-everywhere
-- [ ] Banned user rejected at login and token refresh
-- [ ] Admin bootstrap: seeded phone has `Admin` role
-- [ ] API error contract shape on validation and auth failures
-- [ ] `ICacheService` unit tests: get-or-set and remove (`api.Tests/Infrastructure/CacheServiceTests.cs`)
+- [x] OTP send limits (cooldown, hourly, daily) with no SMS sent when blocked
+- [x] OTP verification: success, 3-attempt void, expired code rejection
+- [x] Account created only after display name + ToS; abandoned signup leaves no `User` row
+- [x] JWT issue, refresh rotation, logout, logout-everywhere
+- [x] Banned user rejected at login and token refresh
+- [x] Admin bootstrap: seeded phone has `Admin` role and password from `ADMIN_PASSWORD`
+- [x] API error contract shape on validation and auth failures
+- [x] `ICacheService` unit tests: get-or-set and remove (`api.Tests/Infrastructure/CacheServiceTests.cs`)
 
 ### Manual smoke checklist
 
-- [ ] Deploy to production stack; migrations apply cleanly (see [deployment.md](./deployment.md))
-- [ ] Receive real SMS OTP on Egyptian mobile number
-- [ ] Complete signup with Arabic display name; RTL layout renders correctly
-- [ ] Terms, Privacy, Safety, Support pages reachable from footer (logged out)
-- [ ] Non-admin user redirected/blocked from `/admin`
-- [ ] Bot check blocks OTP send when failed
+- [x] Deploy to production stack; migrations apply cleanly (see [deployment.md](../docs/deployment.md))
+- [x] Receive real SMS OTP on Egyptian mobile number
+- [x] Complete signup with Arabic display name; RTL layout renders correctly
+- [x] Terms, Privacy, Safety, Support pages reachable from footer (logged out)
+- [x] Non-admin user redirected/blocked from `/admin`
+- [x] Bot check blocks OTP send when failed
 
 ### Phase exit gate
 

@@ -2,6 +2,7 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Data.Seeds;
 using Amanah.Api.Services.Auth;
+using Amanah.Api.Tests.Auth;
 using Amanah.Api.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,7 +81,7 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
   }
 
   [Fact]
-  public async Task Seed_bootstraps_admin_user_from_admin_phone()
+  public async Task Seed_bootstraps_admin_user_from_admin_phone_and_password()
   {
     await RunWithSeededContextAsync(async context =>
     {
@@ -91,7 +92,33 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
 
       Assert.Equal(UserRole.Admin, admin.Role);
       Assert.Equal("Admin", admin.DisplayName);
+      Assert.False(string.IsNullOrWhiteSpace(admin.PasswordHash));
     });
+  }
+
+  [Fact]
+  public async Task Seeded_admin_can_login_with_admin_password()
+  {
+    await using var scope = factory.Services.CreateAsyncScope();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await context.Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<CatalogSeeder>().SeedAsync();
+
+    var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+    {
+      HandleCookies = true,
+    });
+
+    await using var authContext = new OtpSendTestContext(
+      client,
+      factory.SmsSender,
+      factory.CaptchaVerifier,
+      factory.Services.CreateAsyncScope());
+
+    var (response, session) = await authContext.LoginAsync("01011111111", "AdminPass123");
+
+    Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+    Assert.Equal("Admin", session?.User.Role);
   }
 
   [Fact]

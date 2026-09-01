@@ -7,6 +7,12 @@ namespace Amanah.Api.Validators.Auth;
 
 public sealed class SendOtpRequestValidator : AbstractValidator<SendOtpRequest>
 {
+    private static readonly HashSet<string> AllowedPurposes =
+    [
+        OtpPurposes.Signup,
+        OtpPurposes.PasswordReset,
+    ];
+
     public SendOtpRequestValidator()
     {
         RuleFor(request => request.Phone)
@@ -21,5 +27,13 @@ public sealed class SendOtpRequestValidator : AbstractValidator<SendOtpRequest>
             .NotEmpty()
             .WithErrorCode(ErrorCodes.FieldCaptchaTokenRequired)
             .WithMessage("Captcha verification is required.");
+
+        RuleFor(request => request.Purpose)
+            .NotEmpty()
+            .WithErrorCode(ErrorCodes.FieldOtpPurposeRequired)
+            .WithMessage("OTP purpose is required.")
+            .Must(AllowedPurposes.Contains)
+            .WithErrorCode(ErrorCodes.FieldOtpPurposeInvalid)
+            .WithMessage("OTP purpose is not valid.");
     }
 }

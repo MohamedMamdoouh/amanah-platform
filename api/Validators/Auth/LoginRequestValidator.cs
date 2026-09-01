@@ -17,9 +17,9 @@ public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
             .WithErrorCode(ErrorCodes.FieldPhoneInvalid)
             .WithMessage("Phone number format is not valid.");
 
-        RuleFor(request => request.LoginToken)
+        RuleFor(request => request.Password)
             .NotEmpty()
-            .WithErrorCode(ErrorCodes.FieldLoginTokenRequired)
-            .WithMessage("Login token is required.");
+            .WithErrorCode(ErrorCodes.FieldPasswordRequired)
+            .WithMessage("Password is required.");
     }
 }

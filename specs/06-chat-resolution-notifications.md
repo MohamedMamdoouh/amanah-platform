@@ -43,7 +43,7 @@ Resolve **before starting** this phase:
 
 | Item | Notes |
 | ---- | ----- |
-| SignalR event/payload contract | Define in `docs/signalr-contract.md` before starting this phase |
+| SignalR event/payload contract | Define in `specs/signalr-contract.md` before starting this phase |
 
 ---
 

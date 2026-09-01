@@ -28,6 +28,7 @@ public sealed class OtpSendTestContext : IAsyncDisposable
         CaptchaVerifier = captchaVerifier;
         _scope = scope;
         DbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        PasswordHasher = scope.ServiceProvider.GetRequiredService<UserPasswordHasher>();
     }
 
     public HttpClient Client { get; }
@@ -38,26 +39,34 @@ public sealed class OtpSendTestContext : IAsyncDisposable
 
     public AppDbContext DbContext { get; }
 
+    public UserPasswordHasher PasswordHasher { get; }
+
     public OtpSmsOutboxDispatcher Dispatcher =>
         _scope.ServiceProvider.GetRequiredService<OtpSmsOutboxDispatcher>();
 
-    public async Task<HttpResponseMessage> SendOtpAsync(string phone, string captchaToken = "valid-token")
+    public async Task<HttpResponseMessage> SendOtpAsync(
+        string phone,
+        string purpose = OtpPurposes.Signup,
+        string captchaToken = "valid-token")
     {
         return await Client.PostAsJsonAsync("/api/v1/auth/otp/send", new
         {
             phone,
             captchaToken,
+            purpose,
         });
     }
 
     public async Task<(HttpResponseMessage Response, VerifyOtpResponse? Body)> VerifyOtpAsync(
         string phone,
-        string code)
+        string code,
+        string purpose = OtpPurposes.Signup)
     {
         var response = await Client.PostAsJsonAsync("/api/v1/auth/otp/verify", new
         {
             phone,
             code,
+            purpose,
         });
 
         VerifyOtpResponse? body = response.IsSuccessStatusCode
@@ -67,9 +76,11 @@ public sealed class OtpSendTestContext : IAsyncDisposable
         return (response, body);
     }
 
-    public async Task<string> SendOtpAndGetCodeAsync(string phone)
+    public async Task<string> SendOtpAndGetCodeAsync(
+        string phone,
+        string purpose = OtpPurposes.Signup)
     {
-        var response = await SendOtpAsync(phone);
+        var response = await SendOtpAsync(phone, purpose);
         if (response.StatusCode != System.Net.HttpStatusCode.NoContent)
         {
             throw new InvalidOperationException(
@@ -83,12 +94,14 @@ public sealed class OtpSendTestContext : IAsyncDisposable
     public async Task<(HttpResponseMessage Response, AuthSessionResponse? Body)> RegisterAsync(
         string signupToken,
         string displayName = "Ahmed",
+        string password = TestAuthHelpers.DefaultPassword,
         bool acceptTerms = true)
     {
         var response = await Client.PostAsJsonAsync("/api/v1/auth/register", new
         {
             signupToken,
             displayName,
+            password,
             acceptTerms,
         });
 
@@ -101,12 +114,29 @@ public sealed class OtpSendTestContext : IAsyncDisposable
 
     public async Task<(HttpResponseMessage Response, AuthSessionResponse? Body)> LoginAsync(
         string phone,
-        string loginToken)
+        string password = TestAuthHelpers.DefaultPassword)
     {
         var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new
         {
             phone,
-            loginToken,
+            password,
+        });
+
+        AuthSessionResponse? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<AuthSessionResponse>()
+            : null;
+
+        return (response, body);
+    }
+
+    public async Task<(HttpResponseMessage Response, AuthSessionResponse? Body)> ResetPasswordAsync(
+        string resetToken,
+        string password = "NewPass123")
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/password/reset", new
+        {
+            resetToken,
+            password,
         });
 
         AuthSessionResponse? body = response.IsSuccessStatusCode
@@ -167,11 +197,16 @@ public sealed class OtpSendTestContext : IAsyncDisposable
         return (response, body);
     }
 
-    public async Task<(AuthSessionResponse Session, string Phone)> RegisterNewUserAsync(string phone = "01012345678")
+    public async Task<(AuthSessionResponse Session, string Phone)> RegisterNewUserAsync(
+        string phone = "01012345678",
+        string password = TestAuthHelpers.DefaultPassword)
     {
         var code = await SendOtpAndGetCodeAsync(phone);
         var (_, verifyBody) = await VerifyOtpAsync(phone, code);
-        var (registerResponse, session) = await RegisterAsync(verifyBody!.SignupToken!, "Ahmed");
+        var (registerResponse, session) = await RegisterAsync(
+            verifyBody!.SignupToken!,
+            "Ahmed",
+            password);
 
         if (registerResponse.StatusCode != System.Net.HttpStatusCode.OK || session is null)
         {

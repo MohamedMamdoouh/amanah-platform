@@ -1,6 +1,6 @@
 # Amanah
 
-Lost-and-found platform for Egypt. [SPEC](docs/SPEC.md) · [API error contract](docs/api-error-contract.md) · [Phase 01](docs/PHASE-01-platform-foundation.md) · [Deployment](docs/deployment.md)
+Lost-and-found platform for Egypt. [SPEC](specs/SPEC.md) · [API conventions](specs/00-api-conventions.md) · [Phase 01](specs/01-platform-foundation.md) · [Deployment](docs/deployment.md)
 
 ## Local run
 

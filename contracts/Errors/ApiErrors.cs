@@ -1,5 +1,10 @@
 namespace Amanah.Contracts.Errors;
 
+public record ApiError(
+    string Code,
+    string Message,
+    Dictionary<string, string[]>? Errors = null);
+
 public static class ErrorCodes
 {
     public const string ValidationFailed = "validation.failed";
@@ -9,6 +14,8 @@ public static class ErrorCodes
     public const string OtpExpired = "auth.otp_expired";
     public const string OtpVoid = "auth.otp_void";
     public const string HandoffTokenInvalid = "auth.handoff_token_invalid";
+    public const string InvalidCredentials = "auth.invalid_credentials";
+    public const string AccountExists = "auth.account_exists";
     public const string TokenExpired = "auth.token_expired";
     public const string RefreshInvalid = "auth.refresh_invalid";
     public const string Banned = "auth.banned";
@@ -30,8 +37,17 @@ public static class ErrorCodes
     public const string FieldAcceptTermsRequired = "field.accept_terms.required";
     public const string FieldSignupTokenRequired = "field.signup_token.required";
     public const string FieldCaptchaTokenRequired = "field.captcha_token.required";
-    public const string FieldLoginTokenRequired = "field.login_token.required";
+    public const string FieldPasswordRequired = "field.password.required";
+    public const string FieldPasswordTooShort = "field.password.too_short";
+    public const string FieldPasswordInvalid = "field.password.invalid";
+    public const string FieldResetTokenRequired = "field.reset_token.required";
+    public const string FieldOtpPurposeRequired = "field.otp_purpose.required";
+    public const string FieldOtpPurposeInvalid = "field.otp_purpose.invalid";
     public const string FieldRefreshTokenRequired = "field.refresh_token.required";
     public const string FieldOtpCodeRequired = "field.otp_code.required";
     public const string FieldOtpCodeInvalid = "field.otp_code.invalid";
+
+    public const string ReportDailyQuota = "report.daily_quota";
+    public const string ReportOpenCap = "report.open_cap";
+    public const string ReportContactInfo = "report.contact_info";
 }

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Amanah.Api.Filters;
 using Amanah.Api.Middleware;
 using Amanah.Api.Options;
+using Amanah.Api.Services.Catalog;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Amanah.Api.Extensions;
@@ -15,6 +16,8 @@ public static class DependencyInjection
     {
         services.AddDatabase(configuration);
         services.AddApiCaching(configuration);
+        services.AddCatalogServices();
+        services.AddReportServices();
         services.AddOptions<BucketOptions>()
             .Bind(configuration.GetSection(BucketOptions.SectionName));
         services.AddHttpTimeouts(configuration);

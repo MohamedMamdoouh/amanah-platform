@@ -1,4 +1,6 @@
+using Amanah.Api.Services.Catalog;
 using Amanah.Api.Tests.Auth.Fakes;
+using Amanah.Api.Tests.Catalog;
 using Amanah.Api.Services.External;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -36,6 +38,9 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
                 ["Jwt:AccessTokenSigningKey"] = "test-access-signing-key-at-least-32-characters!",
                 ["Jwt:HandoffTokenSigningKey"] = "test-handoff-signing-key-at-least-32-characters!",
                 ["ADMIN_PHONE"] = "+201011111111",
+                ["ADMIN_PASSWORD"] = "AdminPass123",
+                ["RateLimit:Policies:auth-login:PermitLimit"] = "1000",
+                ["RateLimit:Policies:auth-login:WindowSeconds"] = "3600",
             });
         });
 
@@ -43,8 +48,15 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
         {
             services.RemoveAll<ISmsSender>();
             services.RemoveAll<ICaptchaVerifier>();
+            services.RemoveAll<ICategoryLoader>();
+            services.RemoveAll<IGovernorateLoader>();
             services.AddSingleton<ISmsSender>(SmsSender);
             services.AddSingleton<ICaptchaVerifier>(CaptchaVerifier);
+            services.AddScoped<CategoryLoader>();
+            services.AddScoped<CountingCategoryLoader>(sp =>
+                new CountingCategoryLoader(sp.GetRequiredService<CategoryLoader>()));
+            services.AddScoped<ICategoryLoader>(sp => sp.GetRequiredService<CountingCategoryLoader>());
+            services.AddScoped<IGovernorateLoader, GovernorateLoader>();
         });
     }
 

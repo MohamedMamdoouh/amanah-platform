@@ -1,8 +1,26 @@
 <section class="auth-card" aria-labelledby="login-title">
   <header class="auth-card__header">
+  <nav class="auth-card__modes" aria-label="Auth modes">
+    <button
+      type="button"
+      class="auth-card__mode"
+      [class.auth-card__mode--active]="mode() === 'signin'"
+      (click)="setMode('signin')"
+    >
+      {{ "auth.login.mode_signin" | translate }}
+    </button>
+    <button
+      type="button"
+      class="auth-card__mode"
+      [class.auth-card__mode--active]="mode() === 'signup'"
+      (click)="setMode('signup')"
+    >
+      {{ "auth.login.mode_signup" | translate }}
+    </button>
+  </nav>
     <p class="auth-card__step">{{ stepLabelKey() | translate }}</p>
     <h1 id="login-title" class="auth-card__title">
-      {{ "auth.login.title" | translate }}
+      {{ titleKey() | translate }}
     </h1>
   </header>
 
@@ -10,175 +28,340 @@
     <p class="auth-card__error" role="alert">{{ summaryError() }}</p>
   }
 
-  @switch (step()) {
-    @case ("phone") {
-      <form
-        class="auth-form"
-        [formGroup]="phoneForm"
-        (ngSubmit)="submitPhone()"
-      >
-        <label class="auth-form__field">
-          <span class="auth-form__label">{{
-            "auth.login.phone_label" | translate
-          }}</span>
-          <input
-            type="tel"
-            formControlName="phone"
-            class="auth-form__input"
-            inputmode="tel"
-            autocomplete="tel"
-            dir="ltr"
-          />
-          <span class="auth-form__hint">{{
-            "auth.login.phone_hint" | translate
-          }}</span>
-          @if (fieldError("phone")) {
-            <span class="auth-form__field-error" role="alert">{{
-              fieldError("phone")
-            }}</span>
-          }
-        </label>
-
-        <app-turnstile-widget
-          #turnstile
-          (tokenResolved)="onCaptchaToken($event)"
-          (tokenExpired)="onCaptchaExpired()"
-          (tokenErrored)="onCaptchaErrored()"
+  @if (mode() === "signin") {
+    <form
+      class="auth-form"
+      [formGroup]="signInForm"
+      (ngSubmit)="submitSignIn()"
+    >
+      <label class="auth-form__field">
+        <span class="auth-form__label">{{
+          "auth.login.phone_label" | translate
+        }}</span>
+        <input
+          type="tel"
+          formControlName="phone"
+          class="auth-form__input"
+          inputmode="tel"
+          autocomplete="tel"
+          dir="ltr"
         />
-
-        @if (fieldError("captchaToken")) {
+        <span class="auth-form__hint">{{
+          "auth.login.phone_hint" | translate
+        }}</span>
+        @if (fieldError("phone")) {
           <span class="auth-form__field-error" role="alert">{{
-            fieldError("captchaToken")
+            fieldError("phone")
           }}</span>
         }
+      </label>
 
-        <button
-          type="submit"
-          class="auth-form__submit"
-          [disabled]="phoneForm.invalid || !captchaToken() || submitting()"
-        >
-          {{ "auth.login.phone_submit" | translate }}
-        </button>
-      </form>
-    }
-
-    @case ("otp") {
-      <form class="auth-form" [formGroup]="otpForm" (ngSubmit)="submitOtp()">
-        <label class="auth-form__field">
-          <span class="auth-form__label">{{
-            "auth.login.otp_label" | translate
-          }}</span>
-          <input
-            type="text"
-            formControlName="code"
-            class="auth-form__input auth-form__input--otp"
-            inputmode="numeric"
-            maxlength="6"
-            autocomplete="one-time-code"
-            dir="ltr"
-          />
-          @if (fieldError("code")) {
-            <span class="auth-form__field-error" role="alert">{{
-              fieldError("code")
-            }}</span>
-          }
-        </label>
-
-        <button
-          type="submit"
-          class="auth-form__submit"
-          [disabled]="otpForm.invalid || submitting()"
-        >
-          {{ "auth.login.otp_submit" | translate }}
-        </button>
-
-        <app-turnstile-widget
-          #turnstile
-          (tokenResolved)="onCaptchaToken($event)"
-          (tokenExpired)="onCaptchaExpired()"
-          (tokenErrored)="onCaptchaErrored()"
+      <label class="auth-form__field">
+        <span class="auth-form__label">{{
+          "auth.login.password_label" | translate
+        }}</span>
+        <input
+          type="password"
+          formControlName="password"
+          class="auth-form__input"
+          autocomplete="current-password"
         />
-
-        @if (fieldError("captchaToken")) {
+        @if (fieldError("password")) {
           <span class="auth-form__field-error" role="alert">{{
-            fieldError("captchaToken")
+            fieldError("password")
           }}</span>
         }
+      </label>
 
-        <button
-          type="button"
-          class="auth-form__secondary"
-          [disabled]="resendCooldown() > 0 || submitting() || !captchaToken()"
-          (click)="resendOtp()"
-        >
-          @if (resendCooldown() > 0) {
-            {{
-              "auth.login.resend_wait"
-                | translate: { seconds: resendCooldown() }
-            }}
-          } @else {
-            {{ "auth.login.resend" | translate }}
-          }
-        </button>
-      </form>
-    }
-
-    @case ("register") {
-      <form
-        class="auth-form"
-        [formGroup]="registerForm"
-        (ngSubmit)="submitRegister()"
+      <button
+        type="submit"
+        class="auth-form__submit"
+        [disabled]="signInForm.invalid || submitting()"
       >
-        <label class="auth-form__field">
-          <span class="auth-form__label">{{
-            "auth.login.display_name_label" | translate
-          }}</span>
-          <input
-            type="text"
-            formControlName="displayName"
-            class="auth-form__input"
-            autocomplete="nickname"
+        {{ "auth.login.signin_submit" | translate }}
+      </button>
+
+      <button
+        type="button"
+        class="auth-form__secondary"
+        (click)="setMode('forgot')"
+      >
+        {{ "auth.login.forgot_password" | translate }}
+      </button>
+    </form>
+  } @else {
+    @switch (step()) {
+      @case ("phone") {
+        <form
+          class="auth-form"
+          [formGroup]="phoneForm"
+          (ngSubmit)="submitPhone()"
+        >
+          <label class="auth-form__field">
+            <span class="auth-form__label">{{
+              "auth.login.phone_label" | translate
+            }}</span>
+            <input
+              type="tel"
+              formControlName="phone"
+              class="auth-form__input"
+              inputmode="tel"
+              autocomplete="tel"
+              dir="ltr"
+            />
+            <span class="auth-form__hint">{{
+              "auth.login.phone_hint" | translate
+            }}</span>
+            @if (fieldError("phone")) {
+              <span class="auth-form__field-error" role="alert">{{
+                fieldError("phone")
+              }}</span>
+            }
+          </label>
+
+          <app-turnstile-widget
+            #turnstile
+            (tokenResolved)="onCaptchaToken($event)"
+            (tokenExpired)="onCaptchaExpired()"
+            (tokenErrored)="onCaptchaErrored()"
           />
-          <span class="auth-form__hint">{{
-            "auth.login.display_name_hint" | translate
-          }}</span>
-          @if (fieldError("displayName")) {
+
+          @if (fieldError("captchaToken")) {
             <span class="auth-form__field-error" role="alert">{{
-              fieldError("displayName")
+              fieldError("captchaToken")
             }}</span>
           }
-        </label>
 
-        <label class="auth-form__checkbox">
-          <input type="checkbox" formControlName="acceptTerms" />
-          <span>
-            {{ "auth.login.accept_terms" | translate }}
-            <a routerLink="/terms" target="_blank" rel="noopener noreferrer">{{
-              "footer.terms" | translate
-            }}</a>
-            ·
-            <a
-              routerLink="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              >{{ "footer.privacy" | translate }}</a
+          <button
+            type="submit"
+            class="auth-form__submit"
+            [disabled]="phoneForm.invalid || !captchaToken() || submitting()"
+          >
+            {{ "auth.login.phone_submit" | translate }}
+          </button>
+
+          @if (mode() === "forgot") {
+            <button
+              type="button"
+              class="auth-form__secondary"
+              (click)="setMode('signin')"
             >
-          </span>
-        </label>
-        @if (fieldError("acceptTerms")) {
-          <span class="auth-form__field-error" role="alert">{{
-            fieldError("acceptTerms")
-          }}</span>
-        }
+              {{ "auth.login.back_to_signin" | translate }}
+            </button>
+          }
+        </form>
+      }
 
-        <button
-          type="submit"
-          class="auth-form__submit"
-          [disabled]="registerForm.invalid || submitting()"
+      @case ("otp") {
+        <form class="auth-form" [formGroup]="otpForm" (ngSubmit)="submitOtp()">
+          <label class="auth-form__field">
+            <span class="auth-form__label">{{
+              "auth.login.otp_label" | translate
+            }}</span>
+            <input
+              type="text"
+              formControlName="code"
+              class="auth-form__input auth-form__input--otp"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="one-time-code"
+              dir="ltr"
+            />
+            @if (fieldError("code")) {
+              <span class="auth-form__field-error" role="alert">{{
+                fieldError("code")
+              }}</span>
+            }
+          </label>
+
+          <button
+            type="submit"
+            class="auth-form__submit"
+            [disabled]="otpForm.invalid || submitting()"
+          >
+            {{ "auth.login.otp_submit" | translate }}
+          </button>
+
+          <app-turnstile-widget
+            #turnstile
+            (tokenResolved)="onCaptchaToken($event)"
+            (tokenExpired)="onCaptchaExpired()"
+            (tokenErrored)="onCaptchaErrored()"
+          />
+
+          @if (fieldError("captchaToken")) {
+            <span class="auth-form__field-error" role="alert">{{
+              fieldError("captchaToken")
+            }}</span>
+          }
+
+          <button
+            type="button"
+            class="auth-form__secondary"
+            [disabled]="resendCooldown() > 0 || submitting() || !captchaToken()"
+            (click)="resendOtp()"
+          >
+            @if (resendCooldown() > 0) {
+              {{
+                "auth.login.resend_wait"
+                  | translate: { seconds: resendCooldown() }
+              }}
+            } @else {
+              {{ "auth.login.resend" | translate }}
+            }
+          </button>
+        </form>
+      }
+
+      @case ("register") {
+        <form
+          class="auth-form"
+          [formGroup]="registerForm"
+          (ngSubmit)="submitRegister()"
         >
-          {{ "auth.login.register_submit" | translate }}
-        </button>
-      </form>
+          <label class="auth-form__field">
+            <span class="auth-form__label">{{
+              "auth.login.display_name_label" | translate
+            }}</span>
+            <input
+              type="text"
+              formControlName="displayName"
+              class="auth-form__input"
+              autocomplete="nickname"
+            />
+            <span class="auth-form__hint">{{
+              "auth.login.display_name_hint" | translate
+            }}</span>
+            @if (fieldError("displayName")) {
+              <span class="auth-form__field-error" role="alert">{{
+                fieldError("displayName")
+              }}</span>
+            }
+          </label>
+
+          <label class="auth-form__field">
+            <span class="auth-form__label">{{
+              "auth.login.password_label" | translate
+            }}</span>
+            <input
+              type="password"
+              formControlName="password"
+              class="auth-form__input"
+              autocomplete="new-password"
+            />
+            <span class="auth-form__hint">{{
+              "auth.login.password_hint" | translate
+            }}</span>
+            @if (fieldError("password")) {
+              <span class="auth-form__field-error" role="alert">{{
+                fieldError("password")
+              }}</span>
+            }
+          </label>
+
+          <label class="auth-form__field">
+            <span class="auth-form__label">{{
+              "auth.login.confirm_password_label" | translate
+            }}</span>
+            <input
+              type="password"
+              formControlName="confirmPassword"
+              class="auth-form__input"
+              autocomplete="new-password"
+            />
+            @if (
+              registerForm.controls.confirmPassword.hasError("passwordMismatch")
+            ) {
+              <span class="auth-form__field-error" role="alert">{{
+                "auth.login.password_mismatch" | translate
+              }}</span>
+            }
+          </label>
+
+          <label class="auth-form__checkbox">
+            <input type="checkbox" formControlName="acceptTerms" />
+            <span>
+              {{ "auth.login.accept_terms" | translate }}
+              <a routerLink="/terms" target="_blank" rel="noopener noreferrer">{{
+                "footer.terms" | translate
+              }}</a>
+              ·
+              <a
+                routerLink="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ "footer.privacy" | translate }}</a
+              >
+            </span>
+          </label>
+          @if (fieldError("acceptTerms")) {
+            <span class="auth-form__field-error" role="alert">{{
+              fieldError("acceptTerms")
+            }}</span>
+          }
+
+          <button
+            type="submit"
+            class="auth-form__submit"
+            [disabled]="registerForm.invalid || submitting()"
+          >
+            {{ "auth.login.register_submit" | translate }}
+          </button>
+        </form>
+      }
+
+      @case ("reset") {
+        <form
+          class="auth-form"
+          [formGroup]="resetForm"
+          (ngSubmit)="submitReset()"
+        >
+          <label class="auth-form__field">
+            <span class="auth-form__label">{{
+              "auth.login.new_password_label" | translate
+            }}</span>
+            <input
+              type="password"
+              formControlName="password"
+              class="auth-form__input"
+              autocomplete="new-password"
+            />
+            <span class="auth-form__hint">{{
+              "auth.login.password_hint" | translate
+            }}</span>
+            @if (fieldError("password")) {
+              <span class="auth-form__field-error" role="alert">{{
+                fieldError("password")
+              }}</span>
+            }
+          </label>
+
+          <label class="auth-form__field">
+            <span class="auth-form__label">{{
+              "auth.login.confirm_password_label" | translate
+            }}</span>
+            <input
+              type="password"
+              formControlName="confirmPassword"
+              class="auth-form__input"
+              autocomplete="new-password"
+            />
+            @if (resetForm.controls.confirmPassword.hasError("passwordMismatch")) {
+              <span class="auth-form__field-error" role="alert">{{
+                "auth.login.password_mismatch" | translate
+              }}</span>
+            }
+          </label>
+
+          <button
+            type="submit"
+            class="auth-form__submit"
+            [disabled]="resetForm.invalid || submitting()"
+          >
+            {{ "auth.login.reset_submit" | translate }}
+          </button>
+        </form>
+      }
     }
   }
 </section>

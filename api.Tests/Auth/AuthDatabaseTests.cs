@@ -1,5 +1,7 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Services.Auth;
+using Amanah.Api.Tests.Auth;
 using Amanah.Api.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,13 +15,11 @@ public class AuthDatabaseTests(ApiWebApplicationFactory factory) : IClassFixture
     {
         await RunWithMigratedContextAsync(async context =>
         {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var passwordHasher = scope.ServiceProvider.GetRequiredService<UserPasswordHasher>();
+
             const string phone = "+201012345678";
-            var user = new User
-            {
-                NormalizedPhone = phone,
-                Role = UserRole.User,
-                CreatedAt = DateTimeOffset.UtcNow,
-            };
+            var user = TestAuthHelpers.CreateUser(passwordHasher, phone);
 
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -40,21 +40,14 @@ public class AuthDatabaseTests(ApiWebApplicationFactory factory) : IClassFixture
     {
         await RunWithMigratedContextAsync(async context =>
         {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var passwordHasher = scope.ServiceProvider.GetRequiredService<UserPasswordHasher>();
+
             const string phone = "+201098765432";
-            context.Users.Add(new User
-            {
-                NormalizedPhone = phone,
-                Role = UserRole.User,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
+            context.Users.Add(TestAuthHelpers.CreateUser(passwordHasher, phone));
             await context.SaveChangesAsync();
 
-            context.Users.Add(new User
-            {
-                NormalizedPhone = phone,
-                Role = UserRole.User,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
+            context.Users.Add(TestAuthHelpers.CreateUser(passwordHasher, phone));
 
             await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
         });
@@ -65,12 +58,10 @@ public class AuthDatabaseTests(ApiWebApplicationFactory factory) : IClassFixture
     {
         await RunWithMigratedContextAsync(async context =>
         {
-            var user = new User
-            {
-                NormalizedPhone = "+201055544433",
-                Role = UserRole.User,
-                CreatedAt = DateTimeOffset.UtcNow,
-            };
+            await using var scope = factory.Services.CreateAsyncScope();
+            var passwordHasher = scope.ServiceProvider.GetRequiredService<UserPasswordHasher>();
+
+            var user = TestAuthHelpers.CreateUser(passwordHasher, "+201055544433");
 
             context.Users.Add(user);
             await context.SaveChangesAsync();

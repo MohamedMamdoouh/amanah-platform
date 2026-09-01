@@ -7,6 +7,7 @@ namespace Amanah.Api.Data.Seeds;
 public sealed class CatalogSeeder(
     AppDbContext context,
     IConfiguration configuration,
+    UserPasswordHasher passwordHasher,
     ILogger<CatalogSeeder> logger)
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)
@@ -116,6 +117,13 @@ public sealed class CatalogSeeder(
             return;
         }
 
+        var adminPassword = configuration["ADMIN_PASSWORD"];
+        if (string.IsNullOrWhiteSpace(adminPassword))
+        {
+            logger.LogWarning("ADMIN_PASSWORD is not set; skipping admin bootstrap.");
+            return;
+        }
+
         if (!PhoneNormalizer.TryNormalize(adminPhone, out var normalizedPhone))
         {
             logger.LogWarning("ADMIN_PHONE is invalid; skipping admin bootstrap.");
@@ -140,13 +148,16 @@ public sealed class CatalogSeeder(
         }
         else
         {
-            context.Users.Add(new User
+            var adminUser = new User
             {
                 NormalizedPhone = normalizedPhone,
                 DisplayName = "Admin",
                 Role = UserRole.Admin,
                 CreatedAt = DateTimeOffset.UtcNow,
-            });
+                PasswordHash = string.Empty,
+            };
+            adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, adminPassword);
+            context.Users.Add(adminUser);
         }
 
         await context.SaveChangesAsync(cancellationToken);

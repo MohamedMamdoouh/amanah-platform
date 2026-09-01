@@ -1,5 +1,6 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Services.Auth;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Contracts.Errors;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -73,7 +74,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         var (verifyResponse, verifyBody) = await context.VerifyOtpAsync("01012345678", code2);
 
         Assert.Equal(System.Net.HttpStatusCode.OK, verifyResponse.StatusCode);
-        Assert.Equal("new_user", verifyBody?.Status);
+        Assert.Equal("signup_ready", verifyBody?.Status);
     }
 
     [Fact]
@@ -81,21 +82,12 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
     {
         await using var context = await CreateContextAsync();
 
-        var now = DateTimeOffset.UtcNow;
-        context.DbContext.Users.Add(new User
-        {
-            Id = Guid.NewGuid(),
-            NormalizedPhone = "+201012345678",
-            DisplayName = "Ahmed",
-            Role = UserRole.User,
-            CreatedAt = now,
-        });
+        context.DbContext.Users.Add(
+            TestAuthHelpers.CreateUser(context.PasswordHasher, "+201012345678"));
         await context.DbContext.SaveChangesAsync();
         context.DbContext.ChangeTracker.Clear();
 
-        var code = await context.SendOtpAndGetCodeAsync("01012345678");
-        var (_, verifyBody) = await context.VerifyOtpAsync("01012345678", code);
-        var (response, session) = await context.LoginAsync("01012345678", verifyBody!.LoginToken!);
+        var (response, session) = await context.LoginAsync("01012345678");
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(session?.AccessToken);
@@ -103,30 +95,36 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Login_with_wrong_password_returns_invalid_credentials()
+    {
+        await using var context = await CreateContextAsync();
+
+        context.DbContext.Users.Add(
+            TestAuthHelpers.CreateUser(context.PasswordHasher, "+201012345678"));
+        await context.DbContext.SaveChangesAsync();
+        context.DbContext.ChangeTracker.Clear();
+
+        var (response, error) = await LoginWithErrorAsync(context, "01012345678", "WrongPass1");
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ErrorCodes.InvalidCredentials, error?.Code);
+    }
+
+    [Fact]
     public async Task Login_banned_user_returns_banned_with_reason()
     {
         await using var context = await CreateContextAsync();
 
-        var now = DateTimeOffset.UtcNow;
-        context.DbContext.Users.Add(new User
-        {
-            Id = Guid.NewGuid(),
-            NormalizedPhone = "+201012345678",
-            DisplayName = "Ahmed",
-            Role = UserRole.User,
-            IsBanned = true,
-            BanReason = "policy violations",
-            CreatedAt = now,
-        });
+        context.DbContext.Users.Add(
+            TestAuthHelpers.CreateUser(
+                context.PasswordHasher,
+                "+201012345678",
+                isBanned: true,
+                banReason: "policy violations"));
         await context.DbContext.SaveChangesAsync();
         context.DbContext.ChangeTracker.Clear();
 
-        var code = await context.SendOtpAndGetCodeAsync("01012345678");
-        var (_, verifyBody) = await context.VerifyOtpAsync("01012345678", code);
-        var (response, error) = await LoginWithErrorAsync(
-            context,
-            "01012345678",
-            verifyBody!.LoginToken!);
+        var (response, error) = await LoginWithErrorAsync(context, "01012345678");
 
         Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Equal(ErrorCodes.Banned, error?.Code);
@@ -282,7 +280,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         string displayName,
         bool acceptTerms = true)
     {
-        var (response, _) = await context.RegisterAsync(signupToken, displayName, acceptTerms);
+        var (response, _) = await context.RegisterAsync(signupToken, displayName, acceptTerms: acceptTerms);
         var error = await context.ReadErrorAsync(response);
         return (response, error);
     }
@@ -290,9 +288,9 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
     private static async Task<(HttpResponseMessage, ApiError?)> LoginWithErrorAsync(
         OtpSendTestContext context,
         string phone,
-        string loginToken)
+        string password = TestAuthHelpers.DefaultPassword)
     {
-        var (response, _) = await context.LoginAsync(phone, loginToken);
+        var (response, _) = await context.LoginAsync(phone, password);
         var error = await context.ReadErrorAsync(response);
         return (response, error);
     }

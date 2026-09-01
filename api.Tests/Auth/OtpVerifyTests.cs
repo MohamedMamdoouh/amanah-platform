@@ -2,8 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Contracts.Errors;
 using Amanah.Api.Services.Auth;
+using Amanah.Contracts.Errors;
 using Amanah.Api.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +13,7 @@ namespace Amanah.Api.Tests.Auth;
 public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
     [Fact]
-    public async Task Correct_code_consumes_otp_and_returns_new_user_with_signup_token()
+    public async Task Correct_code_consumes_otp_and_returns_signup_ready_with_signup_token()
     {
         await using var context = await CreateContextAsync();
 
@@ -21,9 +21,9 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         var (response, body) = await context.VerifyOtpAsync("01012345678", code);
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("new_user", body?.Status);
+        Assert.Equal("signup_ready", body?.Status);
         Assert.NotNull(body?.SignupToken);
-        Assert.Null(body?.LoginToken);
+        Assert.Null(body?.ResetToken);
         Assert.Equal(0, await context.DbContext.OtpCodes.CountAsync());
 
         using var scope = factory.Services.CreateScope();
@@ -33,34 +33,56 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
     }
 
     [Fact]
-    public async Task Correct_code_for_existing_user_returns_existing_user_with_login_token()
+    public async Task Verify_signup_for_existing_phone_returns_account_exists()
     {
         await using var context = await CreateContextAsync();
 
+        context.DbContext.Users.Add(
+            TestAuthHelpers.CreateUser(context.PasswordHasher, "+201012345678"));
+        await context.DbContext.SaveChangesAsync();
+
         var now = DateTimeOffset.UtcNow;
-        context.DbContext.Users.Add(new User
+        context.DbContext.OtpCodes.Add(new OtpCode
         {
-            Id = Guid.NewGuid(),
-            NormalizedPhone = "+201012345678",
-            DisplayName = "Ahmed",
-            Role = UserRole.User,
+            Phone = "+201012345678",
+            CodeHash = OtpHasher.Hash("123456"),
+            ExpiresAt = now.AddMinutes(10),
+            AttemptCount = 0,
             CreatedAt = now,
         });
         await context.DbContext.SaveChangesAsync();
         context.DbContext.ChangeTracker.Clear();
 
-        var code = await context.SendOtpAndGetCodeAsync("01012345678");
-        var (response, body) = await context.VerifyOtpAsync("01012345678", code);
+        var (response, error) = await VerifyWithErrorAsync(context, "01012345678", "123456");
+
+        Assert.Equal(System.Net.HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(ErrorCodes.AccountExists, error?.Code);
+    }
+
+    [Fact]
+    public async Task Correct_code_for_password_reset_returns_reset_ready_with_reset_token()
+    {
+        await using var context = await CreateContextAsync();
+
+        context.DbContext.Users.Add(
+            TestAuthHelpers.CreateUser(context.PasswordHasher, "+201012345678"));
+        await context.DbContext.SaveChangesAsync();
+        context.DbContext.ChangeTracker.Clear();
+
+        var code = await context.SendOtpAndGetCodeAsync("01012345678", OtpPurposes.PasswordReset);
+        var (response, body) = await context.VerifyOtpAsync(
+            "01012345678",
+            code,
+            OtpPurposes.PasswordReset);
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("existing_user", body?.Status);
+        Assert.Equal("reset_ready", body?.Status);
         Assert.Null(body?.SignupToken);
-        Assert.NotNull(body?.LoginToken);
-        Assert.Equal(0, await context.DbContext.OtpCodes.CountAsync());
+        Assert.NotNull(body?.ResetToken);
 
         using var scope = factory.Services.CreateScope();
         var tokenService = scope.ServiceProvider.GetRequiredService<HandoffTokenService>();
-        Assert.True(tokenService.TryValidate(body!.LoginToken!, AuthTokenPurposes.Login, out var phone));
+        Assert.True(tokenService.TryValidate(body!.ResetToken!, AuthTokenPurposes.Reset, out var phone));
         Assert.Equal("+201012345678", phone);
     }
 
@@ -139,7 +161,7 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
     }
 
     [Fact]
-    public async Task Signup_token_rejected_for_login_purpose()
+    public async Task Signup_token_rejected_for_reset_purpose()
     {
         await using var context = await CreateContextAsync();
 
@@ -149,7 +171,7 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         using var scope = factory.Services.CreateScope();
         var tokenService = scope.ServiceProvider.GetRequiredService<HandoffTokenService>();
 
-        Assert.False(tokenService.TryValidate(body!.SignupToken!, AuthTokenPurposes.Login, out _));
+        Assert.False(tokenService.TryValidate(body!.SignupToken!, AuthTokenPurposes.Reset, out _));
     }
 
     [Fact]
@@ -174,15 +196,16 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         var (response, body) = await context.VerifyOtpAsync("01012345678", arabicCode);
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("new_user", body?.Status);
+        Assert.Equal("signup_ready", body?.Status);
     }
 
     private static async Task<(HttpResponseMessage Response, ApiError? Error)> VerifyWithErrorAsync(
         OtpSendTestContext context,
         string phone,
-        string code)
+        string code,
+        string purpose = OtpPurposes.Signup)
     {
-        var (response, _) = await context.VerifyOtpAsync(phone, code);
+        var (response, _) = await context.VerifyOtpAsync(phone, code, purpose);
         var error = await context.ReadErrorAsync(response);
         return (response, error);
     }

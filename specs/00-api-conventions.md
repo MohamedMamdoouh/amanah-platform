@@ -1,6 +1,6 @@
-# API Error Contract
+# API Conventions
 
-Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes via `code`. Implemented in [Phase 01](./PHASE-01-platform-foundation.md).
+Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes via `code`. Implemented in [Phase 01](./01-platform-foundation.md).
 
 **Base path:** `/api/v1/...` (URL versioning via `Asp.Versioning.Mvc`).
 
@@ -53,7 +53,9 @@ Every `429` includes `Retry-After` (seconds). OTP limits (`otp.cooldown`, `otp.h
 | `auth.invalid_otp`         | 400  | OTP incorrect                 |
 | `auth.otp_expired`         | 400  | OTP expired                   |
 | `auth.otp_void`            | 400  | OTP voided (3 failures)       |
-| `auth.handoff_token_invalid` | 400  | Signup/login handoff token invalid |
+| `auth.handoff_token_invalid` | 400  | Signup/reset handoff token invalid |
+| `auth.invalid_credentials` | 400  | Wrong phone or password on login |
+| `auth.account_exists`        | 409  | Signup OTP requested for existing phone |
 | `auth.unauthorized`        | 401  | No valid access token         |
 | `auth.token_expired`       | 401  | Access token expired          |
 | `auth.refresh_invalid`     | 401  | Refresh token invalid/revoked |
@@ -62,11 +64,23 @@ Every `429` includes `Retry-After` (seconds). OTP limits (`otp.cooldown`, `otp.h
 | `otp.cooldown`             | 429  | 120s resend cooldown          |
 | `otp.hourly_limit`         | 429  | 2 sends / rolling hour        |
 | `otp.daily_limit`          | 429  | 3 sends / Cairo day           |
-| `rate_limit.exceeded`      | 429  | Generic middleware limit      |
+| `rate_limit.exceeded`      | 429  | Generic middleware limit (incl. login) |
 | `service.sms_unavailable`  | 503  | SMS provider down             |
 | `internal.error`           | 500  | Unexpected error              |
 
-Later phases add `report.*`, `claim.*`, `moderation.*`, etc.
+Later phases add `claim.*`, `moderation.*`, etc.
+
+---
+
+## Error codes - Phase 02 (report submission)
+
+| Code | HTTP | Description |
+| ---- | ---- | ----------- |
+| `report.daily_quota` | 429 | 3 new reports per Cairo day exceeded |
+| `report.open_cap` | 429 | 5 open reports (`Pending Review`, `Published`, `Claim In Progress`) exceeded |
+| `report.contact_info` | — | Field-level message when contact info detected; top-level code remains `validation.failed` |
+
+`report.daily_quota` includes `Retry-After` (seconds until next Cairo midnight). `report.open_cap` has no `Retry-After`.
 
 ---
 
@@ -78,7 +92,25 @@ Later phases add `report.*`, `claim.*`, `moderation.*`, etc.
 {
   "code": "validation.failed",
   "message": "Please correct the errors in the form.",
-  "errors": { "displayName": ["Display name is required."] }
+  "errors": { "password": ["Password must be at least 8 characters."] }
+}
+```
+
+**400 invalid credentials** - `POST /api/v1/auth/login`
+
+```json
+{
+  "code": "auth.invalid_credentials",
+  "message": "Phone number or password is incorrect."
+}
+```
+
+**409 account exists** - `POST /api/v1/auth/otp/send` (`purpose=signup`)
+
+```json
+{
+  "code": "auth.account_exists",
+  "message": "An account already exists for this phone number. Sign in instead."
 }
 ```
 

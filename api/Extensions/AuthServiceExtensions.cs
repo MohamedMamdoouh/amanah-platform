@@ -49,6 +49,7 @@ public static class AuthServiceExtensions
         services.AddSingleton<RefreshTokenCookieManager>();
         services.AddScoped<OtpSmsOutboxDispatcher>();
         services.AddScoped<HandoffTokenService>();
+        services.AddSingleton<UserPasswordHasher>();
         services.AddScoped<TokenService>();
         services.AddScoped<AuthService>();
         services.AddScoped<OtpService>();

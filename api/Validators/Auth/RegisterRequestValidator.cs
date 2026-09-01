@@ -22,6 +22,14 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
             .WithErrorCode(ErrorCodes.FieldDisplayNameInvalid)
             .WithMessage("Display name must be 3 to 40 characters using letters, numbers, spaces, or - _ .");
 
+        RuleFor(request => request.Password)
+            .NotEmpty()
+            .WithErrorCode(ErrorCodes.FieldPasswordRequired)
+            .WithMessage("Password is required.")
+            .MinimumLength(PasswordRules.MinLength)
+            .WithErrorCode(ErrorCodes.FieldPasswordTooShort)
+            .WithMessage($"Password must be at least {PasswordRules.MinLength} characters.");
+
         RuleFor(request => request.AcceptTerms)
             .Equal(true)
             .WithErrorCode(ErrorCodes.FieldAcceptTermsRequired)

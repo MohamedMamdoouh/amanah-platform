@@ -23,9 +23,10 @@ public sealed class AuthController(
     [HttpPost("otp/send")]
     [EnableRateLimiting("otp-send")]
     [EndpointName(nameof(SendOtp))]
-    [EndpointSummary("Send a one-time password to an Egyptian mobile number.")]
+    [EndpointSummary("Send a one-time password for signup or password reset.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SendOtp(
@@ -35,6 +36,7 @@ public sealed class AuthController(
         var result = await otpService.SendAsync(
             request.Phone,
             request.CaptchaToken,
+            request.Purpose,
             cancellationToken);
 
         return result.ToActionResult();
@@ -42,9 +44,10 @@ public sealed class AuthController(
 
     [HttpPost("otp/verify")]
     [EndpointName(nameof(VerifyOtp))]
-    [EndpointSummary("Verify a one-time password and distinguish new vs returning users.")]
+    [EndpointSummary("Verify a one-time password and issue a signup or reset handoff token.")]
     [ProducesResponseType(typeof(VerifyOtpResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> VerifyOtp(
         [FromBody] VerifyOtpRequest request,
         CancellationToken cancellationToken)
@@ -52,6 +55,7 @@ public sealed class AuthController(
         var result = await otpService.VerifyAsync(
             request.Phone,
             request.Code,
+            request.Purpose,
             cancellationToken);
 
         return result.ToActionResult();
@@ -78,16 +82,37 @@ public sealed class AuthController(
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("auth-login")]
     [EndpointName(nameof(Login))]
-    [EndpointSummary("Sign in a returning user after OTP verification.")]
+    [EndpointSummary("Sign in with phone number and password.")]
     [ProducesResponseType(typeof(AuthSessionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
     {
         var result = await authService.LoginAsync(request, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return result.ToActionResult();
+        }
+
+        refreshTokenCookies.Set(Response, result.Value.RawRefreshToken);
+        return Ok(result.Value.Session);
+    }
+
+    [HttpPost("password/reset")]
+    [EndpointName(nameof(ResetPassword))]
+    [EndpointSummary("Set a new password after OTP verification and sign in.")]
+    [ProducesResponseType(typeof(AuthSessionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await authService.ResetPasswordAsync(request, cancellationToken);
         if (!result.IsSuccess)
         {
             return result.ToActionResult();
