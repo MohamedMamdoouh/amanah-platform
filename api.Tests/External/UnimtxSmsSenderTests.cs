@@ -87,7 +87,8 @@ public class UnimtxSmsSenderTests
             httpClient,
             smsOptions,
             otpOptions,
-            NullLogger<UnimtxSmsSender>.Instance);
+            NullLogger<UnimtxSmsSender>.Instance,
+            new Amanah.Api.Observability.AppMetrics(NullLogger<Amanah.Api.Observability.AppMetrics>.Instance));
     }
 
     private static HttpResponseMessage CreateJsonResponse(HttpStatusCode statusCode, string body) =>

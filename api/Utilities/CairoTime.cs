@@ -20,7 +20,8 @@ public static class CairoTime
     {
         var cairo = ToCairo(utc);
         var midnight = DateTime.SpecifyKind(cairo.Date, DateTimeKind.Unspecified);
+        var cairoMidnight = new DateTimeOffset(midnight, CairoTimeZone.GetUtcOffset(midnight));
 
-        return new DateTimeOffset(midnight, CairoTimeZone.GetUtcOffset(midnight));
+        return ToUtc(cairoMidnight);
     }
 }

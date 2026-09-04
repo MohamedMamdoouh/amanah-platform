@@ -7,7 +7,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -47,6 +47,7 @@ export class LoginComponent implements OnDestroy {
   private readonly apiErrors = inject(ApiErrorService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
 
   private readonly turnstile = viewChild<TurnstileWidgetComponent>('turnstile');
@@ -180,7 +181,7 @@ export class LoginComponent implements OnDestroy {
         }),
       );
       this.submitting.set(false);
-      await this.router.navigate(['/']);
+      await this.navigateAfterAuth();
     } catch (error) {
       this.handleError(error);
     }
@@ -268,7 +269,7 @@ export class LoginComponent implements OnDestroy {
         }),
       );
       this.submitting.set(false);
-      await this.router.navigate(['/']);
+      await this.navigateAfterAuth();
     } catch (error) {
       this.handleError(error);
     }
@@ -290,7 +291,7 @@ export class LoginComponent implements OnDestroy {
         }),
       );
       this.submitting.set(false);
-      await this.router.navigate(['/']);
+      await this.navigateAfterAuth();
     } catch (error) {
       this.handleError(error);
     }
@@ -379,6 +380,16 @@ export class LoginComponent implements OnDestroy {
 
   private unexpectedError(): string {
     return this.translate.instant('error.internal.error');
+  }
+
+  private async navigateAfterAuth(): Promise<void> {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+      await this.router.navigateByUrl(returnUrl);
+      return;
+    }
+
+    await this.router.navigate(['/']);
   }
 
   private startResendCooldown(seconds: number): void {

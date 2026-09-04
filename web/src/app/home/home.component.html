@@ -5,10 +5,13 @@
     <h1 id="hero-title" class="hero__title">{{ 'home.title' | translate }}</h1>
     <p class="hero__subtitle">{{ 'home.subtitle' | translate }}</p>
     <div class="hero__actions">
-      <span class="hero__cta-placeholder">{{ 'home.cta_browse' | translate }}</span>
-      <span class="hero__cta-placeholder hero__cta-placeholder--secondary">
-        {{ 'home.cta_report' | translate }}
+      <span class="hero__cta-placeholder hero__cta-placeholder--disabled" aria-disabled="true">
+        {{ 'home.cta_browse' | translate }}
       </span>
+      <a routerLink="/report/lost" class="hero__cta">{{ 'home.cta_report_lost' | translate }}</a>
+      <a routerLink="/report/found" class="hero__cta hero__cta--secondary">
+        {{ 'home.cta_report_found' | translate }}
+      </a>
     </div>
   </div>
   <aside class="hero__aside" [attr.aria-label]="'home.aside_label' | translate">

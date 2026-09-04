@@ -25,22 +25,31 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+        builder.UseSetting("ConnectionStrings:Default", ConnectionString);
+        builder.UseSetting("Jwt:AccessTokenSigningKey", "test-access-signing-key-at-least-32-characters!");
+        builder.UseSetting("Jwt:HandoffTokenSigningKey", "test-handoff-signing-key-at-least-32-characters!");
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:Default"] = ConnectionString,
                 ["RateLimit:Policies:otp-send:PermitLimit"] = "1000",
                 ["RateLimit:Policies:otp-send:WindowSeconds"] = "3600",
                 ["Otp:OutboxPollIntervalSeconds"] = "1",
                 ["Database:AutoMigrate"] = "false",
-                ["Jwt:AccessTokenSigningKey"] = "test-access-signing-key-at-least-32-characters!",
-                ["Jwt:HandoffTokenSigningKey"] = "test-handoff-signing-key-at-least-32-characters!",
+                ["Otp:HourlySendLimit"] = "1000",
+                ["Otp:DailySendLimit"] = "1000",
+                ["Otp:CooldownSeconds"] = "0",
                 ["ADMIN_PHONE"] = "+201011111111",
                 ["ADMIN_PASSWORD"] = "AdminPass123",
                 ["RateLimit:Policies:auth-login:PermitLimit"] = "1000",
                 ["RateLimit:Policies:auth-login:WindowSeconds"] = "3600",
+                ["RateLimit:Policies:photo-upload:PermitLimit"] = "1000",
+                ["RateLimit:Policies:photo-upload:WindowSeconds"] = "60",
+                ["RateLimit:Policies:photo-upload:PartitionBy"] = "userId",
+                ["RateLimit:Policies:photo-upload-hourly:PermitLimit"] = "1000",
+                ["RateLimit:Policies:photo-upload-hourly:WindowSeconds"] = "3600",
+                ["RateLimit:Policies:photo-upload-hourly:PartitionBy"] = "userId",
             });
         });
 

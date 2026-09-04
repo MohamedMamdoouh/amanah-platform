@@ -10,6 +10,9 @@
   <nav class="header__nav">
     @if (auth.isLoggedIn()) {
       <span class="header__user">{{ auth.currentUser()?.displayName }}</span>
+      <a routerLink="/my/reports" class="header__link">{{
+        'nav.my_reports' | translate
+      }}</a>
       @if (auth.isAdmin()) {
         <a routerLink="/admin" class="header__link">{{
           'nav.admin' | translate

@@ -578,7 +578,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 | Moderation bottleneck                                           | Single-admin model accepted at low volume; email alerts on new submissions; monitor queue latency                                                                       |
 | Thin nationwide density                                         | Accepted at low traffic; monitor by governorate and revisit seeding strategy if needed                                                                                  |
 | PDPL cross-border transfer and missing correction/access rights | Disclosed in the Privacy Policy as accepted v1 gaps pending formal review                                                                                               |
-| Limited operational visibility                                  | Accepted v1 trade-off; monitor via hosting platform logs                                                                                                                |
+| Limited operational visibility                                  | Structured JSON logs + correlation IDs + log-emitted metrics on Render; GH Actions keepalive alerting; see [observability.md](../docs/observability.md) |
 | Weak discovery with simple keyword search                       | Keyword search over title, description, category fields and area, with Arabic normalization                                                                             |
 | No link previews on shared URLs                                 | Accepted trade-off for v1                                                                                                                                               |
 
@@ -801,7 +801,7 @@ Per section 7.5. On limit exceed: HTTP `429` with `Retry-After` header.
 - **Migrations:** EF Core migrations on API startup.
 - **Scheduled jobs:** retention cleanup (section 12); **listing expiry** and expiry-warning checks (4.7); **pending-claim timeout** (6.3). All business-date logic uses Africa/Cairo day boundaries where applicable.
 - **Backups:** Supabase managed Postgres defaults.
-- **Monitoring:** Render logs.
+- **Monitoring:** Structured JSON logs to Render (correlation IDs, log-emitted metrics). Health: `GET /health` (liveness), `GET /health/ready` (DB + storage). Alerting: GitHub Actions keepalive + GitHub email on workflow failure. See [observability.md](../docs/observability.md).
 - **Caching:** `HybridCache` via `ICacheService` (Section 16). Config: `Cache:CategoriesTtlSeconds`, `Cache:GovernoratesTtlSeconds` in `appsettings.json`. L2 is memory in v1; Redis when multi-instance.
 - **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: section 14.
 - **Budget:** ~$0/month infra for MVP testing (Render + Supabase free tiers); ~$5/month recommended before public launch for always-on API. SMS via Unimtx (pay-as-you-go, ~$0.135/SMS in Egypt).

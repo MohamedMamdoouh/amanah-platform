@@ -1,0 +1,52 @@
+<section class="my-reports" aria-labelledby="my-reports-title">
+  <header class="my-reports__header">
+    <h1 id="my-reports-title" class="my-reports__title">
+      {{ 'reports.mine.title' | translate }}
+    </h1>
+    <p class="my-reports__intro">{{ 'reports.mine.intro' | translate }}</p>
+  </header>
+
+  <nav class="my-reports__tabs" [attr.aria-label]="'reports.mine.tabs_label' | translate">
+    <span class="my-reports__tab my-reports__tab--active">
+      {{ 'reports.mine.tab_pending' | translate }}
+    </span>
+    <span class="my-reports__tab my-reports__tab--disabled" aria-disabled="true">
+      {{ 'reports.mine.tab_other' | translate }}
+    </span>
+  </nav>
+
+  @if (loading()) {
+    <p class="my-reports__loading">{{ 'reports.mine.loading' | translate }}</p>
+  } @else if (error()) {
+    <p class="my-reports__error" role="alert">{{ error() }}</p>
+  } @else if (reports().length === 0) {
+    <div class="my-reports__empty">
+      <p>{{ 'reports.mine.empty' | translate }}</p>
+      <div class="my-reports__empty-actions">
+        <a routerLink="/report/lost" class="my-reports__cta">{{ 'reports.mine.report_lost' | translate }}</a>
+        <a routerLink="/report/found" class="my-reports__cta my-reports__cta--secondary">
+          {{ 'reports.mine.report_found' | translate }}
+        </a>
+      </div>
+    </div>
+  } @else {
+    <ul class="my-reports__list">
+      @for (report of reports(); track report.id) {
+        <li>
+          <a [routerLink]="['/my/reports', report.id]" class="my-reports__card">
+            <span class="my-reports__card-type">{{ typeLabel(report.type) }}</span>
+            <span class="my-reports__card-title">{{ report.title }}</span>
+            <span class="my-reports__card-meta">
+              {{ categoryLabel(report.categoryCode) }} ·
+              {{ governorateLabel(report.governorateCode) }}
+            </span>
+            <span class="my-reports__card-date">
+              {{ report.createdAt | date: 'medium' }}
+            </span>
+            <span class="my-reports__card-status">{{ statusLabel(report.status) }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

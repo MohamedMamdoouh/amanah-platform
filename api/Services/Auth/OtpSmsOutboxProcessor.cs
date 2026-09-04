@@ -1,5 +1,6 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Observability;
 using Amanah.Api.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -9,7 +10,8 @@ namespace Amanah.Api.Services.Auth;
 public sealed class OtpSmsOutboxProcessor(
     IServiceScopeFactory scopeFactory,
     IOptions<OtpOptions> options,
-    ILogger<OtpSmsOutboxProcessor> logger) : BackgroundService
+    ILogger<OtpSmsOutboxProcessor> logger,
+    AppMetrics metrics) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -46,6 +48,15 @@ public sealed class OtpSmsOutboxProcessor(
             .Select(message => message.Id)
             .Take(otpOptions.OutboxBatchSize)
             .ToListAsync(cancellationToken);
+
+        var backlogCount = await dbContext.OtpSmsOutboxMessages
+            .AsNoTracking()
+            .CountAsync(
+                message => message.Status == OtpSmsOutboxStatus.Pending
+                    && message.AttemptCount < otpOptions.OutboxMaxAttempts,
+                cancellationToken);
+
+        metrics.SetOtpOutboxBacklog(backlogCount);
 
         foreach (var outboxId in pendingIds)
         {

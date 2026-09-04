@@ -523,14 +523,14 @@ namespace Amanah.Api.Data.Migrations
                     b.Property<bool>("HasReward")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("HeldLocation")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
                     b.Property<string>("HiddenDetail")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
-
-                    b.Property<string>("ItemHeldLocation")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("NormalizedSearchText")
                         .HasColumnType("text");

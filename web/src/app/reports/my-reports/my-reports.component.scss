@@ -1,0 +1,130 @@
+.my-reports {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.my-reports__header {
+  margin-bottom: var(--space-lg);
+}
+
+.my-reports__title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: var(--space-sm);
+}
+
+.my-reports__intro {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.my-reports__tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+}
+
+.my-reports__tab {
+  padding: var(--space-xs) var(--space-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.my-reports__tab--active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: #fff8f3;
+}
+
+.my-reports__tab--disabled {
+  opacity: 0.5;
+  color: var(--color-text-muted);
+}
+
+.my-reports__loading,
+.my-reports__error,
+.my-reports__empty {
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.my-reports__error {
+  color: #8b1e1e;
+  background: #fdecec;
+}
+
+.my-reports__empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.my-reports__cta {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-lg);
+  font-weight: 600;
+  text-decoration: none;
+  color: #fff;
+  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+}
+
+.my-reports__cta--secondary {
+  color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.my-reports__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.my-reports__card {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  text-decoration: none;
+  color: inherit;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s ease;
+}
+
+.my-reports__card:hover {
+  border-color: var(--color-accent);
+}
+
+.my-reports__card-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-warm);
+}
+
+.my-reports__card-title {
+  font-weight: 700;
+  font-size: 1.0625rem;
+}
+
+.my-reports__card-meta,
+.my-reports__card-date {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.my-reports__card-status {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-accent);
+}

@@ -9,6 +9,7 @@ const translationFiles = [
   'errors',
   'rejection-reasons',
   'pages',
+  'reports',
 ];
 
 export class MultiTranslateHttpLoader implements TranslateLoader {

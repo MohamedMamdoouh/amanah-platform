@@ -16,13 +16,13 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 | SPEC section | Topic                                                                           |
 | ------------ | ------------------------------------------------------------------------------- |
 | Section 4.3  | Admin review, rejection, and resubmission                                       |
-| Section 4.8  | My Reports - Published and Rejected tabs                                      |
+| Section 4.8  | My Reports - Published and Rejected tabs                                        |
 | Section 5.5  | Admin moderation, rejection reasons, category management                        |
 | Section 5.7  | Admin email on new submission; `ReportApproved`, `ReportRejected` notifications |
 | Section 8    | Status transitions through `Published` / `Rejected`                             |
 | Section 9    | Admin private-photo access during review                                        |
 | Section 12   | `ModerationAction` audit persistence                                            |
-| Section 15.2 | Moderation acceptance criteria (except expiry - Phase 07)                     |
+| Section 15.2 | Moderation acceptance criteria (except expiry - Phase 07)                       |
 | Section 21   | Transactional email for admin alerts                                            |
 
 **Part II (technical):** Section 21 (email)
@@ -50,24 +50,24 @@ Resolve **before starting** this phase:
 
 ### API
 
-| Method | Route                                         | Purpose                                                   |
-| ------ | --------------------------------------------- | --------------------------------------------------------- |
-| GET    | `/api/v1/admin/moderation/queue`                 | FIFO pending reports with pending-count                   |
-| GET    | `/api/v1/admin/moderation/reports/{id}`          | Full report for review (incl. private photos)             |
+| Method | Route                                            | Purpose                                                  |
+| ------ | ------------------------------------------------ | -------------------------------------------------------- |
+| GET    | `/api/v1/admin/moderation/queue`                 | FIFO pending reports with pending-count                  |
+| GET    | `/api/v1/admin/moderation/reports/{id}`          | Full report for review (incl. private photos)            |
 | POST   | `/api/v1/admin/moderation/reports/{id}/approve`  | Approve -> `Published`                                   |
 | POST   | `/api/v1/admin/moderation/reports/{id}/reject`   | Reject with reason + optional note -> `Rejected`         |
-| GET    | `/api/v1/admin/moderation/search`                | Keyword search incl. Pending/Rejected                     |
-| GET    | `/api/v1/admin/categories`                       | List all categories (incl. inactive)                      |
-| POST   | `/api/v1/admin/categories`                       | Add category                                              |
-| PUT    | `/api/v1/admin/categories/{id}`                  | Edit name, sort order, `photosPrivate`, active flag       |
-| POST   | `/api/v1/admin/categories/{id}/fields`           | Add field definition                                      |
-| PUT    | `/api/v1/admin/categories/{id}/fields/{fieldId}` | Edit field definition                                     |
+| GET    | `/api/v1/admin/moderation/search`                | Keyword search incl. Pending/Rejected                    |
+| GET    | `/api/v1/admin/categories`                       | List all categories (incl. inactive)                     |
+| POST   | `/api/v1/admin/categories`                       | Add category                                             |
+| PUT    | `/api/v1/admin/categories/{id}`                  | Edit name, sort order, `photosPrivate`, active flag      |
+| POST   | `/api/v1/admin/categories/{id}/fields`           | Add field definition                                     |
+| PUT    | `/api/v1/admin/categories/{id}/fields/{fieldId}` | Edit field definition                                    |
 | POST   | `/api/v1/reports/{id}/resubmit`                  | Reporter resubmits `Rejected` report -> `Pending Review` |
-| PUT    | `/api/v1/reports/{id}`                           | Reporter edits `Rejected` report content                  |
-| GET    | `/api/v1/notifications`                          | User notification list                                    |
-| GET    | `/api/v1/notifications/unread-count`             | Unread count for header badge                             |
-| PATCH  | `/api/v1/notifications/{id}/read`                | Mark notification read                                    |
-| POST   | `/api/v1/notifications/read-all`                 | Mark all read                                             |
+| PUT    | `/api/v1/reports/{id}`                           | Reporter edits `Rejected` report content                 |
+| GET    | `/api/v1/notifications`                          | User notification list                                   |
+| GET    | `/api/v1/notifications/unread-count`             | Unread count for header badge                            |
+| PATCH  | `/api/v1/notifications/{id}/read`                | Mark notification read                                   |
+| POST   | `/api/v1/notifications/read-all`                 | Mark all read                                            |
 
 ### UI routes
 
@@ -107,12 +107,12 @@ Resolve **before starting** this phase:
 
 Server-enforce these matrix rows before marking this phase done:
 
-| Data                       | Roles granted access                                                          |
-| -------------------------- | ----------------------------------------------------------------------------- |
+| Data                       | Roles granted access                                                        |
+| -------------------------- | --------------------------------------------------------------------------- |
 | Private photos             | Reporter (own), Admin (review only - enforcement investigation in Phase 08) |
 | Hidden verification detail | Reporter (own) only - Admin still **never** sees this                       |
-| All public report fields   | Reporter (own), Admin                                                         |
-| Withdrawal reason          | Reporter (own), Admin - enforced in Phase 02; regression only in this phase   |
+| All public report fields   | Reporter (own), Admin                                                       |
+| Withdrawal reason          | Reporter (own), Admin - enforced in Phase 02; regression only in this phase |
 | ModerationAction audit     | Admin only (no read API - writes only; vacuously enforced)                  |
 
 `Pending Review` and `Rejected` reports: not-found for everyone except reporter and admin.

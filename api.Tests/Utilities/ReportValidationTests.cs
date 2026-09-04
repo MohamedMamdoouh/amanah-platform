@@ -1,4 +1,5 @@
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Utilities;
 using Amanah.Api.Utilities.Reports;
 
 namespace Amanah.Api.Tests.Utilities;
@@ -256,5 +257,105 @@ public class SearchTextBuilderTests
     public void Build_returns_empty_string_when_all_inputs_empty()
     {
         Assert.Equal(string.Empty, SearchTextBuilder.Build(string.Empty, string.Empty, null, []));
+    }
+}
+
+public class ReportContentValidatorTests
+{
+    [Fact]
+    public void Validate_accepts_valid_lost_report_content()
+    {
+        var errors = ReportContentValidator.Validate(
+            isFoundReport: false,
+            title: "Lost black wallet",
+            description: "I lost my wallet near the station yesterday evening.",
+            hiddenDetail: "Contains a photo of my family inside.",
+            areaText: "Ramses station",
+            hasReward: false,
+            rewardAmount: null,
+            heldLocation: null);
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void Validate_requires_held_location_for_found_reports()
+    {
+        var errors = ReportContentValidator.Validate(
+            isFoundReport: true,
+            title: "Found black wallet",
+            description: "I found a wallet near the station yesterday evening.",
+            hiddenDetail: "Contains a photo of a family inside.",
+            areaText: null,
+            hasReward: false,
+            rewardAmount: null,
+            heldLocation: null);
+
+        Assert.Contains(ReportContentValidator.HeldLocationField, errors.Keys);
+    }
+
+    [Fact]
+    public void Validate_rejects_held_location_on_lost_reports()
+    {
+        var errors = ReportContentValidator.Validate(
+            isFoundReport: false,
+            title: "Lost black wallet",
+            description: "I lost my wallet near the station yesterday evening.",
+            hiddenDetail: "Contains a photo of my family inside.",
+            areaText: null,
+            hasReward: false,
+            rewardAmount: null,
+            heldLocation: "At Ramses police station");
+
+        Assert.Contains(ReportContentValidator.HeldLocationField, errors.Keys);
+    }
+
+    [Fact]
+    public void Validate_requires_reward_amount_when_flag_is_true()
+    {
+        var errors = ReportContentValidator.Validate(
+            isFoundReport: false,
+            title: "Lost black wallet",
+            description: "I lost my wallet near the station yesterday evening.",
+            hiddenDetail: "Contains a photo of my family inside.",
+            areaText: null,
+            hasReward: true,
+            rewardAmount: null,
+            heldLocation: null);
+
+        Assert.Contains(ReportContentValidator.RewardAmountField, errors.Keys);
+    }
+}
+
+public class ContactInfoValidatorTests
+{
+    [Fact]
+    public void ScanPublicFields_flags_title_with_contact_info()
+    {
+        var errors = ContactInfoValidator.ScanPublicFields(
+            "Call me 01012345678",
+            "Detailed description of the lost item.",
+            null,
+            null,
+            new Dictionary<string, string>());
+
+        Assert.Contains(ReportContentValidator.TitleField, errors.Keys);
+        Assert.Equal(ContactInfoDetector.ContactInfoMessage, errors[ReportContentValidator.TitleField][0]);
+    }
+
+    [Fact]
+    public void ScanPublicFields_flags_category_field_with_contact_info()
+    {
+        var errors = ContactInfoValidator.ScanPublicFields(
+            "Lost black wallet",
+            "Detailed description of the lost item.",
+            null,
+            null,
+            new Dictionary<string, string>
+            {
+                ["brand_model"] = "facebook.com/page",
+            });
+
+        Assert.Contains("brand_model", errors.Keys);
     }
 }

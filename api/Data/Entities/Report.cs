@@ -26,7 +26,7 @@ public class Report : IEntity
 
     public string? AreaText { get; set; }
 
-    public string? ItemHeldLocation { get; set; }
+    public string? HeldLocation { get; set; }
 
     public ReportStatus Status { get; set; }
 

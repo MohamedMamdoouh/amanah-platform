@@ -31,7 +31,7 @@ public static class ReportDateValidator
 public static class CategoryFieldValidator
 {
     public static Dictionary<string, string[]> Validate(
-        IReadOnlyList<CategoryFieldDefinition> definitions,
+        IEnumerable<CategoryFieldDefinition> definitions,
         IReadOnlyDictionary<string, string> submittedValues)
     {
         var errors = new Dictionary<string, string[]>();
@@ -136,5 +136,230 @@ public static class CategoryFieldValidator
         }
 
         errors[fieldKey] = [message];
+    }
+}
+
+public static class ReportContentValidator
+{
+    public const string TitleField = "title";
+    public const string DescriptionField = "description";
+    public const string HiddenDetailField = "hiddenDetail";
+    public const string AreaTextField = "areaText";
+    public const string RewardAmountField = "rewardAmount";
+    public const string HeldLocationField = "heldLocation";
+
+    private const int TitleMinLength = 10;
+    private const int TitleMaxLength = 80;
+    private const int DescriptionMinLength = 20;
+    private const int DescriptionMaxLength = 1000;
+    private const int HiddenDetailMinLength = 10;
+    private const int HiddenDetailMaxLength = 500;
+    private const int AreaTextMaxLength = 120;
+    private const int RewardMinAmount = 50;
+    private const int RewardMaxAmount = 50_000;
+    private const int HeldLocationMaxLength = 120;
+
+    public static Dictionary<string, string[]> Validate(
+        bool isFoundReport,
+        string title,
+        string description,
+        string hiddenDetail,
+        string? areaText,
+        bool hasReward,
+        int? rewardAmount,
+        string? heldLocation)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        ValidateTitle(title, errors);
+        ValidateDescription(description, errors);
+        ValidateHiddenDetail(hiddenDetail, errors);
+        ValidateAreaText(areaText, errors);
+        ValidateReward(hasReward, rewardAmount, errors);
+        ValidateHeldLocation(isFoundReport, heldLocation, errors);
+
+        return errors;
+    }
+
+    private static void ValidateTitle(string title, Dictionary<string, string[]> errors)
+    {
+        if (title.Length == 0)
+        {
+            AddError(errors, TitleField, "Title is required.");
+            return;
+        }
+
+        if (title.Length < TitleMinLength)
+        {
+            AddError(errors, TitleField, $"Title must be at least {TitleMinLength} characters.");
+            return;
+        }
+
+        if (title.Length > TitleMaxLength)
+        {
+            AddError(errors, TitleField, $"Title must be at most {TitleMaxLength} characters.");
+        }
+    }
+
+    private static void ValidateDescription(string description, Dictionary<string, string[]> errors)
+    {
+        if (description.Length == 0)
+        {
+            AddError(errors, DescriptionField, "Description is required.");
+            return;
+        }
+
+        if (description.Length < DescriptionMinLength)
+        {
+            AddError(errors, DescriptionField, $"Description must be at least {DescriptionMinLength} characters.");
+            return;
+        }
+
+        if (description.Length > DescriptionMaxLength)
+        {
+            AddError(errors, DescriptionField, $"Description must be at most {DescriptionMaxLength} characters.");
+        }
+    }
+
+    private static void ValidateHiddenDetail(string hiddenDetail, Dictionary<string, string[]> errors)
+    {
+        if (hiddenDetail.Length == 0)
+        {
+            AddError(errors, HiddenDetailField, "Hidden verification detail is required.");
+            return;
+        }
+
+        if (hiddenDetail.Length < HiddenDetailMinLength)
+        {
+            AddError(errors, HiddenDetailField, $"Hidden verification detail must be at least {HiddenDetailMinLength} characters.");
+            return;
+        }
+
+        if (hiddenDetail.Length > HiddenDetailMaxLength)
+        {
+            AddError(errors, HiddenDetailField, $"Hidden verification detail must be at most {HiddenDetailMaxLength} characters.");
+        }
+    }
+
+    private static void ValidateAreaText(string? areaText, Dictionary<string, string[]> errors)
+    {
+        if (areaText is not null && areaText.Length > AreaTextMaxLength)
+        {
+            AddError(errors, AreaTextField, $"Area must be at most {AreaTextMaxLength} characters.");
+        }
+    }
+
+    private static void ValidateReward(
+        bool hasReward,
+        int? rewardAmount,
+        Dictionary<string, string[]> errors)
+    {
+        if (hasReward)
+        {
+            if (rewardAmount is not int amount)
+            {
+                AddError(errors, RewardAmountField, "Reward amount is required when a reward is offered.");
+                return;
+            }
+
+            if (amount < RewardMinAmount || amount > RewardMaxAmount)
+            {
+                AddError(
+                    errors,
+                    RewardAmountField,
+                    $"Reward amount must be between {RewardMinAmount} and {RewardMaxAmount} EGP.");
+            }
+
+            return;
+        }
+
+        if (rewardAmount is not null)
+        {
+            AddError(errors, RewardAmountField, "Reward amount must be empty when no reward is offered.");
+        }
+    }
+
+    private static void ValidateHeldLocation(
+        bool isFoundReport,
+        string? heldLocation,
+        Dictionary<string, string[]> errors)
+    {
+        if (!isFoundReport)
+        {
+            if (!string.IsNullOrEmpty(heldLocation))
+            {
+                AddError(errors, HeldLocationField, "Held location is only allowed for found reports.");
+            }
+
+            return;
+        }
+
+        if (string.IsNullOrEmpty(heldLocation))
+        {
+            AddError(errors, HeldLocationField, "Held location is required for found reports.");
+            return;
+        }
+
+        if (heldLocation.Length > HeldLocationMaxLength)
+        {
+            AddError(errors, HeldLocationField, $"Held location must be at most {HeldLocationMaxLength} characters.");
+        }
+    }
+
+    private static void AddError(
+        Dictionary<string, string[]> errors,
+        string fieldKey,
+        string message)
+    {
+        if (errors.TryGetValue(fieldKey, out var existing))
+        {
+            errors[fieldKey] = [.. existing, message];
+            return;
+        }
+
+        errors[fieldKey] = [message];
+    }
+}
+
+public static class ContactInfoValidator
+{
+    public static Dictionary<string, string[]> ScanPublicFields(
+        string title,
+        string description,
+        string? areaText,
+        string? heldLocation,
+        IReadOnlyDictionary<string, string> categoryFieldValues)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        ScanField(errors, ReportContentValidator.TitleField, title);
+        ScanField(errors, ReportContentValidator.DescriptionField, description);
+        ScanField(errors, ReportContentValidator.AreaTextField, areaText);
+        ScanField(errors, ReportContentValidator.HeldLocationField, heldLocation);
+
+        foreach (var (fieldKey, value) in categoryFieldValues)
+        {
+            ScanField(errors, fieldKey, value);
+        }
+
+        return errors;
+    }
+
+    private static void ScanField(
+        Dictionary<string, string[]> errors,
+        string fieldKey,
+        string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        if (!ContactInfoDetector.ContainsContactInfo(value))
+        {
+            return;
+        }
+
+        errors[fieldKey] = [ContactInfoDetector.ContactInfoMessage];
     }
 }

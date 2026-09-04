@@ -29,10 +29,10 @@ Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes v
 | 400    | Validation, client-fixable rules | `validation.*`, `auth.*`                  |
 | 401    | Missing / invalid token          | `auth.unauthorized`, `auth.token_expired` |
 | 403    | Wrong role or banned             | `auth.forbidden`, `auth.banned`           |
-| 404    | Not found or no visibility       | `report.*`                                |
-| 409    | State conflict                   | `conflict.*`                              |
-| 429    | Rate limit or quota              | `rate_limit.*`, `otp.*`                   |
-| 503    | External dependency down         | `service.*`                               |
+| 404    | Not found or no visibility       | `resource.not_found`                      |
+| 409    | State conflict                   | `resource.conflict`                       |
+| 429    | Rate limit or quota              | `rate_limit.*`, `otp.*`, `report.*`       |
+| 503    | External dependency down         | `service.*`, `upload.storage_failed`      |
 | 500    | Unexpected fault                 | `internal.error`                          |
 
 ---
@@ -68,19 +68,49 @@ Every `429` includes `Retry-After` (seconds). OTP limits (`otp.cooldown`, `otp.h
 | `service.sms_unavailable`  | 503  | SMS provider down             |
 | `internal.error`           | 500  | Unexpected error              |
 
+Shared across phases (not repeated in phase tables):
+
+| Code | HTTP | Description |
+| ---- | ---- | ----------- |
+| `resource.not_found` | 404 | Entity missing or caller lacks visibility (same response either way) |
+| `resource.conflict` | 409 | Invalid state transition (e.g. withdraw non-pending report) |
+
 Later phases add `claim.*`, `moderation.*`, etc.
 
 ---
 
 ## Error codes - Phase 02 (report submission)
 
-| Code | HTTP | Description |
-| ---- | ---- | ----------- |
-| `report.daily_quota` | 429 | 3 new reports per Cairo day exceeded |
-| `report.open_cap` | 429 | 5 open reports (`Pending Review`, `Published`, `Claim In Progress`) exceeded |
-| `report.contact_info` | — | Field-level message when contact info detected; top-level code remains `validation.failed` |
+### Report (`report.*`)
 
-`report.daily_quota` includes `Retry-After` (seconds until next Cairo midnight). `report.open_cap` has no `Retry-After`.
+| Code | HTTP | When | `errors` map |
+| ---- | ---- | ---- | ------------ |
+| `report.daily_quota` | 429 | 3+ new reports in the current Cairo day | No — summary only; `Retry-After` until next Cairo midnight |
+| `report.open_cap` | 429 | 5 open reports (`pending_review`, `published`, `claim_in_progress`) | No — summary only |
+| `report.contact_info` | — | Reserved; contact-info violations use `validation.failed` with per-field messages | Yes |
+
+Report create/validation also returns `validation.failed` (400) with field keys: `type`, `categoryCode`, `title`, `description`, `dateLostOrFound`, `governorateCode`, `areaText`, `heldLocation`, `hiddenDetail`, `rewardAmount`, category field keys, and `photos[n]`.
+
+### Upload (`upload.*`)
+
+| Code | HTTP | When | `errors` map |
+| ---- | ---- | ---- | ------------ |
+| `upload.invalid_format` | 400 | Wrong MIME or content-type mismatch on report photo | Often on `photos[n]` |
+| `upload.too_large` | 400 | File exceeds 5 MB | Often on `photos[n]` |
+| `upload.storage_failed` | 503 | R2 put failure during report submit | No |
+
+`POST /api/v1/reports` (multipart with photos) may return `rate_limit.exceeded` (429) from the `photo-upload` middleware policy (5/min + 20/hour per user when `photo-upload-hourly` is configured).
+
+---
+
+## Frontend error handling
+
+Angular maps `code` → `error.{code}` in `web/src/assets/i18n/ar/errors.json` via `ApiErrorService` (`web/src/app/i18n/api-error.service.ts`):
+
+- `summary(error)` — translated summary, falling back to `message`
+- `fieldErrors(error)` — `errors` map for inline form display
+
+Report UI also uses `web/src/assets/i18n/ar/reports.json` for form copy.
 
 ---
 
@@ -154,6 +184,25 @@ Used when CAPTCHA verification times out (Turnstile slow/unavailable). SMS provi
 The request passed validation and the OTP was enqueued. SMS delivery happens asynchronously via the outbox worker. The user should check their phone; if no SMS arrives within a minute, retry respecting cooldown/limits.
 
 **Residual ambiguity:** If the SMS provider accepts the message but the HTTP response times out, the API returns **503**, keeps the **`otp_codes`** row, and leaves the outbox **`Pending`** for worker retry (idempotency key = outbox Id). The user may still receive the SMS and can try to verify. If the incoming request times out while dispatch continues server-side, the client may see **504** even though the outbox later becomes **`Sent`**.
+
+**429 report quota** - `POST /api/v1/reports` + header `Retry-After: <seconds>`
+
+```json
+{
+  "code": "report.daily_quota",
+  "message": "You have reached the daily limit of 3 new reports. Try again after midnight (Cairo time)."
+}
+```
+
+**400 upload** - `POST /api/v1/reports` (multipart, photo part)
+
+```json
+{
+  "code": "upload.too_large",
+  "message": "Image must not exceed 5 MB.",
+  "errors": { "photos[0]": ["Image must not exceed 5 MB."] }
+}
+```
 
 **500**
 

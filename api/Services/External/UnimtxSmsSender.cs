@@ -1,4 +1,5 @@
 using Amanah.Api.Models.Common;
+using Amanah.Api.Observability;
 using Amanah.Api.Options;
 using Microsoft.Extensions.Options;
 
@@ -8,16 +9,24 @@ public sealed class UnimtxSmsSender(
     HttpClient httpClient,
     IOptions<SmsOptions> smsOptions,
     IOptions<OtpOptions> otpOptions,
-    ILogger<UnimtxSmsSender> logger) : ISmsSender
+    ILogger<UnimtxSmsSender> logger,
+    AppMetrics metrics) : ISmsSender
 {
     private const string ApiBaseUrl = "https://api.unimtx.com/";
     private const string SuccessCode = "0";
 
-    public async Task SendOtpAsync(
+    public Task SendOtpAsync(
         string normalizedPhone,
         string code,
         Guid idempotencyKey,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        SendOtpCoreAsync(normalizedPhone, code, idempotencyKey, cancellationToken);
+
+    private async Task SendOtpCoreAsync(
+        string normalizedPhone,
+        string code,
+        Guid idempotencyKey,
+        CancellationToken cancellationToken)
     {
         var apiKey = smsOptions.Value.ApiKey!;
         var ttlSeconds = otpOptions.Value.CodeLifetimeMinutes * 60;
@@ -42,18 +51,18 @@ public sealed class UnimtxSmsSender(
             && responseBody is not null
             && responseBody.Code == SuccessCode)
         {
+            metrics.RecordSmsCompleted();
             logger.LogInformation(
-                "OTP SMS sent to {Phone} (idempotency {IdempotencyKey}).",
-                normalizedPhone,
+                "OTP SMS sent (idempotency {IdempotencyKey}).",
                 idempotencyKey);
             return;
         }
 
+        metrics.RecordSmsFailed();
         var errorCode = responseBody?.Code ?? "unknown";
         var errorMessage = responseBody?.Message ?? "No response body";
         logger.LogError(
-            "Unimtx OTP send failed for {Phone} (idempotency {IdempotencyKey}): {ErrorCode} {ErrorMessage} (HTTP {StatusCode})",
-            normalizedPhone,
+            "Unimtx OTP send failed (idempotency {IdempotencyKey}): {ErrorCode} {ErrorMessage} (HTTP {StatusCode})",
             idempotencyKey,
             errorCode,
             errorMessage,

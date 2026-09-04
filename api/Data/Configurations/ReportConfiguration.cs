@@ -31,8 +31,8 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
         builder.Property(report => report.AreaText)
             .HasMaxLength(120);
 
-        builder.Property(report => report.ItemHeldLocation)
-            .HasMaxLength(200);
+        builder.Property(report => report.HeldLocation)
+            .HasMaxLength(120);
 
         builder.Property(report => report.Status)
             .HasMaxLength(20)

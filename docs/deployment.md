@@ -21,7 +21,26 @@ One public origin serves both the app and `/api/v1/*`.
 4. **Unimtx** — create account, add credit, configure SMS API key
 5. **Keepalive** (optional) — scheduled ping to avoid free-tier spin-down
 
-Verify `/health`, the home page, and sign-in/sign-up after deploy.
+Verify `/health`, `/health/ready`, the home page, sign-in/sign-up, and report submission after deploy.
+
+See [observability.md](observability.md) for logs, metrics, and alerting.
+
+---
+
+## Cloudflare R2 (report photos)
+
+Set on the Render web service (or in `.env` locally):
+
+| Variable | Purpose |
+| -------- | ------- |
+| `Bucket__Endpoint` | R2 S3 API endpoint (`https://<account-id>.r2.cloudflarestorage.com`) |
+| `Bucket__AccessKey` | R2 access key ID |
+| `Bucket__SecretKey` | R2 secret access key |
+| `Bucket__Name` | Bucket name (e.g. `amanah-media`) |
+
+When `Bucket__Endpoint` is **unset**, the API uses an in-memory fake storage provider — suitable for local dev and tests, not for production photo persistence across restarts.
+
+Photos are stored under `public/` or `private/` prefixes based on category `photosPrivate`. Report photos are uploaded with `POST /api/v1/reports` (multipart) and written directly to the report prefix on submit.
 
 ---
 

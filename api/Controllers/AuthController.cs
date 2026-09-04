@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Amanah.Api.Auth;
 using Amanah.Contracts.Requests.Auth;
 using Amanah.Contracts.Responses.Auth;
@@ -156,11 +155,9 @@ public sealed class AuthController(
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (this.RequireUserId(out var userId) is { } unauthorized)
         {
-            return ResultError.Unauthorized(
-                "Authentication required.",
-                ErrorCodes.Unauthorized).ToActionResult();
+            return unauthorized;
         }
 
         var rawRefreshToken = refreshTokenCookies.Get(Request);
@@ -189,11 +186,9 @@ public sealed class AuthController(
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LogoutEverywhere(CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (this.RequireUserId(out var userId) is { } unauthorized)
         {
-            return ResultError.Unauthorized(
-                "Authentication required.",
-                ErrorCodes.Unauthorized).ToActionResult();
+            return unauthorized;
         }
 
         var result = await authService.LogoutEverywhereAsync(userId, cancellationToken);
@@ -213,28 +208,12 @@ public sealed class AuthController(
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (this.RequireUserId(out var userId) is { } unauthorized)
         {
-            return ResultError.Unauthorized(
-                "Authentication required.",
-                ErrorCodes.Unauthorized).ToActionResult();
+            return unauthorized;
         }
 
         var result = await authService.GetMeAsync(userId, cancellationToken);
         return result.ToActionResult();
-    }
-
-    private bool TryGetUserId(out Guid userId)
-    {
-        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue(AuthClaimTypes.Sub);
-
-        if (sub is not null && Guid.TryParse(sub, out userId))
-        {
-            return true;
-        }
-
-        userId = default;
-        return false;
     }
 }

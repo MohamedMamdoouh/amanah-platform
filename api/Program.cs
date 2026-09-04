@@ -2,6 +2,8 @@ using Amanah.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.ConfigureObservabilityLogging();
+
 if (!builder.Environment.IsDevelopment())
 {
     var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";

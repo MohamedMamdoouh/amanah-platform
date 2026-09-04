@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping /health
+        id: health
         run: |
           url="${KEEPALIVE_URL%/}/health"
           status=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 120 "$url")

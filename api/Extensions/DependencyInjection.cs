@@ -18,6 +18,8 @@ public static class DependencyInjection
         services.AddApiCaching(configuration);
         services.AddCatalogServices();
         services.AddReportServices();
+        services.AddBucketStorage();
+        services.AddUploadServices();
         services.AddOptions<BucketOptions>()
             .Bind(configuration.GetSection(BucketOptions.SectionName));
         services.AddHttpTimeouts(configuration);
@@ -30,6 +32,7 @@ public static class DependencyInjection
         services.AddApiRateLimiting(configuration);
         services.AddApiCors(configuration, environment);
         services.AddForwardedHeaders(configuration);
+        services.AddObservability();
 
         services.AddControllers(options => options.Filters.Add<ApiValidationFilter>())
             .AddJsonOptions(options =>
@@ -49,6 +52,7 @@ public static class DependencyInjection
     {
         app.UseExceptionHandler();
         app.UseForwardedHeaders();
+        app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseMiddleware<RequestLoggingMiddleware>();
 
         if (app.Environment.IsProduction())
@@ -64,6 +68,7 @@ public static class DependencyInjection
         app.UseAuthorization();
         app.UseRateLimiter();
         app.MapControllers();
+        app.MapObservabilityEndpoints();
 
         if (app.Environment.IsProduction())
         {

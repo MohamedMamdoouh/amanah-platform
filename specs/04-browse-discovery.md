@@ -13,15 +13,15 @@ Enable anyone - including logged-out visitors - to browse, search, filter, and v
 
 ## 2. SPEC references
 
-| SPEC section | Topic |
-| ------------ | ----- |
-| Section 3 | Logged-out browsing parity, login required for actions |
-| Section 4.4 | Browsing and discovery |
-| Section 4.8 | My Reports Published tab integration |
-| Section 8 | Public visibility by status |
-| Section 9 | Public vs reporter vs admin visibility |
-| Section 15.3 | Browse, search, visibility acceptance criteria |
-| Section 16 | Search implementation (`pg_trgm`, Arabic normalization) |
+| SPEC section | Topic                                                   |
+| ------------ | ------------------------------------------------------- |
+| Section 3    | Logged-out browsing parity, login required for actions  |
+| Section 4.4  | Browsing and discovery                                  |
+| Section 4.8  | My Reports Published tab integration                    |
+| Section 8    | Public visibility by status                             |
+| Section 9    | Public vs reporter vs admin visibility                  |
+| Section 15.3 | Browse, search, visibility acceptance criteria          |
+| Section 16   | Search implementation (`pg_trgm`, Arabic normalization) |
 
 **Part II (technical):** Section 16 (search)
 
@@ -45,24 +45,24 @@ None additional.
 
 ### API
 
-| Method | Route | Purpose |
-| ------ | ----- | ------- |
-| GET | `/api/v1/reports` | Browse/search: `Published` + `Claim In Progress` only |
-| GET | `/api/v1/reports/{id}/public` | Public detail page data (status-aware) |
-| GET | `/api/v1/lost/{id}` | Alias redirect or shared handler for lost reports |
-| GET | `/api/v1/found/{id}` | Alias redirect or shared handler for found reports |
+| Method | Route                         | Purpose                                               |
+| ------ | ----------------------------- | ----------------------------------------------------- |
+| GET    | `/api/v1/reports`             | Browse/search: `Published` + `Claim In Progress` only |
+| GET    | `/api/v1/reports/{id}/public` | Public detail page data (status-aware)                |
+| GET    | `/api/v1/lost/{id}`           | Alias redirect or shared handler for lost reports     |
+| GET    | `/api/v1/found/{id}`          | Alias redirect or shared handler for found reports    |
 
 Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (lost/found), `dateFrom`, `dateTo`, `page`, `pageSize` (default 20).
 
 ### UI routes
 
-| Route | Access | Purpose |
-| ----- | ------ | ------- |
-| `/browse` | Public | Browse listing with search and filters |
-| `/lost/{id}` | Public | Lost report detail (status-aware) |
-| `/found/{id}` | Public | Found report detail (status-aware) |
-| `/not-found` | Public | Generic not-found page |
-| `/unavailable` | Public | Permanently-unavailable page |
+| Route          | Access | Purpose                                |
+| -------------- | ------ | -------------------------------------- |
+| `/browse`      | Public | Browse listing with search and filters |
+| `/lost/{id}`   | Public | Lost report detail (status-aware)      |
+| `/found/{id}`  | Public | Found report detail (status-aware)     |
+| `/not-found`   | Public | Generic not-found page                 |
+| `/unavailable` | Public | Permanently-unavailable page           |
 
 ### Database
 
@@ -87,17 +87,18 @@ Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (l
 
 Server-enforce these matrix rows before marking this phase done:
 
-| Data | Public visitor | Logged-in user | Reporter (own) | Admin |
-| ---- | -------------- | -------------- | -------------- | ----- |
-| Title, description, category fields | yes (Published/Claim In Progress) | yes | yes | yes |
-| Public photos | yes | yes | yes | yes |
-| Private photos | - | - | yes (own) | yes (review) |
-| Hidden verification detail | - | - | yes (own) | - |
-| Reward, held location | yes | yes | yes | yes |
-| Display name of reporter | yes | yes | own | yes |
-| Phone numbers | - | own | own | yes |
+| Data                                | Public visitor                    | Logged-in user | Reporter (own) | Admin        |
+| ----------------------------------- | --------------------------------- | -------------- | -------------- | ------------ |
+| Title, description, category fields | yes (Published/Claim In Progress) | yes            | yes            | yes          |
+| Public photos                       | yes                               | yes            | yes            | yes          |
+| Private photos                      | -                                 | -              | yes (own)      | yes (review) |
+| Hidden verification detail          | -                                 | -              | yes (own)      | -            |
+| Reward, held location               | yes                               | yes            | yes            | yes          |
+| Display name of reporter            | yes                               | yes            | own            | yes          |
+| Phone numbers                       | -                                 | own            | own            | yes          |
 
 URL access by status (Section 4.4):
+
 - `Pending Review`, `Rejected` -> not-found (except reporter/admin)
 - `Resolved`, `Withdrawn`, `Removed by Admin` -> permanently-unavailable
 - Missing IDs, wrong type -> not-found
@@ -106,9 +107,9 @@ URL access by status (Section 4.4):
 
 ## 6. Notifications (Section 5.7)
 
-| Event | Recipient | Introduced |
-| ----- | --------- | ---------- |
-| - | - | No new notification types this phase |
+| Event | Recipient | Introduced                           |
+| ----- | --------- | ------------------------------------ |
+| -     | -         | No new notification types this phase |
 
 ---
 
