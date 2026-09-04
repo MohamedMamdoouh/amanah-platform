@@ -22,7 +22,7 @@ export class ReportService {
 
   create(request: CreateReportRequest, photos: File[] = []): Observable<CreateReportResponse> {
     const formData = new FormData();
-    formData.append('report', new Blob([JSON.stringify(request)], { type: 'application/json' }));
+    formData.append('report', JSON.stringify(request));
 
     for (const photo of photos) {
       formData.append('photos', photo, photo.name);

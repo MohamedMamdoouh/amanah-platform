@@ -2,6 +2,7 @@ using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 using Amanah.Api.Utilities.Reports;
 using Amanah.Contracts.Errors;
+using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Tests.Uploads;
 
@@ -41,6 +42,7 @@ public class ReportPhotoSubmitTests(ApiWebApplicationFactory factory) : IClassFi
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.UploadTooLarge, apiError?.Code);
         Assert.Contains("photos[0]", apiError!.Errors!.Keys);
+        Assert.Equal(0, await context.DbContext.Reports.CountAsync());
     }
 
     [Fact]
@@ -58,6 +60,7 @@ public class ReportPhotoSubmitTests(ApiWebApplicationFactory factory) : IClassFi
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.UploadInvalidFormat, apiError?.Code);
         Assert.Contains("photos[0]", apiError!.Errors!.Keys);
+        Assert.Equal(0, await context.DbContext.Reports.CountAsync());
     }
 
     [Fact]
@@ -74,5 +77,23 @@ public class ReportPhotoSubmitTests(ApiWebApplicationFactory factory) : IClassFi
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("photos", apiError!.Errors!.Keys);
+    }
+
+    [Fact]
+    public async Task Create_rejects_invalid_second_photo_without_persisting_report()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var request = TestReportHelpers.BuildValidLostRequest();
+
+        var (response, _) = await context.SubmitReportAsync(
+            request,
+            [TestImageFactory.CreateMinimalJpeg(), "not-an-image"u8.ToArray()],
+            "image/jpeg");
+        var apiError = await context.ReadErrorAsync(response);
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ErrorCodes.UploadInvalidFormat, apiError?.Code);
+        Assert.Contains("photos[1]", apiError!.Errors!.Keys);
+        Assert.Equal(0, await context.DbContext.Reports.CountAsync());
     }
 }

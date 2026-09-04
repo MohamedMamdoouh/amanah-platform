@@ -85,11 +85,28 @@ public sealed class ReportTestContext : IAsyncDisposable
     public async Task<(HttpResponseMessage Response, CreateReportResponse? Body)> SubmitReportAsync(
         CreateReportRequest request,
         IReadOnlyList<byte[]>? photoContents = null,
-        string photoContentType = "image/jpeg")
+        string photoContentType = "image/jpeg") =>
+        await SubmitReportAsync(request, photoContents, photoContentType, reportJsonAsFilePart: false);
+
+    public async Task<(HttpResponseMessage Response, CreateReportResponse? Body)> SubmitReportAsync(
+        CreateReportRequest request,
+        IReadOnlyList<byte[]>? photoContents,
+        string photoContentType,
+        bool reportJsonAsFilePart)
     {
         using var content = new MultipartFormDataContent();
         var json = JsonSerializer.Serialize(request, ApiJson.SerializerOptions);
-        content.Add(new StringContent(json, Encoding.UTF8, "application/json"), "report");
+
+        if (reportJsonAsFilePart)
+        {
+            var reportPart = new ByteArrayContent(Encoding.UTF8.GetBytes(json));
+            reportPart.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            content.Add(reportPart, "report", "blob");
+        }
+        else
+        {
+            content.Add(new StringContent(json, Encoding.UTF8, "application/json"), "report");
+        }
 
         if (photoContents is not null)
         {

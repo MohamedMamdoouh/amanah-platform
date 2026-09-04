@@ -26,7 +26,7 @@ public sealed class ReportCreateFormParser(IValidator<CreateReportRequest> valid
 
         var form = await request.ReadFormAsync(cancellationToken);
 
-        var reportJson = form["report"].ToString();
+        var reportJson = await ReadReportJsonAsync(form, cancellationToken);
         if (string.IsNullOrWhiteSpace(reportJson))
         {
             return ReportPartError("Report data is required.");
@@ -94,6 +94,27 @@ public sealed class ReportCreateFormParser(IValidator<CreateReportRequest> valid
         }
 
         return new ReportCreateForm(reportRequest, photoFiles);
+    }
+
+    private static async Task<string> ReadReportJsonAsync(
+        IFormCollection form,
+        CancellationToken cancellationToken)
+    {
+        var reportJson = form["report"].ToString();
+        if (!string.IsNullOrWhiteSpace(reportJson))
+        {
+            return reportJson;
+        }
+
+        // Angular FormData.append(name, new Blob(...)) is a file part, not a string field.
+        var reportFile = form.Files.GetFile("report");
+        if (reportFile is null || reportFile.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        using var reader = new StreamReader(reportFile.OpenReadStream());
+        return await reader.ReadToEndAsync(cancellationToken);
     }
 
     private static ResultError ReportPartError(string message) =>
