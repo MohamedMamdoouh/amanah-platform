@@ -195,6 +195,23 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task Create_accepts_report_json_sent_as_file_part()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var request = TestReportHelpers.BuildValidLostRequest();
+
+        var (response, body) = await context.SubmitReportAsync(
+            request,
+            photoContents: null,
+            photoContentType: "image/jpeg",
+            reportJsonAsFilePart: true);
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Equal("pending_review", body.Status);
+    }
+
+    [Fact]
     public async Task Create_rejects_held_location_on_lost_report()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);

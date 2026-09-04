@@ -192,9 +192,6 @@ public sealed class ReportService(
             normalized.AreaText,
             categoryFieldValues);
 
-        dbContext.Reports.Add(report);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
         var photoError = await photoAttachService.AttachAsync(
             report,
             photos,
@@ -203,15 +200,11 @@ public sealed class ReportService(
 
         if (photoError is not null)
         {
-            dbContext.Reports.Remove(report);
-            await dbContext.SaveChangesAsync(cancellationToken);
             return photoError;
         }
 
-        if (photos.Count > 0)
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
+        dbContext.Reports.Add(report);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         metrics.RecordReportSubmitted();
 
