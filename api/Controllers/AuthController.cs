@@ -107,6 +107,7 @@ public sealed class AuthController(
     [EndpointSummary("Set a new password after OTP verification and sign in.")]
     [ProducesResponseType(typeof(AuthSessionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ResetPassword(
         [FromBody] ResetPasswordRequest request,
         CancellationToken cancellationToken)

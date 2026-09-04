@@ -66,6 +66,47 @@ public class PasswordResetTests(ApiWebApplicationFactory factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task Password_reset_banned_user_returns_banned_and_does_not_change_password()
+    {
+        await using var context = await CreateContextAsync();
+
+        await context.RegisterNewUserAsync();
+
+        var user = await context.DbContext.Users.SingleAsync();
+        var previousHash = user.PasswordHash;
+        user.IsBanned = true;
+        user.BanReason = "policy violations";
+        await context.DbContext.SaveChangesAsync();
+        context.DbContext.ChangeTracker.Clear();
+
+        var code = await context.SendOtpAndGetCodeAsync("01012345678", OtpPurposes.PasswordReset);
+        var (_, verifyBody) = await context.VerifyOtpAsync(
+            "01012345678",
+            code,
+            OtpPurposes.PasswordReset);
+
+        var (response, session) = await context.ResetPasswordAsync(
+            verifyBody!.ResetToken!,
+            "NewPass123");
+        var error = await context.ReadErrorAsync(response);
+
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(ErrorCodes.Banned, error?.Code);
+        Assert.Contains("policy violations", error?.Message);
+        Assert.Null(session);
+        Assert.Null(OtpSendTestContext.ExtractRefreshToken(response));
+
+        context.DbContext.ChangeTracker.Clear();
+        var unchanged = await context.DbContext.Users.SingleAsync();
+        Assert.Equal(previousHash, unchanged.PasswordHash);
+        Assert.True(
+            context.PasswordHasher.VerifyPassword(
+                unchanged,
+                TestAuthHelpers.DefaultPassword,
+                unchanged.PasswordHash));
+    }
+
+    [Fact]
     public async Task Password_reset_send_for_unknown_phone_returns_204_without_sms()
     {
         await using var context = await CreateContextAsync();
