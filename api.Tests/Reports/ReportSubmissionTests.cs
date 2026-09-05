@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Models.Common;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Uploads;
 using Amanah.Api.Utilities;
@@ -209,6 +211,45 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
         Assert.Equal("pending_review", body.Status);
+    }
+
+    [Fact]
+    public async Task Create_persists_reward_when_amount_is_json_number()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var request = TestReportHelpers.BuildValidLostRequest(
+            hasReward: true,
+            rewardAmount: 250);
+
+        var (response, body) = await context.SubmitReportAsync(request);
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+
+        var report = await context.DbContext.Reports.SingleAsync(report => report.Id == body.Id);
+        Assert.True(report.HasReward);
+        Assert.Equal(250, report.RewardAmount);
+    }
+
+    [Fact]
+    public async Task Create_accepts_reward_amount_serialized_as_json_string()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var request = TestReportHelpers.BuildValidLostRequest();
+        var node = System.Text.Json.Nodes.JsonNode.Parse(
+            JsonSerializer.Serialize(request, ApiJson.SerializerOptions));
+        Assert.NotNull(node);
+        node["hasReward"] = true;
+        node["rewardAmount"] = "250";
+
+        var (response, body) = await context.SubmitReportJsonAsync(node.ToJsonString());
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+
+        var report = await context.DbContext.Reports.SingleAsync(report => report.Id == body.Id);
+        Assert.True(report.HasReward);
+        Assert.Equal(250, report.RewardAmount);
     }
 
     [Fact]

@@ -189,7 +189,7 @@ export class ReportFormComponent implements OnInit {
       areaText: value.areaText.trim() || null,
       heldLocation: this.isFound() ? value.heldLocation.trim() : null,
       hasReward: value.hasReward,
-      rewardAmount: value.hasReward ? value.rewardAmount : null,
+      rewardAmount: value.hasReward ? parseRewardAmount(value.rewardAmount) : null,
       hiddenDetail: value.hiddenDetail.trim(),
       categoryFields,
     };
@@ -315,4 +315,17 @@ export class ReportFormComponent implements OnInit {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
+}
+
+function parseRewardAmount(raw: unknown): number | null {
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return Math.trunc(raw);
+  }
+
+  if (typeof raw === 'string' && raw.trim().length > 0) {
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
 }
