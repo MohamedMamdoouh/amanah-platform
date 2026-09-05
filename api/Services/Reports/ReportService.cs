@@ -410,9 +410,20 @@ public sealed class ReportService(
             normalized.AreaText,
             report.CategoryFields.Select(field => field.Value).ToList());
 
+        if (photos.Count > 0 && report.Photos.Count + photos.Count > MaxPhotos)
+        {
+            return ResultError.BadRequest(
+                "Please correct the errors in the form.",
+                errors: new Dictionary<string, string[]>
+                {
+                    ["photos"] = [$"At most {MaxPhotos} photos are allowed."],
+                });
+        }
+
+        IReadOnlyList<string> stalePhotoKeys = [];
         if (previousPhotosPrivate != category.PhotosPrivate)
         {
-            var privacyError = await photoAttachService.SyncPhotoPrivacyAsync(
+            var (privacyError, keysToDelete) = await photoAttachService.SyncPhotoPrivacyAsync(
                 report,
                 category.PhotosPrivate,
                 cancellationToken);
@@ -421,20 +432,12 @@ public sealed class ReportService(
             {
                 return privacyError;
             }
+
+            stalePhotoKeys = keysToDelete;
         }
 
         if (photos.Count > 0)
         {
-            if (report.Photos.Count + photos.Count > MaxPhotos)
-            {
-                return ResultError.BadRequest(
-                    "Please correct the errors in the form.",
-                    errors: new Dictionary<string, string[]>
-                    {
-                        ["photos"] = [$"At most {MaxPhotos} photos are allowed."],
-                    });
-            }
-
             var photoError = await photoAttachService.AttachAsync(
                 report,
                 photos,
@@ -448,6 +451,12 @@ public sealed class ReportService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (stalePhotoKeys.Count > 0)
+        {
+            await bucketStorage.DeleteManyAsync(stalePhotoKeys, cancellationToken);
+        }
+
         return Result.Ok();
     }
 
