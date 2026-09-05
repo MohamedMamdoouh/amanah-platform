@@ -14,6 +14,8 @@ public static class TestReportHelpers
         string? hiddenDetail = null,
         string? areaText = "Ramses station platform 2",
         string? heldLocation = null,
+        bool hasReward = false,
+        int? rewardAmount = null,
         Dictionary<string, string>? categoryFields = null) =>
         new()
         {
@@ -25,7 +27,8 @@ public static class TestReportHelpers
             GovernorateCode = governorateCode,
             AreaText = areaText,
             HeldLocation = heldLocation,
-            HasReward = false,
+            HasReward = hasReward,
+            RewardAmount = rewardAmount,
             HiddenDetail = hiddenDetail ?? "Contains a photo of my family inside.",
             CategoryFields = categoryFields ?? new Dictionary<string, string>
             {

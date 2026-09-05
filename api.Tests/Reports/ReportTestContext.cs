@@ -92,20 +92,30 @@ public sealed class ReportTestContext : IAsyncDisposable
         CreateReportRequest request,
         IReadOnlyList<byte[]>? photoContents,
         string photoContentType,
-        bool reportJsonAsFilePart)
+        bool reportJsonAsFilePart) =>
+        await SubmitReportJsonAsync(
+            JsonSerializer.Serialize(request, ApiJson.SerializerOptions),
+            photoContents,
+            photoContentType,
+            reportJsonAsFilePart);
+
+    public async Task<(HttpResponseMessage Response, CreateReportResponse? Body)> SubmitReportJsonAsync(
+        string reportJson,
+        IReadOnlyList<byte[]>? photoContents = null,
+        string photoContentType = "image/jpeg",
+        bool reportJsonAsFilePart = false)
     {
         using var content = new MultipartFormDataContent();
-        var json = JsonSerializer.Serialize(request, ApiJson.SerializerOptions);
 
         if (reportJsonAsFilePart)
         {
-            var reportPart = new ByteArrayContent(Encoding.UTF8.GetBytes(json));
+            var reportPart = new ByteArrayContent(Encoding.UTF8.GetBytes(reportJson));
             reportPart.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             content.Add(reportPart, "report", "blob");
         }
         else
         {
-            content.Add(new StringContent(json, Encoding.UTF8, "application/json"), "report");
+            content.Add(new StringContent(reportJson, Encoding.UTF8, "application/json"), "report");
         }
 
         if (photoContents is not null)
