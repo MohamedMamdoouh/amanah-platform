@@ -20,141 +20,341 @@
       </p>
     </header>
 
-    <dl class="report-detail__fields">
-      <div>
-        <dt>{{ "reports.detail.category" | translate }}</dt>
-        <dd>{{ categoryLabel(detail.categoryCode) }}</dd>
-      </div>
-      <div>
-        <dt>{{ "reports.detail.governorate" | translate }}</dt>
-        <dd>{{ governorateLabel(detail.governorateCode) }}</dd>
-      </div>
-      <div>
-        <dt>
-          @if (detail.type === "found") {
-            {{ "reports.form.date_found" | translate }}
-          } @else {
-            {{ "reports.form.date_lost" | translate }}
+    @if (canEdit()) {
+      @if (detail.rejectionReasonCode || detail.rejectionNote) {
+        <section class="report-detail__rejection" aria-labelledby="rejection-title">
+          <h2 id="rejection-title">{{ "reports.resubmit.rejection_title" | translate }}</h2>
+          @if (detail.rejectionReasonCode) {
+            <p class="report-detail__rejection-reason">
+              {{ rejectionReasonLabel(detail.rejectionReasonCode) }}
+            </p>
           }
-        </dt>
-        <dd>{{ detail.dateLostOrFound }}</dd>
-      </div>
-      @if (detail.areaText) {
-        <div>
-          <dt>{{ "reports.form.area" | translate }}</dt>
-          <dd>{{ detail.areaText }}</dd>
-        </div>
+          @if (detail.rejectionNote) {
+            <p class="report-detail__rejection-note">{{ detail.rejectionNote }}</p>
+          }
+        </section>
       }
-      @if (detail.heldLocation) {
-        <div>
-          <dt>{{ "reports.form.held_location" | translate }}</dt>
-          <dd>{{ detail.heldLocation }}</dd>
-        </div>
-      }
-      <div>
-        <dt>{{ "reports.form.description" | translate }}</dt>
-        <dd>{{ detail.description }}</dd>
-      </div>
-      @for (entry of categoryFieldEntries(); track entry[0]) {
-        <div>
-          <dt>{{ fieldLabel(entry[0]) }}</dt>
-          <dd>{{ entry[1] }}</dd>
-        </div>
-      }
-      @if (detail.hasReward && detail.rewardAmount) {
-        <div>
-          <dt>{{ "reports.form.reward_amount" | translate }}</dt>
-          <dd>{{ detail.rewardAmount }}</dd>
-        </div>
-      }
-      @if (detail.hiddenDetail) {
-        <div class="report-detail__private">
-          <dt>{{ "reports.form.hidden_detail" | translate }}</dt>
-          <dd>{{ detail.hiddenDetail }}</dd>
-        </div>
-      }
-    </dl>
 
-    @if (photos().length > 0) {
-      <section
-        class="report-detail__photos"
-        [attr.aria-label]="'reports.form.photos_title' | translate"
-      >
-        <h2>{{ "reports.form.photos_title" | translate }}</h2>
-        <div class="report-detail__photo-grid">
-          @for (photo of photos(); track photo.id) {
-            @if (photo.url) {
-              <img [src]="photo.url" alt="" class="report-detail__photo" />
-            } @else if (photo.loading) {
-              <span class="report-detail__photo-loading">{{
-                "reports.detail.photo_loading" | translate
-              }}</span>
+      @if (resubmitError()) {
+        <p class="report-detail__error" role="alert">{{ resubmitError() }}</p>
+      }
+
+      @if (catalogLoading()) {
+        <p>{{ "reports.form.loading" | translate }}</p>
+      } @else {
+        <form class="report-detail__edit-form" [formGroup]="editForm" (ngSubmit)="resubmit()">
+          <p class="report-detail__edit-intro">{{ "reports.resubmit.intro" | translate }}</p>
+
+          <label class="report-detail__field">
+            <span class="report-detail__label">{{ "reports.form.category" | translate }}</span>
+            <select formControlName="categoryCode" class="report-detail__input">
+              <option value="" disabled>{{ "reports.form.category_placeholder" | translate }}</option>
+              @for (category of categories(); track category.code) {
+                <option [value]="category.code">{{ categoryLabel(category.code) }}</option>
+              }
+            </select>
+            @if (fieldError("categoryCode")) {
+              <span class="report-detail__field-error" role="alert">{{ fieldError("categoryCode") }}</span>
             }
+          </label>
+
+          @if (selectedCategory()) {
+            <div formGroupName="categoryFields" class="report-detail__section">
+              <h2 class="report-detail__section-title">{{ "reports.form.category_fields" | translate }}</h2>
+              @for (definition of fieldDefinitions(); track definition.fieldKey) {
+                <label class="report-detail__field">
+                  <span class="report-detail__label">{{ fieldLabel(definition.fieldKey) }}</span>
+                  @if (definition.type === "Integer") {
+                    <input
+                      type="number"
+                      class="report-detail__input"
+                      [formControlName]="definition.fieldKey"
+                    />
+                  } @else {
+                    <input
+                      type="text"
+                      class="report-detail__input"
+                      [formControlName]="definition.fieldKey"
+                    />
+                  }
+                  @if (fieldHint(definition.fieldKey); as hint) {
+                    <span class="report-detail__hint">{{ hint }}</span>
+                  }
+                  @if (categoryFieldError(definition.fieldKey)) {
+                    <span class="report-detail__field-error" role="alert">
+                      {{ categoryFieldError(definition.fieldKey) }}
+                    </span>
+                  }
+                </label>
+              }
+            </div>
           }
-        </div>
-      </section>
-    }
 
-    @if (canWithdraw()) {
-      <div class="report-detail__actions">
-        <button
-          type="button"
-          class="report-detail__withdraw"
-          (click)="openWithdraw()"
-        >
-          {{ "reports.withdraw.button" | translate }}
-        </button>
-      </div>
-    }
+          <label class="report-detail__field">
+            <span class="report-detail__label">{{ "reports.form.title" | translate }}</span>
+            <input type="text" class="report-detail__input" formControlName="title" />
+            @if (fieldError("title")) {
+              <span class="report-detail__field-error" role="alert">{{ fieldError("title") }}</span>
+            }
+          </label>
 
-    @if (showWithdraw()) {
-      <div
-        class="report-detail__dialog"
-        role="dialog"
-        aria-labelledby="withdraw-title"
-      >
-        <h2 id="withdraw-title">{{ "reports.withdraw.title" | translate }}</h2>
-        <p>{{ "reports.withdraw.intro" | translate }}</p>
+          <label class="report-detail__field">
+            <span class="report-detail__label">{{ "reports.form.description" | translate }}</span>
+            <textarea class="report-detail__input" rows="4" formControlName="description"></textarea>
+            @if (fieldError("description")) {
+              <span class="report-detail__field-error" role="alert">{{ fieldError("description") }}</span>
+            }
+          </label>
 
-        @if (withdrawError()) {
-          <p class="report-detail__error" role="alert">{{ withdrawError() }}</p>
-        }
+          <label class="report-detail__field">
+            <span class="report-detail__label">
+              @if (isFound()) {
+                {{ "reports.form.date_found" | translate }}
+              } @else {
+                {{ "reports.form.date_lost" | translate }}
+              }
+            </span>
+            <input type="date" class="report-detail__input" formControlName="dateLostOrFound" />
+            @if (fieldError("dateLostOrFound")) {
+              <span class="report-detail__field-error" role="alert">{{ fieldError("dateLostOrFound") }}</span>
+            }
+          </label>
 
-        <form
-          class="report-detail__withdraw-form"
-          [formGroup]="withdrawForm"
-          (ngSubmit)="confirmWithdraw()"
-        >
-          <fieldset class="report-detail__reasons">
-            <legend class="report-detail__reasons-legend">
-              {{ "reports.withdraw.reason_label" | translate }}
-            </legend>
-            @for (reason of withdrawalReasons; track reason) {
-              <label class="report-detail__reason">
-                <input type="radio" formControlName="reason" [value]="reason" />
-                <span>{{ withdrawalReasonLabel(reason) }}</span>
+          <label class="report-detail__field">
+            <span class="report-detail__label">{{ "reports.form.governorate" | translate }}</span>
+            <select formControlName="governorateCode" class="report-detail__input">
+              <option value="" disabled>{{ "reports.form.governorate_placeholder" | translate }}</option>
+              @for (governorate of governorates(); track governorate.code) {
+                <option [value]="governorate.code">{{ governorateLabel(governorate.code) }}</option>
+              }
+            </select>
+            @if (fieldError("governorateCode")) {
+              <span class="report-detail__field-error" role="alert">{{ fieldError("governorateCode") }}</span>
+            }
+          </label>
+
+          <label class="report-detail__field">
+            <span class="report-detail__label">{{ "reports.form.area" | translate }}</span>
+            <input type="text" class="report-detail__input" formControlName="areaText" />
+            @if (fieldError("areaText")) {
+              <span class="report-detail__field-error" role="alert">{{ fieldError("areaText") }}</span>
+            }
+          </label>
+
+          @if (isFound()) {
+            <label class="report-detail__field">
+              <span class="report-detail__label">{{ "reports.form.held_location" | translate }}</span>
+              <input type="text" class="report-detail__input" formControlName="heldLocation" />
+              @if (fieldError("heldLocation")) {
+                <span class="report-detail__field-error" role="alert">{{ fieldError("heldLocation") }}</span>
+              }
+            </label>
+          }
+
+          @if (!isFound()) {
+            <label class="report-detail__checkbox">
+              <input type="checkbox" formControlName="hasReward" />
+              <span>{{ "reports.form.has_reward" | translate }}</span>
+            </label>
+
+            @if (editForm.controls.hasReward.value) {
+              <label class="report-detail__field">
+                <span class="report-detail__label">{{ "reports.form.reward_amount" | translate }}</span>
+                <input type="number" class="report-detail__input" formControlName="rewardAmount" />
+                @if (fieldError("rewardAmount")) {
+                  <span class="report-detail__field-error" role="alert">{{ fieldError("rewardAmount") }}</span>
+                }
               </label>
             }
-          </fieldset>
+          }
 
-          <div class="report-detail__dialog-actions">
-            <button
-              type="button"
-              class="report-detail__cancel"
-              (click)="closeWithdraw()"
-            >
-              {{ "reports.withdraw.cancel" | translate }}
-            </button>
+          <section class="report-detail__private">
+            <h2>{{ "reports.form.hidden_detail_title" | translate }}</h2>
+            <p class="report-detail__hint">{{ "reports.form.hidden_detail_privacy" | translate }}</p>
+            <label class="report-detail__field">
+              <span class="report-detail__label">{{ "reports.form.hidden_detail" | translate }}</span>
+              <textarea class="report-detail__input" rows="3" formControlName="hiddenDetail"></textarea>
+              @if (fieldError("hiddenDetail")) {
+                <span class="report-detail__field-error" role="alert">{{ fieldError("hiddenDetail") }}</span>
+              }
+            </label>
+          </section>
+
+          @if (photos().length > 0) {
+            <section class="report-detail__photos" [attr.aria-label]="'reports.form.photos_title' | translate">
+              <h2>{{ "reports.resubmit.existing_photos" | translate }}</h2>
+              <div class="report-detail__photo-grid">
+                @for (photo of photos(); track photo.id) {
+                  @if (photo.url) {
+                    <img [src]="photo.url" alt="" class="report-detail__photo" />
+                  } @else if (photo.loading) {
+                    <span class="report-detail__photo-loading">{{ "reports.detail.photo_loading" | translate }}</span>
+                  }
+                }
+              </div>
+            </section>
+          }
+
+          <section class="report-detail__photos">
+            <h2>{{ "reports.resubmit.add_photos" | translate }}</h2>
+            <app-photo-upload (photosChange)="onPhotosChange($event)" />
+            @if (photosFieldError()) {
+              <span class="report-detail__field-error" role="alert">{{ photosFieldError() }}</span>
+            }
+          </section>
+
+          <div class="report-detail__actions">
             <button
               type="submit"
-              class="report-detail__confirm"
-              [disabled]="withdrawForm.invalid || withdrawing()"
+              class="report-detail__resubmit"
+              [disabled]="editForm.invalid || resubmitting()"
             >
-              {{ "reports.withdraw.confirm" | translate }}
+              @if (resubmitting()) {
+                {{ "reports.resubmit.submitting" | translate }}
+              } @else {
+                {{ "reports.resubmit.button" | translate }}
+              }
             </button>
           </div>
         </form>
-      </div>
+      }
+    } @else {
+      <dl class="report-detail__fields">
+        <div>
+          <dt>{{ "reports.detail.category" | translate }}</dt>
+          <dd>{{ categoryLabel(detail.categoryCode) }}</dd>
+        </div>
+        <div>
+          <dt>{{ "reports.detail.governorate" | translate }}</dt>
+          <dd>{{ governorateLabel(detail.governorateCode) }}</dd>
+        </div>
+        <div>
+          <dt>
+            @if (detail.type === "found") {
+              {{ "reports.form.date_found" | translate }}
+            } @else {
+              {{ "reports.form.date_lost" | translate }}
+            }
+          </dt>
+          <dd>{{ detail.dateLostOrFound }}</dd>
+        </div>
+        @if (detail.areaText) {
+          <div>
+            <dt>{{ "reports.form.area" | translate }}</dt>
+            <dd>{{ detail.areaText }}</dd>
+          </div>
+        }
+        @if (detail.heldLocation) {
+          <div>
+            <dt>{{ "reports.form.held_location" | translate }}</dt>
+            <dd>{{ detail.heldLocation }}</dd>
+          </div>
+        }
+        <div>
+          <dt>{{ "reports.form.description" | translate }}</dt>
+          <dd>{{ detail.description }}</dd>
+        </div>
+        @for (entry of categoryFieldEntries(); track entry[0]) {
+          <div>
+            <dt>{{ fieldLabel(entry[0]) }}</dt>
+            <dd>{{ entry[1] }}</dd>
+          </div>
+        }
+        @if (detail.hasReward && detail.rewardAmount) {
+          <div>
+            <dt>{{ "reports.form.reward_amount" | translate }}</dt>
+            <dd>{{ detail.rewardAmount }}</dd>
+          </div>
+        }
+        @if (detail.hiddenDetail) {
+          <div class="report-detail__private">
+            <dt>{{ "reports.form.hidden_detail" | translate }}</dt>
+            <dd>{{ detail.hiddenDetail }}</dd>
+          </div>
+        }
+      </dl>
+
+      @if (photos().length > 0) {
+        <section
+          class="report-detail__photos"
+          [attr.aria-label]="'reports.form.photos_title' | translate"
+        >
+          <h2>{{ "reports.form.photos_title" | translate }}</h2>
+          <div class="report-detail__photo-grid">
+            @for (photo of photos(); track photo.id) {
+              @if (photo.url) {
+                <img [src]="photo.url" alt="" class="report-detail__photo" />
+              } @else if (photo.loading) {
+                <span class="report-detail__photo-loading">{{
+                  "reports.detail.photo_loading" | translate
+                }}</span>
+              }
+            }
+          </div>
+        </section>
+      }
+
+      @if (canWithdraw()) {
+        <div class="report-detail__actions">
+          <button
+            type="button"
+            class="report-detail__withdraw"
+            (click)="openWithdraw()"
+          >
+            {{ "reports.withdraw.button" | translate }}
+          </button>
+        </div>
+      }
+
+      @if (showWithdraw()) {
+        <div
+          class="report-detail__dialog"
+          role="dialog"
+          aria-labelledby="withdraw-title"
+        >
+          <h2 id="withdraw-title">{{ "reports.withdraw.title" | translate }}</h2>
+          <p>{{ "reports.withdraw.intro" | translate }}</p>
+
+          @if (withdrawError()) {
+            <p class="report-detail__error" role="alert">{{ withdrawError() }}</p>
+          }
+
+          <form
+            class="report-detail__withdraw-form"
+            [formGroup]="withdrawForm"
+            (ngSubmit)="confirmWithdraw()"
+          >
+            <fieldset class="report-detail__reasons">
+              <legend class="report-detail__reasons-legend">
+                {{ "reports.withdraw.reason_label" | translate }}
+              </legend>
+              @for (reason of withdrawalReasons; track reason) {
+                <label class="report-detail__reason">
+                  <input type="radio" formControlName="reason" [value]="reason" />
+                  <span>{{ withdrawalReasonLabel(reason) }}</span>
+                </label>
+              }
+            </fieldset>
+
+            <div class="report-detail__dialog-actions">
+              <button
+                type="button"
+                class="report-detail__cancel"
+                (click)="closeWithdraw()"
+              >
+                {{ "reports.withdraw.cancel" | translate }}
+              </button>
+              <button
+                type="submit"
+                class="report-detail__confirm"
+                [disabled]="withdrawForm.invalid || withdrawing()"
+              >
+                {{ "reports.withdraw.confirm" | translate }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
     }
   }
 </section>

@@ -5,8 +5,10 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
-import { ReportSummary } from '../models/report.models';
+import { ReportStatus, ReportSummary } from '../models/report.models';
 import { ReportService } from '../report.service';
+
+type MyReportsTab = 'pending_review' | 'rejected' | 'published';
 
 @Component({
   selector: 'app-my-reports',
@@ -23,9 +25,12 @@ export class MyReportsComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly reports = signal<ReportSummary[]>([]);
+  readonly activeTab = signal<MyReportsTab>('pending_review');
+
+  readonly tabs: MyReportsTab[] = ['pending_review', 'rejected', 'published'];
 
   ngOnInit(): void {
-    void this.loadReports();
+    void this.loadReports(this.activeTab());
   }
 
   categoryLabel(code: string): string {
@@ -44,11 +49,29 @@ export class MyReportsComponent implements OnInit {
     return this.translate.instant(`reports.status.${status}`);
   }
 
-  private async loadReports(): Promise<void> {
+  tabLabel(tab: MyReportsTab): string {
+    return this.translate.instant(`reports.mine.tab_${tab}`);
+  }
+
+  emptyMessage(): string {
+    return this.translate.instant(`reports.mine.empty_${this.activeTab()}`);
+  }
+
+  selectTab(tab: MyReportsTab): void {
+    if (tab === this.activeTab()) {
+      return;
+    }
+
+    this.activeTab.set(tab);
+    void this.loadReports(tab);
+  }
+
+  private async loadReports(status: ReportStatus): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+
     try {
-      const response = await firstValueFrom(
-        this.reportService.getMine('pending_review'),
-      );
+      const response = await firstValueFrom(this.reportService.getMine(status));
       this.reports.set(response.items);
     } catch {
       this.error.set(this.translate.instant('error.internal.error'));

@@ -1,11 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import {
-  Component,
-  DestroyRef,
-  inject,
-  OnInit,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormBuilder,
@@ -18,7 +12,10 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { CatalogService } from '../../catalog/catalog.service';
-import { Category, CategoryFieldDefinition } from '../../catalog/models/catalog.models';
+import {
+  Category,
+  CategoryFieldDefinition,
+} from '../../catalog/models/catalog.models';
 import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
 import { CreateReportRequest, ReportType } from '../models/report.models';
@@ -64,15 +61,32 @@ export class ReportFormComponent implements OnInit {
 
   readonly form = this.fb.nonNullable.group({
     categoryCode: ['', Validators.required],
-    title: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(80)]],
-    description: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(1000)]],
+    title: [
+      '',
+      [Validators.required, Validators.minLength(10), Validators.maxLength(80)],
+    ],
+    description: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(20),
+        Validators.maxLength(1000),
+      ],
+    ],
     dateLostOrFound: [this.today, Validators.required],
     governorateCode: ['', Validators.required],
     areaText: ['', Validators.maxLength(120)],
     heldLocation: ['', Validators.maxLength(120)],
     hasReward: [false],
     rewardAmount: [null as number | null],
-    hiddenDetail: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
+    hiddenDetail: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(10),
+        Validators.maxLength(500),
+      ],
+    ],
     categoryFields: this.fb.group({}),
   });
 
@@ -122,7 +136,9 @@ export class ReportFormComponent implements OnInit {
   }
 
   categoryFieldError(fieldKey: string): string | null {
-    return this.fieldError(fieldKey) ?? this.fieldError(`categoryFields.${fieldKey}`);
+    return (
+      this.fieldError(fieldKey) ?? this.fieldError(`categoryFields.${fieldKey}`)
+    );
   }
 
   photosFieldError(): string | null {
@@ -189,7 +205,9 @@ export class ReportFormComponent implements OnInit {
       areaText: value.areaText.trim() || null,
       heldLocation: this.isFound() ? value.heldLocation.trim() : null,
       hasReward: value.hasReward,
-      rewardAmount: value.hasReward ? parseRewardAmount(value.rewardAmount) : null,
+      rewardAmount: value.hasReward
+        ? parseRewardAmount(value.rewardAmount)
+        : null,
       hiddenDetail: value.hiddenDetail.trim(),
       categoryFields,
     };
@@ -228,7 +246,8 @@ export class ReportFormComponent implements OnInit {
   }
 
   private onCategoryChanged(code: string): void {
-    const category = this.categories().find((item) => item.code === code) ?? null;
+    const category =
+      this.categories().find((item) => item.code === code) ?? null;
     this.selectedCategory.set(category);
     this.rebuildCategoryFields(category);
   }

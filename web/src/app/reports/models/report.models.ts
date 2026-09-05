@@ -30,6 +30,20 @@ export interface CreateReportRequest {
   categoryFields: Record<string, string>;
 }
 
+export interface UpdateReportRequest {
+  categoryCode: string;
+  title: string;
+  description: string;
+  dateLostOrFound: string;
+  governorateCode: string;
+  areaText?: string | null;
+  heldLocation?: string | null;
+  hasReward: boolean;
+  rewardAmount?: number | null;
+  hiddenDetail: string;
+  categoryFields: Record<string, string>;
+}
+
 export interface CreateReportResponse {
   id: string;
   status: ReportStatus;
@@ -65,6 +79,8 @@ export interface ReportDetail extends ReportSummary {
   categoryFields: Record<string, string>;
   hiddenDetail?: string | null;
   withdrawalReason?: string | null;
+  rejectionReasonCode?: string | null;
+  rejectionNote?: string | null;
   photos: ReportPhoto[];
 }
 

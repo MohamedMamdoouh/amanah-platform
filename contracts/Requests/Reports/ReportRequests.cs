@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Amanah.Contracts.Requests.Reports;
 
 public sealed class CreateReportRequest
@@ -22,8 +20,31 @@ public sealed class CreateReportRequest
 
     public bool HasReward { get; init; }
 
-    // Angular <input type="number"> + DefaultValueAccessor serializes the value as a JSON string.
-    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public int? RewardAmount { get; init; }
+
+    public string HiddenDetail { get; init; } = string.Empty;
+
+    public Dictionary<string, string> CategoryFields { get; init; } = [];
+}
+
+public sealed class UpdateReportRequest
+{
+    public string CategoryCode { get; init; } = string.Empty;
+
+    public string Title { get; init; } = string.Empty;
+
+    public string Description { get; init; } = string.Empty;
+
+    public DateOnly DateLostOrFound { get; init; }
+
+    public string GovernorateCode { get; init; } = string.Empty;
+
+    public string? AreaText { get; init; }
+
+    public string? HeldLocation { get; init; }
+
+    public bool HasReward { get; init; }
+
     public int? RewardAmount { get; init; }
 
     public string HiddenDetail { get; init; } = string.Empty;

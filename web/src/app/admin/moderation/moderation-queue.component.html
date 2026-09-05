@@ -1,0 +1,48 @@
+<section class="moderation-queue" aria-labelledby="moderation-queue-title">
+  <header class="moderation-queue__header">
+    <h1 id="moderation-queue-title" class="moderation-queue__title">
+      {{ 'admin.moderation.title' | translate }}
+    </h1>
+    <p class="moderation-queue__intro">
+      {{ 'admin.moderation.intro' | translate }}
+    </p>
+    @if (pendingCount() > 0) {
+      <p class="moderation-queue__badge">
+        {{
+          'admin.moderation.pending_badge'
+            | translate: { count: pendingCount() }
+        }}
+      </p>
+    }
+  </header>
+
+  @if (loading()) {
+    <p>{{ 'admin.moderation.loading' | translate }}</p>
+  } @else if (error()) {
+    <p class="moderation-queue__error" role="alert">{{ error() }}</p>
+  } @else if (items().length === 0) {
+    <p class="moderation-queue__empty">
+      {{ 'admin.moderation.empty' | translate }}
+    </p>
+  } @else {
+    <ul class="moderation-queue__list">
+      @for (item of items(); track item.id) {
+        <li>
+          <a [routerLink]="['/admin/moderation', item.id]" class="moderation-queue__card">
+            <span class="moderation-queue__type">{{ typeLabel(item.type) }}</span>
+            <span class="moderation-queue__title-text">{{ item.title }}</span>
+            <span class="moderation-queue__meta">
+              {{ categoryLabel(item.categoryCode) }}
+            </span>
+            <span class="moderation-queue__date">
+              {{ item.createdAt | date: 'medium' }}
+            </span>
+            <span class="moderation-queue__action">
+              {{ 'admin.moderation.review' | translate }}
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

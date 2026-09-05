@@ -180,6 +180,43 @@ public sealed class ReportTestContext : IAsyncDisposable
             request ?? new WithdrawReportRequest());
     }
 
+    public async Task<(HttpResponseMessage Response, CreateReportResponse? Body)> UpdateReportAsync(
+        Guid id,
+        UpdateReportRequest request,
+        IReadOnlyList<byte[]>? photoContents = null,
+        string photoContentType = "image/jpeg") =>
+        await UpdateReportJsonAsync(
+            id,
+            JsonSerializer.Serialize(request, ApiJson.SerializerOptions),
+            photoContents,
+            photoContentType);
+
+    public async Task<(HttpResponseMessage Response, CreateReportResponse? Body)> UpdateReportJsonAsync(
+        Guid id,
+        string reportJson,
+        IReadOnlyList<byte[]>? photoContents = null,
+        string photoContentType = "image/jpeg")
+    {
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(reportJson, Encoding.UTF8, "application/json"), "report");
+
+        if (photoContents is not null)
+        {
+            for (var i = 0; i < photoContents.Count; i++)
+            {
+                var photoContent = new ByteArrayContent(photoContents[i]);
+                photoContent.Headers.ContentType = new MediaTypeHeaderValue(photoContentType);
+                content.Add(photoContent, "photos", $"photo{i}.jpg");
+            }
+        }
+
+        var response = await Client.PutAsync($"/api/v1/reports/{id}", content);
+        return (response, null);
+    }
+
+    public async Task<HttpResponseMessage> ResubmitReportAsync(Guid id) =>
+        await Client.PostAsync($"/api/v1/reports/{id}/resubmit", null);
+
     public async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response) =>
         await Auth.ReadErrorAsync(response);
 

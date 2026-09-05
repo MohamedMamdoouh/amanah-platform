@@ -1,0 +1,57 @@
+<section class="notifications" aria-labelledby="notifications-title">
+  <header class="notifications__header">
+    <h1 id="notifications-title" class="notifications__title">
+      {{ 'notifications.title' | translate }}
+    </h1>
+    <p class="notifications__intro">
+      {{ 'notifications.intro' | translate }}
+    </p>
+    @if (items().length > 0) {
+      <button
+        type="button"
+        class="notifications__mark-all"
+        [disabled]="markingAll()"
+        (click)="markAllRead()"
+      >
+        {{ 'notifications.mark_all_read' | translate }}
+      </button>
+    }
+  </header>
+
+  @if (loading()) {
+    <p>{{ 'notifications.loading' | translate }}</p>
+  } @else if (error()) {
+    <p class="notifications__error" role="alert">{{ error() }}</p>
+  } @else if (items().length === 0) {
+    <p class="notifications__empty">{{ 'notifications.empty' | translate }}</p>
+  } @else {
+    <ul class="notifications__list">
+      @for (item of items(); track item.id) {
+        <li>
+          <button
+            type="button"
+            class="notifications__item"
+            [class.notifications__item--unread]="!item.isRead"
+            (click)="openNotification(item)"
+          >
+            <span class="notifications__item-type">{{ typeLabel(item.payload.type) }}</span>
+            @if (item.payload.reasonCode) {
+              <span class="notifications__item-reason">
+                {{ reasonLabel(item.payload.reasonCode) }}
+              </span>
+            }
+            @if (item.payload.note) {
+              <span class="notifications__item-note">{{ item.payload.note }}</span>
+            }
+            <span class="notifications__item-date">
+              {{ item.payload.createdAt | date: 'medium' }}
+            </span>
+            <span class="notifications__item-link">
+              {{ 'notifications.open_report' | translate }}
+            </span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

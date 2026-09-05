@@ -13,8 +13,16 @@
       <a routerLink="/my/reports" class="header__link">{{
         'nav.my_reports' | translate
       }}</a>
+      <a routerLink="/notifications" class="header__link header__link--badge">
+        {{ 'nav.notifications' | translate }}
+        @if (notifications.unreadCount() > 0) {
+          <span class="header__badge" aria-hidden="true">{{
+            notifications.unreadCount()
+          }}</span>
+        }
+      </a>
       @if (auth.isAdmin()) {
-        <a routerLink="/admin" class="header__link">{{
+        <a routerLink="/admin/moderation" class="header__link">{{
           'nav.admin' | translate
         }}</a>
       }

@@ -61,4 +61,35 @@ public static class TestReportHelpers
                 ["colour"] = "black",
             },
         };
+
+    public static UpdateReportRequest BuildValidUpdateRequest(
+        string categoryCode = "phones",
+        string governorateCode = "cairo",
+        DateOnly? dateLostOrFound = null,
+        string? title = null,
+        string? description = null,
+        string? hiddenDetail = null,
+        string? areaText = "Ramses station platform 2",
+        string? heldLocation = null,
+        bool hasReward = false,
+        int? rewardAmount = null,
+        Dictionary<string, string>? categoryFields = null) =>
+        new()
+        {
+            CategoryCode = categoryCode,
+            Title = title ?? "Lost black iPhone",
+            Description = description ?? "I lost my phone near Ramses station yesterday evening.",
+            DateLostOrFound = dateLostOrFound ?? CairoTime.TodayInCairo(),
+            GovernorateCode = governorateCode,
+            AreaText = areaText,
+            HeldLocation = heldLocation,
+            HasReward = hasReward,
+            RewardAmount = rewardAmount,
+            HiddenDetail = hiddenDetail ?? "Contains a photo of my family inside.",
+            CategoryFields = categoryFields ?? new Dictionary<string, string>
+            {
+                ["brand_model"] = "iPhone 14",
+                ["colour"] = "black",
+            },
+        };
 }

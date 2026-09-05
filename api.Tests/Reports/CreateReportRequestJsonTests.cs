@@ -29,9 +29,9 @@ public class CreateReportRequestJsonTests
     }
 
     [Fact]
-    public void Deserialize_accepts_reward_amount_as_json_string()
+    public void Deserialize_rejects_reward_amount_as_json_string()
     {
-        var request = Deserialize(
+        Assert.Throws<JsonException>(() => Deserialize(
             """
             {
               "type": "lost",
@@ -44,10 +44,7 @@ public class CreateReportRequestJsonTests
               "rewardAmount": "250",
               "hiddenDetail": "Contains a photo of my family inside."
             }
-            """);
-
-        Assert.True(request.HasReward);
-        Assert.Equal(250, request.RewardAmount);
+            """));
     }
 
     private static CreateReportRequest Deserialize(string json) =>

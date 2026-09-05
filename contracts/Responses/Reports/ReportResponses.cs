@@ -67,6 +67,10 @@ public sealed class ReportDetailResponse
 
     public string? WithdrawalReason { get; init; }
 
+    public string? RejectionReasonCode { get; init; }
+
+    public string? RejectionNote { get; init; }
+
     public IReadOnlyList<ReportPhotoResponse> Photos { get; init; } = [];
 }
 

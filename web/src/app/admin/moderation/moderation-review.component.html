@@ -1,0 +1,171 @@
+<section class="moderation-review" aria-labelledby="moderation-review-title">
+  <p class="moderation-review__back">
+    <a routerLink="/admin/moderation">{{
+      "admin.moderation.back" | translate
+    }}</a>
+  </p>
+
+  @if (loading()) {
+    <p>{{ "reports.detail.loading" | translate }}</p>
+  } @else if (error()) {
+    <p class="moderation-review__error" role="alert">{{ error() }}</p>
+  } @else if (report()) {
+    @let detail = report()!;
+    <header class="moderation-review__header">
+      <span class="moderation-review__type">{{ typeLabel(detail.type) }}</span>
+      <h1 id="moderation-review-title" class="moderation-review__title">
+        {{ detail.title }}
+      </h1>
+      <p class="moderation-review__meta">
+        {{ detail.createdAt | date: "medium" }}
+      </p>
+    </header>
+
+    <dl class="moderation-review__fields">
+      <div>
+        <dt>{{ "reports.detail.category" | translate }}</dt>
+        <dd>{{ categoryLabel(detail.categoryCode) }}</dd>
+      </div>
+      <div>
+        <dt>{{ "reports.detail.governorate" | translate }}</dt>
+        <dd>{{ governorateLabel(detail.governorateCode) }}</dd>
+      </div>
+      <div>
+        <dt>
+          @if (detail.type === "found") {
+            {{ "reports.form.date_found" | translate }}
+          } @else {
+            {{ "reports.form.date_lost" | translate }}
+          }
+        </dt>
+        <dd>{{ detail.dateLostOrFound }}</dd>
+      </div>
+      @if (detail.areaText) {
+        <div>
+          <dt>{{ "reports.form.area" | translate }}</dt>
+          <dd>{{ detail.areaText }}</dd>
+        </div>
+      }
+      @if (detail.heldLocation) {
+        <div>
+          <dt>{{ "reports.form.held_location" | translate }}</dt>
+          <dd>{{ detail.heldLocation }}</dd>
+        </div>
+      }
+      <div>
+        <dt>{{ "reports.form.description" | translate }}</dt>
+        <dd>{{ detail.description }}</dd>
+      </div>
+      @for (entry of categoryFieldEntries(); track entry[0]) {
+        <div>
+          <dt>{{ fieldLabel(entry[0]) }}</dt>
+          <dd>{{ entry[1] }}</dd>
+        </div>
+      }
+      @if (detail.hasReward && detail.rewardAmount) {
+        <div>
+          <dt>{{ "reports.form.reward_amount" | translate }}</dt>
+          <dd>{{ detail.rewardAmount }}</dd>
+        </div>
+      }
+    </dl>
+
+    @if (photos().length > 0) {
+      <section
+        class="moderation-review__photos"
+        aria-labelledby="moderation-photos-title"
+      >
+        <h2 id="moderation-photos-title">
+          {{ "reports.form.photos_title" | translate }}
+        </h2>
+        <ul class="moderation-review__photo-list">
+          @for (photo of photos(); track photo.id) {
+            <li>
+              @if (photo.loading) {
+                <span class="moderation-review__photo-loading">
+                  {{ "reports.detail.photo_loading" | translate }}
+                </span>
+              } @else if (photo.url) {
+                <img
+                  [src]="photo.url"
+                  alt=""
+                  class="moderation-review__photo"
+                />
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (actionError()) {
+      <p class="moderation-review__error" role="alert">{{ actionError() }}</p>
+    }
+
+    <div class="moderation-review__actions">
+      <button
+        type="button"
+        class="moderation-review__approve"
+        [disabled]="approving()"
+        (click)="approveReport()"
+      >
+        {{
+          approving()
+            ? ("admin.moderation.approving" | translate)
+            : ("admin.moderation.approve" | translate)
+        }}
+      </button>
+      <button
+        type="button"
+        class="moderation-review__reject-toggle"
+        (click)="openReject()"
+      >
+        {{ "admin.moderation.reject" | translate }}
+      </button>
+    </div>
+
+    @if (showReject()) {
+      <form
+        class="moderation-review__reject-form"
+        [formGroup]="rejectForm"
+        (ngSubmit)="submitReject()"
+      >
+        <label class="moderation-review__field">
+          <span>{{ "admin.moderation.reject_reason" | translate }}</span>
+          <select formControlName="reasonCode">
+            <option value="" disabled>
+              {{ "admin.moderation.reject_reason" | translate }}
+            </option>
+            @for (code of rejectionReasons; track code) {
+              <option [value]="code">{{ reasonLabel(code) }}</option>
+            }
+          </select>
+        </label>
+        <label class="moderation-review__field">
+          <span>{{ "admin.moderation.reject_note" | translate }}</span>
+          <textarea formControlName="note" rows="3"></textarea>
+        </label>
+        <div class="moderation-review__reject-actions">
+          <button
+            type="button"
+            class="moderation-review__cancel"
+            (click)="closeReject()"
+          >
+            {{ "reports.withdraw.cancel" | translate }}
+          </button>
+          <button
+            type="submit"
+            class="moderation-review__reject-submit"
+            [disabled]="rejectForm.invalid || rejecting()"
+          >
+            {{
+              rejecting()
+                ? ("admin.moderation.rejecting" | translate)
+                : ("admin.moderation.reject_submit" | translate)
+            }}
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

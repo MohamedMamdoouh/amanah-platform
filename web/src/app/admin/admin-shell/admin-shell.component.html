@@ -1,6 +1,17 @@
 <section class="admin-shell" aria-labelledby="admin-title">
-  <h1 id="admin-title" class="admin-shell__title">
-    {{ 'admin.title' | translate }}
-  </h1>
-  <p class="admin-shell__lead">{{ 'admin.welcome' | translate }}</p>
+  <header class="admin-shell__header">
+    <h1 id="admin-title" class="admin-shell__title">
+      {{ 'admin.title' | translate }}
+    </h1>
+    <nav class="admin-shell__nav" [attr.aria-label]="'admin.title' | translate">
+      <a
+        routerLink="/admin/moderation"
+        routerLinkActive="admin-shell__link--active"
+        class="admin-shell__link"
+      >
+        {{ 'admin.nav.moderation' | translate }}
+      </a>
+    </nav>
+  </header>
+  <router-outlet />
 </section>

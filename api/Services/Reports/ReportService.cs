@@ -20,6 +20,9 @@ public sealed class ReportService(
     TimeProvider timeProvider,
     AppMetrics metrics)
 {
+    private const int MaxPhotos = 5;
+    private const int MaxResubmissions = 3;
+
     private static readonly ReportStatus[] Phase02ReadableStatuses =
     [
         ReportStatus.PendingReview,
@@ -220,6 +223,23 @@ public sealed class ReportService(
         string? status,
         CancellationToken cancellationToken = default)
     {
+        if (string.Equals(status, "closed", StringComparison.OrdinalIgnoreCase))
+        {
+            var closedReports = await dbContext.Reports
+                .AsNoTracking()
+                .Include(report => report.Category)
+                .Include(report => report.Governorate)
+                .Where(report => report.ReporterId == reporterId
+                    && ClosedStatuses.Contains(report.Status))
+                .OrderByDescending(report => report.CreatedAt)
+                .ToListAsync(cancellationToken);
+
+            return new ReportListResponse
+            {
+                Items = closedReports.Select(ToSummary).ToList(),
+            };
+        }
+
         var statusFilter = ParseStatusFilter(status);
         if (!string.IsNullOrWhiteSpace(status) && statusFilter is null)
         {
@@ -231,18 +251,18 @@ public sealed class ReportService(
                 });
         }
 
-        // Phase 02 only implements the Pending Review tab; other valid filters return empty.
-        if (statusFilter is not ReportStatus.PendingReview)
-        {
-            return new ReportListResponse();
-        }
-
-        var reports = await dbContext.Reports
+        var query = dbContext.Reports
             .AsNoTracking()
             .Include(report => report.Category)
             .Include(report => report.Governorate)
-            .Where(report => report.ReporterId == reporterId
-                && report.Status == ReportStatus.PendingReview)
+            .Where(report => report.ReporterId == reporterId);
+
+        if (statusFilter is ReportStatus filter)
+        {
+            query = query.Where(report => report.Status == filter);
+        }
+
+        var reports = await query
             .OrderByDescending(report => report.CreatedAt)
             .ToListAsync(cancellationToken);
 
@@ -284,9 +304,20 @@ public sealed class ReportService(
             return ResultError.NotFound("Report not found.");
         }
 
+        ModerationAction? latestRejection = null;
+        if (report.Status == ReportStatus.Rejected)
+        {
+            latestRejection = await dbContext.ModerationActions
+                .AsNoTracking()
+                .Where(action => action.ReportId == reportId
+                    && action.Decision == ModerationDecision.Reject)
+                .OrderByDescending(action => action.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         return isReporter
-            ? ToReporterDetail(report)
-            : ToAdminDetail(report);
+            ? ToReporterDetail(report, latestRejection)
+            : ToAdminDetail(report, latestRejection);
     }
 
     public async Task<Result> WithdrawAsync(
@@ -317,6 +348,332 @@ public sealed class ReportService(
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
     }
+
+    public async Task<Result> UpdateAsync(
+        Guid reportId,
+        Guid reporterId,
+        UpdateReportRequest request,
+        IReadOnlyList<IFormFile> photos,
+        CancellationToken cancellationToken = default)
+    {
+        var report = await dbContext.Reports
+            .Include(report => report.Category)
+            .Include(report => report.CategoryFields)
+            .Include(report => report.Photos)
+            .SingleOrDefaultAsync(
+                report => report.Id == reportId && report.ReporterId == reporterId,
+                cancellationToken);
+
+        if (report is null)
+        {
+            return ResultError.NotFound("Report not found.");
+        }
+
+        if (report.Status != ReportStatus.Rejected)
+        {
+            return ResultError.Conflict("Only rejected reports can be edited.");
+        }
+
+        var normalized = NormalizeUpdateRequest(request);
+        var validation = await ValidateEditableContentAsync(
+            report.Type,
+            normalized,
+            cancellationToken);
+
+        if (validation.Error is not null)
+        {
+            return validation.Error;
+        }
+
+        var category = validation.Category!;
+        var governorate = validation.Governorate!;
+        var previousPhotosPrivate = report.Category.PhotosPrivate;
+        var now = timeProvider.GetUtcNow();
+
+        report.CategoryId = category.Id;
+        report.GovernorateId = governorate.Id;
+        report.Title = normalized.Title;
+        report.Description = normalized.Description;
+        report.DateLostOrFound = normalized.DateLostOrFound;
+        report.AreaText = normalized.AreaText;
+        report.HeldLocation = report.Type == ReportType.Found ? normalized.HeldLocation : null;
+        report.HasReward = normalized.HasReward;
+        report.RewardAmount = normalized.HasReward ? normalized.RewardAmount : null;
+        report.HiddenDetail = normalized.HiddenDetail;
+        report.UpdatedAt = now;
+
+        ReplaceCategoryFields(report, category, normalized);
+
+        report.NormalizedSearchText = SearchTextBuilder.Build(
+            normalized.Title,
+            normalized.Description,
+            normalized.AreaText,
+            report.CategoryFields.Select(field => field.Value).ToList());
+
+        if (previousPhotosPrivate != category.PhotosPrivate)
+        {
+            var privacyError = await photoAttachService.SyncPhotoPrivacyAsync(
+                report,
+                category.PhotosPrivate,
+                cancellationToken);
+
+            if (privacyError is not null)
+            {
+                return privacyError;
+            }
+        }
+
+        if (photos.Count > 0)
+        {
+            if (report.Photos.Count + photos.Count > MaxPhotos)
+            {
+                return ResultError.BadRequest(
+                    "Please correct the errors in the form.",
+                    errors: new Dictionary<string, string[]>
+                    {
+                        ["photos"] = [$"At most {MaxPhotos} photos are allowed."],
+                    });
+            }
+
+            var photoError = await photoAttachService.AttachAsync(
+                report,
+                photos,
+                category.PhotosPrivate,
+                cancellationToken);
+
+            if (photoError is not null)
+            {
+                return photoError;
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result.Ok();
+    }
+
+    public async Task<Result> ResubmitAsync(
+        Guid reportId,
+        Guid reporterId,
+        CancellationToken cancellationToken = default)
+    {
+        var report = await dbContext.Reports
+            .Include(report => report.Category)
+            .Include(report => report.Governorate)
+            .Include(report => report.CategoryFields)
+            .SingleOrDefaultAsync(
+                report => report.Id == reportId && report.ReporterId == reporterId,
+                cancellationToken);
+
+        if (report is null)
+        {
+            return ResultError.NotFound("Report not found.");
+        }
+
+        if (report.Status != ReportStatus.Rejected)
+        {
+            return ResultError.Conflict("Only rejected reports can be resubmitted.");
+        }
+
+        if (report.ResubmissionCount >= MaxResubmissions)
+        {
+            return ResultError.Conflict(
+                "This report has reached the maximum number of resubmissions.",
+                ErrorCodes.ReportResubmitCap);
+        }
+
+        var normalized = BuildNormalizedFromReport(report);
+        var validation = await ValidateEditableContentAsync(
+            report.Type,
+            normalized,
+            cancellationToken);
+
+        if (validation.Error is not null)
+        {
+            return validation.Error;
+        }
+
+        var quotaResult = await quotaService.CheckNewSubmissionAsync(
+            reporterId,
+            isResubmission: true,
+            cancellationToken: cancellationToken);
+
+        if (quotaResult.Kind != QuotaFailureKind.None)
+        {
+            return ResultError.Conflict("Resubmission could not be completed.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        report.Status = ReportStatus.PendingReview;
+        report.ResubmissionCount += 1;
+        report.UpdatedAt = now;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result.Ok();
+    }
+
+    private async Task<(ResultError? Error, Category? Category, Governorate? Governorate)> ValidateEditableContentAsync(
+        ReportType reportType,
+        NormalizedCreateReportRequest normalized,
+        CancellationToken cancellationToken)
+    {
+        var category = await dbContext.Categories
+            .AsNoTracking()
+            .Include(category => category.FieldDefinitions)
+            .SingleOrDefaultAsync(
+                category => category.Code == normalized.CategoryCode,
+                cancellationToken);
+
+        var governorate = await dbContext.Governorates
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                governorate => governorate.Code == normalized.GovernorateCode,
+                cancellationToken);
+
+        if (category is null || !category.Active)
+        {
+            return (ResultError.BadRequest(
+                "Please correct the errors in the form.",
+                errors: new Dictionary<string, string[]>
+                {
+                    ["categoryCode"] = ["Category is invalid."],
+                }), null, null);
+        }
+
+        if (governorate is null)
+        {
+            return (ResultError.BadRequest(
+                "Please correct the errors in the form.",
+                errors: new Dictionary<string, string[]>
+                {
+                    ["governorateCode"] = ["Governorate is invalid."],
+                }), null, null);
+        }
+
+        var dateError = ReportDateValidator.ValidateDateLostOrFound(normalized.DateLostOrFound);
+        var errors = MergeErrors(
+            ReportContentValidator.Validate(
+                reportType == ReportType.Found,
+                normalized.Title,
+                normalized.Description,
+                normalized.HiddenDetail,
+                normalized.AreaText,
+                normalized.HasReward,
+                normalized.RewardAmount,
+                normalized.HeldLocation),
+            dateError is null
+                ? []
+                : new Dictionary<string, string[]>
+                {
+                    [ReportDateValidator.FieldName] = [dateError],
+                },
+            CategoryFieldValidator.Validate(
+                category.FieldDefinitions,
+                normalized.CategoryFields),
+            ContactInfoValidator.ScanPublicFields(
+                normalized.Title,
+                normalized.Description,
+                normalized.AreaText,
+                normalized.HeldLocation,
+                normalized.CategoryFields));
+
+        if (errors.Count > 0)
+        {
+            return (ResultError.BadRequest(
+                "Please correct the errors in the form.",
+                errors: errors), null, null);
+        }
+
+        return (null, category, governorate);
+    }
+
+    private static NormalizedCreateReportRequest BuildNormalizedFromReport(Report report)
+    {
+        var categoryFields = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var field in report.CategoryFields)
+        {
+            categoryFields[field.FieldKey] = field.Value;
+        }
+
+        return new NormalizedCreateReportRequest
+        {
+            Type = ToApiType(report.Type),
+            CategoryCode = report.Category.Code,
+            Title = report.Title,
+            Description = report.Description,
+            DateLostOrFound = report.DateLostOrFound,
+            GovernorateCode = report.Governorate.Code,
+            AreaText = report.AreaText,
+            HeldLocation = report.HeldLocation,
+            HasReward = report.HasReward,
+            RewardAmount = report.RewardAmount,
+            HiddenDetail = report.HiddenDetail,
+            CategoryFields = categoryFields,
+        };
+    }
+
+    private void ReplaceCategoryFields(
+        Report report,
+        Category category,
+        NormalizedCreateReportRequest normalized)
+    {
+        if (report.CategoryFields.Count > 0)
+        {
+            dbContext.CategoryFields.RemoveRange(report.CategoryFields);
+            report.CategoryFields.Clear();
+        }
+
+        foreach (var definition in category.FieldDefinitions)
+        {
+            if (!normalized.CategoryFields.TryGetValue(definition.FieldKey, out var value)
+                || value.Length == 0)
+            {
+                continue;
+            }
+
+            report.CategoryFields.Add(new CategoryField
+            {
+                Id = Guid.NewGuid(),
+                FieldKey = definition.FieldKey,
+                Value = value,
+            });
+        }
+    }
+
+    private static NormalizedCreateReportRequest NormalizeUpdateRequest(UpdateReportRequest request)
+    {
+        var categoryFields = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (fieldKey, value) in request.CategoryFields ?? [])
+        {
+            categoryFields[fieldKey] = TextNormalizer.Normalize(value);
+        }
+
+        return new NormalizedCreateReportRequest
+        {
+            Type = string.Empty,
+            CategoryCode = TextNormalizer.Normalize(request.CategoryCode),
+            Title = TextNormalizer.Normalize(request.Title),
+            Description = TextNormalizer.Normalize(request.Description),
+            DateLostOrFound = request.DateLostOrFound,
+            GovernorateCode = TextNormalizer.Normalize(request.GovernorateCode),
+            AreaText = string.IsNullOrWhiteSpace(request.AreaText)
+                ? null
+                : TextNormalizer.Normalize(request.AreaText),
+            HeldLocation = string.IsNullOrWhiteSpace(request.HeldLocation)
+                ? null
+                : TextNormalizer.Normalize(request.HeldLocation),
+            HasReward = request.HasReward,
+            RewardAmount = request.RewardAmount,
+            HiddenDetail = TextNormalizer.Normalize(request.HiddenDetail),
+            CategoryFields = categoryFields,
+        };
+    }
+
+    private static readonly ReportStatus[] ClosedStatuses =
+    [
+        ReportStatus.Resolved,
+        ReportStatus.Withdrawn,
+        ReportStatus.RemovedByAdmin,
+    ];
 
     private static NormalizedCreateReportRequest NormalizeRequest(CreateReportRequest request)
     {
@@ -384,13 +741,16 @@ public sealed class ReportService(
             RewardAmount = report.RewardAmount,
         };
 
-    private ReportDetailResponse ToReporterDetail(Report report) =>
-        BuildDetail(report, includeHiddenDetail: true);
+    private ReportDetailResponse ToReporterDetail(Report report, ModerationAction? latestRejection) =>
+        BuildDetail(report, includeHiddenDetail: true, latestRejection);
 
-    private ReportDetailResponse ToAdminDetail(Report report) =>
-        BuildDetail(report, includeHiddenDetail: false);
+    private ReportDetailResponse ToAdminDetail(Report report, ModerationAction? latestRejection) =>
+        BuildDetail(report, includeHiddenDetail: false, latestRejection);
 
-    private ReportDetailResponse BuildDetail(Report report, bool includeHiddenDetail) =>
+    private ReportDetailResponse BuildDetail(
+        Report report,
+        bool includeHiddenDetail,
+        ModerationAction? latestRejection) =>
         new()
         {
             Id = report.Id,
@@ -413,6 +773,8 @@ public sealed class ReportService(
             WithdrawalReason = report.Status == ReportStatus.Withdrawn
                 ? report.WithdrawalReason
                 : null,
+            RejectionReasonCode = latestRejection?.ReasonCode,
+            RejectionNote = latestRejection?.Note,
             Photos = report.Photos
                 .OrderBy(photo => photo.SortOrder)
                 .Select(photo => new ReportPhotoResponse

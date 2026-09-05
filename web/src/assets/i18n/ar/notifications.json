@@ -1,0 +1,12 @@
+{
+  "nav.notifications": "الإشعارات",
+  "notifications.title": "الإشعارات",
+  "notifications.intro": "تظل الإشعارات غير مقروءة حتى تفتحها أو تعلّمها كمقروءة.",
+  "notifications.loading": "جاري التحميل…",
+  "notifications.empty": "لا توجد إشعارات.",
+  "notifications.mark_all_read": "تعليم الكل كمقروء",
+  "notifications.unread_badge": "{{count}}",
+  "notifications.type.ReportApproved": "تم اعتماد بلاغك",
+  "notifications.type.ReportRejected": "تم رفض بلاغك",
+  "notifications.open_report": "عرض البلاغ"
+}

@@ -9,6 +9,7 @@ import {
   ReportDetail,
   ReportListResponse,
   ReportStatus,
+  UpdateReportRequest,
   WithdrawReportRequest,
 } from './models/report.models';
 
@@ -47,5 +48,20 @@ export class ReportService {
 
   withdraw(id: string, request: WithdrawReportRequest): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/withdraw`, request);
+  }
+
+  update(id: string, request: UpdateReportRequest, photos: File[] = []): Observable<void> {
+    const formData = new FormData();
+    formData.append('report', JSON.stringify(request));
+
+    for (const photo of photos) {
+      formData.append('photos', photo, photo.name);
+    }
+
+    return this.http.put<void>(`${this.baseUrl}/${id}`, formData);
+  }
+
+  resubmit(id: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/resubmit`, null);
   }
 }

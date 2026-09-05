@@ -10,6 +10,7 @@ public static class ReportServiceExtensions
         services.AddScoped<ReportService>();
         services.AddScoped<ReportPhotoAttachService>();
         services.AddScoped<ReportCreateFormParser>();
+        services.AddScoped<ReportUpdateFormParser>();
 
         return services;
     }

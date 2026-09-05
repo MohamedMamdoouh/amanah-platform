@@ -1,0 +1,19 @@
+{
+  "admin.nav.moderation": "مراجعة البلاغات",
+  "admin.moderation.title": "قائمة المراجعة",
+  "admin.moderation.intro": "البلاغات المعلقة مرتبة من الأقدم إلى الأحدث.",
+  "admin.moderation.pending_badge": "{{count}} بانتظار المراجعة",
+  "admin.moderation.loading": "جاري التحميل…",
+  "admin.moderation.empty": "لا توجد بلاغات بانتظار المراجعة.",
+  "admin.moderation.review": "مراجعة",
+  "admin.moderation.back": "العودة إلى القائمة",
+  "admin.moderation.approve": "اعتماد ونشر",
+  "admin.moderation.reject": "رفض البلاغ",
+  "admin.moderation.reject_reason": "سبب الرفض",
+  "admin.moderation.reject_note": "ملاحظة (اختياري)",
+  "admin.moderation.reject_submit": "تأكيد الرفض",
+  "admin.moderation.approving": "جاري الاعتماد…",
+  "admin.moderation.rejecting": "جاري الرفض…",
+  "admin.moderation.done_approved": "تم اعتماد البلاغ ونشره.",
+  "admin.moderation.done_rejected": "تم رفض البلاغ."
+}

@@ -26,10 +26,13 @@
 
 .my-reports__tab {
   padding: var(--space-xs) var(--space-md);
+  font: inherit;
   font-size: 0.875rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
 }
 
 .my-reports__tab--active {
@@ -41,6 +44,7 @@
 .my-reports__tab--disabled {
   opacity: 0.5;
   color: var(--color-text-muted);
+  cursor: not-allowed;
 }
 
 .my-reports__loading,

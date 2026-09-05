@@ -232,7 +232,7 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
     }
 
     [Fact]
-    public async Task Create_accepts_reward_amount_serialized_as_json_string()
+    public async Task Create_rejects_reward_amount_serialized_as_json_string()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var request = TestReportHelpers.BuildValidLostRequest();
@@ -242,14 +242,9 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
         node["hasReward"] = true;
         node["rewardAmount"] = "250";
 
-        var (response, body) = await context.SubmitReportJsonAsync(node.ToJsonString());
+        var (response, _) = await context.SubmitReportJsonAsync(node.ToJsonString());
 
-        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(body);
-
-        var report = await context.DbContext.Reports.SingleAsync(report => report.Id == body.Id);
-        Assert.True(report.HasReward);
-        Assert.Equal(250, report.RewardAmount);
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

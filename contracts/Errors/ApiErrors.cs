@@ -51,6 +51,7 @@ public static class ErrorCodes
     public const string ReportDailyQuota = "report.daily_quota";
     public const string ReportOpenCap = "report.open_cap";
     public const string ReportContactInfo = "report.contact_info";
+    public const string ReportResubmitCap = "report.resubmit_cap";
 
     public const string UploadInvalidFormat = "upload.invalid_format";
     public const string UploadTooLarge = "upload.too_large";

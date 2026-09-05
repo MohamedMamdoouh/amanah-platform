@@ -92,4 +92,66 @@ public sealed class ReportPhotoAttachService(
 
         return null;
     }
+
+    public async Task<ResultError?> SyncPhotoPrivacyAsync(
+        Report report,
+        bool photosPrivate,
+        CancellationToken cancellationToken = default)
+    {
+        if (report.Photos.Count == 0)
+        {
+            return null;
+        }
+
+        var keysToDelete = new List<string>();
+
+        try
+        {
+            foreach (var photo in report.Photos)
+            {
+                var newOriginalKey = ReportPhotoStorageKeys.PromotedOriginal(
+                    photosPrivate,
+                    report.Id,
+                    photo.Id);
+                var newThumbnailKey = ReportPhotoStorageKeys.PromotedThumbnail(
+                    photosPrivate,
+                    report.Id,
+                    photo.Id);
+
+                if (string.Equals(photo.StorageKey, newOriginalKey, StringComparison.Ordinal)
+                    && string.Equals(photo.ThumbnailStorageKey, newThumbnailKey, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                await bucketStorage.CopyAsync(photo.StorageKey, newOriginalKey, cancellationToken);
+                keysToDelete.Add(photo.StorageKey);
+
+                if (!string.IsNullOrWhiteSpace(photo.ThumbnailStorageKey))
+                {
+                    await bucketStorage.CopyAsync(
+                        photo.ThumbnailStorageKey,
+                        newThumbnailKey,
+                        cancellationToken);
+                    keysToDelete.Add(photo.ThumbnailStorageKey);
+                }
+
+                photo.StorageKey = newOriginalKey;
+                photo.ThumbnailStorageKey = newThumbnailKey;
+            }
+        }
+        catch (Exception)
+        {
+            return ResultError.ServiceUnavailable(
+                "Photo upload is temporarily unavailable. Please try again later.",
+                ErrorCodes.UploadStorageFailed);
+        }
+
+        if (keysToDelete.Count > 0)
+        {
+            await bucketStorage.DeleteManyAsync(keysToDelete, cancellationToken);
+        }
+
+        return null;
+    }
 }

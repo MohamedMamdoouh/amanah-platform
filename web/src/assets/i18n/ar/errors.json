@@ -38,6 +38,7 @@
   "error.report.daily_quota": "تجاوزت الحد اليومي لتقديم البلاغات (3 بلاغات في اليوم).",
   "error.report.open_cap": "لديك الحد الأقصى من البلاغات المفتوحة (5). أغلق بلاغاً قبل تقديم بلاغ جديد.",
   "error.report.contact_info": "لا يُسمح بمعلومات التواصل في الحقول العامة.",
+  "error.report.resubmit_cap": "وصل هذا البلاغ إلى الحد الأقصى لإعادة الإرسال (3 مرات).",
   "error.upload.invalid_format": "يجب أن تكون الصورة بصيغة JPEG أو PNG أو WebP.",
   "error.upload.too_large": "يجب ألا يتجاوز حجم الصورة 5 ميجابايت.",
   "error.upload.storage_failed": "رفع الصور غير متاح مؤقتاً. حاول لاحقاً.",

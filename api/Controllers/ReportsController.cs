@@ -16,7 +16,8 @@ namespace Amanah.Api.Controllers;
 [Authorize]
 public sealed class ReportsController(
     ReportService reportService,
-    ReportCreateFormParser createFormParser) : ControllerBase
+    ReportCreateFormParser createFormParser,
+    ReportUpdateFormParser updateFormParser) : ControllerBase
 {
     [HttpPost]
     [Consumes("multipart/form-data")]
@@ -74,6 +75,55 @@ public sealed class ReportsController(
         User.TryGetUserId(out var userId);
 
         var result = await reportService.GetByIdAsync(id, userId, User.GetUserRole(), cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [HttpPut("{id:guid}")]
+    [Consumes("multipart/form-data")]
+    [EnableRateLimiting("photo-upload")]
+    [EndpointName(nameof(UpdateReport))]
+    [EndpointSummary("Edit a rejected report.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateReport(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        User.TryGetUserId(out var userId);
+
+        var parsed = await updateFormParser.ParseAsync(Request, cancellationToken);
+        if (!parsed.IsSuccess)
+        {
+            return parsed.Error!.ToActionResult();
+        }
+
+        var result = await reportService.UpdateAsync(
+            id,
+            userId,
+            parsed.Value!.Request,
+            parsed.Value.Photos,
+            cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [HttpPost("{id:guid}/resubmit")]
+    [EndpointName(nameof(ResubmitReport))]
+    [EndpointSummary("Resubmit a rejected report for moderation.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ResubmitReport(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        User.TryGetUserId(out var userId);
+
+        var result = await reportService.ResubmitAsync(id, userId, cancellationToken);
         return result.ToActionResult();
     }
 

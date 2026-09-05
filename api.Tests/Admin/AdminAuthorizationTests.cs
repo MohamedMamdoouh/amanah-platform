@@ -5,6 +5,7 @@ using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Admin;
+using Amanah.Contracts.Responses.Admin;
 
 namespace Amanah.Api.Tests.Admin;
 
@@ -32,16 +33,18 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
     }
 
     [Fact]
-    public async Task Get_moderation_queue_as_admin_reaches_stub_route()
+    public async Task Get_moderation_queue_as_admin_returns_queue()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         await LoginAsAdminAsync(context);
 
         var response = await context.Client.GetAsync("/api/v1/admin/moderation/queue");
-        var error = await context.ReadErrorAsync(response);
+        var body = await response.Content.ReadFromJsonAsync<ModerationQueueResponse>();
 
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-        Assert.Equal(ErrorCodes.NotImplemented, error?.Code);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Empty(body.Items);
+        Assert.Equal(0, body.PendingCount);
     }
 
     [Fact]
@@ -79,7 +82,7 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
     }
 
     [Fact]
-    public async Task Reject_report_with_valid_reason_as_admin_reaches_stub_route()
+    public async Task Reject_report_with_valid_reason_as_admin_returns_not_found_for_missing_report()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         await LoginAsAdminAsync(context);
@@ -94,8 +97,8 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
 
         var error = await context.ReadErrorAsync(response);
 
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-        Assert.Equal(ErrorCodes.NotImplemented, error?.Code);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(ErrorCodes.NotFound, error?.Code);
     }
 
     private static async Task LoginAsAdminAsync(ReportTestContext context)

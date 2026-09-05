@@ -51,6 +51,27 @@
   padding: var(--space-xs) var(--space-sm);
 }
 
+.header__link--badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.header__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-accent);
+  border-radius: 999px;
+}
+
 .header__button {
   font: inherit;
   font-size: 0.9375rem;
