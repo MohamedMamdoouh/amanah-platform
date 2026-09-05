@@ -174,8 +174,9 @@ export class ReportFormComponent implements OnInit {
     const value = this.form.getRawValue();
     const categoryFields: Record<string, string> = {};
     for (const [key, fieldValue] of Object.entries(value.categoryFields)) {
-      if (typeof fieldValue === 'string' && fieldValue.trim().length > 0) {
-        categoryFields[key] = fieldValue.trim();
+      const serialized = categoryFieldToString(fieldValue);
+      if (serialized !== null) {
+        categoryFields[key] = serialized;
       }
     }
 
@@ -325,6 +326,19 @@ function parseRewardAmount(raw: unknown): number | null {
   if (typeof raw === 'string' && raw.trim().length > 0) {
     const parsed = Number.parseInt(raw, 10);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+// Angular NumberValueAccessor stores <input type="number"> as a number.
+function categoryFieldToString(raw: unknown): string | null {
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return String(raw);
+  }
+
+  if (typeof raw === 'string' && raw.trim().length > 0) {
+    return raw.trim();
   }
 
   return null;

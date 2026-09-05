@@ -253,6 +253,32 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task Create_persists_integer_category_field_when_value_is_json_number()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var request = TestReportHelpers.BuildValidLostRequest();
+        var node = System.Text.Json.Nodes.JsonNode.Parse(
+            JsonSerializer.Serialize(request, ApiJson.SerializerOptions));
+        Assert.NotNull(node);
+        node["categoryCode"] = "keys";
+        node["categoryFields"] = new System.Text.Json.Nodes.JsonObject
+        {
+            ["key_type"] = "house",
+            ["key_count"] = 3,
+        };
+
+        var (response, body) = await context.SubmitReportJsonAsync(node.ToJsonString());
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+
+        var report = await context.DbContext.Reports
+            .Include(report => report.CategoryFields)
+            .SingleAsync(report => report.Id == body.Id);
+        Assert.Equal("3", report.CategoryFields.Single(field => field.FieldKey == "key_count").Value);
+    }
+
+    [Fact]
     public async Task Create_rejects_held_location_on_lost_report()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Amanah.Contracts.Serialization;
 
 namespace Amanah.Contracts.Requests.Reports;
 
@@ -28,6 +29,7 @@ public sealed class CreateReportRequest
 
     public string HiddenDetail { get; init; } = string.Empty;
 
+    [JsonConverter(typeof(FlexibleStringDictionaryConverter))]
     public Dictionary<string, string> CategoryFields { get; init; } = [];
 }
 
