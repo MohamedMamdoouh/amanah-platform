@@ -87,9 +87,11 @@ public sealed class AdminModerationController(ModerationService moderationServic
     [ProducesResponseType(typeof(ModerationSearchResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status501NotImplemented)]
-    public IActionResult SearchModerationReports([FromQuery] string? q) =>
-        StatusCode(StatusCodes.Status501NotImplemented, new ApiError(
-            ErrorCodes.NotImplemented,
-            "This endpoint is not implemented yet."));
+    public async Task<IActionResult> SearchModerationReports(
+        [FromQuery] string? q,
+        CancellationToken cancellationToken)
+    {
+        var result = await moderationService.SearchAsync(q, cancellationToken);
+        return result.ToActionResult();
+    }
 }

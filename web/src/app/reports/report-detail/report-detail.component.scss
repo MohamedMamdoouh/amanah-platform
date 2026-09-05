@@ -14,8 +14,8 @@
 
 .report-detail__error {
   padding: var(--space-sm) var(--space-md);
-  color: #8b1e1e;
-  background: #fdecec;
+  color: var(--color-error);
+  background: var(--color-error-bg);
   border-radius: var(--radius-sm);
 }
 
@@ -94,6 +94,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-xs);
   width: 5.5rem;
   height: 5.5rem;
   font-size: 0.75rem;
@@ -110,8 +111,8 @@
   padding: var(--space-sm) var(--space-lg);
   font: inherit;
   font-weight: 600;
-  color: #8b1e1e;
-  background: #fdecec;
+  color: var(--color-error);
+  background: var(--color-error-bg);
   border: 1px solid #f5c2c2;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -165,7 +166,7 @@
 
 .report-detail__confirm {
   color: #fff;
-  background: #8b1e1e;
+  background: var(--color-error);
   border: none;
 }
 
@@ -177,7 +178,7 @@
 .report-detail__rejection {
   margin-bottom: var(--space-lg);
   padding: var(--space-lg);
-  background: #fdecec;
+  background: var(--color-error-bg);
   border: 1px solid #f5c2c2;
   border-radius: var(--radius-md);
 }
@@ -227,7 +228,7 @@
 }
 
 .report-detail__field-error {
-  color: #8b1e1e;
+  color: var(--color-error);
   font-size: 0.8125rem;
 }
 

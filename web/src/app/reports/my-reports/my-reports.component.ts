@@ -5,6 +5,13 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
+import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { BadgeComponent, BadgeVariant } from '../../shared/ui/badge/badge.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { CardComponent } from '../../shared/ui/card/card.component';
+import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { ReportStatus, ReportSummary } from '../models/report.models';
 import { ReportService } from '../report.service';
 
@@ -13,7 +20,18 @@ type MyReportsTab = 'pending_review' | 'rejected' | 'published';
 @Component({
   selector: 'app-my-reports',
   standalone: true,
-  imports: [DatePipe, RouterLink, TranslateModule],
+  imports: [
+    AlertComponent,
+    BadgeComponent,
+    ButtonComponent,
+    CardComponent,
+    DatePipe,
+    EmptyStateComponent,
+    LoadingIndicatorComponent,
+    PageHeaderComponent,
+    RouterLink,
+    TranslateModule,
+  ],
   templateUrl: './my-reports.component.html',
   styleUrl: './my-reports.component.scss',
 })
@@ -47,6 +65,16 @@ export class MyReportsComponent implements OnInit {
 
   statusLabel(status: string): string {
     return this.translate.instant(`reports.status.${status}`);
+  }
+
+  badgeVariant(status: string): BadgeVariant {
+    if (status === 'published') {
+      return 'approved';
+    }
+    if (status === 'rejected') {
+      return 'rejected';
+    }
+    return 'pending';
   }
 
   tabLabel(tab: MyReportsTab): string {

@@ -6,9 +6,9 @@
 .photo-upload__error {
   margin: 0;
   padding: var(--space-sm) var(--space-md);
-  font-size: 0.875rem;
-  color: #8b1e1e;
-  background: #fdecec;
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+  background: var(--color-error-bg);
   border-radius: var(--radius-sm);
 }
 

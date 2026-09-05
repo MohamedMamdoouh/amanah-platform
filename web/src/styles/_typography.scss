@@ -1,0 +1,30 @@
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-warm);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.page-title {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+}
+
+.page-intro {
+  margin: 0;
+  font-size: var(--font-size-md);
+  color: var(--color-text-muted);
+}

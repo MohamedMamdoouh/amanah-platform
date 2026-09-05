@@ -22,6 +22,8 @@ import { CatalogService } from '../../catalog/catalog.service';
 import { Category, CategoryFieldDefinition } from '../../catalog/models/catalog.models';
 import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
+import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
+import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import { ReportPhotoUploadService } from '../../uploads/report-photo-upload.service';
 import {
   ReportDetail,
@@ -42,8 +44,10 @@ interface DisplayPhoto {
   standalone: true,
   imports: [
     DatePipe,
+    LoadingIndicatorComponent,
     ReactiveFormsModule,
     RouterLink,
+    SpinnerComponent,
     TranslateModule,
     PhotoUploadComponent,
   ],

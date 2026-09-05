@@ -19,6 +19,10 @@ export interface ModerationQueueResponse {
   pendingCount: number;
 }
 
+export interface ModerationSearchResponse {
+  items: ModerationQueueItem[];
+}
+
 export interface RejectReportRequest {
   reasonCode: string;
   note?: string | null;
@@ -34,6 +38,12 @@ export class AdminModerationService {
 
   getQueue(): Observable<ModerationQueueResponse> {
     return this.http.get<ModerationQueueResponse>(`${this.baseUrl}/queue`);
+  }
+
+  search(query: string): Observable<ModerationSearchResponse> {
+    return this.http.get<ModerationSearchResponse>(`${this.baseUrl}/search`, {
+      params: { q: query },
+    });
   }
 
   getReport(id: string): Observable<ReportDetail> {

@@ -4,7 +4,7 @@
   </p>
 
   @if (loading()) {
-    <p>{{ "reports.detail.loading" | translate }}</p>
+    <app-loading-indicator [label]="'reports.detail.loading' | translate" />
   } @else if (error()) {
     <p class="report-detail__error" role="alert">{{ error() }}</p>
   } @else if (report()) {
@@ -40,7 +40,7 @@
       }
 
       @if (catalogLoading()) {
-        <p>{{ "reports.form.loading" | translate }}</p>
+        <app-loading-indicator [label]="'reports.form.loading' | translate" />
       } @else {
         <form class="report-detail__edit-form" [formGroup]="editForm" (ngSubmit)="resubmit()">
           <p class="report-detail__edit-intro">{{ "reports.resubmit.intro" | translate }}</p>
@@ -188,7 +188,10 @@
                   @if (photo.url) {
                     <img [src]="photo.url" alt="" class="report-detail__photo" />
                   } @else if (photo.loading) {
-                    <span class="report-detail__photo-loading">{{ "reports.detail.photo_loading" | translate }}</span>
+                    <span class="report-detail__photo-loading">
+                      <app-spinner size="sm" />
+                      {{ "reports.detail.photo_loading" | translate }}
+                    </span>
                   }
                 }
               </div>
@@ -206,10 +209,11 @@
           <div class="report-detail__actions">
             <button
               type="submit"
-              class="report-detail__resubmit"
+              class="report-detail__resubmit btn-loading"
               [disabled]="editForm.invalid || resubmitting()"
             >
               @if (resubmitting()) {
+                <app-spinner size="sm" />
                 {{ "reports.resubmit.submitting" | translate }}
               } @else {
                 {{ "reports.resubmit.button" | translate }}
@@ -285,9 +289,10 @@
               @if (photo.url) {
                 <img [src]="photo.url" alt="" class="report-detail__photo" />
               } @else if (photo.loading) {
-                <span class="report-detail__photo-loading">{{
-                  "reports.detail.photo_loading" | translate
-                }}</span>
+                <span class="report-detail__photo-loading">
+                  <app-spinner size="sm" />
+                  {{ "reports.detail.photo_loading" | translate }}
+                </span>
               }
             }
           </div>
@@ -346,9 +351,12 @@
               </button>
               <button
                 type="submit"
-                class="report-detail__confirm"
+                class="report-detail__confirm btn-loading"
                 [disabled]="withdrawForm.invalid || withdrawing()"
               >
+                @if (withdrawing()) {
+                  <app-spinner size="sm" />
+                }
                 {{ "reports.withdraw.confirm" | translate }}
               </button>
             </div>

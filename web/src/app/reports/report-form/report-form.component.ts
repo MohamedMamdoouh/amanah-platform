@@ -18,6 +18,10 @@ import {
 } from '../../catalog/models/catalog.models';
 import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
+import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
+import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { CreateReportRequest, ReportType } from '../models/report.models';
 import { PhotoUploadComponent } from '../photo-upload/photo-upload.component';
 import { ReportService } from '../report.service';
@@ -26,6 +30,10 @@ import { ReportService } from '../report.service';
   selector: 'app-report-form',
   standalone: true,
   imports: [
+    AlertComponent,
+    ButtonComponent,
+    LoadingIndicatorComponent,
+    PageHeaderComponent,
     ReactiveFormsModule,
     RouterLink,
     TranslateModule,

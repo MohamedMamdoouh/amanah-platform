@@ -1,29 +1,26 @@
-<section class="notifications" aria-labelledby="notifications-title">
-  <header class="notifications__header">
-    <h1 id="notifications-title" class="notifications__title">
-      {{ 'notifications.title' | translate }}
-    </h1>
-    <p class="notifications__intro">
-      {{ 'notifications.intro' | translate }}
-    </p>
+<section class="notifications page-container" aria-labelledby="notifications-title">
+  <app-page-header
+    [title]="'notifications.title' | translate"
+    [intro]="'notifications.intro' | translate"
+  >
     @if (items().length > 0) {
-      <button
-        type="button"
-        class="notifications__mark-all"
-        [disabled]="markingAll()"
-        (click)="markAllRead()"
+      <app-button
+        variant="ghost"
+        size="sm"
+        [loading]="markingAll()"
+        (clicked)="markAllRead()"
       >
         {{ 'notifications.mark_all_read' | translate }}
-      </button>
+      </app-button>
     }
-  </header>
+  </app-page-header>
 
   @if (loading()) {
-    <p>{{ 'notifications.loading' | translate }}</p>
+    <app-loading-indicator [label]="'notifications.loading' | translate" />
   } @else if (error()) {
-    <p class="notifications__error" role="alert">{{ error() }}</p>
+    <app-alert variant="error">{{ error() }}</app-alert>
   } @else if (items().length === 0) {
-    <p class="notifications__empty">{{ 'notifications.empty' | translate }}</p>
+    <app-empty-state [title]="'notifications.empty' | translate" />
   } @else {
     <ul class="notifications__list">
       @for (item of items(); track item.id) {

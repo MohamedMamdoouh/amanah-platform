@@ -4,10 +4,26 @@
     class="header__brand"
     [attr.aria-label]="'nav.home' | translate"
   >
-    <span class="header__mark" aria-hidden="true"></span>
+    <span class="header__mark" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="6" fill="var(--color-accent)" />
+        <path
+          d="M8 16C8 16 12 10 16 10C20 10 24 16 24 16"
+          stroke="var(--color-warm)"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+        <path
+          d="M8 16C8 16 12 22 16 22C20 22 24 16 24 16"
+          stroke="var(--color-on-accent)"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
+    </span>
     <span class="header__name">{{ 'app.name' | translate }}</span>
   </a>
-  <nav class="header__nav">
+  <nav class="header__nav" [attr.aria-label]="'nav.home' | translate">
     @if (auth.isLoggedIn()) {
       <span class="header__user">{{ auth.currentUser()?.displayName }}</span>
       <a routerLink="/my/reports" class="header__link">{{
@@ -16,9 +32,9 @@
       <a routerLink="/notifications" class="header__link header__link--badge">
         {{ 'nav.notifications' | translate }}
         @if (notifications.unreadCount() > 0) {
-          <span class="header__badge" aria-hidden="true">{{
+          <app-badge variant="neutral" [dot]="true">{{
             notifications.unreadCount()
-          }}</span>
+          }}</app-badge>
         }
       </a>
       @if (auth.isAdmin()) {
@@ -26,13 +42,18 @@
           'nav.admin' | translate
         }}</a>
       }
-      <button type="button" class="header__button" (click)="logout()">
+      <app-button
+        variant="ghost"
+        size="sm"
+        [loading]="loggingOut()"
+        (clicked)="logout()"
+      >
         {{ 'nav.logout' | translate }}
-      </button>
+      </app-button>
     } @else {
-      <a routerLink="/login" class="header__link">{{
-        'nav.login' | translate
-      }}</a>
+      <app-button variant="primary" size="sm" [routerLink]="'/login'">
+        {{ 'nav.login' | translate }}
+      </app-button>
     }
   </nav>
 </header>

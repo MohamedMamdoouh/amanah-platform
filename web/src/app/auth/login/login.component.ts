@@ -12,6 +12,8 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
+import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { AuthService } from '../auth.service';
 import { AuthMode, OtpPurpose } from '../models/auth.models';
 import { TurnstileWidgetComponent } from '../turnstile-widget/turnstile-widget.component';
@@ -36,6 +38,8 @@ function passwordsMatch(control: AbstractControl): ValidationErrors | null {
   imports: [
     ReactiveFormsModule,
     RouterLink,
+    AlertComponent,
+    ButtonComponent,
     TranslateModule,
     TurnstileWidgetComponent,
   ],

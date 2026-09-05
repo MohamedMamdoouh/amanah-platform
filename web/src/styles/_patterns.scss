@@ -1,0 +1,32 @@
+.amanah-pattern {
+  position: relative;
+  overflow: hidden;
+}
+
+.amanah-pattern::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      var(--color-accent) 0,
+      var(--color-accent) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      var(--color-warm) 0,
+      var(--color-warm) 1px,
+      transparent 1px,
+      transparent 12px
+    );
+  pointer-events: none;
+}
+
+.amanah-pattern > * {
+  position: relative;
+  z-index: 1;
+}

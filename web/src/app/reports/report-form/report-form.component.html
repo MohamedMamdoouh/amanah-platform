@@ -15,42 +15,39 @@
       <p class="report-confirmation__timing">
         {{ "reports.confirmation.timing" | translate }}
       </p>
-      <div class="report-confirmation__actions">
-        <a routerLink="/my/reports" class="report-form__submit">
+      <div class="report-confirmation__actions cluster">
+        <app-button variant="primary" [routerLink]="'/my/reports'">
           {{ "reports.confirmation.view_mine" | translate }}
-        </a>
+        </app-button>
         @if (submittedId(); as id) {
-          <a [routerLink]="['/my/reports', id]" class="report-form__secondary">
+          <app-button variant="secondary" [routerLink]="['/my/reports', id]">
             {{ "reports.confirmation.view_detail" | translate }}
-          </a>
+          </app-button>
         }
       </div>
     </div>
   } @else {
-    <header class="report-page__header">
-      <h1 id="report-form-title" class="report-page__title">
-        @if (isFound()) {
-          {{ "reports.form.title_found" | translate }}
-        } @else {
-          {{ "reports.form.title_lost" | translate }}
-        }
-      </h1>
-      <p class="report-page__intro">
-        @if (isFound()) {
-          {{ "reports.form.intro_found" | translate }}
-        } @else {
-          {{ "reports.form.intro_lost" | translate }}
-        }
-      </p>
-    </header>
+    <app-page-header
+      [title]="
+        isFound()
+          ? ('reports.form.title_found' | translate)
+          : ('reports.form.title_lost' | translate)
+      "
+      [intro]="
+        isFound()
+          ? ('reports.form.intro_found' | translate)
+          : ('reports.form.intro_lost' | translate)
+      "
+    />
 
     @if (loading()) {
-      <p class="report-page__loading">
-        {{ "reports.form.loading" | translate }}
-      </p>
+      <app-loading-indicator
+        class="report-page__loading"
+        [label]="'reports.form.loading' | translate"
+      />
     } @else {
       @if (summaryError()) {
-        <p class="report-form__error" role="alert">{{ summaryError() }}</p>
+        <app-alert variant="error">{{ summaryError() }}</app-alert>
       }
 
       <form class="report-form" [formGroup]="form" (ngSubmit)="submit()">
@@ -311,17 +308,18 @@
           }
         </div>
 
-        <button
+        <app-button
           type="submit"
-          class="report-form__submit"
-          [disabled]="form.invalid || submitting()"
+          variant="primary"
+          [disabled]="form.invalid"
+          [loading]="submitting()"
         >
           @if (submitting()) {
             {{ "reports.form.submitting" | translate }}
           } @else {
             {{ "reports.form.submit" | translate }}
           }
-        </button>
+        </app-button>
       </form>
     }
   }

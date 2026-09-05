@@ -13,8 +13,8 @@
 
 .moderation-review__error {
   padding: var(--space-sm) var(--space-md);
-  color: #8b1e1e;
-  background: #fdecec;
+  color: var(--color-error);
+  background: var(--color-error-bg);
   border-radius: var(--radius-sm);
 }
 
@@ -86,7 +86,9 @@
 }
 
 .moderation-review__photo-loading {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
   padding: var(--space-md);
   font-size: 0.875rem;
   color: var(--color-text-muted);
@@ -152,7 +154,7 @@
 
 .moderation-review__reject-submit {
   color: #fff;
-  background: #8b1e1e;
+  background: var(--color-error);
   border: none;
 }
 

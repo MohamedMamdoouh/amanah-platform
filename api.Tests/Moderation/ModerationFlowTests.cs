@@ -213,6 +213,111 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         Assert.Equal("Remove the phone number from the description.", body?.RejectionNote);
     }
 
+    [Fact]
+    public async Task Search_finds_pending_report_by_title_keyword()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var (_, created) = await context.SubmitReportAsync(
+            TestReportHelpers.BuildValidLostRequest(title: "Unique sapphire wallet"));
+        Assert.NotNull(created);
+
+        await LoginAsAdminAsync(context);
+
+        var response = await context.Client.GetAsync(
+            "/api/v1/admin/moderation/search?q=sapphire");
+        var body = await response.Content.ReadFromJsonAsync<ModerationSearchResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Contains(body.Items, item => item.Id == created.Id);
+        Assert.Equal("pending_review", body.Items.Single(item => item.Id == created.Id).Status);
+    }
+
+    [Fact]
+    public async Task Search_does_not_return_published_reports()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var (_, created) = await context.SubmitReportAsync(
+            TestReportHelpers.BuildValidLostRequest(title: "Published emerald ring"));
+        Assert.NotNull(created);
+
+        await LoginAsAdminAsync(context);
+
+        var approveResponse = await context.Client.PostAsync(
+            $"/api/v1/admin/moderation/reports/{created.Id}/approve",
+            null);
+        Assert.Equal(HttpStatusCode.NoContent, approveResponse.StatusCode);
+
+        var response = await context.Client.GetAsync(
+            "/api/v1/admin/moderation/search?q=emerald");
+        var body = await response.Content.ReadFromJsonAsync<ModerationSearchResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.DoesNotContain(body.Items, item => item.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task Search_matches_arabic_normalization_variants()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var (_, created) = await context.SubmitReportAsync(
+            TestReportHelpers.BuildValidLostRequest(title: "حقيبة مدرسة زرقاء"));
+        Assert.NotNull(created);
+
+        await LoginAsAdminAsync(context);
+
+        var response = await context.Client.GetAsync(
+            "/api/v1/admin/moderation/search?q=مدرسه");
+        var body = await response.Content.ReadFromJsonAsync<ModerationSearchResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Contains(body.Items, item => item.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task Search_finds_rejected_reports()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var (_, created) = await context.SubmitReportAsync(
+            TestReportHelpers.BuildValidLostRequest(title: "Rejected ruby necklace"));
+        Assert.NotNull(created);
+
+        await LoginAsAdminAsync(context);
+        await context.Client.PostAsJsonAsync(
+            $"/api/v1/admin/moderation/reports/{created.Id}/reject",
+            new RejectReportRequest
+            {
+                ReasonCode = "rejection.duplicate_report",
+            });
+
+        var response = await context.Client.GetAsync(
+            "/api/v1/admin/moderation/search?q=ruby");
+        var body = await response.Content.ReadFromJsonAsync<ModerationSearchResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Contains(body.Items, item => item.Id == created.Id);
+        Assert.Equal("rejected", body.Items.Single(item => item.Id == created.Id).Status);
+    }
+
+    [Fact]
+    public async Task Search_with_empty_query_returns_no_results()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
+
+        await LoginAsAdminAsync(context);
+
+        var response = await context.Client.GetAsync("/api/v1/admin/moderation/search?q=");
+        var body = await response.Content.ReadFromJsonAsync<ModerationSearchResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Empty(body.Items);
+    }
+
     private static async Task LoginAsAdminAsync(ReportTestContext context)
     {
         var (loginResponse, adminSession) = await context.Auth.LoginAsync("01011111111", "AdminPass123");

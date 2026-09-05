@@ -1,0 +1,28 @@
+<div class="empty-state amanah-pattern">
+  <div class="empty-state__content">
+    <div class="empty-state__icon" aria-hidden="true">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M12 24C12 17.3726 17.3726 12 24 12C30.6274 12 36 17.3726 36 24C36 30.6274 30.6274 36 24 36"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+        <path
+          d="M24 12V24L30 30"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+    <h2 class="empty-state__title">{{ title() }}</h2>
+    @if (description()) {
+      <p class="empty-state__desc">{{ description() }}</p>
+    }
+    <div class="empty-state__actions">
+      <ng-content />
+    </div>
+  </div>
+</div>

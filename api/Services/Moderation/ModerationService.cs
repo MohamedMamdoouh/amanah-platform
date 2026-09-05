@@ -3,6 +3,7 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Services.Reports;
+using Amanah.Api.Utilities.Common;
 using Amanah.Api.Utilities.Notifications;
 using Amanah.Contracts.Requests.Admin;
 using Amanah.Contracts.Responses.Admin;
@@ -30,6 +31,40 @@ public sealed class ModerationService(
         {
             Items = reports.Select(ToQueueItem).ToList(),
             PendingCount = reports.Count,
+        };
+    }
+
+    public async Task<Result<ModerationSearchResponse>> SearchAsync(
+        string? query,
+        CancellationToken cancellationToken = default)
+    {
+        var terms = ArabicNormalizer.BuildSearchTerms(query ?? string.Empty);
+        if (terms.Length == 0)
+        {
+            return new ModerationSearchResponse();
+        }
+
+        IQueryable<Report> reportsQuery = dbContext.Reports
+            .AsNoTracking()
+            .Include(report => report.Category)
+            .Where(report =>
+                report.Status == ReportStatus.PendingReview
+                || report.Status == ReportStatus.Rejected);
+
+        foreach (var term in terms)
+        {
+            reportsQuery = reportsQuery.Where(report =>
+                report.NormalizedSearchText != null
+                && report.NormalizedSearchText.Contains(term));
+        }
+
+        var reports = await reportsQuery
+            .OrderByDescending(report => report.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return new ModerationSearchResponse
+        {
+            Items = reports.Select(ToQueueItem).ToList(),
         };
     }
 
@@ -155,7 +190,19 @@ public sealed class ModerationService(
             },
             Title = report.Title,
             CategoryCode = report.Category.Code,
-            Status = "pending_review",
+            Status = MapStatus(report.Status),
             CreatedAt = report.CreatedAt,
         };
+
+    private static string MapStatus(ReportStatus status) => status switch
+    {
+        ReportStatus.PendingReview => "pending_review",
+        ReportStatus.Rejected => "rejected",
+        ReportStatus.Published => "published",
+        ReportStatus.ClaimInProgress => "claim_in_progress",
+        ReportStatus.Resolved => "resolved",
+        ReportStatus.Withdrawn => "withdrawn",
+        ReportStatus.RemovedByAdmin => "removed_by_admin",
+        _ => status.ToString().ToLowerInvariant(),
+    };
 }

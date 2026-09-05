@@ -1,32 +1,42 @@
-<section class="hero" aria-labelledby="hero-title">
-  <div class="hero__pattern" aria-hidden="true"></div>
-  <div class="hero__content">
-    <p class="hero__eyebrow">{{ 'home.eyebrow' | translate }}</p>
+<section class="hero amanah-pattern" aria-labelledby="hero-title">
+  <div class="hero__content animate-fade-up">
+    <p class="hero__eyebrow eyebrow">{{ 'home.eyebrow' | translate }}</p>
     <h1 id="hero-title" class="hero__title">{{ 'home.title' | translate }}</h1>
     <p class="hero__subtitle">{{ 'home.subtitle' | translate }}</p>
-    <div class="hero__actions">
-      <span class="hero__cta-placeholder hero__cta-placeholder--disabled" aria-disabled="true">
+    <div class="hero__actions cluster">
+      <app-button variant="secondary" [disabled]="true">
         {{ 'home.cta_browse' | translate }}
-      </span>
-      <a routerLink="/report/lost" class="hero__cta">{{ 'home.cta_report_lost' | translate }}</a>
-      <a routerLink="/report/found" class="hero__cta hero__cta--secondary">
+      </app-button>
+      <app-button variant="primary" [routerLink]="'/report/lost'">
+        {{ 'home.cta_report_lost' | translate }}
+      </app-button>
+      <app-button variant="secondary" [routerLink]="'/report/found'">
         {{ 'home.cta_report_found' | translate }}
-      </a>
+      </app-button>
     </div>
   </div>
-  <aside class="hero__aside" [attr.aria-label]="'home.aside_label' | translate">
+  <aside
+    class="hero__aside animate-fade-up animate-fade-up--delay"
+    [attr.aria-label]="'home.aside_label' | translate"
+  >
     <ul class="hero__principles">
       <li>
-        <span class="hero__principle-label">{{ 'home.principle_moderation' | translate }}</span>
-        <span class="hero__principle-desc">{{ 'home.principle_moderation_desc' | translate }}</span>
+        <app-card variant="inset" padding="md">
+          <span class="hero__principle-label">{{ 'home.principle_moderation' | translate }}</span>
+          <span class="hero__principle-desc">{{ 'home.principle_moderation_desc' | translate }}</span>
+        </app-card>
       </li>
       <li>
-        <span class="hero__principle-label">{{ 'home.principle_verify' | translate }}</span>
-        <span class="hero__principle-desc">{{ 'home.principle_verify_desc' | translate }}</span>
+        <app-card variant="inset" padding="md">
+          <span class="hero__principle-label">{{ 'home.principle_verify' | translate }}</span>
+          <span class="hero__principle-desc">{{ 'home.principle_verify_desc' | translate }}</span>
+        </app-card>
       </li>
       <li>
-        <span class="hero__principle-label">{{ 'home.principle_chat' | translate }}</span>
-        <span class="hero__principle-desc">{{ 'home.principle_chat_desc' | translate }}</span>
+        <app-card variant="inset" padding="md">
+          <span class="hero__principle-label">{{ 'home.principle_chat' | translate }}</span>
+          <span class="hero__principle-desc">{{ 'home.principle_chat_desc' | translate }}</span>
+        </app-card>
       </li>
     </ul>
   </aside>
@@ -34,13 +44,13 @@
 <section class="home-links" aria-labelledby="home-links-title">
   <h2 id="home-links-title" class="home-links__title">{{ 'home.links_title' | translate }}</h2>
   <div class="home-links__grid">
-    <a routerLink="/safety" class="home-links__card">
+    <app-card variant="interactive" [routerLink]="'/safety'">
       <span class="home-links__card-title">{{ 'footer.safety' | translate }}</span>
       <span class="home-links__card-desc">{{ 'home.safety_card' | translate }}</span>
-    </a>
-    <a routerLink="/support" class="home-links__card">
+    </app-card>
+    <app-card variant="interactive" [routerLink]="'/support'">
       <span class="home-links__card-title">{{ 'footer.support' | translate }}</span>
       <span class="home-links__card-desc">{{ 'home.support_card' | translate }}</span>
-    </a>
+    </app-card>
   </div>
 </section>

@@ -1,0 +1,24 @@
+.page-header {
+  margin-bottom: var(--space-lg);
+}
+
+.page-header__eyebrow {
+  margin: 0 0 var(--space-sm);
+}
+
+.page-header__title {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  margin-bottom: var(--space-sm);
+}
+
+.page-header__intro {
+  margin: 0;
+  font-size: var(--font-size-md);
+  color: var(--color-text-muted);
+  max-width: 36rem;
+}
+
+.page-header__actions {
+  margin-top: var(--space-md);
+}

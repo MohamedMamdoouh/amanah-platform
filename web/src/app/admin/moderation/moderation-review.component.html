@@ -6,9 +6,9 @@
   </p>
 
   @if (loading()) {
-    <p>{{ "reports.detail.loading" | translate }}</p>
+    <app-loading-indicator [label]="'reports.detail.loading' | translate" />
   } @else if (error()) {
-    <p class="moderation-review__error" role="alert">{{ error() }}</p>
+    <app-alert variant="error">{{ error() }}</app-alert>
   } @else if (report()) {
     @let detail = report()!;
     <header class="moderation-review__header">
@@ -83,6 +83,7 @@
             <li>
               @if (photo.loading) {
                 <span class="moderation-review__photo-loading">
+                  <app-spinner size="sm" />
                   {{ "reports.detail.photo_loading" | translate }}
                 </span>
               } @else if (photo.url) {
@@ -99,29 +100,24 @@
     }
 
     @if (actionError()) {
-      <p class="moderation-review__error" role="alert">{{ actionError() }}</p>
+      <app-alert variant="error">{{ actionError() }}</app-alert>
     }
 
-    <div class="moderation-review__actions">
-      <button
-        type="button"
-        class="moderation-review__approve"
-        [disabled]="approving()"
-        (click)="approveReport()"
+    <div class="moderation-review__actions cluster">
+      <app-button
+        variant="primary"
+        [loading]="approving()"
+        (clicked)="approveReport()"
       >
         {{
           approving()
             ? ("admin.moderation.approving" | translate)
             : ("admin.moderation.approve" | translate)
         }}
-      </button>
-      <button
-        type="button"
-        class="moderation-review__reject-toggle"
-        (click)="openReject()"
-      >
+      </app-button>
+      <app-button variant="danger" (clicked)="openReject()">
         {{ "admin.moderation.reject" | translate }}
-      </button>
+      </app-button>
     </div>
 
     @if (showReject()) {
@@ -130,9 +126,9 @@
         [formGroup]="rejectForm"
         (ngSubmit)="submitReject()"
       >
-        <label class="moderation-review__field">
-          <span>{{ "admin.moderation.reject_reason" | translate }}</span>
-          <select formControlName="reasonCode">
+        <label class="form-field">
+          <span class="form-label">{{ "admin.moderation.reject_reason" | translate }}</span>
+          <select class="form-select" formControlName="reasonCode">
             <option value="" disabled>
               {{ "admin.moderation.reject_reason" | translate }}
             </option>
@@ -141,29 +137,26 @@
             }
           </select>
         </label>
-        <label class="moderation-review__field">
-          <span>{{ "admin.moderation.reject_note" | translate }}</span>
-          <textarea formControlName="note" rows="3"></textarea>
+        <label class="form-field">
+          <span class="form-label">{{ "admin.moderation.reject_note" | translate }}</span>
+          <textarea class="form-textarea" formControlName="note" rows="3"></textarea>
         </label>
-        <div class="moderation-review__reject-actions">
-          <button
-            type="button"
-            class="moderation-review__cancel"
-            (click)="closeReject()"
-          >
+        <div class="moderation-review__reject-actions cluster">
+          <app-button type="button" variant="ghost" (clicked)="closeReject()">
             {{ "reports.withdraw.cancel" | translate }}
-          </button>
-          <button
+          </app-button>
+          <app-button
             type="submit"
-            class="moderation-review__reject-submit"
-            [disabled]="rejectForm.invalid || rejecting()"
+            variant="danger"
+            [disabled]="rejectForm.invalid"
+            [loading]="rejecting()"
           >
             {{
               rejecting()
                 ? ("admin.moderation.rejecting" | translate)
                 : ("admin.moderation.reject_submit" | translate)
             }}
-          </button>
+          </app-button>
         </div>
       </form>
     }

@@ -1,10 +1,8 @@
-<section class="my-reports" aria-labelledby="my-reports-title">
-  <header class="my-reports__header">
-    <h1 id="my-reports-title" class="my-reports__title">
-      {{ 'reports.mine.title' | translate }}
-    </h1>
-    <p class="my-reports__intro">{{ 'reports.mine.intro' | translate }}</p>
-  </header>
+<section class="my-reports page-container" aria-labelledby="my-reports-title">
+  <app-page-header
+    [title]="'reports.mine.title' | translate"
+    [intro]="'reports.mine.intro' | translate"
+  />
 
   <nav class="my-reports__tabs" [attr.aria-label]="'reports.mine.tabs_label' | translate">
     @for (tab of tabs; track tab) {
@@ -20,37 +18,45 @@
   </nav>
 
   @if (loading()) {
-    <p class="my-reports__loading">{{ 'reports.mine.loading' | translate }}</p>
+    <app-loading-indicator
+      class="my-reports__loading"
+      [label]="'reports.mine.loading' | translate"
+    />
   } @else if (error()) {
-    <p class="my-reports__error" role="alert">{{ error() }}</p>
+    <app-alert variant="error">{{ error() }}</app-alert>
   } @else if (reports().length === 0) {
-    <div class="my-reports__empty">
-      <p>{{ emptyMessage() }}</p>
+    <app-empty-state
+      [title]="emptyMessage()"
+    >
       @if (activeTab() === 'pending_review') {
-        <div class="my-reports__empty-actions">
-          <a routerLink="/report/lost" class="my-reports__cta">{{ 'reports.mine.report_lost' | translate }}</a>
-          <a routerLink="/report/found" class="my-reports__cta my-reports__cta--secondary">
-            {{ 'reports.mine.report_found' | translate }}
-          </a>
-        </div>
+        <app-button variant="primary" [routerLink]="'/report/lost'">
+          {{ 'reports.mine.report_lost' | translate }}
+        </app-button>
+        <app-button variant="secondary" [routerLink]="'/report/found'">
+          {{ 'reports.mine.report_found' | translate }}
+        </app-button>
       }
-    </div>
+    </app-empty-state>
   } @else {
     <ul class="my-reports__list">
       @for (report of reports(); track report.id) {
         <li>
-          <a [routerLink]="['/my/reports', report.id]" class="my-reports__card">
-            <span class="my-reports__card-type">{{ typeLabel(report.type) }}</span>
-            <span class="my-reports__card-title">{{ report.title }}</span>
-            <span class="my-reports__card-meta">
-              {{ categoryLabel(report.categoryCode) }} ·
-              {{ governorateLabel(report.governorateCode) }}
-            </span>
-            <span class="my-reports__card-date">
-              {{ report.createdAt | date: 'medium' }}
-            </span>
-            <span class="my-reports__card-status">{{ statusLabel(report.status) }}</span>
-          </a>
+          <app-card variant="interactive" [routerLink]="['/my/reports', report.id]" padding="md">
+            <div class="my-reports__card-content">
+              <span class="my-reports__card-type">{{ typeLabel(report.type) }}</span>
+              <span class="my-reports__card-title">{{ report.title }}</span>
+              <span class="my-reports__card-meta">
+                {{ categoryLabel(report.categoryCode) }} ·
+                {{ governorateLabel(report.governorateCode) }}
+              </span>
+              <span class="my-reports__card-date">
+                {{ report.createdAt | date: 'medium' }}
+              </span>
+              <app-badge [variant]="badgeVariant(report.status)">
+                {{ statusLabel(report.status) }}
+              </app-badge>
+            </div>
+          </app-card>
         </li>
       }
     </ul>

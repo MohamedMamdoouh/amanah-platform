@@ -56,7 +56,7 @@
   "reports.detail.not_found": "البلاغ غير موجود.",
   "reports.detail.category": "الفئة",
   "reports.detail.governorate": "المحافظة",
-  "reports.detail.photo_loading": "…",
+  "reports.detail.photo_loading": "جارٍ التحميل…",
   "reports.type.lost": "مفقود",
   "reports.type.found": "موجود",
   "reports.status.pending_review": "قيد المراجعة",

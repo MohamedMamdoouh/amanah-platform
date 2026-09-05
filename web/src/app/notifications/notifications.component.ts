@@ -5,11 +5,24 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { NotificationItem, NotificationService } from './notification.service';
+import { LoadingIndicatorComponent } from '../shared/ui/loading-indicator/loading-indicator.component';
+import { AlertComponent } from '../shared/ui/alert/alert.component';
+import { ButtonComponent } from '../shared/ui/button/button.component';
+import { EmptyStateComponent } from '../shared/ui/empty-state/empty-state.component';
+import { PageHeaderComponent } from '../shared/ui/page-header/page-header.component';
 
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [DatePipe, TranslateModule],
+  imports: [
+    AlertComponent,
+    ButtonComponent,
+    DatePipe,
+    EmptyStateComponent,
+    LoadingIndicatorComponent,
+    PageHeaderComponent,
+    TranslateModule,
+  ],
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.scss',
 })
