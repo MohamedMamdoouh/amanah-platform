@@ -1,0 +1,17 @@
+<div class="form-field">
+  @if (label()) {
+    <label class="form-label" [attr.for]="htmlFor()">
+      {{ label() }}
+      @if (required()) {
+        <span class="form-label__required" aria-hidden="true">*</span>
+      }
+    </label>
+  }
+  <ng-content />
+  @if (hint() && !error()) {
+    <p class="form-hint">{{ hint() }}</p>
+  }
+  @if (error()) {
+    <p class="form-error" role="alert">{{ error() }}</p>
+  }
+</div>

@@ -47,11 +47,7 @@
 .report-detail__fields {
   display: grid;
   gap: var(--space-md);
-  margin: 0 0 var(--space-lg);
-  padding: var(--space-lg);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  margin: 0;
 }
 
 .report-detail__fields dt {

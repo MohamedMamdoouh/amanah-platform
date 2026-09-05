@@ -1,38 +1,21 @@
-@if (routerLink(); as link) {
-  <a
-    class="btn"
-    [class.btn--primary]="variant() === 'primary'"
-    [class.btn--secondary]="variant() === 'secondary'"
-    [class.btn--ghost]="variant() === 'ghost'"
-    [class.btn--danger]="variant() === 'danger'"
-    [class.btn--sm]="size() === 'sm'"
-    [class.btn--loading]="loading()"
-    [routerLink]="link"
-    [attr.aria-disabled]="ariaDisabled() ? 'true' : null"
-    [class.btn--disabled]="ariaDisabled()"
-    (click)="onClick($event)"
-  >
-    @if (loading()) {
-      <app-spinner size="sm" />
-    }
-    <ng-content />
-  </a>
-} @else {
-  <button
-    class="btn"
-    [class.btn--primary]="variant() === 'primary'"
-    [class.btn--secondary]="variant() === 'secondary'"
-    [class.btn--ghost]="variant() === 'ghost'"
-    [class.btn--danger]="variant() === 'danger'"
-    [class.btn--sm]="size() === 'sm'"
-    [class.btn--loading]="loading()"
-    [type]="type()"
-    [disabled]="disabled() || loading()"
-    (click)="onClick($event)"
-  >
-    @if (loading()) {
-      <app-spinner size="sm" />
-    }
-    <ng-content />
-  </button>
-}
+<button
+  class="btn"
+  [class.btn--primary]="variant() === 'primary'"
+  [class.btn--secondary]="variant() === 'secondary'"
+  [class.btn--outline]="variant() === 'outline'"
+  [class.btn--ghost]="variant() === 'ghost'"
+  [class.btn--danger]="variant() === 'danger'"
+  [class.btn--sm]="size() === 'sm'"
+  [class.btn--loading]="loading()"
+  [class.btn--disabled]="ariaDisabled() || (routerLink() && disabled())"
+  [type]="routerLink() ? 'button' : type()"
+  [disabled]="!routerLink() && (disabled() || loading())"
+  [attr.aria-disabled]="routerLink() && (ariaDisabled() || disabled() || loading()) ? 'true' : null"
+  [routerLink]="routerLink()"
+  (click)="onClick($event)"
+>
+  @if (loading()) {
+    <app-spinner size="sm" />
+  }
+  <span class="btn__label"><ng-content /></span>
+</button>

@@ -13,25 +13,22 @@
     }
   </app-page-header>
 
-  <div class="moderation-queue__search form-field">
-    <label class="form-label" for="moderation-search">
-      {{ 'admin.moderation.search_label' | translate }}
-    </label>
-    <input
-      id="moderation-search"
-      type="search"
-      class="form-input"
-      [value]="searchQuery()"
+  <app-form-field
+    [label]="'admin.moderation.search_label' | translate"
+    htmlFor="moderation-search"
+  >
+    <app-search-input
+      [formControl]="searchControl"
       [placeholder]="'admin.moderation.search_placeholder' | translate"
-      (input)="onSearchInput($event)"
+      [ariaLabel]="'admin.moderation.search_label' | translate"
     />
-  </div>
+  </app-form-field>
 
   @if (loading()) {
     <app-loading-indicator [label]="'admin.moderation.loading' | translate" />
   } @else if (error()) {
     <app-alert variant="error">{{ error() }}</app-alert>
-  } @else if (searchQuery().trim()) {
+  } @else if (hasSearchQuery()) {
     @if (searchLoading()) {
       <app-loading-indicator [label]="'admin.moderation.searching' | translate" />
     } @else if (searchResults().length === 0) {
@@ -40,22 +37,16 @@
       <ul class="moderation-queue__list">
         @for (item of searchResults(); track item.id) {
           <li>
-            <app-card variant="interactive" [routerLink]="['/admin/moderation', item.id]" padding="md">
-              <div class="moderation-queue__card-content">
-                <span class="moderation-queue__type">{{ typeLabel(item.type) }}</span>
-                <span class="moderation-queue__title-text">{{ item.title }}</span>
-                <span class="moderation-queue__meta">
-                  {{ categoryLabel(item.categoryCode) }}
-                </span>
-                <span class="moderation-queue__date">
-                  {{ item.createdAt | date: 'medium' }}
-                </span>
-                <span class="moderation-queue__status">{{ statusLabel(item.status) }}</span>
-                <span class="moderation-queue__action">
-                  {{ 'admin.moderation.review' | translate }}
-                </span>
-              </div>
-            </app-card>
+            <app-listing-card
+              [title]="item.title"
+              [typeLabel]="typeLabel(item.type)"
+              [subtitle]="categoryLabel(item.categoryCode)"
+              [date]="(item.createdAt | date: 'medium') ?? ''"
+              [badgeLabel]="statusLabel(item.status)"
+              [badgeVariant]="'pending'"
+              [routerLink]="['/admin/moderation', item.id]"
+              [actionLabel]="'admin.moderation.review' | translate"
+            />
           </li>
         }
       </ul>
@@ -66,21 +57,14 @@
     <ul class="moderation-queue__list">
       @for (item of items(); track item.id) {
         <li>
-          <app-card variant="interactive" [routerLink]="['/admin/moderation', item.id]" padding="md">
-            <div class="moderation-queue__card-content">
-              <span class="moderation-queue__type">{{ typeLabel(item.type) }}</span>
-              <span class="moderation-queue__title-text">{{ item.title }}</span>
-              <span class="moderation-queue__meta">
-                {{ categoryLabel(item.categoryCode) }}
-              </span>
-              <span class="moderation-queue__date">
-                {{ item.createdAt | date: 'medium' }}
-              </span>
-              <span class="moderation-queue__action">
-                {{ 'admin.moderation.review' | translate }}
-              </span>
-            </div>
-          </app-card>
+          <app-listing-card
+            [title]="item.title"
+            [typeLabel]="typeLabel(item.type)"
+            [subtitle]="categoryLabel(item.categoryCode)"
+            [date]="(item.createdAt | date: 'medium') ?? ''"
+            [routerLink]="['/admin/moderation', item.id]"
+            [actionLabel]="'admin.moderation.review' | translate"
+          />
         </li>
       }
     </ul>

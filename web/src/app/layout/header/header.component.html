@@ -1,59 +1,212 @@
 <header class="header">
-  <a
-    routerLink="/"
-    class="header__brand"
-    [attr.aria-label]="'nav.home' | translate"
-  >
-    <span class="header__mark" aria-hidden="true">
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="32" height="32" rx="6" fill="var(--color-accent)" />
-        <path
-          d="M8 16C8 16 12 10 16 10C20 10 24 16 24 16"
-          stroke="var(--color-warm)"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
-        <path
-          d="M8 16C8 16 12 22 16 22C20 22 24 16 24 16"
-          stroke="var(--color-on-accent)"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
-      </svg>
-    </span>
-    <span class="header__name">{{ 'app.name' | translate }}</span>
-  </a>
-  <nav class="header__nav" [attr.aria-label]="'nav.home' | translate">
-    @if (auth.isLoggedIn()) {
-      <span class="header__user">{{ auth.currentUser()?.displayName }}</span>
-      <a routerLink="/my/reports" class="header__link">{{
-        'nav.my_reports' | translate
-      }}</a>
-      <a routerLink="/notifications" class="header__link header__link--badge">
-        {{ 'nav.notifications' | translate }}
-        @if (notifications.unreadCount() > 0) {
-          <app-badge variant="neutral" [dot]="true">{{
-            notifications.unreadCount()
-          }}</app-badge>
+  <div class="header__inner page-container--wide">
+    <a
+      routerLink="/"
+      class="header__brand"
+      [attr.aria-label]="'nav.home' | translate"
+      (click)="closeMobileNav()"
+    >
+      <span class="header__mark" aria-hidden="true">
+        <svg
+          width="36"
+          height="36"
+          viewBox="0 0 32 32"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect width="32" height="32" rx="9" fill="var(--color-primary)" />
+          <path
+            d="M11 24.5V15.2c0-3.4 2.1-6.3 5-7.5"
+            stroke="var(--color-on-accent)"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+          <path
+            d="M21 24.5V15.2c0-3.4-2.1-6.3-5-7.5"
+            stroke="var(--color-on-accent)"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+          <path
+            d="M12.2 10.2c1.5-.9 3.3-1.35 5.1-1.1 1.8-.25 3.4.35 4.7 1.35"
+            stroke="var(--color-warm)"
+            stroke-width="1.6"
+            stroke-linecap="round"
+          />
+          <circle cx="16" cy="17.2" r="3.1" fill="var(--color-warm)" />
+          <circle
+            cx="17"
+            cy="16.4"
+            r="0.85"
+            fill="var(--color-on-accent)"
+            opacity="0.4"
+          />
+        </svg>
+      </span>
+      <span class="header__name">{{ "app.name" | translate }}</span>
+    </a>
+
+    <nav class="header__center" [attr.aria-label]="'nav.main' | translate">
+      <a
+        routerLink="/"
+        class="header__link"
+        routerLinkActive="header__link--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        {{ "nav.home" | translate }}
+      </a>
+      <span class="header__link header__link--disabled" aria-disabled="true">
+        {{ "nav.browse" | translate }}
+      </span>
+      <a
+        routerLink="/safety"
+        class="header__link"
+        routerLinkActive="header__link--active"
+      >
+        {{ "footer.safety" | translate }}
+      </a>
+      <a
+        routerLink="/support"
+        class="header__link"
+        routerLinkActive="header__link--active"
+      >
+        {{ "footer.support" | translate }}
+      </a>
+      @if (auth.isLoggedIn()) {
+        <a
+          routerLink="/my/reports"
+          class="header__link"
+          routerLinkActive="header__link--active"
+        >
+          {{ "nav.my_reports" | translate }}
+        </a>
+      }
+    </nav>
+
+    <div class="header__actions">
+      @if (auth.isLoggedIn()) {
+        <a
+          routerLink="/notifications"
+          class="header__bell"
+          [attr.aria-label]="'nav.notifications' | translate"
+        >
+          <app-icon name="bell" size="md" />
+          @if (notifications.unreadCount() > 0) {
+            <app-badge variant="neutral" [dot]="true">{{
+              notifications.unreadCount()
+            }}</app-badge>
+          }
+        </a>
+        @if (auth.isAdmin()) {
+          <a
+            routerLink="/admin/moderation"
+            class="header__link header__link--compact"
+          >
+            {{ "nav.admin" | translate }}
+          </a>
         }
+        <app-button
+          variant="ghost"
+          size="sm"
+          [loading]="loggingOut()"
+          (clicked)="logout()"
+        >
+          {{ "nav.logout" | translate }}
+        </app-button>
+      } @else {
+        <a
+          routerLink="/notifications"
+          class="header__bell header__bell--muted"
+          [attr.aria-label]="'nav.notifications' | translate"
+          tabindex="-1"
+          aria-hidden="true"
+        >
+          <app-icon name="bell" size="md" />
+        </a>
+        <app-button variant="primary" size="sm" [routerLink]="'/login'">
+          {{ "nav.login" | translate }}
+        </app-button>
+      }
+
+      <button
+        type="button"
+        class="header__menu-btn"
+        [attr.aria-expanded]="mobileNavOpen()"
+        [attr.aria-label]="mobileNavOpen() ? 'إغلاق القائمة' : 'فتح القائمة'"
+        (click)="toggleMobileNav()"
+      >
+        <app-icon [name]="mobileNavOpen() ? 'close' : 'menu'" size="md" />
+      </button>
+    </div>
+  </div>
+</header>
+
+@if (mobileNavOpen()) {
+  <nav class="header__drawer" [attr.aria-label]="'nav.main' | translate">
+    <a
+      routerLink="/"
+      class="header__drawer-link"
+      routerLinkActive="header__drawer-link--active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      (click)="closeMobileNav()"
+    >
+      {{ "nav.home" | translate }}
+    </a>
+    <span class="header__drawer-link header__drawer-link--disabled">{{
+      "nav.browse" | translate
+    }}</span>
+    <a
+      routerLink="/safety"
+      class="header__drawer-link"
+      (click)="closeMobileNav()"
+    >
+      {{ "footer.safety" | translate }}
+    </a>
+    <a
+      routerLink="/support"
+      class="header__drawer-link"
+      (click)="closeMobileNav()"
+    >
+      {{ "footer.support" | translate }}
+    </a>
+    @if (auth.isLoggedIn()) {
+      <span class="header__drawer-user">{{
+        auth.currentUser()?.displayName
+      }}</span>
+      <a
+        routerLink="/my/reports"
+        class="header__drawer-link"
+        (click)="closeMobileNav()"
+      >
+        {{ "nav.my_reports" | translate }}
+      </a>
+      <a
+        routerLink="/notifications"
+        class="header__drawer-link"
+        (click)="closeMobileNav()"
+      >
+        {{ "nav.notifications" | translate }}
       </a>
       @if (auth.isAdmin()) {
-        <a routerLink="/admin/moderation" class="header__link">{{
-          'nav.admin' | translate
-        }}</a>
+        <a
+          routerLink="/admin/moderation"
+          class="header__drawer-link"
+          (click)="closeMobileNav()"
+        >
+          {{ "nav.admin" | translate }}
+        </a>
       }
-      <app-button
-        variant="ghost"
-        size="sm"
-        [loading]="loggingOut()"
-        (clicked)="logout()"
-      >
-        {{ 'nav.logout' | translate }}
+      <app-button variant="ghost" [loading]="loggingOut()" (clicked)="logout()">
+        {{ "nav.logout" | translate }}
       </app-button>
     } @else {
-      <app-button variant="primary" size="sm" [routerLink]="'/login'">
-        {{ 'nav.login' | translate }}
+      <app-button
+        variant="primary"
+        [routerLink]="'/login'"
+        (click)="closeMobileNav()"
+      >
+        {{ "nav.login" | translate }}
       </app-button>
     }
   </nav>
-</header>
+}

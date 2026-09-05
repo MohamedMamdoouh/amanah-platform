@@ -22,7 +22,9 @@
   background: var(--color-warning-bg);
 }
 
-.badge--approved {
+.badge--approved,
+.badge--published,
+.badge--resolved {
   color: var(--color-success);
   background: var(--color-success-bg);
 }
@@ -34,5 +36,20 @@
 
 .badge--neutral {
   color: var(--color-on-accent);
-  background: var(--color-accent);
+  background: var(--color-primary);
+}
+
+.badge--lost {
+  color: var(--color-error);
+  background: var(--color-error-bg);
+}
+
+.badge--found {
+  color: var(--color-info);
+  background: var(--color-info-bg);
+}
+
+.badge--claim {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
 }

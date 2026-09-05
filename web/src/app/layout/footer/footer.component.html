@@ -1,9 +1,38 @@
 <footer class="footer">
-  <p class="footer__tagline">{{ 'footer.tagline' | translate }}</p>
-  <nav class="footer__nav">
-    <a routerLink="/terms">{{ 'footer.terms' | translate }}</a>
-    <a routerLink="/privacy">{{ 'footer.privacy' | translate }}</a>
-    <a routerLink="/safety">{{ 'footer.safety' | translate }}</a>
-    <a routerLink="/support">{{ 'footer.support' | translate }}</a>
-  </nav>
+  <div class="footer__inner page-container--wide">
+    <a routerLink="/" class="footer__brand" [attr.aria-label]="'nav.home' | translate">
+      <span class="footer__mark" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="9" fill="var(--color-on-accent)" />
+          <path
+            d="M11 24.5V15.2c0-3.4 2.1-6.3 5-7.5"
+            stroke="var(--color-primary)"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+          <path
+            d="M21 24.5V15.2c0-3.4-2.1-6.3-5-7.5"
+            stroke="var(--color-primary)"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+          <path
+            d="M12.2 10.2c1.5-.9 3.3-1.35 5.1-1.1 1.8-.25 3.4.35 4.7 1.35"
+            stroke="var(--color-warm)"
+            stroke-width="1.6"
+            stroke-linecap="round"
+          />
+          <circle cx="16" cy="17.2" r="3.1" fill="var(--color-warm)" />
+        </svg>
+      </span>
+      <span class="footer__name">{{ 'app.name' | translate }}</span>
+    </a>
+
+    <nav class="footer__nav" [attr.aria-label]="'nav.main' | translate">
+      <a routerLink="/safety">{{ 'footer.safety' | translate }}</a>
+      <a routerLink="/support">{{ 'footer.support' | translate }}</a>
+      <a routerLink="/terms">{{ 'footer.terms' | translate }}</a>
+      <a routerLink="/privacy">{{ 'footer.privacy' | translate }}</a>
+    </nav>
+  </div>
 </footer>

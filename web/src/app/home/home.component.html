@@ -1,56 +1,149 @@
-<section class="hero amanah-pattern" aria-labelledby="hero-title">
-  <div class="hero__content animate-fade-up">
-    <p class="hero__eyebrow eyebrow">{{ 'home.eyebrow' | translate }}</p>
-    <h1 id="hero-title" class="hero__title">{{ 'home.title' | translate }}</h1>
-    <p class="hero__subtitle">{{ 'home.subtitle' | translate }}</p>
-    <div class="hero__actions cluster">
-      <app-button variant="secondary" [disabled]="true">
-        {{ 'home.cta_browse' | translate }}
-      </app-button>
-      <app-button variant="primary" [routerLink]="'/report/lost'">
-        {{ 'home.cta_report_lost' | translate }}
-      </app-button>
-      <app-button variant="secondary" [routerLink]="'/report/found'">
-        {{ 'home.cta_report_found' | translate }}
-      </app-button>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero__grid">
+    <div class="hero__content animate-fade-up">
+      <h1 id="hero-title" class="hero__title">
+        {{ "home.title" | translate }}
+      </h1>
+      <p class="hero__subtitle">{{ "home.subtitle" | translate }}</p>
+      <div class="hero__actions">
+        <app-button
+          class="hero__cta"
+          variant="primary"
+          [routerLink]="'/report/lost'"
+        >
+          <app-icon name="lost" size="sm" />
+          {{ "home.cta_report_lost" | translate }}
+        </app-button>
+        <app-button
+          class="hero__cta"
+          variant="outline"
+          [routerLink]="'/report/found'"
+        >
+          <app-icon name="found" size="sm" />
+          {{ "home.cta_report_found" | translate }}
+        </app-button>
+      </div>
+    </div>
+
+    <div class="hero__visual" aria-hidden="true">
+      <figure class="hero-scene animate-fade-up animate-fade-up--delay">
+        <svg
+          class="hero-scene__svg"
+          viewBox="0 0 400 400"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle class="hero-scene__halo" cx="200" cy="200" r="172" />
+          <path
+            class="hero-scene__arc"
+            d="M68 142c42-58 96-80 132-76s90 22 132 76"
+            stroke="var(--color-warm)"
+            stroke-width="5"
+            stroke-linecap="round"
+          />
+          <path
+            class="hero-scene__arm"
+            d="M104 296V182c0-46 40-84 88-92"
+            stroke="var(--color-primary)"
+            stroke-width="14"
+            stroke-linecap="round"
+          />
+          <path
+            class="hero-scene__arm"
+            d="M296 296V182c0-46-40-84-88-92"
+            stroke="var(--color-primary)"
+            stroke-width="14"
+            stroke-linecap="round"
+          />
+          <circle
+            class="hero-scene__core"
+            cx="200"
+            cy="206"
+            r="32"
+            fill="var(--color-warm)"
+          />
+          <circle cx="211" cy="196" r="9" fill="#fff" fill-opacity="0.45" />
+          <g class="hero-scene__node hero-scene__node--lost">
+            <circle
+              cx="62"
+              cy="206"
+              r="18"
+              fill="var(--color-surface)"
+              stroke="var(--color-primary)"
+              stroke-width="2.5"
+            />
+            <circle cx="62" cy="199" r="4.5" fill="var(--color-primary)" />
+            <path
+              d="M54.5 212a7.5 5 0 0 1 15 0"
+              fill="var(--color-primary)"
+            />
+          </g>
+          <g class="hero-scene__node hero-scene__node--found">
+            <circle
+              cx="338"
+              cy="206"
+              r="18"
+              fill="var(--color-surface)"
+              stroke="var(--color-primary)"
+              stroke-width="2.5"
+            />
+            <path
+              d="M330.5 206.5 334.5 211.5 346.5 199.5"
+              stroke="var(--color-primary)"
+              stroke-width="3.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </g>
+        </svg>
+      </figure>
     </div>
   </div>
-  <aside
-    class="hero__aside animate-fade-up animate-fade-up--delay"
-    [attr.aria-label]="'home.aside_label' | translate"
-  >
-    <ul class="hero__principles">
-      <li>
-        <app-card variant="inset" padding="md">
-          <span class="hero__principle-label">{{ 'home.principle_moderation' | translate }}</span>
-          <span class="hero__principle-desc">{{ 'home.principle_moderation_desc' | translate }}</span>
-        </app-card>
-      </li>
-      <li>
-        <app-card variant="inset" padding="md">
-          <span class="hero__principle-label">{{ 'home.principle_verify' | translate }}</span>
-          <span class="hero__principle-desc">{{ 'home.principle_verify_desc' | translate }}</span>
-        </app-card>
-      </li>
-      <li>
-        <app-card variant="inset" padding="md">
-          <span class="hero__principle-label">{{ 'home.principle_chat' | translate }}</span>
-          <span class="hero__principle-desc">{{ 'home.principle_chat_desc' | translate }}</span>
-        </app-card>
-      </li>
-    </ul>
-  </aside>
 </section>
-<section class="home-links" aria-labelledby="home-links-title">
-  <h2 id="home-links-title" class="home-links__title">{{ 'home.links_title' | translate }}</h2>
-  <div class="home-links__grid">
-    <app-card variant="interactive" [routerLink]="'/safety'">
-      <span class="home-links__card-title">{{ 'footer.safety' | translate }}</span>
-      <span class="home-links__card-desc">{{ 'home.safety_card' | translate }}</span>
-    </app-card>
-    <app-card variant="interactive" [routerLink]="'/support'">
-      <span class="home-links__card-title">{{ 'footer.support' | translate }}</span>
-      <span class="home-links__card-desc">{{ 'home.support_card' | translate }}</span>
-    </app-card>
-  </div>
+
+<section class="features" aria-labelledby="features-title">
+  <h2 id="features-title" class="sr-only">
+    {{ "home.aside_label" | translate }}
+  </h2>
+  <ul class="features__grid">
+    <li>
+      <article class="feature-card">
+        <span class="feature-card__icon" aria-hidden="true">
+          <app-icon name="shield" size="lg" />
+        </span>
+        <h3 class="feature-card__title">
+          {{ "home.principle_moderation" | translate }}
+        </h3>
+        <p class="feature-card__desc">
+          {{ "home.principle_moderation_desc" | translate }}
+        </p>
+      </article>
+    </li>
+    <li>
+      <article class="feature-card">
+        <span class="feature-card__icon" aria-hidden="true">
+          <app-icon name="check" size="lg" />
+        </span>
+        <h3 class="feature-card__title">
+          {{ "home.principle_verify" | translate }}
+        </h3>
+        <p class="feature-card__desc">
+          {{ "home.principle_verify_desc" | translate }}
+        </p>
+      </article>
+    </li>
+    <li>
+      <article class="feature-card">
+        <span class="feature-card__icon" aria-hidden="true">
+          <app-icon name="chat" size="lg" />
+        </span>
+        <h3 class="feature-card__title">
+          {{ "home.principle_chat" | translate }}
+        </h3>
+        <p class="feature-card__desc">
+          {{ "home.principle_chat_desc" | translate }}
+        </p>
+      </article>
+    </li>
+  </ul>
 </section>

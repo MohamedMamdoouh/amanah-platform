@@ -1,26 +1,34 @@
-<article class="legal-page">
-  <header class="legal-page__masthead">
+<article class="info-page page-container">
+  <header class="info-page__masthead">
     <h1>{{ 'pages.terms.title' | translate }}</h1>
-    <p class="legal-page__lead">{{ 'pages.terms.lead' | translate }}</p>
+    <p class="info-page__lead">{{ 'pages.terms.lead' | translate }}</p>
   </header>
 
-  <section class="legal-page__section">
-    <h2>{{ 'pages.terms.eligibility.title' | translate }}</h2>
-    <p>{{ 'pages.terms.eligibility.body' | translate }}</p>
-  </section>
+  <div class="info-page__sections">
+    <section class="info-card">
+      <h2>{{ 'pages.terms.eligibility.title' | translate }}</h2>
+      <p>{{ 'pages.terms.eligibility.body' | translate }}</p>
+    </section>
 
-  <section class="legal-page__section">
-    <h2>{{ 'pages.terms.acceptance.title' | translate }}</h2>
-    <p>{{ 'pages.terms.acceptance.body' | translate }}</p>
-  </section>
+    <section class="info-card">
+      <h2>{{ 'pages.terms.acceptance.title' | translate }}</h2>
+      <p>{{ 'pages.terms.acceptance.body' | translate }}</p>
+    </section>
 
-  <section class="legal-page__section">
-    <h2>{{ 'pages.terms.use.title' | translate }}</h2>
-    <p>{{ 'pages.terms.use.body' | translate }}</p>
-  </section>
+    <section class="info-card">
+      <h2>{{ 'pages.terms.use.title' | translate }}</h2>
+      <p>{{ 'pages.terms.use.body' | translate }}</p>
+    </section>
 
-  <section class="legal-page__section">
-    <h2>{{ 'pages.terms.changes.title' | translate }}</h2>
-    <p>{{ 'pages.terms.changes.body' | translate }}</p>
-  </section>
+    <section class="info-card">
+      <h2>{{ 'pages.terms.changes.title' | translate }}</h2>
+      <p>{{ 'pages.terms.changes.body' | translate }}</p>
+    </section>
+  </div>
+
+  <nav class="info-page__related" [attr.aria-label]="'pages.related.label' | translate">
+    <a routerLink="/privacy">{{ 'footer.privacy' | translate }}</a>
+    <a routerLink="/safety">{{ 'footer.safety' | translate }}</a>
+    <a routerLink="/support">{{ 'footer.support' | translate }}</a>
+  </nav>
 </article>

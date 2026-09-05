@@ -5,27 +5,20 @@
   "
 >
   @if (submitted()) {
-    <div class="report-confirmation">
-      <h1 id="confirmation-title" class="report-page__title">
-        {{ "reports.confirmation.title" | translate }}
-      </h1>
-      <p class="report-confirmation__message">
-        {{ "reports.confirmation.message" | translate }}
-      </p>
-      <p class="report-confirmation__timing">
-        {{ "reports.confirmation.timing" | translate }}
-      </p>
-      <div class="report-confirmation__actions cluster">
-        <app-button variant="primary" [routerLink]="'/my/reports'">
-          {{ "reports.confirmation.view_mine" | translate }}
+    <app-empty-state
+      variant="success"
+      [title]="'reports.confirmation.title' | translate"
+      [description]="('reports.confirmation.message' | translate) + ' ' + ('reports.confirmation.timing' | translate)"
+    >
+      <app-button variant="primary" [routerLink]="'/my/reports'">
+        {{ 'reports.confirmation.view_mine' | translate }}
+      </app-button>
+      @if (submittedId(); as id) {
+        <app-button variant="outline" [routerLink]="['/my/reports', id]">
+          {{ 'reports.confirmation.view_detail' | translate }}
         </app-button>
-        @if (submittedId(); as id) {
-          <app-button variant="secondary" [routerLink]="['/my/reports', id]">
-            {{ "reports.confirmation.view_detail" | translate }}
-          </app-button>
-        }
-      </div>
-    </div>
+      }
+    </app-empty-state>
   } @else {
     <app-page-header
       [title]="
@@ -51,11 +44,11 @@
       }
 
       <form class="report-form" [formGroup]="form" (ngSubmit)="submit()">
-        <label class="report-form__field">
-          <span class="report-form__label">{{
+        <label class="form-field">
+          <span class="form-label">{{
             "reports.form.category" | translate
           }}</span>
-          <select formControlName="categoryCode" class="report-form__input">
+          <select formControlName="categoryCode" class="form-input">
             <option value="" disabled>
               {{ "reports.form.category_placeholder" | translate }}
             </option>
@@ -66,23 +59,23 @@
             }
           </select>
           @if (fieldError("categoryCode")) {
-            <span class="report-form__field-error" role="alert">{{
+            <span class="form-error" role="alert">{{
               fieldError("categoryCode")
             }}</span>
           }
         </label>
 
         @if (selectedCategory()) {
-          <div formGroupName="categoryFields" class="report-form__section">
-            <h2 class="report-form__section-title">
+          <div formGroupName="categoryFields" class="form-section">
+            <h2 class="form-section__title">
               {{ "reports.form.category_fields" | translate }}
             </h2>
             @for (definition of fieldDefinitions(); track definition.fieldKey) {
-              <label class="report-form__field">
-                <span class="report-form__label">
+              <label class="form-field">
+                <span class="form-label">
                   {{ fieldLabel(definition.fieldKey) }}
                   @if (definition.required) {
-                    <span class="report-form__required" aria-hidden="true"
+                    <span class="form-label__required" aria-hidden="true"
                       >*</span
                     >
                   }
@@ -90,7 +83,7 @@
                 @if (definition.type === "Integer") {
                   <input
                     type="number"
-                    class="report-form__input"
+                    class="form-input"
                     [formControlName]="definition.fieldKey"
                     [attr.min]="definition.minInt ?? null"
                     [attr.max]="definition.maxInt ?? null"
@@ -98,17 +91,17 @@
                 } @else {
                   <input
                     type="text"
-                    class="report-form__input"
+                    class="form-input"
                     [formControlName]="definition.fieldKey"
                     [attr.minlength]="definition.minLength ?? null"
                     [attr.maxlength]="definition.maxLength ?? null"
                   />
                 }
                 @if (fieldHint(definition.fieldKey); as hint) {
-                  <span class="report-form__hint">{{ hint }}</span>
+                  <span class="form-hint">{{ hint }}</span>
                 }
                 @if (categoryFieldError(definition.fieldKey)) {
-                  <span class="report-form__field-error" role="alert">
+                  <span class="form-error" role="alert">
                     {{ categoryFieldError(definition.fieldKey) }}
                   </span>
                 }
@@ -117,42 +110,42 @@
           </div>
         }
 
-        <label class="report-form__field">
-          <span class="report-form__label">{{
+        <label class="form-field">
+          <span class="form-label">{{
             "reports.form.title" | translate
           }}</span>
           <input
             type="text"
             formControlName="title"
-            class="report-form__input"
+            class="form-input"
             maxlength="80"
           />
           @if (fieldError("title")) {
-            <span class="report-form__field-error" role="alert">{{
+            <span class="form-error" role="alert">{{
               fieldError("title")
             }}</span>
           }
         </label>
 
-        <label class="report-form__field">
-          <span class="report-form__label">{{
+        <label class="form-field">
+          <span class="form-label">{{
             "reports.form.description" | translate
           }}</span>
           <textarea
             formControlName="description"
-            class="report-form__textarea"
+            class="form-textarea"
             rows="4"
             maxlength="1000"
           ></textarea>
           @if (fieldError("description")) {
-            <span class="report-form__field-error" role="alert">{{
+            <span class="form-error" role="alert">{{
               fieldError("description")
             }}</span>
           }
         </label>
 
-        <label class="report-form__field">
-          <span class="report-form__label">
+        <label class="form-field">
+          <span class="form-label">
             @if (isFound()) {
               {{ "reports.form.date_found" | translate }}
             } @else {
@@ -162,21 +155,21 @@
           <input
             type="date"
             formControlName="dateLostOrFound"
-            class="report-form__input"
+            class="form-input"
             [max]="today"
           />
           @if (fieldError("dateLostOrFound")) {
-            <span class="report-form__field-error" role="alert">{{
+            <span class="form-error" role="alert">{{
               fieldError("dateLostOrFound")
             }}</span>
           }
         </label>
 
-        <label class="report-form__field">
-          <span class="report-form__label">{{
+        <label class="form-field">
+          <span class="form-label">{{
             "reports.form.governorate" | translate
           }}</span>
-          <select formControlName="governorateCode" class="report-form__input">
+          <select formControlName="governorateCode" class="form-input">
             <option value="" disabled>
               {{ "reports.form.governorate_placeholder" | translate }}
             </option>
@@ -187,56 +180,56 @@
             }
           </select>
           @if (fieldError("governorateCode")) {
-            <span class="report-form__field-error" role="alert">{{
+            <span class="form-error" role="alert">{{
               fieldError("governorateCode")
             }}</span>
           }
         </label>
 
-        <label class="report-form__field">
-          <span class="report-form__label">{{
+        <label class="form-field">
+          <span class="form-label">{{
             "reports.form.area" | translate
           }}</span>
           <input
             type="text"
             formControlName="areaText"
-            class="report-form__input"
+            class="form-input"
             maxlength="120"
           />
-          <span class="report-form__hint">{{
+          <span class="form-hint">{{
             "reports.form.area_hint" | translate
           }}</span>
           @if (fieldError("areaText")) {
-            <span class="report-form__field-error" role="alert">{{
+            <span class="form-error" role="alert">{{
               fieldError("areaText")
             }}</span>
           }
         </label>
 
         @if (isFound()) {
-          <label class="report-form__field">
-            <span class="report-form__label">{{
+          <label class="form-field">
+            <span class="form-label">{{
               "reports.form.held_location" | translate
             }}</span>
             <input
               type="text"
               formControlName="heldLocation"
-              class="report-form__input"
+              class="form-input"
               maxlength="120"
             />
-            <span class="report-form__hint">{{
+            <span class="form-hint">{{
               "reports.form.held_location_hint" | translate
             }}</span>
             @if (fieldError("heldLocation")) {
-              <span class="report-form__field-error" role="alert">{{
+              <span class="form-error" role="alert">{{
                 fieldError("heldLocation")
               }}</span>
             }
           </label>
         }
 
-        <div class="report-form__section">
-          <h2 class="report-form__section-title">
+        <div class="form-section">
+          <h2 class="form-section__title">
             {{ "reports.form.photos_title" | translate }}
           </h2>
           <app-photo-upload
@@ -244,63 +237,63 @@
             (photosChange)="onPhotosChange($event)"
           />
           @if (photosFieldError()) {
-            <span class="report-form__field-error" role="alert">{{
+            <span class="form-error" role="alert">{{
               photosFieldError()
             }}</span>
           }
         </div>
 
-        <div class="report-form__section report-form__section--private">
-          <h2 class="report-form__section-title">
+        <div class="form-section form-section--inset">
+          <h2 class="form-section__title">
             {{ "reports.form.hidden_detail_title" | translate }}
           </h2>
           <p class="report-form__privacy">
             {{ "reports.form.hidden_detail_privacy" | translate }}
           </p>
-          <label class="report-form__field">
-            <span class="report-form__label">{{
+          <label class="form-field">
+            <span class="form-label">{{
               "reports.form.hidden_detail" | translate
             }}</span>
             <textarea
               formControlName="hiddenDetail"
-              class="report-form__textarea"
+              class="form-textarea"
               rows="3"
               maxlength="500"
             ></textarea>
-            <span class="report-form__hint">{{
+            <span class="form-hint">{{
               "reports.form.hidden_detail_hint" | translate
             }}</span>
             @if (fieldError("hiddenDetail")) {
-              <span class="report-form__field-error" role="alert">{{
+              <span class="form-error" role="alert">{{
                 fieldError("hiddenDetail")
               }}</span>
             }
           </label>
         </div>
 
-        <div class="report-form__section">
+        <div class="form-section">
           <label class="report-form__checkbox">
             <input type="checkbox" formControlName="hasReward" />
             <span>{{ "reports.form.has_reward" | translate }}</span>
           </label>
 
           @if (form.controls.hasReward.value) {
-            <label class="report-form__field">
-              <span class="report-form__label">{{
+            <label class="form-field">
+              <span class="form-label">{{
                 "reports.form.reward_amount" | translate
               }}</span>
               <input
                 type="number"
                 formControlName="rewardAmount"
-                class="report-form__input"
+                class="form-input"
                 min="50"
                 max="50000"
               />
-              <span class="report-form__hint">{{
+              <span class="form-hint">{{
                 "reports.form.reward_hint" | translate
               }}</span>
               @if (fieldError("rewardAmount")) {
-                <span class="report-form__field-error" role="alert">{{
+                <span class="form-error" role="alert">{{
                   fieldError("rewardAmount")
                 }}</span>
               }

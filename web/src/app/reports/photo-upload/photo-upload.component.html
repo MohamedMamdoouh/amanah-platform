@@ -1,6 +1,6 @@
 <div class="photo-upload">
   @if (error()) {
-    <p class="photo-upload__error" role="alert">{{ error() }}</p>
+    <app-alert variant="error">{{ error() }}</app-alert>
   }
 
   <div class="photo-upload__grid">
@@ -17,29 +17,28 @@
           [disabled]="disabled()"
           (click)="removePhoto(photo.id)"
         >
-          {{ "reports.photos.remove" | translate }}
+          {{ 'reports.photos.remove' | translate }}
         </button>
       </figure>
     }
+
+    @if (canAddMore()) {
+      <label class="photo-upload__add form-dropzone">
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          class="photo-upload__input sr-only"
+          [disabled]="disabled()"
+          (change)="onFilesSelected($event)"
+        />
+        <app-icon name="camera" size="lg" />
+        <span class="form-dropzone__label">{{ 'reports.photos.add' | translate }}</span>
+      </label>
+    }
   </div>
 
-  @if (canAddMore()) {
-    <label class="photo-upload__add">
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple
-        class="photo-upload__input"
-        [disabled]="disabled()"
-        (change)="onFilesSelected($event)"
-      />
-      <span class="photo-upload__add-label">
-        {{ "reports.photos.add" | translate }}
-      </span>
-    </label>
-  }
-
-  <p class="photo-upload__hint">
-    {{ "reports.photos.hint" | translate: { max: maxPhotos } }}
+  <p class="photo-upload__hint form-hint">
+    {{ 'reports.photos.hint' | translate: { max: maxPhotos } }}
   </p>
 </div>

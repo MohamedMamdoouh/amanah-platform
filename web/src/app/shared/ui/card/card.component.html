@@ -1,20 +1,10 @@
-@if (routerLink(); as link) {
-  <a
-    class="card"
-    [class.card--interactive]="variant() === 'interactive'"
-    [class.card--inset]="variant() === 'inset'"
-    [class.card--padding-md]="padding() === 'md'"
-    [routerLink]="link"
-  >
-    <ng-content />
-  </a>
-} @else {
-  <div
-    class="card"
-    [class.card--interactive]="variant() === 'interactive'"
-    [class.card--inset]="variant() === 'inset'"
-    [class.card--padding-md]="padding() === 'md'"
-  >
-    <ng-content />
-  </div>
-}
+<div
+  class="card"
+  [class.card--interactive]="variant() === 'interactive'"
+  [class.card--inset]="variant() === 'inset'"
+  [class.card--elevated]="variant() === 'elevated'"
+  [class.card--flat]="variant() === 'flat'"
+  [class.card--padding-md]="padding() === 'md'"
+>
+  <ng-content />
+</div>

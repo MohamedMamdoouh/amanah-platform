@@ -3,12 +3,6 @@
   margin: 0 auto;
 }
 
-.report-page__title {
-  font-size: var(--font-size-xl);
-  font-weight: 800;
-  margin-bottom: var(--space-sm);
-}
-
 .report-page__loading {
   color: var(--color-text-muted);
 }
@@ -20,73 +14,13 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
-}
-
-.report-form__section {
-  display: grid;
-  gap: var(--space-md);
-  padding-top: var(--space-sm);
-  border-top: 1px solid var(--color-border);
-}
-
-.report-form__section--private {
-  padding: var(--space-md);
-  background: var(--color-accent-soft);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-}
-
-.report-form__section-title {
-  margin: 0;
-  font-size: var(--font-size-base);
-  font-weight: 700;
+  box-shadow: var(--shadow-card);
 }
 
 .report-form__privacy {
   margin: 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-}
-
-.report-form__field {
-  display: grid;
-  gap: var(--space-xs);
-}
-
-.report-form__label {
-  font-weight: 600;
-  font-size: var(--font-size-sm);
-}
-
-.report-form__required {
-  color: var(--color-warm);
-}
-
-.report-form__input,
-.report-form__textarea {
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  font: inherit;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  min-height: var(--touch-min);
-}
-
-.report-form__textarea {
-  resize: vertical;
-  min-height: 5rem;
-}
-
-.report-form__hint {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-}
-
-.report-form__field-error {
-  font-size: var(--font-size-sm);
-  color: var(--color-error);
 }
 
 .report-form__checkbox {
@@ -96,26 +30,4 @@
   font-weight: 600;
   cursor: pointer;
   min-height: var(--touch-min);
-}
-
-.report-confirmation {
-  padding: var(--space-xl);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
-}
-
-.report-confirmation__message {
-  font-size: var(--font-size-md);
-  margin-bottom: var(--space-sm);
-}
-
-.report-confirmation__timing {
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-lg);
-}
-
-.report-confirmation__actions {
-  margin-top: var(--space-md);
 }

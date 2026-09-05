@@ -1,0 +1,16 @@
+.search-input {
+  position: relative;
+}
+
+.search-input__icon {
+  position: absolute;
+  inset-inline-start: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-input__field {
+  padding-inline-start: calc(var(--space-md) + 1.5rem);
+}

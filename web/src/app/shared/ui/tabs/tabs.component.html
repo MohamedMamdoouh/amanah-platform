@@ -1,0 +1,14 @@
+<nav class="tabs" role="tablist" [attr.aria-label]="ariaLabel() || null">
+  @for (tab of tabs(); track tab.id) {
+    <button
+      type="button"
+      class="tabs__tab"
+      role="tab"
+      [class.tabs__tab--active]="tab.id === activeId()"
+      [attr.aria-selected]="tab.id === activeId()"
+      (click)="selectTab(tab.id)"
+    >
+      {{ tab.label }}
+    </button>
+  }
+</nav>

@@ -20,7 +20,7 @@ body {
   min-height: 100vh;
   font-family: var(--font-body);
   font-size: var(--font-size-base);
-  line-height: 1.7;
+  line-height: var(--line-height-base);
   color: var(--color-text);
   background: var(--color-bg);
   text-rendering: optimizeLegibility;

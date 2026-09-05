@@ -4,18 +4,12 @@
     [intro]="'reports.mine.intro' | translate"
   />
 
-  <nav class="my-reports__tabs" [attr.aria-label]="'reports.mine.tabs_label' | translate">
-    @for (tab of tabs; track tab) {
-      <button
-        type="button"
-        class="my-reports__tab"
-        [class.my-reports__tab--active]="activeTab() === tab"
-        (click)="selectTab(tab)"
-      >
-        {{ tabLabel(tab) }}
-      </button>
-    }
-  </nav>
+  <app-tabs
+    [tabs]="tabItems()"
+    [activeId]="activeTab()"
+    [ariaLabel]="'reports.mine.tabs_label' | translate"
+    (tabChange)="onTabChange($event)"
+  />
 
   @if (loading()) {
     <app-loading-indicator
@@ -25,14 +19,12 @@
   } @else if (error()) {
     <app-alert variant="error">{{ error() }}</app-alert>
   } @else if (reports().length === 0) {
-    <app-empty-state
-      [title]="emptyMessage()"
-    >
+    <app-empty-state [title]="emptyMessage()">
       @if (activeTab() === 'pending_review') {
         <app-button variant="primary" [routerLink]="'/report/lost'">
           {{ 'reports.mine.report_lost' | translate }}
         </app-button>
-        <app-button variant="secondary" [routerLink]="'/report/found'">
+        <app-button variant="outline" [routerLink]="'/report/found'">
           {{ 'reports.mine.report_found' | translate }}
         </app-button>
       }
@@ -41,22 +33,16 @@
     <ul class="my-reports__list">
       @for (report of reports(); track report.id) {
         <li>
-          <app-card variant="interactive" [routerLink]="['/my/reports', report.id]" padding="md">
-            <div class="my-reports__card-content">
-              <span class="my-reports__card-type">{{ typeLabel(report.type) }}</span>
-              <span class="my-reports__card-title">{{ report.title }}</span>
-              <span class="my-reports__card-meta">
-                {{ categoryLabel(report.categoryCode) }} ·
-                {{ governorateLabel(report.governorateCode) }}
-              </span>
-              <span class="my-reports__card-date">
-                {{ report.createdAt | date: 'medium' }}
-              </span>
-              <app-badge [variant]="badgeVariant(report.status)">
-                {{ statusLabel(report.status) }}
-              </app-badge>
-            </div>
-          </app-card>
+          <app-listing-card
+            [title]="report.title"
+            [typeLabel]="typeLabel(report.type)"
+            [subtitle]="categoryLabel(report.categoryCode) + ' · ' + governorateLabel(report.governorateCode)"
+            [date]="(report.createdAt | date: 'medium') ?? ''"
+            [badgeLabel]="statusLabel(report.status)"
+            [badgeVariant]="badgeVariant(report.status)"
+            [routerLink]="['/my/reports', report.id]"
+            [actionLabel]="'reports.confirmation.view_detail' | translate"
+          />
         </li>
       }
     </ul>

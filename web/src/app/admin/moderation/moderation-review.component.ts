@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -10,7 +10,9 @@ import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { CardComponent } from '../../shared/ui/card/card.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
+import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import { ReportDetail } from '../../reports/models/report.models';
 import { ReportPhotoUploadService } from '../../uploads/report-photo-upload.service';
@@ -39,10 +41,11 @@ const REJECTION_REASON_CODES = [
   imports: [
     AlertComponent,
     ButtonComponent,
+    CardComponent,
     DatePipe,
     LoadingIndicatorComponent,
+    PageHeaderComponent,
     ReactiveFormsModule,
-    RouterLink,
     SpinnerComponent,
     TranslateModule,
   ],

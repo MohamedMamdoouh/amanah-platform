@@ -1,16 +1,20 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
-import { CardComponent } from '../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { ListingCardComponent } from '../../shared/ui/listing-card/listing-card.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
+import { SearchInputComponent } from '../../shared/ui/search-input/search-input.component';
 import {
   AdminModerationService,
   ModerationQueueItem,
@@ -22,12 +26,15 @@ import {
   imports: [
     AlertComponent,
     BadgeComponent,
-    CardComponent,
     DatePipe,
     EmptyStateComponent,
+    FormFieldComponent,
+    ListingCardComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,
+    ReactiveFormsModule,
     RouterLink,
+    SearchInputComponent,
     TranslateModule,
   ],
   templateUrl: './moderation-queue.component.html',
@@ -42,14 +49,16 @@ export class ModerationQueueComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly items = signal<ModerationQueueItem[]>([]);
   readonly pendingCount = signal(0);
-  readonly searchQuery = signal('');
   readonly searchResults = signal<ModerationQueueItem[]>([]);
   readonly searchLoading = signal(false);
-
-  private searchTimeout?: ReturnType<typeof setTimeout>;
+  readonly searchControl = new FormControl('', { nonNullable: true });
 
   ngOnInit(): void {
     void this.loadQueue();
+
+    this.searchControl.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((query) => void this.runSearch(query));
   }
 
   categoryLabel(code: string): string {
@@ -64,15 +73,8 @@ export class ModerationQueueComponent implements OnInit {
     return this.translate.instant(`reports.status.${status}`);
   }
 
-  onSearchInput(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.searchQuery.set(value);
-    this.scheduleSearch(value);
-  }
-
-  private scheduleSearch(query: string): void {
-    clearTimeout(this.searchTimeout);
-    this.searchTimeout = setTimeout(() => void this.runSearch(query), 300);
+  hasSearchQuery(): boolean {
+    return this.searchControl.value.trim().length > 0;
   }
 
   private async loadQueue(): Promise<void> {

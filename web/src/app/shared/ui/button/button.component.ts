@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 
 import { SpinnerComponent } from '../spinner/spinner.component';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md';
 
 @Component({

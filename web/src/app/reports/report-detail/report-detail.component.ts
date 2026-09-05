@@ -14,7 +14,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -22,7 +22,9 @@ import { CatalogService } from '../../catalog/catalog.service';
 import { Category, CategoryFieldDefinition } from '../../catalog/models/catalog.models';
 import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
+import { CardComponent } from '../../shared/ui/card/card.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
+import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import { ReportPhotoUploadService } from '../../uploads/report-photo-upload.service';
 import {
@@ -43,10 +45,11 @@ interface DisplayPhoto {
   selector: 'app-report-detail',
   standalone: true,
   imports: [
+    CardComponent,
     DatePipe,
     LoadingIndicatorComponent,
+    PageHeaderComponent,
     ReactiveFormsModule,
-    RouterLink,
     SpinnerComponent,
     TranslateModule,
     PhotoUploadComponent,

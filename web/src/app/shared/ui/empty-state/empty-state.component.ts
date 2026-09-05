@@ -1,5 +1,7 @@
 import { Component, input } from '@angular/core';
 
+export type EmptyStateVariant = 'default' | 'success';
+
 @Component({
   selector: 'app-empty-state',
   standalone: true,
@@ -9,4 +11,5 @@ import { Component, input } from '@angular/core';
 export class EmptyStateComponent {
   readonly title = input.required<string>();
   readonly description = input<string | null>(null);
+  readonly variant = input<EmptyStateVariant>('default');
 }

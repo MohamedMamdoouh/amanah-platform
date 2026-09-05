@@ -2,7 +2,7 @@
   display: inline-block;
   flex-shrink: 0;
   border: 2px solid var(--color-border);
-  border-top-color: var(--color-accent);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spinner-rotate 0.7s linear infinite;
 }

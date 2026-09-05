@@ -1,24 +1,15 @@
-<section class="auth-card" aria-labelledby="login-title">
+<section class="auth-card page-container" aria-labelledby="login-title">
   <header class="auth-card__header">
-  <nav class="auth-card__modes" aria-label="Auth modes">
-    <button
-      type="button"
-      class="auth-card__mode"
-      [class.auth-card__mode--active]="mode() === 'signin'"
-      (click)="setMode('signin')"
-    >
-      {{ "auth.login.mode_signin" | translate }}
-    </button>
-    <button
-      type="button"
-      class="auth-card__mode"
-      [class.auth-card__mode--active]="mode() === 'signup'"
-      (click)="setMode('signup')"
-    >
-      {{ "auth.login.mode_signup" | translate }}
-    </button>
-  </nav>
-    <p class="auth-card__step">{{ stepLabelKey() | translate }}</p>
+    @if (mode() !== 'forgot') {
+      <app-tabs
+        [tabs]="authTabs()"
+        [activeId]="mode()"
+        (tabChange)="onTabChange($event)"
+      />
+    }
+    @if (mode() !== 'signin') {
+      <app-stepper [steps]="authSteps()" [currentStep]="currentStepIndex()" />
+    }
     <h1 id="login-title" class="auth-card__title">
       {{ titleKey() | translate }}
     </h1>
@@ -34,11 +25,14 @@
       [formGroup]="signInForm"
       (ngSubmit)="submitSignIn()"
     >
-      <label class="form-field">
-        <span class="form-label">{{
-          "auth.login.phone_label" | translate
-        }}</span>
+      <app-form-field
+        [label]="'auth.login.phone_label' | translate"
+        [error]="fieldError('phone')"
+        [required]="true"
+        htmlFor="signin-phone"
+      >
         <input
+          id="signin-phone"
           type="tel"
           formControlName="phone"
           class="form-input"
@@ -46,32 +40,22 @@
           autocomplete="tel"
           dir="ltr"
         />
-        <span class="form-hint">{{
-          "auth.login.phone_hint" | translate
-        }}</span>
-        @if (fieldError("phone")) {
-          <span class="form-error" role="alert">{{
-            fieldError("phone")
-          }}</span>
-        }
-      </label>
+      </app-form-field>
 
-      <label class="form-field">
-        <span class="form-label">{{
-          "auth.login.password_label" | translate
-        }}</span>
+      <app-form-field
+        [label]="'auth.login.password_label' | translate"
+        [error]="fieldError('password')"
+        [required]="true"
+        htmlFor="signin-password"
+      >
         <input
+          id="signin-password"
           type="password"
           formControlName="password"
           class="form-input"
           autocomplete="current-password"
         />
-        @if (fieldError("password")) {
-          <span class="form-error" role="alert">{{
-            fieldError("password")
-          }}</span>
-        }
-      </label>
+      </app-form-field>
 
       <app-button
         type="submit"
@@ -94,11 +78,14 @@
           [formGroup]="phoneForm"
           (ngSubmit)="submitPhone()"
         >
-          <label class="form-field">
-            <span class="form-label">{{
-              "auth.login.phone_label" | translate
-            }}</span>
+          <app-form-field
+            [label]="'auth.login.phone_label' | translate"
+            [error]="fieldError('phone')"
+            [required]="true"
+            htmlFor="auth-phone"
+          >
             <input
+              id="auth-phone"
               type="tel"
               formControlName="phone"
               class="form-input"
@@ -106,15 +93,7 @@
               autocomplete="tel"
               dir="ltr"
             />
-            <span class="form-hint">{{
-              "auth.login.phone_hint" | translate
-            }}</span>
-            @if (fieldError("phone")) {
-              <span class="form-error" role="alert">{{
-                fieldError("phone")
-              }}</span>
-            }
-          </label>
+          </app-form-field>
 
           <app-turnstile-widget
             #turnstile
@@ -148,11 +127,14 @@
 
       @case ("otp") {
         <form class="auth-form" [formGroup]="otpForm" (ngSubmit)="submitOtp()">
-          <label class="form-field">
-            <span class="form-label">{{
-              "auth.login.otp_label" | translate
-            }}</span>
+          <app-form-field
+            [label]="'auth.login.otp_label' | translate"
+            [error]="fieldError('code')"
+            [required]="true"
+            htmlFor="auth-otp"
+          >
             <input
+              id="auth-otp"
               type="text"
               formControlName="code"
               class="form-input form-input--otp"
@@ -161,12 +143,7 @@
               autocomplete="one-time-code"
               dir="ltr"
             />
-            @if (fieldError("code")) {
-              <span class="form-error" role="alert">{{
-                fieldError("code")
-              }}</span>
-            }
-          </label>
+          </app-form-field>
 
           <app-button
             type="submit"

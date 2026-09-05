@@ -5,45 +5,11 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-card);
 }
 
 .auth-card__header {
   margin-bottom: var(--space-lg);
-}
-
-.auth-card__modes {
-  display: flex;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-md);
-}
-
-.auth-card__mode {
-  flex: 1;
-  min-height: var(--touch-min);
-  padding: var(--space-xs) var(--space-sm);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition:
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    background var(--transition-fast);
-}
-
-.auth-card__mode--active {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-  background: var(--color-highlight);
-}
-
-.auth-card__step {
-  margin: 0 0 var(--space-xs);
 }
 
 .auth-card__title {
@@ -58,29 +24,21 @@
 
 .auth-form__checkbox {
   display: flex;
-  gap: var(--space-sm);
   align-items: flex-start;
+  gap: var(--space-sm);
   font-size: var(--font-size-sm);
-  line-height: 1.5;
 }
 
 .auth-form__checkbox input {
-  margin-top: 0.25rem;
-  flex-shrink: 0;
-  min-width: 1.125rem;
-  min-height: 1.125rem;
+  margin-top: 0.2rem;
+}
+
+.auth-form__checkbox a {
+  color: var(--color-primary);
 }
 
 .form-input--otp {
-  font-size: var(--font-size-xl);
   letter-spacing: 0.25em;
   text-align: center;
-}
-
-.auth-form app-button {
-  width: 100%;
-}
-
-.auth-form app-button .btn {
-  width: 100%;
+  font-size: var(--font-size-lg);
 }

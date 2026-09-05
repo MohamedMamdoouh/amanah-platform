@@ -2,6 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--color-bg);
 }
 
 .shell__main {
@@ -14,6 +15,6 @@
 
 @media (min-width: 48rem) {
   .shell__main {
-    padding: var(--space-xl) var(--space-lg);
+    padding: var(--section-gap) var(--space-lg);
   }
 }

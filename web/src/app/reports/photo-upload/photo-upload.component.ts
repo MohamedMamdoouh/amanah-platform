@@ -1,6 +1,9 @@
 import { Component, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
+import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+
 export interface LocalPhoto {
   id: string;
   file: File;
@@ -19,7 +22,7 @@ const ALLOWED_TYPES = new Set([
 @Component({
   selector: 'app-photo-upload',
   standalone: true,
-  imports: [TranslateModule],
+  imports: [TranslateModule, AlertComponent, IconComponent],
   templateUrl: './photo-upload.component.html',
   styleUrl: './photo-upload.component.scss',
 })

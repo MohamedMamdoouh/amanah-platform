@@ -4,6 +4,12 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   text-align: center;
+  box-shadow: var(--shadow-card);
+}
+
+.empty-state--success .empty-state__icon {
+  color: var(--color-success);
+  opacity: 1;
 }
 
 .empty-state__content {
@@ -15,7 +21,7 @@
 }
 
 .empty-state__icon {
-  color: var(--color-accent);
+  color: var(--color-primary);
   opacity: 0.7;
 }
 

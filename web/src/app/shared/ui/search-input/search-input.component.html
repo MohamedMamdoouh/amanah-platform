@@ -1,0 +1,13 @@
+<div class="search-input">
+  <app-icon class="search-input__icon" name="search" size="sm" />
+  <input
+    class="search-input__field form-input"
+    type="search"
+    [value]="value"
+    [placeholder]="placeholder()"
+    [attr.aria-label]="ariaLabel() || placeholder() || null"
+    [disabled]="disabled"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+  />
+</div>

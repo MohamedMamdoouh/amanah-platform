@@ -1,24 +1,18 @@
-<section class="report-detail" aria-labelledby="report-detail-title">
-  <p class="report-detail__back">
-    <a routerLink="/my/reports">{{ "reports.detail.back" | translate }}</a>
-  </p>
-
+<section class="report-detail page-container" aria-labelledby="report-detail-title">
   @if (loading()) {
     <app-loading-indicator [label]="'reports.detail.loading' | translate" />
   } @else if (error()) {
     <p class="report-detail__error" role="alert">{{ error() }}</p>
   } @else if (report()) {
     @let detail = report()!;
-    <header class="report-detail__header">
-      <span class="report-detail__type">{{ typeLabel(detail.type) }}</span>
-      <h1 id="report-detail-title" class="report-detail__title">
-        {{ detail.title }}
-      </h1>
-      <p class="report-detail__meta">
-        {{ statusLabel(detail.status) }} ·
-        {{ detail.createdAt | date: "medium" }}
-      </p>
-    </header>
+    <app-page-header
+      [backLink]="'/my/reports'"
+      [backLabel]="'reports.detail.back' | translate"
+      [title]="detail.title"
+      [intro]="statusLabel(detail.status) + ' · ' + (detail.createdAt | date: 'medium')"
+    >
+      <span class="label-caps">{{ typeLabel(detail.type) }}</span>
+    </app-page-header>
 
     @if (canEdit()) {
       @if (detail.rejectionReasonCode || detail.rejectionNote) {
@@ -223,6 +217,7 @@
         </form>
       }
     } @else {
+      <app-card variant="flat" padding="md">
       <dl class="report-detail__fields">
         <div>
           <dt>{{ "reports.detail.category" | translate }}</dt>
@@ -277,6 +272,7 @@
           </div>
         }
       </dl>
+      </app-card>
 
       @if (photos().length > 0) {
         <section

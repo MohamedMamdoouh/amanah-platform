@@ -2,7 +2,7 @@
   margin: 0 0 var(--space-md);
   padding: var(--space-sm) var(--space-md);
   font-size: var(--font-size-sm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
 }
 
@@ -21,5 +21,11 @@
 .alert--success {
   color: var(--color-success);
   background: var(--color-success-bg);
-  border-color: rgba(10, 107, 80, 0.15);
+  border-color: rgba(6, 90, 70, 0.15);
+}
+
+.alert--warning {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border-color: rgba(138, 90, 18, 0.15);
 }

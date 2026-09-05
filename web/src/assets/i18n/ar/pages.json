@@ -34,8 +34,14 @@
   "pages.safety.handover.item_verify": "تحقق من أن الغرض يطابق البلاغ قبل التسليم. لا تسلّم مستندات أو هويات دون تحقق كافٍ.",
   "pages.safety.abuse.title": "الإبلاغ عن إساءة",
   "pages.safety.abuse.body": "إذا رأيت بلاغًا مشبوهًا أو تعرضت لاحتيال أو إساءة، يمكنك الإبلاغ عن البلاغ من داخل التطبيق (عند توفر هذه الميزة). سنراجع البلاغ ونتخذ إجراءً مناسبًا.",
+  "pages.safety.privacy.title": "حماية معلوماتك",
+  "pages.safety.privacy.body": "أمانة مصمّمة لتقليل كشف بياناتك الشخصية. اتبع هذه الإرشادات:",
+  "pages.safety.privacy.item_contact": "لا تنشر رقم هاتفك أو عنوانك في البلاغ أو أي مكان عام.",
+  "pages.safety.privacy.item_in_app": "تواصل من داخل التطبيق — لا تنتقل لمحادثات خارجية قبل التحقق.",
+  "pages.safety.privacy.item_payment": "لا ترسل أموالًا أو مدفوعات مقابل «رسوم إعادة» — هذا غالبًا احتيال.",
   "pages.safety.report.title": "التواصل مع الدعم",
   "pages.safety.report.body": "للحالات العاجلة أو عندما لا تتوفر ميزة الإبلاغ، راسلنا عبر صفحة الدعم.",
+  "pages.safety.report.cta": "تواصل مع الدعم",
 
   "pages.support.title": "الدعم",
   "pages.support.lead": "تواصل معنا للمساعدة أو الاستفسارات.",
@@ -43,5 +49,7 @@
   "pages.support.email.address": "support@amanah.example",
   "pages.support.email.body": "أرسل رسالتك إلى البريد أعلاه. اذكر اسم عرضك ووصفًا موجزًا للمشكلة. لا تُرسل معلومات حساسة غير ضرورية.",
   "pages.support.response.title": "وقت الرد",
-  "pages.support.response.body": "نسعى للرد خلال بضعة أيام عمل. في الإطلاق الأول قد يستغرق الرد وقتًا أطول."
+  "pages.support.response.body": "نسعى للرد خلال بضعة أيام عمل. في الإطلاق الأول قد يستغرق الرد وقتًا أطول.",
+
+  "pages.related.label": "صفحات ذات صلة"
 }

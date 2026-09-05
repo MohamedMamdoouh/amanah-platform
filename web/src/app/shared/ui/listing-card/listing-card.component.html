@@ -1,0 +1,85 @@
+@if (routerLink(); as link) {
+  <a
+    class="listing-card"
+    [class.listing-card--unread]="unread()"
+    [routerLink]="link"
+  >
+    @if (imageUrl()) {
+      <img class="listing-card__image" [src]="imageUrl()" [alt]="title()" loading="lazy" />
+    }
+    <div class="listing-card__body">
+      <div class="listing-card__header">
+        @if (typeLabel()) {
+          <span class="listing-card__type label-caps">{{ typeLabel() }}</span>
+        }
+        @if (badgeLabel()) {
+          <app-badge [variant]="badgeVariant()">{{ badgeLabel() }}</app-badge>
+        }
+      </div>
+      <h3 class="listing-card__title">{{ title() }}</h3>
+      @if (subtitle()) {
+        <p class="listing-card__subtitle meta-text">{{ subtitle() }}</p>
+      }
+      <div class="listing-card__meta">
+        @if (location()) {
+          <span class="listing-card__meta-item">
+            <app-icon name="location" size="sm" />
+            {{ location() }}
+          </span>
+        }
+        @if (date()) {
+          <span class="listing-card__meta-item">
+            <app-icon name="calendar" size="sm" />
+            {{ date() }}
+          </span>
+        }
+      </div>
+      @if (actionLabel()) {
+        <span class="listing-card__action">
+          {{ actionLabel() }}
+          <app-icon name="chevron" size="sm" />
+        </span>
+      }
+    </div>
+  </a>
+} @else {
+  <article class="listing-card" [class.listing-card--unread]="unread()">
+    @if (imageUrl()) {
+      <img class="listing-card__image" [src]="imageUrl()" [alt]="title()" loading="lazy" />
+    }
+    <div class="listing-card__body">
+      <div class="listing-card__header">
+        @if (typeLabel()) {
+          <span class="listing-card__type label-caps">{{ typeLabel() }}</span>
+        }
+        @if (badgeLabel()) {
+          <app-badge [variant]="badgeVariant()">{{ badgeLabel() }}</app-badge>
+        }
+      </div>
+      <h3 class="listing-card__title">{{ title() }}</h3>
+      @if (subtitle()) {
+        <p class="listing-card__subtitle meta-text">{{ subtitle() }}</p>
+      }
+      <div class="listing-card__meta">
+        @if (location()) {
+          <span class="listing-card__meta-item">
+            <app-icon name="location" size="sm" />
+            {{ location() }}
+          </span>
+        }
+        @if (date()) {
+          <span class="listing-card__meta-item">
+            <app-icon name="calendar" size="sm" />
+            {{ date() }}
+          </span>
+        }
+      </div>
+      @if (actionLabel()) {
+        <span class="listing-card__action">
+          {{ actionLabel() }}
+          <app-icon name="chevron" size="sm" />
+        </span>
+      }
+    </div>
+  </article>
+}

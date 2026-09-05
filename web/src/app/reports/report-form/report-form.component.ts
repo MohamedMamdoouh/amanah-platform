@@ -18,6 +18,7 @@ import {
 } from '../../catalog/models/catalog.models';
 import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
+import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -32,6 +33,7 @@ import { ReportService } from '../report.service';
   imports: [
     AlertComponent,
     ButtonComponent,
+    EmptyStateComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,
     ReactiveFormsModule,

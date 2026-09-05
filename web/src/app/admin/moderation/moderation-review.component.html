@@ -1,26 +1,20 @@
-<section class="moderation-review" aria-labelledby="moderation-review-title">
-  <p class="moderation-review__back">
-    <a routerLink="/admin/moderation">{{
-      "admin.moderation.back" | translate
-    }}</a>
-  </p>
-
+<section class="moderation-review page-container--wide" aria-labelledby="moderation-review-title">
   @if (loading()) {
     <app-loading-indicator [label]="'reports.detail.loading' | translate" />
   } @else if (error()) {
     <app-alert variant="error">{{ error() }}</app-alert>
   } @else if (report()) {
     @let detail = report()!;
-    <header class="moderation-review__header">
-      <span class="moderation-review__type">{{ typeLabel(detail.type) }}</span>
-      <h1 id="moderation-review-title" class="moderation-review__title">
-        {{ detail.title }}
-      </h1>
-      <p class="moderation-review__meta">
-        {{ detail.createdAt | date: "medium" }}
-      </p>
-    </header>
+    <app-page-header
+      [backLink]="'/admin/moderation'"
+      [backLabel]="'admin.moderation.back' | translate"
+      [title]="detail.title"
+      [intro]="(detail.createdAt | date: 'medium') ?? ''"
+    >
+      <span class="label-caps">{{ typeLabel(detail.type) }}</span>
+    </app-page-header>
 
+    <app-card variant="flat" padding="md">
     <dl class="moderation-review__fields">
       <div>
         <dt>{{ "reports.detail.category" | translate }}</dt>
@@ -69,6 +63,7 @@
         </div>
       }
     </dl>
+    </app-card>
 
     @if (photos().length > 0) {
       <section

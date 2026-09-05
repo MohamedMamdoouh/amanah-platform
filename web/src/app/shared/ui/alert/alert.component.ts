@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-export type AlertVariant = 'error' | 'info' | 'success';
+export type AlertVariant = 'error' | 'info' | 'success' | 'warning';
 
 @Component({
   selector: 'app-alert',
@@ -11,6 +11,7 @@ export type AlertVariant = 'error' | 'info' | 'success';
       [class.alert--error]="variant() === 'error'"
       [class.alert--info]="variant() === 'info'"
       [class.alert--success]="variant() === 'success'"
+      [class.alert--warning]="variant() === 'warning'"
       role="alert"
     >
       <ng-content />

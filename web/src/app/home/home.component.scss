@@ -1,32 +1,105 @@
 .hero {
+  padding: var(--space-xl) 0 var(--space-2xl);
+}
+
+.hero__grid {
   display: grid;
   gap: var(--space-xl);
-  padding: var(--space-xl);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
+  align-items: center;
 }
 
 .hero__title {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-3xl);
   font-weight: 800;
   margin-bottom: var(--space-md);
-  max-width: 28rem;
+  max-width: 30rem;
+  line-height: var(--line-height-tight);
+  color: var(--color-primary);
 }
 
 .hero__subtitle {
   margin: 0 0 var(--space-lg);
   font-size: var(--font-size-md);
   color: var(--color-text-muted);
-  max-width: 32rem;
+  max-width: 34rem;
+  line-height: var(--line-height-base);
 }
 
 .hero__actions {
-  margin-top: var(--space-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
 }
 
-.hero__principles {
+.hero__visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-scene {
+  position: relative;
+  width: min(100%, 24rem);
+  margin-inline: auto;
+  aspect-ratio: 1;
+}
+
+.hero-scene__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  shape-rendering: geometricPrecision;
+  filter: drop-shadow(0 16px 32px rgba(0, 77, 64, 0.08));
+}
+
+.hero-scene__halo {
+  fill: var(--color-accent-soft);
+  stroke: rgba(0, 77, 64, 0.08);
+  stroke-width: 2;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-scene__arc {
+    stroke-dasharray: 320;
+    stroke-dashoffset: 320;
+    animation: hero-arc-draw 1.4s ease-out 0.2s forwards;
+  }
+
+  .hero-scene__node--lost {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hero-node-in 0.6s ease-out 0.5s both;
+  }
+
+  .hero-scene__node--found {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hero-node-in 0.6s ease-out 0.7s both;
+  }
+}
+
+@keyframes hero-arc-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes hero-node-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.features {
+  padding-bottom: var(--space-2xl);
+}
+
+.features__grid {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -34,59 +107,71 @@
   gap: var(--space-md);
 }
 
-.hero__principles li {
-  list-style: none;
+.feature-card {
+  height: 100%;
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  text-align: center;
 }
 
-.hero__principle-label {
-  display: block;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--space-xs);
-}
-
-.hero__principle-desc {
-  display: block;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-}
-
-.home-links {
-  margin-top: var(--space-xl);
-}
-
-.home-links__title {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
+.feature-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
   margin-bottom: var(--space-md);
+  color: var(--color-primary);
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-full);
 }
 
-.home-links__grid {
-  display: grid;
-  gap: var(--space-md);
-}
-
-.home-links__card-title {
-  display: block;
+.feature-card__title {
+  margin: 0 0 var(--space-xs);
   font-family: var(--font-display);
+  font-size: var(--font-size-md);
   font-weight: 700;
-  margin-bottom: var(--space-xs);
+  color: var(--color-text);
 }
 
-.home-links__card-desc {
-  display: block;
+.feature-card__desc {
+  margin: 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+  line-height: var(--line-height-base);
 }
 
 @media (min-width: 56rem) {
-  .hero {
-    grid-template-columns: 1.2fr 1fr;
-    align-items: start;
+  .hero__grid {
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: var(--space-2xl);
   }
 
-  .home-links__grid {
-    grid-template-columns: 1fr 1fr;
+  .hero-scene {
+    justify-self: center;
+  }
+
+  .hero__visual {
+    justify-self: center;
+  }
+
+  .features__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 55.99rem) {
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero__actions app-button,
+  .hero__actions .hero__cta {
+    display: flex;
+    width: 100%;
   }
 }

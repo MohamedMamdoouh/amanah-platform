@@ -14,6 +14,9 @@ import { firstValueFrom } from 'rxjs';
 import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { StepItem, StepperComponent } from '../../shared/ui/stepper/stepper.component';
+import { TabItem, TabsComponent } from '../../shared/ui/tabs/tabs.component';
 import { AuthService } from '../auth.service';
 import { AuthMode, OtpPurpose } from '../models/auth.models';
 import { TurnstileWidgetComponent } from '../turnstile-widget/turnstile-widget.component';
@@ -40,6 +43,9 @@ function passwordsMatch(control: AbstractControl): ValidationErrors | null {
     RouterLink,
     AlertComponent,
     ButtonComponent,
+    FormFieldComponent,
+    StepperComponent,
+    TabsComponent,
     TranslateModule,
     TurnstileWidgetComponent,
   ],
@@ -123,23 +129,6 @@ export class LoginComponent implements OnDestroy {
     this.turnstile()?.reset();
   }
 
-  stepLabelKey(): string {
-    if (this.mode() === 'signin') {
-      return 'auth.login.step_signin';
-    }
-
-    switch (this.step()) {
-      case 'phone':
-        return 'auth.login.step_phone';
-      case 'otp':
-        return 'auth.login.step_otp';
-      case 'register':
-        return 'auth.login.step_profile';
-      case 'reset':
-        return 'auth.login.step_reset';
-    }
-  }
-
   titleKey(): string {
     switch (this.mode()) {
       case 'signin':
@@ -148,6 +137,35 @@ export class LoginComponent implements OnDestroy {
         return 'auth.login.title_signup';
       case 'forgot':
         return 'auth.login.title_forgot';
+    }
+  }
+
+  authTabs(): TabItem[] {
+    return [
+      { id: 'signin', label: this.translate.instant('auth.login.mode_signin') },
+      { id: 'signup', label: this.translate.instant('auth.login.mode_signup') },
+    ];
+  }
+
+  onTabChange(id: string): void {
+    this.setMode(id as AuthMode);
+  }
+
+  authSteps(): StepItem[] {
+    return [{ label: '' }, { label: '' }, { label: '' }];
+  }
+
+  currentStepIndex(): number {
+    switch (this.step()) {
+      case 'phone':
+        return 0;
+      case 'otp':
+        return 1;
+      case 'register':
+      case 'reset':
+        return 2;
+      default:
+        return 0;
     }
   }
 

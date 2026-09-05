@@ -6,12 +6,13 @@ import { firstValueFrom } from 'rxjs';
 
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
-import { BadgeComponent, BadgeVariant } from '../../shared/ui/badge/badge.component';
+import { BadgeVariant } from '../../shared/ui/badge/badge.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
-import { CardComponent } from '../../shared/ui/card/card.component';
+import { ListingCardComponent } from '../../shared/ui/listing-card/listing-card.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
+import { TabItem, TabsComponent } from '../../shared/ui/tabs/tabs.component';
 import { ReportStatus, ReportSummary } from '../models/report.models';
 import { ReportService } from '../report.service';
 
@@ -22,14 +23,14 @@ type MyReportsTab = 'pending_review' | 'rejected' | 'published';
   standalone: true,
   imports: [
     AlertComponent,
-    BadgeComponent,
     ButtonComponent,
-    CardComponent,
     DatePipe,
     EmptyStateComponent,
+    ListingCardComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,
     RouterLink,
+    TabsComponent,
     TranslateModule,
   ],
   templateUrl: './my-reports.component.html',
@@ -51,6 +52,17 @@ export class MyReportsComponent implements OnInit {
     void this.loadReports(this.activeTab());
   }
 
+  tabItems(): TabItem[] {
+    return this.tabs.map((tab) => ({
+      id: tab,
+      label: this.tabLabel(tab),
+    }));
+  }
+
+  onTabChange(id: string): void {
+    this.selectTab(id as MyReportsTab);
+  }
+
   categoryLabel(code: string): string {
     return this.catalogLabels.category(code);
   }
@@ -69,7 +81,7 @@ export class MyReportsComponent implements OnInit {
 
   badgeVariant(status: string): BadgeVariant {
     if (status === 'published') {
-      return 'approved';
+      return 'published';
     }
     if (status === 'rejected') {
       return 'rejected';

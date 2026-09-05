@@ -2,6 +2,20 @@
   margin-bottom: var(--space-lg);
 }
 
+.page-header__back {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.page-header__back:hover {
+  color: var(--color-primary-hover);
+}
+
 .page-header__eyebrow {
   margin: 0 0 var(--space-sm);
 }

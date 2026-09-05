@@ -1,11 +1,15 @@
+:host {
+  display: block;
+}
+
 .card {
   display: block;
   padding: var(--space-xl);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
-  color: inherit;
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
   text-decoration: none;
   transition:
     border-color var(--transition-fast),
@@ -20,14 +24,30 @@
 .card--inset {
   background: var(--color-accent-soft);
   box-shadow: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+}
+
+.card--elevated {
+  box-shadow: var(--shadow-soft);
+}
+
+.card--flat {
+  box-shadow: none;
 }
 
 .card--interactive:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
 }
 
 a.card--interactive {
   cursor: pointer;
+}
+
+.card__image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
 }
