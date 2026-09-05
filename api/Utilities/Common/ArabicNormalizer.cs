@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Amanah.Api.Utilities;
+namespace Amanah.Api.Utilities.Common;
 
 public static class ArabicNormalizer
 {

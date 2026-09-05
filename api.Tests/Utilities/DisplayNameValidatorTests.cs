@@ -1,4 +1,4 @@
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Auth;
 
 namespace Amanah.Api.Tests.Utilities;
 

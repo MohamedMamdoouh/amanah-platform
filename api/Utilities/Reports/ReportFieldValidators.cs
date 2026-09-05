@@ -1,4 +1,5 @@
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Utilities.Common;
 
 namespace Amanah.Api.Utilities.Reports;
 

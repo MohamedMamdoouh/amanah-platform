@@ -1,4 +1,4 @@
-namespace Amanah.Api.Utilities;
+namespace Amanah.Api.Utilities.Common;
 
 public static class TextNormalizer
 {

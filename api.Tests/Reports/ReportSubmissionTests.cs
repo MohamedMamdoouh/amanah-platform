@@ -1,7 +1,7 @@
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Uploads;
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Common;
 using Amanah.Api.Utilities.Reports;
 using Amanah.Contracts.Errors;
 using Microsoft.EntityFrameworkCore;

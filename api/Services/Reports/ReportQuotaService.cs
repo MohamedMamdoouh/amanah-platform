@@ -1,6 +1,6 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Services.Reports;

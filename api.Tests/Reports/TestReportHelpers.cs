@@ -1,4 +1,4 @@
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Common;
 using Amanah.Contracts.Requests.Reports;
 
 namespace Amanah.Api.Tests.Reports;

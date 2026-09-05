@@ -1,4 +1,4 @@
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Auth;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Auth;
 using FluentValidation;

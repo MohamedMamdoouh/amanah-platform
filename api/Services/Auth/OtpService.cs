@@ -6,7 +6,7 @@ using Amanah.Contracts.Errors;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Options;
 using Amanah.Api.Services.External;
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Common;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

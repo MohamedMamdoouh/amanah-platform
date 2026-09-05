@@ -156,10 +156,7 @@ public sealed class AuthController(
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        if (this.RequireUserId(out var userId) is { } unauthorized)
-        {
-            return unauthorized;
-        }
+        User.TryGetUserId(out var userId);
 
         var rawRefreshToken = refreshTokenCookies.Get(Request);
         if (string.IsNullOrWhiteSpace(rawRefreshToken))
@@ -187,10 +184,7 @@ public sealed class AuthController(
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LogoutEverywhere(CancellationToken cancellationToken)
     {
-        if (this.RequireUserId(out var userId) is { } unauthorized)
-        {
-            return unauthorized;
-        }
+        User.TryGetUserId(out var userId);
 
         var result = await authService.LogoutEverywhereAsync(userId, cancellationToken);
         if (result.IsSuccess)
@@ -209,10 +203,7 @@ public sealed class AuthController(
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
-        if (this.RequireUserId(out var userId) is { } unauthorized)
-        {
-            return unauthorized;
-        }
+        User.TryGetUserId(out var userId);
 
         var result = await authService.GetMeAsync(userId, cancellationToken);
         return result.ToActionResult();

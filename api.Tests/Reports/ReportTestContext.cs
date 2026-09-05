@@ -55,6 +55,8 @@ public sealed class ReportTestContext : IAsyncDisposable
         await setupContext.Database.MigrateAsync();
         await setupContext.CategoryFields.ExecuteDeleteAsync();
         await setupContext.ReportPhotos.ExecuteDeleteAsync();
+        await setupContext.Notifications.ExecuteDeleteAsync();
+        await setupContext.ModerationActions.ExecuteDeleteAsync();
         await setupContext.Reports.ExecuteDeleteAsync();
         await setupContext.OtpCodes.ExecuteDeleteAsync();
         await setupContext.OtpSmsOutboxMessages.ExecuteDeleteAsync();

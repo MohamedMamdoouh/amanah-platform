@@ -3,7 +3,7 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Services.Reports;
 using Amanah.Api.Tests.Auth;
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Tests.Services;

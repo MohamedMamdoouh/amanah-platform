@@ -3,7 +3,7 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Observability;
 using Amanah.Api.Services.Storage;
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Common;
 using Amanah.Api.Utilities.Reports;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Reports;

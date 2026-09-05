@@ -1,5 +1,4 @@
 using Amanah.Api.Auth;
-using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Uploads;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Responses.Uploads;
@@ -25,10 +24,7 @@ public sealed class UploadsController(ReportPhotoPresignService presignService) 
         Guid id,
         CancellationToken cancellationToken)
     {
-        if (this.RequireUserId(out var userId) is { } unauthorized)
-        {
-            return unauthorized;
-        }
+        User.TryGetUserId(out var userId);
 
         var result = await presignService.GetReportPhotoUrlAsync(
             id,

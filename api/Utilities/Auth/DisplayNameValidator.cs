@@ -1,4 +1,6 @@
-namespace Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Common;
+
+namespace Amanah.Api.Utilities.Auth;
 
 public static class DisplayNameValidator
 {

@@ -1,5 +1,5 @@
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Common;
 using Amanah.Api.Utilities.Reports;
 
 namespace Amanah.Api.Tests.Utilities;

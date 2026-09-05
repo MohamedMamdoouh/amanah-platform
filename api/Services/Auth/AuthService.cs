@@ -4,7 +4,7 @@ using Amanah.Contracts.Requests.Auth;
 using Amanah.Contracts.Responses.Auth;
 using Amanah.Contracts.Errors;
 using Amanah.Api.Models.Errors;
-using Amanah.Api.Utilities;
+using Amanah.Api.Utilities.Auth;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Services.Auth;

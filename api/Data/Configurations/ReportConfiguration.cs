@@ -72,5 +72,7 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
         builder.HasOne(report => report.Resolution)
             .WithOne(resolution => resolution.Report)
             .HasForeignKey<Resolution>(resolution => resolution.ReportId);
+
+        builder.HasIndex(report => new { report.Status, report.CreatedAt });
     }
 }

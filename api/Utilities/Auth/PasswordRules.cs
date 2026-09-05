@@ -1,4 +1,4 @@
-namespace Amanah.Api.Utilities;
+namespace Amanah.Api.Utilities.Auth;
 
 public static class PasswordRules
 {
