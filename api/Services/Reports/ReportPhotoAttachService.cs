@@ -93,17 +93,17 @@ public sealed class ReportPhotoAttachService(
         return null;
     }
 
-    public async Task<ResultError?> SyncPhotoPrivacyAsync(
+    public async Task<(ResultError? Error, IReadOnlyList<string> StaleKeys)> SyncPhotoPrivacyAsync(
         Report report,
         bool photosPrivate,
         CancellationToken cancellationToken = default)
     {
         if (report.Photos.Count == 0)
         {
-            return null;
+            return (null, []);
         }
 
-        var keysToDelete = new List<string>();
+        var staleKeys = new List<string>();
 
         try
         {
@@ -125,7 +125,7 @@ public sealed class ReportPhotoAttachService(
                 }
 
                 await bucketStorage.CopyAsync(photo.StorageKey, newOriginalKey, cancellationToken);
-                keysToDelete.Add(photo.StorageKey);
+                staleKeys.Add(photo.StorageKey);
 
                 if (!string.IsNullOrWhiteSpace(photo.ThumbnailStorageKey))
                 {
@@ -133,7 +133,7 @@ public sealed class ReportPhotoAttachService(
                         photo.ThumbnailStorageKey,
                         newThumbnailKey,
                         cancellationToken);
-                    keysToDelete.Add(photo.ThumbnailStorageKey);
+                    staleKeys.Add(photo.ThumbnailStorageKey);
                 }
 
                 photo.StorageKey = newOriginalKey;
@@ -142,16 +142,13 @@ public sealed class ReportPhotoAttachService(
         }
         catch (Exception)
         {
-            return ResultError.ServiceUnavailable(
-                "Photo upload is temporarily unavailable. Please try again later.",
-                ErrorCodes.UploadStorageFailed);
+            return (
+                ResultError.ServiceUnavailable(
+                    "Photo upload is temporarily unavailable. Please try again later.",
+                    ErrorCodes.UploadStorageFailed),
+                []);
         }
 
-        if (keysToDelete.Count > 0)
-        {
-            await bucketStorage.DeleteManyAsync(keysToDelete, cancellationToken);
-        }
-
-        return null;
+        return (null, staleKeys);
     }
 }

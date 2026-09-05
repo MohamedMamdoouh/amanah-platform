@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Services.Storage;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Uploads;
 using Amanah.Api.Utilities.Reports;
@@ -10,6 +11,7 @@ using Amanah.Contracts.Requests.Admin;
 using Amanah.Contracts.Responses.Admin;
 using Amanah.Contracts.Responses.Reports;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Amanah.Api.Tests.Reports;
 
@@ -182,6 +184,14 @@ public class ReportResubmitTests(ApiWebApplicationFactory factory) : IClassFixtu
 
         await RejectAsAdminAsync(context, created.Id);
 
+        var original = await context.DbContext.ReportPhotos
+            .AsNoTracking()
+            .SingleAsync(item => item.ReportId == created.Id);
+        var storage = Assert.IsType<FakeBucketStorage>(
+            factory.Services.GetRequiredService<IBucketStorage>());
+        Assert.True(storage.ContainsKey(original.StorageKey));
+        Assert.True(storage.ContainsKey(original.ThumbnailStorageKey!));
+
         var updateResponse = await context.UpdateReportAsync(
             created.Id,
             TestReportHelpers.BuildValidUpdateRequest(
@@ -199,6 +209,52 @@ public class ReportResubmitTests(ApiWebApplicationFactory factory) : IClassFixtu
 
         Assert.StartsWith("private/", photo.StorageKey, StringComparison.Ordinal);
         Assert.StartsWith("private/", photo.ThumbnailStorageKey, StringComparison.Ordinal);
+        Assert.True(storage.ContainsKey(photo.StorageKey));
+        Assert.True(storage.ContainsKey(photo.ThumbnailStorageKey!));
+        Assert.False(storage.ContainsKey(original.StorageKey));
+        Assert.False(storage.ContainsKey(original.ThumbnailStorageKey!));
+    }
+
+    [Fact]
+    public async Task Update_keeps_original_photos_when_privacy_change_is_followed_by_invalid_photo()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var (_, created) = await context.SubmitReportAsync(
+            TestReportHelpers.BuildValidLostRequest(),
+            [TestImageFactory.CreateMinimalJpeg()]);
+        Assert.NotNull(created);
+
+        await RejectAsAdminAsync(context, created.Id);
+
+        var original = await context.DbContext.ReportPhotos
+            .AsNoTracking()
+            .SingleAsync(item => item.ReportId == created.Id);
+        var storage = Assert.IsType<FakeBucketStorage>(
+            factory.Services.GetRequiredService<IBucketStorage>());
+        Assert.True(storage.ContainsKey(original.StorageKey));
+
+        var updateResponse = await context.UpdateReportAsync(
+            created.Id,
+            TestReportHelpers.BuildValidUpdateRequest(
+                categoryCode: "documents-ids",
+                categoryFields: new Dictionary<string, string>
+                {
+                    ["document_type"] = "National ID",
+                    ["first_name_on_document"] = "Ahmed",
+                }),
+            ["not-an-image"u8.ToArray()]);
+        var error = await context.ReadErrorAsync(updateResponse.Response);
+
+        Assert.Equal(HttpStatusCode.BadRequest, updateResponse.Response.StatusCode);
+        Assert.Equal(ErrorCodes.UploadInvalidFormat, error?.Code);
+
+        var after = await context.DbContext.ReportPhotos
+            .AsNoTracking()
+            .SingleAsync(item => item.ReportId == created.Id);
+        Assert.Equal(original.StorageKey, after.StorageKey);
+        Assert.Equal(original.ThumbnailStorageKey, after.ThumbnailStorageKey);
+        Assert.True(storage.ContainsKey(original.StorageKey));
+        Assert.True(storage.ContainsKey(original.ThumbnailStorageKey!));
     }
 
     [Fact]
