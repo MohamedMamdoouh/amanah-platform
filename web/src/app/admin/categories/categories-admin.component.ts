@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgTemplateOutlet } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -14,6 +13,7 @@ import { CardComponent } from '../../shared/ui/card/card.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { CategoryFieldFormComponent, CategoryFieldFormGroup } from './category-field-form.component';
 import {
   AdminCategoriesService,
   AdminCategory,
@@ -29,10 +29,10 @@ type FieldFormValue = {
   type: string;
   required: boolean;
   sortOrder: number;
-  minLength: string | number | null;
-  maxLength: string | number | null;
-  minInt: string | number | null;
-  maxInt: string | number | null;
+  minLength: string;
+  maxLength: string;
+  minInt: string;
+  maxInt: string;
   textFormat: string;
 };
 
@@ -48,9 +48,9 @@ type ParseOptionalIntResult =
     BadgeComponent,
     ButtonComponent,
     CardComponent,
+    CategoryFieldFormComponent,
     FormFieldComponent,
     LoadingIndicatorComponent,
-    NgTemplateOutlet,
     PageHeaderComponent,
     ReactiveFormsModule,
     TranslateModule,
@@ -74,9 +74,6 @@ export class CategoriesAdminComponent implements OnInit {
   readonly editingField = signal<{ categoryId: string; fieldId: string } | null>(null);
   readonly saving = signal(false);
   readonly successMessage = signal<string | null>(null);
-
-  readonly fieldTypes = ['text', 'integer'];
-  readonly textFormats = ['', 'letters_and_spaces'];
 
   readonly addCategoryForm = this.fb.nonNullable.group({
     code: ['', [Validators.required, Validators.maxLength(40)]],
@@ -163,10 +160,6 @@ export class CategoriesAdminComponent implements OnInit {
   cancelFieldForms(): void {
     this.addingFieldCategoryId.set(null);
     this.editingField.set(null);
-  }
-
-  isTextType(type: string): boolean {
-    return type === 'text';
   }
 
   async submitAddCategory(): Promise<void> {
@@ -279,7 +272,7 @@ export class CategoriesAdminComponent implements OnInit {
     }
   }
 
-  private createFieldForm(): FormGroup {
+  private createFieldForm(): CategoryFieldFormGroup {
     return this.fb.nonNullable.group({
       fieldKey: ['', [Validators.required, Validators.maxLength(40)]],
       type: ['text', Validators.required],

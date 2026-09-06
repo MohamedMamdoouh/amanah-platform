@@ -183,10 +183,7 @@
                     [formGroup]="editFieldForm"
                     (ngSubmit)="submitEditField(category.id, field.id)"
                   >
-                    <ng-container
-                      [ngTemplateOutlet]="fieldFormFields"
-                      [ngTemplateOutletContext]="{ form: editFieldForm }"
-                    />
+                    <app-category-field-form [form]="editFieldForm" />
                     <div class="categories-admin__form-actions">
                       <app-button type="submit" [loading]="saving()">
                         {{ "admin.categories.save" | translate }}
@@ -258,10 +255,7 @@
                 [formGroup]="addFieldForm"
                 (ngSubmit)="submitAddField(category.id)"
               >
-                <ng-container
-                  [ngTemplateOutlet]="fieldFormFields"
-                  [ngTemplateOutletContext]="{ form: addFieldForm }"
-                />
+                <app-category-field-form [form]="addFieldForm" />
                 <div class="categories-admin__form-actions">
                   <app-button type="submit" [loading]="saving()">
                     {{ "admin.categories.save" | translate }}
@@ -278,88 +272,3 @@
     </div>
   }
 </section>
-
-<ng-template #fieldFormFields let-form="form">
-  <app-form-field
-    [label]="'admin.categories.field_key' | translate"
-    [required]="true"
-  >
-    <input
-      class="form-input"
-      [formControl]="form.controls.fieldKey"
-      autocomplete="off"
-    />
-  </app-form-field>
-  <app-form-field
-    [label]="'admin.categories.field_type' | translate"
-    [required]="true"
-  >
-    <select class="form-input" [formControl]="form.controls.type">
-      @for (type of fieldTypes; track type) {
-        <option [value]="type">{{ fieldTypeLabel(type) }}</option>
-      }
-    </select>
-  </app-form-field>
-  <app-form-field
-    [label]="'admin.categories.sort_order' | translate"
-    [required]="true"
-  >
-    <input
-      class="form-input"
-      type="number"
-      [formControl]="form.controls.sortOrder"
-      min="0"
-    />
-  </app-form-field>
-  <label class="categories-admin__checkbox">
-    <input type="checkbox" [formControl]="form.controls.required" />
-    <span>{{ "admin.categories.required" | translate }}</span>
-  </label>
-
-  @if (isTextType(form.controls.type.value)) {
-    <div class="categories-admin__bounds">
-      <app-form-field [label]="'admin.categories.min_length' | translate">
-        <input
-          class="form-input"
-          type="number"
-          [formControl]="form.controls.minLength"
-          min="0"
-        />
-      </app-form-field>
-      <app-form-field [label]="'admin.categories.max_length' | translate">
-        <input
-          class="form-input"
-          type="number"
-          [formControl]="form.controls.maxLength"
-          min="0"
-        />
-      </app-form-field>
-      <app-form-field [label]="'admin.categories.text_format' | translate">
-        <select class="form-input" [formControl]="form.controls.textFormat">
-          @for (format of textFormats; track format) {
-            <option [value]="format">
-              {{ textFormatLabel(format || null) }}
-            </option>
-          }
-        </select>
-      </app-form-field>
-    </div>
-  } @else {
-    <div class="categories-admin__bounds">
-      <app-form-field [label]="'admin.categories.min_int' | translate">
-        <input
-          class="form-input"
-          type="number"
-          [formControl]="form.controls.minInt"
-        />
-      </app-form-field>
-      <app-form-field [label]="'admin.categories.max_int' | translate">
-        <input
-          class="form-input"
-          type="number"
-          [formControl]="form.controls.maxInt"
-        />
-      </app-form-field>
-    </div>
-  }
-</ng-template>

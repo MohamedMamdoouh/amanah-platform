@@ -1,0 +1,16 @@
+.category-field-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.category-field-form__bounds {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.category-field-form__checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
