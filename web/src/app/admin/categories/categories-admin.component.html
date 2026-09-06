@@ -1,0 +1,246 @@
+<section class="categories-admin page-container--wide">
+  <app-page-header
+    [title]="'admin.categories.title' | translate"
+    [intro]="'admin.categories.intro' | translate"
+  />
+
+  @if (successMessage()) {
+    <app-alert variant="success">{{ successMessage() }}</app-alert>
+  }
+
+  @if (error()) {
+    <app-alert variant="error">{{ error() }}</app-alert>
+  }
+
+  <div class="categories-admin__toolbar">
+    <app-button (clicked)="toggleAddCategory()">
+      {{ showAddCategory() ? ('admin.categories.cancel_add' | translate) : ('admin.categories.add' | translate) }}
+    </app-button>
+  </div>
+
+  @if (showAddCategory()) {
+    <app-card class="categories-admin__form-card">
+      <h2 class="categories-admin__section-title">{{ 'admin.categories.add_title' | translate }}</h2>
+      <form class="categories-admin__form" [formGroup]="addCategoryForm" (ngSubmit)="submitAddCategory()">
+        <app-form-field [label]="'admin.categories.code' | translate" [required]="true">
+          <input class="form-input" formControlName="code" autocomplete="off" />
+        </app-form-field>
+        <app-form-field [label]="'admin.categories.sort_order' | translate" [required]="true">
+          <input class="form-input" type="number" formControlName="sortOrder" min="0" />
+        </app-form-field>
+        <label class="categories-admin__checkbox">
+          <input type="checkbox" formControlName="photosPrivate" />
+          <span>{{ 'admin.categories.photos_private' | translate }}</span>
+        </label>
+        <label class="categories-admin__checkbox">
+          <input type="checkbox" formControlName="isActive" />
+          <span>{{ 'admin.categories.active' | translate }}</span>
+        </label>
+        <app-button type="submit" [loading]="saving()">
+          {{ 'admin.categories.save' | translate }}
+        </app-button>
+      </form>
+    </app-card>
+  }
+
+  @if (loading()) {
+    <app-loading-indicator [label]="'admin.categories.loading' | translate" />
+  } @else {
+    <div class="categories-admin__list">
+      @for (category of categories(); track category.id) {
+        <app-card class="categories-admin__item">
+          <div class="categories-admin__item-header">
+            <div>
+              <h2 class="categories-admin__item-title">
+                {{ categoryLabel(category.code) }}
+              </h2>
+              <p class="categories-admin__item-meta">
+                <code>{{ category.code }}</code>
+                · {{ 'admin.categories.sort_order' | translate }}: {{ category.sortOrder }}
+              </p>
+            </div>
+            <div class="categories-admin__badges">
+              @if (!category.isActive) {
+                <app-badge variant="neutral">{{ 'admin.categories.inactive' | translate }}</app-badge>
+              }
+              @if (category.photosPrivate) {
+                <app-badge variant="pending">{{ 'admin.categories.photos_private' | translate }}</app-badge>
+              }
+            </div>
+          </div>
+
+          @if (editingCategoryId() === category.id) {
+            <form
+              class="categories-admin__form"
+              [formGroup]="editCategoryForm"
+              (ngSubmit)="submitEditCategory(category.id)"
+            >
+              <app-form-field [label]="'admin.categories.code' | translate" [required]="true">
+                <input class="form-input" formControlName="code" autocomplete="off" />
+              </app-form-field>
+              <app-form-field [label]="'admin.categories.sort_order' | translate" [required]="true">
+                <input class="form-input" type="number" formControlName="sortOrder" min="0" />
+              </app-form-field>
+              <label class="categories-admin__checkbox">
+                <input type="checkbox" formControlName="photosPrivate" />
+                <span>{{ 'admin.categories.photos_private' | translate }}</span>
+              </label>
+              <label class="categories-admin__checkbox">
+                <input type="checkbox" formControlName="isActive" />
+                <span>{{ 'admin.categories.active' | translate }}</span>
+              </label>
+              <div class="categories-admin__form-actions">
+                <app-button type="submit" [loading]="saving()">
+                  {{ 'admin.categories.save' | translate }}
+                </app-button>
+                <app-button variant="ghost" (clicked)="cancelEditCategory()">
+                  {{ 'admin.categories.cancel' | translate }}
+                </app-button>
+              </div>
+            </form>
+          } @else {
+            <div class="categories-admin__item-actions">
+              <app-button variant="outline" size="sm" (clicked)="startEditCategory(category)">
+                {{ 'admin.categories.edit' | translate }}
+              </app-button>
+              <app-button variant="outline" size="sm" (clicked)="startAddField(category.id)">
+                {{ 'admin.categories.add_field' | translate }}
+              </app-button>
+            </div>
+          }
+
+          <section class="categories-admin__fields" [attr.aria-label]="'admin.categories.fields' | translate">
+            <h3 class="categories-admin__fields-title">{{ 'admin.categories.fields' | translate }}</h3>
+
+            @if (category.fieldDefinitions.length === 0) {
+              <p class="categories-admin__empty-fields">{{ 'admin.categories.no_fields' | translate }}</p>
+            }
+
+            @for (field of category.fieldDefinitions; track field.id) {
+              <div class="categories-admin__field-row">
+                @if (editingField()?.categoryId === category.id && editingField()?.fieldId === field.id) {
+                  <form
+                    class="categories-admin__form categories-admin__field-form"
+                    [formGroup]="editFieldForm"
+                    (ngSubmit)="submitEditField(category.id, field.id)"
+                  >
+                    <ng-container [ngTemplateOutlet]="fieldFormFields" [ngTemplateOutletContext]="{ form: editFieldForm }" />
+                    <div class="categories-admin__form-actions">
+                      <app-button type="submit" [loading]="saving()">
+                        {{ 'admin.categories.save' | translate }}
+                      </app-button>
+                      <app-button variant="ghost" (clicked)="cancelFieldForms()">
+                        {{ 'admin.categories.cancel' | translate }}
+                      </app-button>
+                    </div>
+                  </form>
+                } @else {
+                  <div class="categories-admin__field-summary">
+                    <div>
+                      <strong>{{ fieldLabel(category.code, field.fieldKey) }}</strong>
+                      <span class="categories-admin__field-meta">
+                        <code>{{ field.fieldKey }}</code>
+                        · {{ fieldTypeLabel(field.type) }}
+                        · {{ 'admin.categories.sort_order' | translate }}: {{ field.sortOrder }}
+                        @if (field.required) {
+                          · {{ 'admin.categories.required' | translate }}
+                        }
+                        @if (field.minLength !== null && field.minLength !== undefined) {
+                          · min {{ field.minLength }}
+                        }
+                        @if (field.maxLength !== null && field.maxLength !== undefined) {
+                          · max {{ field.maxLength }}
+                        }
+                        @if (field.minInt !== null && field.minInt !== undefined) {
+                          · min {{ field.minInt }}
+                        }
+                        @if (field.maxInt !== null && field.maxInt !== undefined) {
+                          · max {{ field.maxInt }}
+                        }
+                        @if (field.textFormat) {
+                          · {{ textFormatLabel(field.textFormat) }}
+                        }
+                      </span>
+                    </div>
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      (clicked)="startEditField(category, field)"
+                    >
+                      {{ 'admin.categories.edit' | translate }}
+                    </app-button>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (addingFieldCategoryId() === category.id) {
+              <form
+                class="categories-admin__form categories-admin__field-form"
+                [formGroup]="addFieldForm"
+                (ngSubmit)="submitAddField(category.id)"
+              >
+                <ng-container [ngTemplateOutlet]="fieldFormFields" [ngTemplateOutletContext]="{ form: addFieldForm }" />
+                <div class="categories-admin__form-actions">
+                  <app-button type="submit" [loading]="saving()">
+                    {{ 'admin.categories.save' | translate }}
+                  </app-button>
+                  <app-button variant="ghost" (clicked)="cancelFieldForms()">
+                    {{ 'admin.categories.cancel' | translate }}
+                  </app-button>
+                </div>
+              </form>
+            }
+          </section>
+        </app-card>
+      }
+    </div>
+  }
+</section>
+
+<ng-template #fieldFormFields let-form="form">
+  <app-form-field [label]="'admin.categories.field_key' | translate" [required]="true">
+    <input class="form-input" [formControl]="form.controls.fieldKey" autocomplete="off" />
+  </app-form-field>
+  <app-form-field [label]="'admin.categories.field_type' | translate" [required]="true">
+    <select class="form-input" [formControl]="form.controls.type">
+      @for (type of fieldTypes; track type) {
+        <option [value]="type">{{ fieldTypeLabel(type) }}</option>
+      }
+    </select>
+  </app-form-field>
+  <app-form-field [label]="'admin.categories.sort_order' | translate" [required]="true">
+    <input class="form-input" type="number" [formControl]="form.controls.sortOrder" min="0" />
+  </app-form-field>
+  <label class="categories-admin__checkbox">
+    <input type="checkbox" [formControl]="form.controls.required" />
+    <span>{{ 'admin.categories.required' | translate }}</span>
+  </label>
+
+  @if (isTextType(form.controls.type.value)) {
+    <div class="categories-admin__bounds">
+      <app-form-field [label]="'admin.categories.min_length' | translate">
+        <input class="form-input" type="number" [formControl]="form.controls.minLength" min="0" />
+      </app-form-field>
+      <app-form-field [label]="'admin.categories.max_length' | translate">
+        <input class="form-input" type="number" [formControl]="form.controls.maxLength" min="0" />
+      </app-form-field>
+      <app-form-field [label]="'admin.categories.text_format' | translate">
+        <select class="form-input" [formControl]="form.controls.textFormat">
+          @for (format of textFormats; track format) {
+            <option [value]="format">{{ textFormatLabel(format || null) }}</option>
+          }
+        </select>
+      </app-form-field>
+    </div>
+  } @else {
+    <div class="categories-admin__bounds">
+      <app-form-field [label]="'admin.categories.min_int' | translate">
+        <input class="form-input" type="number" [formControl]="form.controls.minInt" />
+      </app-form-field>
+      <app-form-field [label]="'admin.categories.max_int' | translate">
+        <input class="form-input" type="number" [formControl]="form.controls.maxInt" />
+      </app-form-field>
+    </div>
+  }
+</ng-template>

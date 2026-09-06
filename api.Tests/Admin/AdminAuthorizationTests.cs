@@ -48,16 +48,17 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
     }
 
     [Fact]
-    public async Task Get_admin_categories_as_admin_reaches_stub_route()
+    public async Task Get_admin_categories_as_admin_returns_category_list()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         await LoginAsAdminAsync(context);
 
         var response = await context.Client.GetAsync("/api/v1/admin/categories");
-        var error = await context.ReadErrorAsync(response);
+        var body = await response.Content.ReadFromJsonAsync<AdminCategoryListResponse>();
 
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-        Assert.Equal(ErrorCodes.NotImplemented, error?.Code);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.NotEmpty(body.Items);
     }
 
     [Fact]

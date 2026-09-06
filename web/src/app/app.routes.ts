@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { AdminShellComponent } from './admin/admin-shell/admin-shell.component';
 import { ModerationQueueComponent } from './admin/moderation/moderation-queue.component';
 import { ModerationReviewComponent } from './admin/moderation/moderation-review.component';
+import { CategoriesAdminComponent } from './admin/categories/categories-admin.component';
 import { authGuard, guestGuard, adminGuard } from './auth/auth.guards';
 import { LoginComponent } from './auth/login/login.component';
 import { HomeComponent } from './home/home.component';
@@ -58,6 +59,7 @@ export const routes: Routes = [
           { path: '', redirectTo: 'moderation', pathMatch: 'full' },
           { path: 'moderation', component: ModerationQueueComponent },
           { path: 'moderation/:id', component: ModerationReviewComponent },
+          { path: 'categories', component: CategoriesAdminComponent },
         ],
       },
       { path: 'terms', component: TermsComponent },

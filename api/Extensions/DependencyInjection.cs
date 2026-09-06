@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddDatabase(configuration);
         services.AddApiCaching(configuration);
         services.AddCatalogServices();
+        services.AddCategoryAdminServices();
         services.AddReportServices();
         services.AddModerationServices();
         services.AddBucketStorage();

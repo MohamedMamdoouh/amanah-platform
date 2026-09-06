@@ -1,0 +1,107 @@
+.categories-admin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.categories-admin__toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.categories-admin__form-card,
+.categories-admin__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.categories-admin__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.categories-admin__section-title,
+.categories-admin__item-title,
+.categories-admin__fields-title {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.categories-admin__item-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.categories-admin__item-meta,
+.categories-admin__field-meta {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.categories-admin__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.categories-admin__form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.categories-admin__bounds {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.categories-admin__checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.categories-admin__form-actions,
+.categories-admin__item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.categories-admin__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.categories-admin__field-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.categories-admin__field-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.categories-admin__field-form {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.categories-admin__empty-fields {
+  margin: 0;
+  color: var(--color-text-muted);
+}
