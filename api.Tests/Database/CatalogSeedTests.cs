@@ -149,6 +149,49 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
     Assert.Equal(1, await context.Users.CountAsync(user => user.Role == UserRole.Admin));
   }
 
+  [Fact]
+  public async Task Re_running_seed_preserves_admin_category_and_field_edits()
+  {
+    await using var scope = factory.Services.CreateAsyncScope();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var seeder = scope.ServiceProvider.GetRequiredService<CatalogSeeder>();
+
+    await context.Database.MigrateAsync();
+    await seeder.SeedAsync();
+
+    var other = await context.Categories.SingleAsync(category => category.Code == "other");
+    other.Active = false;
+    other.SortOrder = 99;
+    other.PhotosPrivate = true;
+
+    var keyCount = await context.CategoryFieldDefinitions
+      .SingleAsync(field => field.FieldKey == "key_count");
+    keyCount.MaxInt = 10;
+    keyCount.Required = false;
+
+    var phonesColour = await context.CategoryFieldDefinitions
+      .SingleAsync(field => field.FieldKey == "colour" && field.Category.Code == "phones");
+    context.CategoryFieldDefinitions.Remove(phonesColour);
+
+    await context.SaveChangesAsync();
+    context.ChangeTracker.Clear();
+    await seeder.SeedAsync();
+
+    var otherAfter = await context.Categories.SingleAsync(category => category.Code == "other");
+    var keyCountAfter = await context.CategoryFieldDefinitions
+      .SingleAsync(field => field.FieldKey == "key_count");
+
+    Assert.False(otherAfter.Active);
+    Assert.Equal(99, otherAfter.SortOrder);
+    Assert.True(otherAfter.PhotosPrivate);
+    Assert.Equal(10, keyCountAfter.MaxInt);
+    Assert.False(keyCountAfter.Required);
+    Assert.True(
+      await context.CategoryFieldDefinitions.AnyAsync(field =>
+        field.FieldKey == "colour" && field.Category.Code == "phones"));
+    Assert.Equal(8, await context.Categories.CountAsync());
+  }
+
   private async Task RunWithSeededContextAsync(Func<AppDbContext, Task> test)
   {
     await using var scope = factory.Services.CreateAsyncScope();

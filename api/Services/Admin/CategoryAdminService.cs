@@ -69,6 +69,13 @@ public sealed class CategoryAdminService(AppDbContext dbContext, ICacheService c
             return ResultError.Conflict("A category with this code already exists.");
         }
 
+        if (category.PhotosPrivate != request.PhotosPrivate
+            && await dbContext.Reports.AnyAsync(report => report.CategoryId == id, cancellationToken))
+        {
+            return ResultError.Conflict(
+                "Photo privacy cannot be changed while reports exist for this category.");
+        }
+
         category.Code = request.Code;
         category.SortOrder = request.SortOrder;
         category.PhotosPrivate = request.PhotosPrivate;
