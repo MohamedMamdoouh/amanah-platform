@@ -31,9 +31,9 @@ Implement background scheduled jobs for listing expiry, pending-claim timeout, a
 
 ### Prior phases
 
-- [ ] Phase 01 - Platform Foundation
-- [ ] Phase 02 - Report Submission
-- [ ] Phase 03 - Admin Moderation
+- [x] Phase 01 - Platform Foundation
+- [x] Phase 02 - Report Submission
+- [x] Phase 03 - Admin Moderation
 - [ ] Phase 05 - Claims & Verification
 - [ ] Phase 06 - Chat, Resolution & Notifications
 

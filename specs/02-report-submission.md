@@ -19,7 +19,7 @@ Enable logged-in users to submit lost and found item reports with full field val
 | Section 4.2         | Reporting a found item                                                    |
 | Section 4.1.3       | Contact-info block                                                        |
 | Section 4.1.6-4.1.7 | Submission quota and concurrent open-report cap                           |
-| Section 4.8         | My Reports (Pending Review tab; Rejected tab read-only until Phase 03)    |
+| Section 4.8         | My Reports (Pending Review tab; Rejected/Published tabs in Phase 03)    |
 | Section 5.2         | Report categories and fields, hidden verification detail, `photosPrivate` |
 | Section 5.3         | Location (governorate + area)                                             |
 | Section 5.4         | Reward flag                                                               |
@@ -124,9 +124,10 @@ Non-reporter users and public visitors cannot access `Pending Review` reports (n
 
 ## 6. Notifications (Section 5.7)
 
-| Event | Recipient | Introduced                                                    |
-| ----- | --------- | ------------------------------------------------------------- |
-| -     | -         | Deferred to Phase 03 (admin approval/rejection notifications) |
+| Event           | Recipient | Introduced                                                    |
+| --------------- | --------- | ------------------------------------------------------------- |
+| Report approved | Reporter  | Phase 03 ([03-admin-moderation.md](./03-admin-moderation.md)) |
+| Report rejected | Reporter  | Phase 03 ([03-admin-moderation.md](./03-admin-moderation.md)) |
 
 Submission confirmation is shown inline on the confirmation screen ("usually within a day").
 
@@ -134,16 +135,15 @@ Submission confirmation is shown inline on the confirmation screen ("usually wit
 
 ## 7. Out of scope
 
-Explicitly deferred to later phases:
+Implemented in Phase 03 ([03-admin-moderation.md](./03-admin-moderation.md)): admin approve/reject, resubmit, in-app notifications.
 
-- Admin approve/reject -> Phase 03
-- Rejected report resubmit -> Phase 03
+Still deferred to later phases:
+
 - Public browse and search -> Phase 04
 - Claims -> Phase 05
 - Listing expiry and auto-withdraw jobs -> Phase 07
 - Reporter withdraw while `Published` -> Phase 07
 - Orphaned R2 objects after failed report submit (DB commit after photo upload) -> Phase 07
-- In-app notifications -> Phase 03
 
 ---
 
@@ -157,7 +157,7 @@ From [SPEC.md Section 15.1](./SPEC.md#151-report-submission-and-validation).
 - [x] **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held location, public category fields, and claim text - and is accepted in the hidden verification detail and in chat messages
 - [x] **Category fields:** required category fields are validated per the active category's field definitions (Section 5.2), including seed defaults (text 2-80 chars, `first name on document` 2-40 letters/spaces, `key count` integer 1-20)
 - [x] **Submission quota:** at 3 new reports in the current Africa/Cairo day, the next submission is rejected with clear quota messaging
-- [x] **Open-report cap:** at 5 reports in `Pending Review`, `Published`, or `Claim In Progress`, the next new submission is rejected with clear cap messaging; resubmitting a `Rejected` report still succeeds (testable after Phase 03; verify cap logic is implemented now)
+- [x] **Open-report cap:** at 5 reports in `Pending Review`, `Published`, or `Claim In Progress`, the next new submission is rejected with clear cap messaging; resubmitting a `Rejected` report still succeeds (verified in Phase 03 `ReportResubmitTests`)
 
 **Additional phase gate:**
 

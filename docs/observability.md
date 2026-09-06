@@ -62,7 +62,8 @@ Metrics are emitted as structured log lines (`event: metric`) in Render log expl
 | `upload.photo.failed` | counter | Photo upload failed |
 | `sms.send.completed` | counter | OTP SMS sent |
 | `sms.send.failed` | counter | OTP SMS send failed |
-| `otp.outbox.backlog` | gauge | Pending outbox messages each poll |
+| `otp.outbox.backlog` | gauge | Pending OTP SMS outbox messages each poll |
+| `email.admin_alert.outbox.backlog` | gauge | Pending admin alert email outbox messages each poll |
 
 ---
 

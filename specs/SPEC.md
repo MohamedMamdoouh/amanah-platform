@@ -804,7 +804,7 @@ Per section 7.5. On limit exceed: HTTP `429` with `Retry-After` header.
 - **Backups:** Supabase managed Postgres defaults.
 - **Monitoring:** Structured JSON logs to Render (correlation IDs, log-emitted metrics). Health: `GET /health` (liveness), `GET /health/ready` (DB + storage). Alerting: GitHub Actions keepalive + GitHub email on workflow failure. See [observability.md](../docs/observability.md).
 - **Caching:** `HybridCache` via `ICacheService` (Section 16). Config: `Cache:CategoriesTtlSeconds`, `Cache:GovernoratesTtlSeconds` in `appsettings.json`. L2 is memory in v1; Redis when multi-instance.
-- **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: section 14.
+- **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: Resend via `admin_alert_email_outbox` (section 14).
 - **Budget:** ~$0/month infra for MVP testing (Render + Supabase free tiers); ~$5/month recommended before public launch for always-on API. SMS via Unimtx (pay-as-you-go, ~$0.135/SMS in Egypt).
 - **Domain:** section 14.
 - **Hosting:** Render (API + static frontend) + Supabase Postgres + Cloudflare R2, outside Egypt (section 5.8). See [deployment.md](../docs/deployment.md).

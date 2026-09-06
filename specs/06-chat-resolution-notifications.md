@@ -34,7 +34,9 @@ Activate real-time in-app chat via SignalR for approved claims, with text and ph
 
 ### Prior phases
 
-- [ ] Phase 01 - Platform Foundation
+- [x] Phase 01 - Platform Foundation
+- [x] Phase 02 - Report Submission
+- [x] Phase 03 - Admin Moderation
 - [ ] Phase 05 - Claims & Verification (`ChatThread` records exist on approved claims)
 
 ### Deferred decisions (Section 14)

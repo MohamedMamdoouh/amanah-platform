@@ -10,9 +10,10 @@ Lost-and-found platform for Egypt — moderated listings, ownership verification
 | ----- | ----------------------------------------------------------- | ------------ |
 | 01    | Platform foundation (auth, sessions, deploy, seeds)         | **Complete** |
 | 02    | Report submission                                           | **Complete** |
-| 03–08 | Moderation, browse, claims, chat, lifecycle, trust & safety | Planned      |
+| 03    | Admin moderation (queue, resubmit, categories, email)       | **Complete** |
+| 04–08 | Browse, claims, chat, lifecycle, trust & safety             | Planned      |
 
-**Next up:** Phase 03 — admin moderation queue (approve/reject, resubmit rejected reports).
+**Next up:** Phase 04 — public browse and search.
 
 ### Shipped (Phase 01)
 
@@ -47,16 +48,36 @@ Lost-and-found platform for Egypt — moderated listings, ownership verification
 - `/report/lost`, `/report/found` — submission forms with photo upload
 - `/my/reports`, `/my/reports/{id}` — list and detail (withdraw while pending)
 - Home CTAs for report submission; browse/search placeholder (Phase 04)
-- Admin shell route (`/admin`) — placeholder until Phase 03
 
 **Tests**
 
 - Integration tests for auth, catalog, report submission/access/withdraw, and photo upload
 - Unit tests for validators, quota, normalizers, and image processing
 
+### Shipped (Phase 03)
+
+**API**
+
+- Admin moderation: queue, approve/reject, detail, keyword search (`Pending Review` / `Rejected` only)
+- Reporter edit (`PUT`) and resubmit (`POST`) for `Rejected` reports
+- Admin category and field CRUD (deactivate only; cache invalidation on write)
+- Notification center API (`GET`, unread count, mark read, read all)
+- Admin alert email outbox (Resend) on report submit and resubmit
+
+**Web**
+
+- `/admin/moderation`, `/admin/moderation/{id}` — FIFO queue, search, approve/reject
+- `/admin/categories` — category and field management
+- `/my/reports` — Pending Review, Rejected, and Published tabs; edit/resubmit on rejected
+- `/notifications` — notification center with unread badge in header
+
+**Tests**
+
+- `ModerationFlowTests`, `ReportResubmitTests`, `NotificationTests`, `CategoryAdminTests`, `ReportAdminAlertEmailTests`
+
 ### Not built yet
 
-Public browse/search, admin moderation, claims, chat, resolution, lifecycle jobs, and in-app notifications — see [phase specs](specs/README.md).
+Public browse/search, claims, chat, resolution, lifecycle jobs — see [phase specs](specs/README.md).
 
 ## Stack
 

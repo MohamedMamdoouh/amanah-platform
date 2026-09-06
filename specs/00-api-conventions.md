@@ -1,6 +1,6 @@
 # API Conventions
 
-Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes via `code`. Implemented in [Phase 01](./01-platform-foundation.md).
+Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes via `code`. Implemented in Phase 01 (platform foundation).
 
 **Base path:** `/api/v1/...` (URL versioning via `Asp.Versioning.Mvc`).
 

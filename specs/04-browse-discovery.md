@@ -31,9 +31,9 @@ Enable anyone - including logged-out visitors - to browse, search, filter, and v
 
 ### Prior phases
 
-- [ ] Phase 01 - Platform Foundation
-- [ ] Phase 02 - Report Submission (search column populated on write)
-- [ ] Phase 03 - Admin Moderation (`Published` reports exist)
+- [x] Phase 01 - Platform Foundation
+- [x] Phase 02 - Report Submission (search column populated on write)
+- [x] Phase 03 - Admin Moderation (`Published` reports exist)
 
 ### Deferred decisions (Section 14)
 

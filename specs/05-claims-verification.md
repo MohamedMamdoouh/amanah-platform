@@ -32,9 +32,9 @@ Implement the full claim lifecycle: logged-in users submit claims on `Published`
 
 ### Prior phases
 
-- [ ] Phase 01 - Platform Foundation
-- [ ] Phase 02 - Report Submission
-- [ ] Phase 03 - Admin Moderation
+- [x] Phase 01 - Platform Foundation
+- [x] Phase 02 - Report Submission
+- [x] Phase 03 - Admin Moderation
 - [ ] Phase 04 - Browse & Discovery
 
 ### Deferred decisions (Section 14)

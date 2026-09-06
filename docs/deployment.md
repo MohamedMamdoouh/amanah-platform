@@ -8,6 +8,7 @@ Production runs on a **$0/month MVP stack** (pre-launch). SMS is pay-as-you-go o
 | PostgreSQL             | Supabase      | Primary database            |
 | Media storage          | Cloudflare R2 | Report photos               |
 | SMS (OTP)              | Unimtx        | Phone verification          |
+| Email (admin alerts)   | Resend        | Moderation-queue alerts     |
 
 One public origin serves both the app and `/api/v1/*`.
 
