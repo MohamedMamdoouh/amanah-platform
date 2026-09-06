@@ -70,15 +70,24 @@ public class CatalogApiTests(ApiWebApplicationFactory factory) : IClassFixture<A
         inactive!.Active = false;
         await context.SaveChangesAsync();
 
-        await scope.ServiceProvider.GetRequiredService<ICacheService>()
-            .RemoveAsync(CacheKeys.Categories);
+        var cacheService = scope.ServiceProvider.GetRequiredService<ICacheService>();
+        await cacheService.RemoveAsync(CacheKeys.Categories);
 
-        var client = factory.CreateClient();
-        var body = await client.GetFromJsonAsync<CategoryListResponse>("/api/v1/categories");
+        try
+        {
+            var client = factory.CreateClient();
+            var body = await client.GetFromJsonAsync<CategoryListResponse>("/api/v1/categories");
 
-        Assert.NotNull(body);
-        Assert.Equal(7, body.Items.Count);
-        Assert.DoesNotContain(body.Items, category => category.Code == "other");
+            Assert.NotNull(body);
+            Assert.Equal(7, body.Items.Count);
+            Assert.DoesNotContain(body.Items, category => category.Code == "other");
+        }
+        finally
+        {
+            inactive.Active = true;
+            await context.SaveChangesAsync();
+            await cacheService.RemoveAsync(CacheKeys.Categories);
+        }
     }
 
     [Fact]

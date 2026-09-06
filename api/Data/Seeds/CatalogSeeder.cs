@@ -38,47 +38,32 @@ public sealed class CatalogSeeder(
                 context.Categories.Add(category);
                 await context.SaveChangesAsync(cancellationToken);
             }
-            else
-            {
-                category.SortOrder = categorySeed.SortOrder;
-                category.PhotosPrivate = categorySeed.PhotosPrivate;
-                category.Active = true;
-            }
 
             foreach (var fieldSeed in categorySeed.Fields)
             {
-                var fieldType = Enum.Parse<CategoryFieldType>(fieldSeed.Type);
                 var existingField = category.FieldDefinitions
                     .SingleOrDefault(field => field.FieldKey == fieldSeed.FieldKey);
 
-                if (existingField is null)
+                if (existingField is not null)
                 {
-                    context.CategoryFieldDefinitions.Add(new CategoryFieldDefinition
-                    {
-                        Id = Guid.NewGuid(),
-                        CategoryId = category.Id,
-                        FieldKey = fieldSeed.FieldKey,
-                        Type = fieldType,
-                        MinLength = fieldSeed.MinLength,
-                        MaxLength = fieldSeed.MaxLength,
-                        MinInt = fieldSeed.MinInt,
-                        MaxInt = fieldSeed.MaxInt,
-                        Required = fieldSeed.Required,
-                        SortOrder = fieldSeed.SortOrder,
-                        TextFormat = fieldSeed.TextFormat,
-                    });
+                    continue;
                 }
-                else
+
+                var fieldType = Enum.Parse<CategoryFieldType>(fieldSeed.Type);
+                context.CategoryFieldDefinitions.Add(new CategoryFieldDefinition
                 {
-                    existingField.Type = fieldType;
-                    existingField.MinLength = fieldSeed.MinLength;
-                    existingField.MaxLength = fieldSeed.MaxLength;
-                    existingField.MinInt = fieldSeed.MinInt;
-                    existingField.MaxInt = fieldSeed.MaxInt;
-                    existingField.Required = fieldSeed.Required;
-                    existingField.SortOrder = fieldSeed.SortOrder;
-                    existingField.TextFormat = fieldSeed.TextFormat;
-                }
+                    Id = Guid.NewGuid(),
+                    CategoryId = category.Id,
+                    FieldKey = fieldSeed.FieldKey,
+                    Type = fieldType,
+                    MinLength = fieldSeed.MinLength,
+                    MaxLength = fieldSeed.MaxLength,
+                    MinInt = fieldSeed.MinInt,
+                    MaxInt = fieldSeed.MaxInt,
+                    Required = fieldSeed.Required,
+                    SortOrder = fieldSeed.SortOrder,
+                    TextFormat = fieldSeed.TextFormat,
+                });
             }
         }
 
