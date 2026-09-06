@@ -1,6 +1,6 @@
 # API Conventions
 
-Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes via `code`. Implemented in Phase 01 (platform foundation).
+Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes via `code`. Implemented in platform foundation.
 
 **Base path:** `/api/v1/...` (URL versioning via `Asp.Versioning.Mvc`).
 
@@ -39,11 +39,11 @@ Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes v
 
 ## `Retry-After` (429)
 
-Every `429` includes `Retry-After` (seconds). OTP limits (`otp.cooldown`, `otp.hourly_limit`, `otp.daily_limit`): no SMS sent when blocked.
+`Retry-After` (seconds) is included when a retry window is known. Required for OTP limits (`otp.cooldown`, `otp.hourly_limit`, `otp.daily_limit`) and `report.daily_quota`. May be absent for `report.open_cap` and generic `rate_limit.exceeded` middleware responses. OTP limits: no SMS sent when blocked.
 
 ---
 
-## Error codes - Phase 01
+## Error codes - Platform foundation (auth)
 
 | Code                       | HTTP | Description                   |
 | -------------------------- | ---- | ----------------------------- |
@@ -75,11 +75,28 @@ Shared across phases (not repeated in phase tables):
 | `resource.not_found` | 404 | Entity missing or caller lacks visibility (same response either way) |
 | `resource.conflict` | 409 | Invalid state transition (e.g. withdraw non-pending report) |
 
-Later phases add `claim.*`, `moderation.*`, etc.
+Phase 02 moderation failures use shared `resource.conflict` / `resource.not_found` (no `moderation.*` namespace). Later phases add `claim.*`, etc.
+
+### Field validation (`field.*`)
+
+Used by auth validators; returned inside `validation.failed` or as field keys in `errors`:
+
+| Code | HTTP | Description |
+| ---- | ---- | ----------- |
+| `field.phone.required` | 400 | Phone required |
+| `field.phone.invalid` | 400 | Phone format not accepted |
+| `field.display_name.required` | 400 | Display name required |
+| `field.display_name.invalid` | 400 | Display name format invalid |
+| `field.password.required` | 400 | Password required |
+| `field.password.too_short` | 400 | Password under 8 characters |
+| `field.accept_terms.required` | 400 | Terms acceptance required |
+| `field.captcha_token.required` | 400 | CAPTCHA token required |
+| `field.otp_code.required` | 400 | OTP code required |
+| `field.otp_purpose.required` | 400 | OTP purpose required |
 
 ---
 
-## Error codes - Phase 02 (report submission)
+## Error codes - Phase 01 (report submission)
 
 ### Report (`report.*`)
 
@@ -100,6 +117,25 @@ Report create/validation also returns `validation.failed` (400) with field keys:
 | `upload.storage_failed` | 503 | R2 put failure during report submit | No |
 
 `POST /api/v1/reports` (multipart with photos) may return `rate_limit.exceeded` (429) from the `photo-upload` middleware policy (5/min + 20/hour per user when `photo-upload-hourly` is configured).
+
+---
+
+## Error codes - Phase 02 (moderation)
+
+| Code | HTTP | When | `errors` map |
+| ---- | ---- | ---- | ------------ |
+| `report.resubmit_cap` | 409 | 3rd resubmission already rejected | No — summary only |
+
+---
+
+## Success response conventions
+
+| Endpoint pattern | Status | Body |
+| ---------------- | ------ | ---- |
+| `POST /api/v1/reports` | 200 | `{ id, status }` |
+| `POST /api/v1/auth/otp/send` | 204 | — |
+| Approve, reject, resubmit, withdraw, update, mark-read | 204 | — |
+| List/detail GET endpoints | 200 | Resource JSON |
 
 ---
 
@@ -214,7 +250,7 @@ No stack traces, phone numbers, or OTP codes in error bodies.
 
 ---
 
-## Session tokens (Phase 01)
+## Session tokens (Platform foundation)
 
 | Token | Transport | Client storage |
 | ----- | ----------- | -------------- |

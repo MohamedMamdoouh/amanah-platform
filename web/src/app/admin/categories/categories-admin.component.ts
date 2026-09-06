@@ -36,6 +36,10 @@ type FieldFormValue = {
   textFormat: string;
 };
 
+type ParseOptionalIntResult =
+  | { ok: true; value: number | null }
+  | { ok: false };
+
 @Component({
   selector: 'app-categories-admin',
   standalone: true,
@@ -115,14 +119,18 @@ export class CategoriesAdminComponent implements OnInit {
   }
 
   toggleAddCategory(): void {
-    this.showAddCategory.update((value) => !value);
+    const willShow = !this.showAddCategory();
+    this.showAddCategory.set(willShow);
     this.editingCategoryId.set(null);
-    this.addCategoryForm.reset({
-      code: '',
-      sortOrder: this.categories().length + 1,
-      photosPrivate: false,
-      isActive: true,
-    });
+
+    if (willShow) {
+      this.addCategoryForm.reset({
+        code: '',
+        sortOrder: this.categories().length + 1,
+        photosPrivate: false,
+        isActive: true,
+      });
+    }
   }
 
   startEditCategory(category: AdminCategory): void {
@@ -140,10 +148,10 @@ export class CategoriesAdminComponent implements OnInit {
     this.editingCategoryId.set(null);
   }
 
-  startAddField(categoryId: string): void {
+  startAddField(category: AdminCategory): void {
     this.editingField.set(null);
-    this.addingFieldCategoryId.set(categoryId);
-    this.addFieldForm.reset(this.emptyFieldFormValue(99));
+    this.addingFieldCategoryId.set(category.id);
+    this.addFieldForm.reset(this.emptyFieldFormValue(this.nextFieldSortOrder(category)));
   }
 
   startEditField(category: AdminCategory, field: AdminCategoryFieldDefinition): void {
@@ -285,6 +293,18 @@ export class CategoriesAdminComponent implements OnInit {
     });
   }
 
+  private nextFieldSortOrder(category: AdminCategory): number {
+    if (category.fieldDefinitions.length === 0) {
+      return 1;
+    }
+
+    const maxSort = category.fieldDefinitions.reduce(
+      (max, field) => Math.max(max, field.sortOrder),
+      0,
+    );
+    return maxSort + 1;
+  }
+
   private emptyFieldFormValue(sortOrder: number): FieldFormValue {
     return {
       fieldKey: '',
@@ -320,15 +340,35 @@ export class CategoriesAdminComponent implements OnInit {
       return null;
     }
 
+    const minLength = this.parseOptionalInt(value.minLength);
+    if (!minLength.ok) {
+      return null;
+    }
+
+    const maxLength = this.parseOptionalInt(value.maxLength);
+    if (!maxLength.ok) {
+      return null;
+    }
+
+    const minInt = this.parseOptionalInt(value.minInt);
+    if (!minInt.ok) {
+      return null;
+    }
+
+    const maxInt = this.parseOptionalInt(value.maxInt);
+    if (!maxInt.ok) {
+      return null;
+    }
+
     const request: CreateCategoryFieldRequest = {
       fieldKey: value.fieldKey.trim(),
       type: value.type,
       required: value.required,
       sortOrder: value.sortOrder,
-      minLength: this.parseOptionalInt(value.minLength),
-      maxLength: this.parseOptionalInt(value.maxLength),
-      minInt: this.parseOptionalInt(value.minInt),
-      maxInt: this.parseOptionalInt(value.maxInt),
+      minLength: minLength.value,
+      maxLength: maxLength.value,
+      minInt: minInt.value,
+      maxInt: maxInt.value,
       textFormat: value.textFormat || null,
     };
 
@@ -344,21 +384,25 @@ export class CategoriesAdminComponent implements OnInit {
     return request;
   }
 
-  private parseOptionalInt(value: string | number | null | undefined): number | null {
+  private parseOptionalInt(
+    value: string | number | null | undefined,
+  ): ParseOptionalIntResult {
     if (value === null || value === undefined || value === '') {
-      return null;
+      return { ok: true, value: null };
     }
 
     if (typeof value === 'number') {
-      return Number.isFinite(value) ? Math.trunc(value) : null;
+      return Number.isFinite(value)
+        ? { ok: true, value: Math.trunc(value) }
+        : { ok: false };
     }
 
     const trimmed = value.trim();
     if (!trimmed) {
-      return null;
+      return { ok: true, value: null };
     }
 
     const parsed = Number.parseInt(trimmed, 10);
-    return Number.isNaN(parsed) ? null : parsed;
+    return Number.isNaN(parsed) ? { ok: false } : { ok: true, value: parsed };
   }
 }

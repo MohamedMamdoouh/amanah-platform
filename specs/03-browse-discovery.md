@@ -1,7 +1,7 @@
-# Phase 04 - Browse & Discovery
+# Phase 03 - Browse & Discovery
 
 **Status:** Not started  
-**Prerequisites:** Phase 03 - Admin Moderation
+**Prerequisites:** Phase 02 - Admin Moderation
 
 ---
 
@@ -31,9 +31,9 @@ Enable anyone - including logged-out visitors - to browse, search, filter, and v
 
 ### Prior phases
 
-- [x] Phase 01 - Platform Foundation
-- [x] Phase 02 - Report Submission (search column populated on write)
-- [x] Phase 03 - Admin Moderation (`Published` reports exist)
+- [x] Platform foundation
+- [x] Phase 01 - Report Submission (search column populated on write)
+- [x] Phase 02 - Admin Moderation (`Published` reports exist)
 
 ### Deferred decisions (Section 14)
 
@@ -68,7 +68,7 @@ Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (l
 
 - `pg_trgm` GIN index on `Report.normalizedSearchText`
 - Enable `pg_trgm` extension in migration
-- Verify search column backfill not needed (written since Phase 02)
+- Verify search column backfill not needed (written since Phase 01)
 
 ### Infrastructure
 
@@ -79,7 +79,7 @@ Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (l
 - Arabic normalization for query: alef variants, `ى` -> `ي`, `ة` -> `ه`, strip tatweel/diacritics, collapse whitespace, lowercase
 - All-terms AND matching via `ILIKE '%term%'` per normalized term
 - Status-based response filtering: strip private photos, hidden detail, reporter phone
-- `Claim In Progress` label on listing and detail; claim CTA shows login prompt or disabled state until Phase 05
+- `Claim In Progress` label on listing and detail; claim CTA shows login prompt or disabled state until Phase 04
 
 ---
 
@@ -117,9 +117,9 @@ URL access by status (Section 4.4):
 
 Explicitly deferred to later phases:
 
-- Claim submission and claim CTA functionality -> Phase 05
-- Chat and messaging -> Phase 06
-- Abuse flagging UI -> Phase 08
+- Claim submission and claim CTA functionality -> Phase 04
+- Chat and messaging -> Phase 05
+- Abuse flagging UI -> Phase 07
 - Social link previews -> out of scope v1 (Section 10)
 - Map/GPS location -> out of scope v1 (Section 10)
 
@@ -140,7 +140,7 @@ From [SPEC.md Section 15.3](./SPEC.md#153-browse-search-visibility-and-urls).
 - [ ] Sort: newest published first
 - [ ] Pagination: 20 per page, numbered pages
 - [ ] Logged-out visitors see same content as logged-in on public reports
-- [ ] Claim and message action stubs prompt login when logged out (full message/chat in Phase 06)
+- [ ] Claim and message action stubs prompt login when logged out (full message/chat in Phase 05)
 
 ---
 

@@ -1,7 +1,9 @@
 # Amanah - Specification (SPEC)
 
-**Status:** v9  
+**Status:** v9 (spec document version)  
 **Owner:** Mohamed Mamdouh
+
+**Implementation:** Phases 01–02 complete; phases 03–07 not started. See [specs/README.md](./README.md) for per-phase delivery status.
 
 - **Part I (1-15)** - product behavior.
 - **Part II (16-21)** - technical specification.
@@ -592,7 +594,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 | API error contract appendix                   | **Resolved** - [00-api-conventions.md](./00-api-conventions.md)                                                                                       |
 | SignalR event/payload contract                | **Pending** before implementation                                                                                                                     |
 | Transactional email provider for admin alerts | **Done** — [Resend](https://resend.com/) via `ResendAdminAlertEmailSender` ([deployment.md](../docs/deployment.md))                                   |
-| Orphaned R2 objects on failed report submit   | **Deferred — Phase 07** — compensating delete on DB failure + `OrphanedStorageCleanup` job ([07-lifecycle-retention.md](./07-lifecycle-retention.md)) |
+| Orphaned R2 objects on failed report submit   | **Deferred — Phase 06** — compensating delete on DB failure + `OrphanedStorageCleanup` job ([06-lifecycle-retention.md](./06-lifecycle-retention.md)) |
 | Domain name                                   | **To be chosen** before launch                                                                                                                        |
 
 ---
@@ -719,10 +721,10 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
   | Cache key              | Value                                                   | TTL (default) | Invalidation                   |
   | ---------------------- | ------------------------------------------------------- | ------------- | ------------------------------ |
-  | `catalog:categories`   | Active categories + field defs (`CacheKeys.Categories`) | 1h            | Admin category CRUD (Phase 03) |
+  | `catalog:categories`   | Active categories + field defs (`CacheKeys.Categories`) | 1h            | Admin category CRUD (Phase 02) |
   | `catalog:governorates` | Governorate list (`CacheKeys.Governorates`)             | 24h           | Seed change (rare)             |
 
-- **Admin dashboard:** same Angular app behind a role guard at `/admin/`. Screens match section 5.5.
+- **Admin dashboard:** same Angular app behind a role guard at `/admin/`. Phased: moderation + categories (phases 01–02); abuse queue + user lookup (phase 07).
 
 ---
 

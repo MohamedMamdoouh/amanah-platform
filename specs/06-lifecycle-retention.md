@@ -1,13 +1,13 @@
-# Phase 07 - Lifecycle, Retention & Account Management
+# Phase 06 - Lifecycle, Retention & Account Management
 
 **Status:** Not started  
-**Prerequisites:** Phase 06 - Chat, Resolution & Notifications
+**Prerequisites:** Phase 05 - Chat, Resolution & Notifications
 
 ---
 
 ## 1. Summary
 
-Implement background scheduled jobs for listing expiry, pending-claim timeout, and data retention cleanup. Enable reporter withdrawal from `Published` reports, account self-deletion with blockers, and the cumulative 90-day published timer (paused during `Claim In Progress`). Introduce shared cleanup services that Phase 08 ban/takedown flows will call.
+Implement background scheduled jobs for listing expiry, pending-claim timeout, and data retention cleanup. Enable reporter withdrawal from `Published` reports, account self-deletion with blockers, and the cumulative 90-day published timer (paused during `Claim In Progress`). Introduce shared cleanup services that Phase 07 ban/takedown flows will call.
 
 ---
 
@@ -19,7 +19,7 @@ Implement background scheduled jobs for listing expiry, pending-claim timeout, a
 | Section 5.1 | Account deletion |
 | Section 6.3 | 10-day pending-claim auto-withdraw |
 | Section 12 | Data retention (full schedule) |
-| Section 15.2 | Expiry acceptance criteria (deferred from Phase 03) |
+| Section 15.2 | Expiry acceptance criteria (deferred from Phase 02) |
 | Section 15.5 | Chat retention deletion |
 | Section 21 | Scheduled jobs |
 
@@ -31,11 +31,11 @@ Implement background scheduled jobs for listing expiry, pending-claim timeout, a
 
 ### Prior phases
 
-- [x] Phase 01 - Platform Foundation
-- [x] Phase 02 - Report Submission
-- [x] Phase 03 - Admin Moderation
-- [ ] Phase 05 - Claims & Verification
-- [ ] Phase 06 - Chat, Resolution & Notifications
+- [x] Platform foundation
+- [x] Phase 01 - Report Submission
+- [x] Phase 02 - Admin Moderation
+- [ ] Phase 04 - Claims & Verification
+- [ ] Phase 05 - Chat, Resolution & Notifications
 
 ### Deferred decisions (Section 14)
 
@@ -49,7 +49,7 @@ None additional.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| POST | `/api/v1/reports/{id}/withdraw` | Reporter withdraws `Published` report (extend Phase 02 endpoint) |
+| POST | `/api/v1/reports/{id}/withdraw` | Reporter withdraws `Published` report (extend Phase 01 endpoint) |
 | DELETE | `/api/v1/account` | Self-serve account deletion |
 | GET | `/api/v1/account/deletion-status` | Check blockers (active approved claims) |
 
@@ -89,9 +89,9 @@ All jobs use Africa/Cairo day boundaries where applicable. Run on a configurable
 
 ### Orphaned storage cleanup
 
-Report submit (`ReportPhotoAttachService`) uploads originals and thumbnails to R2 **before** `SaveChangesAsync`. If the DB write fails after storage succeeds, objects remain in the bucket with no database reference. Phase 02 does not roll back storage on DB failure.
+Report submit (`ReportPhotoAttachService`) uploads originals and thumbnails to R2 **before** `SaveChangesAsync`. If the DB write fails after storage succeeds, objects remain in the bucket with no database reference. Phase 01 does not roll back storage on DB failure.
 
-**Phase 07 deliverable:**
+**Phase 06 deliverable:**
 
 1. **Immediate compensating delete (preferred on submit path):** on `SaveChangesAsync` failure after photo promotion, delete the keys written in that request before returning an error to the client.
 2. **Scheduled sweeper (`OrphanedStorageCleanup`):** daily job listing objects under `public/reports/` and `private/reports/` (or equivalent prefixes) and deleting any whose storage keys are not referenced by `ReportPhoto` (and not written within a short grace window, e.g. 1 hour, to avoid racing an in-flight submit).
@@ -112,9 +112,9 @@ Implement both where practical: immediate cleanup limits orphan volume; the job 
 | ------ | ------- |
 | `LISTING_EXPIRY_DAYS` | Override 90-day expiry (e.g. `1` for tests) |
 | `LISTING_EXPIRY_WARNING_DAYS_BEFORE` | Override 7-day warning offset (default `7`; warning fires at `LISTING_EXPIRY_DAYS -` this value) |
-| `CLAIM_TIMEOUT_MINUTES` | Override 10-day claim timeout (from Phase 05 stub) |
+| `CLAIM_TIMEOUT_MINUTES` | Override 10-day claim timeout (from Phase 04 stub) |
 | `RETENTION_DAYS_OVERRIDE` | Override all 30-day retention windows (rejected reports, chat, sessions, account PII purge) |
-| `POST /api/v1/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI (supersedes Phase 05 `trigger-claim-timeout` stub) |
+| `POST /api/v1/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI (supersedes Phase 04 `trigger-claim-timeout` stub) |
 
 ---
 
@@ -128,7 +128,7 @@ Server-enforce these matrix rows before marking this phase done:
 | Direct PII (phone, display name) | Purged within 30 days |
 | ModerationAction audit | Survives all deletions |
 
-Withdrawal reason: reporter and admin only - enforced in Phase 02; regression in Phase 07 withdraw UI/API tests.
+Withdrawal reason: reporter and admin only - enforced in Phase 01; regression in Phase 06 withdraw UI/API tests.
 
 ---
 
@@ -147,15 +147,15 @@ Withdrawal reason: reporter and admin only - enforced in Phase 02; regression in
 
 Explicitly deferred to later phases:
 
-- Abuse admin UI and ban/takedown flows -> Phase 08 (will call cleanup services from this phase)
-- Claim-ended-by-enforcement notification -> Phase 08
-- Admin takedown affecting you -> Phase 08
+- Abuse admin UI and ban/takedown flows -> Phase 07 (will call cleanup services from this phase)
+- Claim-ended-by-enforcement notification -> Phase 07
+- Admin takedown affecting you -> Phase 07
 
 ---
 
 ## 8. Acceptance criteria
 
-From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission) (expiry items deferred from Phase 03).
+From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission) (expiry items deferred from Phase 02).
 
 - [ ] **Listing expiry warning:** when a `Published` report has **83 cumulative published days** elapsed (7 days before auto-expiry), the reporter receives `ReportExpiringSoon`
 - [ ] **Listing auto-expiry:** after **90 cumulative days** in `Published` (timer paused during `Claim In Progress`), the report becomes `Withdrawn` with `_expired_`; pending claims close; reporter and claimants are notified

@@ -1,13 +1,13 @@
-# Phase 05 - Claims & Verification
+# Phase 04 - Claims & Verification
 
 **Status:** Not started  
-**Prerequisites:** Phase 04 - Browse & Discovery
+**Prerequisites:** Phase 03 - Browse & Discovery
 
 ---
 
 ## 1. Summary
 
-Implement the full claim lifecycle: logged-in users submit claims on `Published` reports, reporters manually approve or reject, attempt limits apply per user per report, and approving a claim moves the report to `Claim In Progress` and creates a chat thread record. Real-time messaging is deferred to Phase 06 - the thread exists but is inert until then. In-app notifications for all claim events (except chat and resolution) are added.
+Implement the full claim lifecycle: logged-in users submit claims on `Published` reports, reporters manually approve or reject, attempt limits apply per user per report, and approving a claim moves the report to `Claim In Progress` and creates a chat thread record. Real-time messaging is deferred to Phase 05 - the thread exists but is inert until then. In-app notifications for all claim events (except chat and resolution) are added.
 
 ---
 
@@ -32,10 +32,10 @@ Implement the full claim lifecycle: logged-in users submit claims on `Published`
 
 ### Prior phases
 
-- [x] Phase 01 - Platform Foundation
-- [x] Phase 02 - Report Submission
-- [x] Phase 03 - Admin Moderation
-- [ ] Phase 04 - Browse & Discovery
+- [x] Platform foundation
+- [x] Phase 01 - Report Submission
+- [x] Phase 02 - Admin Moderation
+- [ ] Phase 03 - Browse & Discovery
 
 ### Deferred decisions (Section 14)
 
@@ -71,7 +71,7 @@ None additional.
 ### Database
 
 - `Claim` records with status, attempt tracking, `countsAsFailure` flag
-- `ChatThread` record created on claim approval (messaging inert until Phase 06)
+- `ChatThread` record created on claim approval (messaging inert until Phase 05)
 - `Report.status` -> `Claim In Progress` on approval
 - Auto-reject other `Pending` claims with reason `Another claim approved`
 
@@ -89,9 +89,9 @@ None additional.
 - One open `Pending` claim per user per report
 - 3 attempts per user per report lifetime
 
-### Phase 05 / Phase 06 boundary
+### Phase 03 / Phase 04 boundary
 
-> **Important:** On claim approval, a `ChatThread` row is created and linked to the claim, but no SignalR hub, message endpoints, or chat UI are wired. The thread is a placeholder. Phase 06 activates messaging on existing threads. Document this in code comments and QA checklists to avoid scope creep.
+> **Important:** On claim approval, a `ChatThread` row is created and linked to the claim, but no SignalR hub, message endpoints, or chat UI are wired. The thread is a placeholder. Phase 05 activates messaging on existing threads. Document this in code comments and QA checklists to avoid scope creep.
 
 ---
 
@@ -101,10 +101,10 @@ Server-enforce these matrix rows before marking this phase done:
 
 | Data | Claimant | Reporter | Admin |
 | ---- | -------- | -------- | ----- |
-| Claim text and claim photo | own | yes (for review) | yes (flagged-listing investigation only - stub OK; full in Phase 08) |
+| Claim text and claim photo | own | yes (for review) | yes (flagged-listing investigation only - stub OK; full in Phase 07) |
 | Display name of claimant | own | yes | yes |
 | Display name of reporter | yes | own | yes |
-| Chat thread | - | - | - (Phase 06) |
+| Chat thread | - | - | - (Phase 05) |
 
 Claimant cannot claim own report. Claim refused on non-`Published` status without consuming attempt.
 
@@ -118,9 +118,9 @@ Claimant cannot claim own report. Claim refused on non-`Published` status withou
 | Claim withdrawn by claimant | Reporter | this phase |
 | Claim approved | Claimant | this phase |
 | Claim rejected | Claimant | this phase |
-| Claim closed - report unavailable | Claimant | this phase (`ClaimCleanupService` unit-tested; E2E on `Published` withdraw in Phase 07) |
-| Claim cancelled by counterparty | Other party | deferred to Phase 06 (full cancel flow) |
-| Claim auto-withdrawn | Reporter and claimant | deferred to Phase 07 (job) |
+| Claim closed - report unavailable | Claimant | this phase (`ClaimCleanupService` unit-tested; E2E on `Published` withdraw in Phase 06) |
+| Claim cancelled by counterparty | Other party | deferred to Phase 05 (full cancel flow) |
+| Claim auto-withdrawn | Reporter and claimant | deferred to Phase 06 (job) |
 
 ---
 
@@ -128,13 +128,13 @@ Claimant cannot claim own report. Claim refused on non-`Published` status withou
 
 Explicitly deferred to later phases:
 
-- Real-time chat messaging -> Phase 06
-- Mutual resolution / Confirm Resolved -> Phase 06
-- Cancel approved claim (full flow with chat read-only) -> Phase 06
-- 10-day pending-claim auto-withdraw job -> Phase 07
-- Pending-claim closure on expiry/takedown/ban -> Phase 07/08
-- Abuse report-from-chat -> Phase 08
-- Claim-ended-by-enforcement notification -> Phase 08
+- Real-time chat messaging -> Phase 05
+- Mutual resolution / Confirm Resolved -> Phase 05
+- Cancel approved claim (full flow with chat read-only) -> Phase 05
+- 10-day pending-claim auto-withdraw job -> Phase 06
+- Pending-claim closure on expiry/takedown/ban -> Phase 05/07
+- Abuse report-from-chat -> Phase 07
+- Claim-ended-by-enforcement notification -> Phase 07
 
 ---
 
@@ -149,18 +149,18 @@ From [SPEC.md Section 15.4](./SPEC.md#154-claiming-and-review).
 - [ ] **Approval side effects:** the claim becomes `Approved`, the report becomes `Claim In Progress`, a chat thread is created, and all other pending claims become `Rejected` with the reason `Another claim approved`, notified, with no attempt consumed
 - [ ] **Attempt counting:** manual reporter rejections and claimant-initiated cancellations of an approved claim each consume one attempt; reporter-initiated cancellations, claimant withdrawals, **10-day auto-withdrawals**, auto-rejections, auto-closures, and refused claims do not. After 3 counted failures, further claims on that report by that user are blocked with a clear message
 - [ ] **Daily claim quota:** at 5 claim submissions in the current Africa/Cairo day, the next claim is rejected with clear quota messaging
-- [ ] **Pending claim closure:** `ClaimCleanupService` closes pending claims with no attempt consumed and sends `ClaimClosedReportUnavailable` (unit/integration test). **E2E** closure when a `Published` report is withdrawn, expired, or taken down → Phase 07/08 (withdraw of `Published` is not available until Phase 07)
+- [ ] **Pending claim closure:** `ClaimCleanupService` closes pending claims with no attempt consumed and sends `ClaimClosedReportUnavailable` (unit/integration test). **E2E** closure when a `Published` report is withdrawn, expired, or taken down → Phase 05/07 (withdraw of `Published` is not available until Phase 06)
 
 **Deferred within v1:**
 
-- [ ] **Reporter timeout (10-day auto-withdraw)** → Phase 07. Test via configurable interval or admin trigger stub.
+- [ ] **Reporter timeout (10-day auto-withdraw)** → Phase 06. Test via configurable interval or admin trigger stub.
 
 ### 10-day timeout test stub
 
-For CI and manual QA before Phase 07 ships the job:
+For CI and manual QA before Phase 06 ships the job:
 
 - Environment variable `CLAIM_TIMEOUT_MINUTES` (default: 14400 = 10 days) overrides the timeout interval in non-production
-- Optional admin-only `POST /api/v1/admin/test/trigger-claim-timeout` for early CI hooks (Phase 07's `POST /api/v1/admin/test/run-job/{jobName}` is the primary test trigger)
+- Optional admin-only `POST /api/v1/admin/test/trigger-claim-timeout` for early CI hooks (Phase 06's `POST /api/v1/admin/test/run-job/{jobName}` is the primary test trigger)
 
 ---
 

@@ -1,13 +1,13 @@
-# Phase 02 - Report Submission
+# Phase 01 - Report Submission
 
 **Status:** Complete (API + Angular UI)  
-**Prerequisites:** Phase 01 - Platform Foundation
+**Prerequisites:** Platform foundation
 
 ---
 
 ## 1. Summary
 
-Enable logged-in users to submit lost and found item reports with full field validation, category-specific fields, photo uploads, contact-info blocking, submission quotas, and the hidden verification detail. Reports are created in `Pending Review` status. Reporters can view their submissions in My Reports (Pending Review tab) and withdraw while pending. The normalized search column is populated on every write so Phase 04 browse can read it without a backfill.
+Enable logged-in users to submit lost and found item reports with full field validation, category-specific fields, photo uploads, contact-info blocking, submission quotas, and the hidden verification detail. Reports are created in `Pending Review` status. Reporters can view their submissions in My Reports and withdraw while pending. The normalized search column is populated on every create and rejected-report update so Phase 03 browse can read it without a backfill.
 
 ---
 
@@ -19,7 +19,7 @@ Enable logged-in users to submit lost and found item reports with full field val
 | Section 4.2         | Reporting a found item                                                    |
 | Section 4.1.3       | Contact-info block                                                        |
 | Section 4.1.6-4.1.7 | Submission quota and concurrent open-report cap                           |
-| Section 4.8         | My Reports (Pending Review tab; Rejected/Published tabs in Phase 03)    |
+| Section 4.8         | My Reports (Pending Review tab; Rejected/Published tabs added in Phase 02) |
 | Section 5.2         | Report categories and fields, hidden verification detail, `photosPrivate` |
 | Section 5.3         | Location (governorate + area)                                             |
 | Section 5.4         | Reward flag                                                               |
@@ -37,11 +37,11 @@ Enable logged-in users to submit lost and found item reports with full field val
 
 ### Prior phases
 
-- [x] Phase 01 - Platform Foundation (auth, DB schema, seeds, buckets)
+- [x] Platform foundation (auth, DB schema, seeds, buckets)
 
 ### Deferred decisions (Section 14)
 
-None additional - Phase 01 prerequisites must be complete.
+None additional - Platform foundation prerequisites must be complete.
 
 ---
 
@@ -53,10 +53,10 @@ None additional - Phase 01 prerequisites must be complete.
 | ------ | --------------------------------------- | -------------------------------------------------------------------------- |
 | GET    | `/api/v1/categories`                    | Active categories with field definitions (keys only — no localized labels) |
 | GET    | `/api/v1/governorates`                  | Governorate list (`code` + `sortOrder`; Arabic labels from frontend i18n)  |
-| POST   | `/api/v1/reports`                       | Submit lost or found report (`multipart/form-data`: JSON `report` + optional `photos`) |
-| GET    | `/api/v1/reports/mine`                  | Reporter's reports (filterable by status tab)                              |
+| POST   | `/api/v1/reports`                       | Submit lost or found report (`multipart/form-data`: JSON `report` + optional `photos`); returns **200** `{ id, status }` |
+| GET    | `/api/v1/reports/mine`                  | Reporter's reports; optional `?status=` (see below)                        |
 | GET    | `/api/v1/reports/{id}`                  | Report detail (reporter + admin only for non-public statuses)              |
-| POST   | `/api/v1/reports/{id}/withdraw`         | Reporter withdraws while `Pending Review`                                  |
+| POST   | `/api/v1/reports/{id}/withdraw`         | Reporter withdraws while `Pending Review`; optional JSON `{ reason? }`; returns **204** |
 | GET    | `/api/v1/uploads/report-photo/{id}/url` | Pre-signed URL for private attached photos (reporter/admin only)           |
 
 ### UI routes
@@ -65,12 +65,14 @@ None additional - Phase 01 prerequisites must be complete.
 | ------------------ | -------------------- | ------------------------------- |
 | `/report/lost`     | Logged-in            | Lost item submission form       |
 | `/report/found`    | Logged-in            | Found item submission form      |
-| `/my/reports`      | Logged-in            | My Reports - Pending Review tab |
-| `/my/reports/{id}` | Logged-in (reporter) | Report detail while pending     |
+| `/my/reports`      | Logged-in            | My Reports — Pending Review tab (Rejected/Published tabs added in Phase 02) |
+| `/my/reports/{id}` | Logged-in (reporter) | Report detail; withdraw while pending                                     |
+
+**`GET /api/v1/reports/mine?status=`** values: `pending_review` (default), `rejected`, `published`, `claim_in_progress`, `resolved`, `withdrawn`, `removed_by_admin`, and alias `closed` (resolved + withdrawn + removed_by_admin).
 
 ### Database
 
-- No new entities (created in Phase 01); populate `Report`, `CategoryField`, `ReportPhoto`
+- No new entities (created in initial schema); populate `Report`, `CategoryField`, `ReportPhoto`
 - `Report.normalizedSearchText` computed and stored on every create/update
 - `Report.status` defaults to `Pending Review`
 - `Report.resubmissionCount` initialized to 0
@@ -81,7 +83,7 @@ None additional - Phase 01 prerequisites must be complete.
 - Photos uploaded with report submit: `POST /api/v1/reports` accepts `multipart/form-data` (`report` JSON part + optional `photos` file parts); processed and stored in one request
 - WebP thumbnail generation on submit
 - Upload rate limiting on report create: 5/min, 20/hour per account (Section 7.5)
-- **Known gap (deferred):** photos are written to R2 before `SaveChangesAsync`. If the DB commit fails after storage succeeds, promoted objects are not deleted and no `Report` / `ReportPhoto` rows exist. Compensating cleanup is planned for **Phase 07** — see [07-lifecycle-retention.md](./07-lifecycle-retention.md#orphaned-storage-cleanup).
+- **Known gap (deferred):** photos are written to R2 before `SaveChangesAsync`. If the DB commit fails after storage succeeds, promoted objects are not deleted and no `Report` / `ReportPhoto` rows exist. Compensating cleanup is planned for **Phase 06** — see [06-lifecycle-retention.md](./06-lifecycle-retention.md#orphaned-storage-cleanup).
 - **Cache consumers:** `GET /api/v1/categories` and `GET /api/v1/governorates` use `ICacheService` with `CacheKeys.Categories` (1h TTL) and `CacheKeys.Governorates` (24h TTL)
 
 ### Shared utilities
@@ -126,8 +128,8 @@ Non-reporter users and public visitors cannot access `Pending Review` reports (n
 
 | Event           | Recipient | Introduced                                                    |
 | --------------- | --------- | ------------------------------------------------------------- |
-| Report approved | Reporter  | Phase 03 ([03-admin-moderation.md](./03-admin-moderation.md)) |
-| Report rejected | Reporter  | Phase 03 ([03-admin-moderation.md](./03-admin-moderation.md)) |
+| Report approved | Reporter  | Phase 02 ([02-admin-moderation.md](./02-admin-moderation.md)) |
+| Report rejected | Reporter  | Phase 02 ([02-admin-moderation.md](./02-admin-moderation.md)) |
 
 Submission confirmation is shown inline on the confirmation screen ("usually within a day").
 
@@ -135,15 +137,15 @@ Submission confirmation is shown inline on the confirmation screen ("usually wit
 
 ## 7. Out of scope
 
-Implemented in Phase 03 ([03-admin-moderation.md](./03-admin-moderation.md)): admin approve/reject, resubmit, in-app notifications.
+Implemented in Phase 02 ([02-admin-moderation.md](./02-admin-moderation.md)): admin approve/reject, resubmit, in-app notifications.
 
 Still deferred to later phases:
 
-- Public browse and search -> Phase 04
-- Claims -> Phase 05
-- Listing expiry and auto-withdraw jobs -> Phase 07
-- Reporter withdraw while `Published` -> Phase 07
-- Orphaned R2 objects after failed report submit (DB commit after photo upload) -> Phase 07
+- Public browse and search -> Phase 03
+- Claims -> Phase 04
+- Listing expiry and auto-withdraw jobs -> Phase 06
+- Reporter withdraw while `Published` -> Phase 06
+- Orphaned R2 objects after failed report submit (DB commit after photo upload) -> Phase 06
 
 ---
 
@@ -157,13 +159,13 @@ From [SPEC.md Section 15.1](./SPEC.md#151-report-submission-and-validation).
 - [x] **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held location, public category fields, and claim text - and is accepted in the hidden verification detail and in chat messages
 - [x] **Category fields:** required category fields are validated per the active category's field definitions (Section 5.2), including seed defaults (text 2-80 chars, `first name on document` 2-40 letters/spaces, `key count` integer 1-20)
 - [x] **Submission quota:** at 3 new reports in the current Africa/Cairo day, the next submission is rejected with clear quota messaging
-- [x] **Open-report cap:** at 5 reports in `Pending Review`, `Published`, or `Claim In Progress`, the next new submission is rejected with clear cap messaging; resubmitting a `Rejected` report still succeeds (verified in Phase 03 `ReportResubmitTests`)
+- [x] **Open-report cap:** at 5 reports in `Pending Review`, `Published`, or `Claim In Progress`, the next new submission is rejected with clear cap messaging; resubmitting a `Rejected` report still succeeds (verified in Phase 02 `ReportResubmitTests`)
 
 **Additional phase gate:**
 
 - [x] `photosPrivate` category stores photos in private bucket; not returned in public API responses
 - [x] EXIF metadata stripped from uploaded photos
-- [x] Normalized search column populated on create
+- [x] Normalized search column populated on create and on rejected-report update
 - [x] Reporter can withdraw `Pending Review` report
 - [x] No draft saving - single-session submission only
 - [x] Angular UI: `/report/lost`, `/report/found`, `/my/reports`, `/my/reports/{id}` with auth guard

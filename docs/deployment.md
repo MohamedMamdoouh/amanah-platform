@@ -17,7 +17,7 @@ One public origin serves both the app and `/api/v1/*`.
 ## Setup order
 
 1. **Supabase** — create project and database
-2. **Render** — deploy the Docker web service; configure secrets and connection string
+2. **Render** — deploy the Docker web service (see below)
 3. **Cloudflare R2** — create bucket and credentials for media
 4. **Unimtx** — create account, add credit, configure SMS API key
 5. **Resend** (optional until staging) — create account, verify domain (or use `onboarding@resend.dev`), configure admin alert email
@@ -29,9 +29,51 @@ See [observability.md](observability.md) for logs, metrics, and alerting.
 
 ---
 
-## Cloudflare R2 (report photos)
+## Render web service
 
-Set on the Render web service (or in `.env` locally):
+| Setting | Value |
+| ------- | ----- |
+| Type | Web Service |
+| Environment | Docker |
+| Dockerfile path | `api/Dockerfile` |
+| Build context | Repository root |
+| Health check path | `/health` |
+| Docker build arg | `TURNSTILE_SITE_KEY` — Cloudflare Turnstile site key (baked into Angular build) |
+
+The API binds `0.0.0.0:$PORT` (Render sets `PORT` automatically). EF Core migrations run on startup (`Database:AutoMigrate` defaults `true`).
+
+---
+
+## Required production environment variables
+
+See `.env.example` for naming reference. Double-underscore maps to nested config (`ConnectionStrings__Default` → `ConnectionStrings:Default`).
+
+| Variable | Required | Purpose |
+| -------- | -------- | ------- |
+| `ConnectionStrings__Default` | Yes | Supabase Postgres — **Session pooler** on Render (`aws-0-<region>.pooler.supabase.com`, user `postgres.<ref>`); direct connection for local dev |
+| `Jwt__AccessTokenSigningKey` | Yes | JWT signing (≥32 chars) |
+| `Jwt__HandoffTokenSigningKey` | Yes | OTP handoff token (≥32 chars) |
+| `Cors__AllowedOrigins__0` | Yes | Public origin (e.g. `https://<service>.onrender.com`) |
+| `Sms__ApiKey` | Yes | Unimtx AccessKey ID |
+| `Turnstile__SecretKey` | Yes | Cloudflare Turnstile server secret |
+| `TURNSTILE_SITE_KEY` | Yes (Docker build arg) | Turnstile site key in Angular build |
+| `ADMIN_PHONE` | Yes | Bootstrap admin phone (`+20...`) |
+| `ADMIN_PASSWORD` | Yes | Bootstrap admin password (≥8 chars) |
+| `Bucket__Endpoint` | Yes* | R2 S3 API endpoint |
+| `Bucket__AccessKey` | Yes* | R2 access key ID |
+| `Bucket__SecretKey` | Yes* | R2 secret access key |
+| `Bucket__Name` | Yes* | Bucket name (e.g. `amanah-media`) |
+| `Email__ApiKey` | Optional pre-staging | Resend API key |
+| `Email__FromAddress` | Optional pre-staging | Verified sender |
+| `Email__AdminAlertTo` | Optional pre-staging | Admin inbox for moderation alerts |
+
+\*When `Bucket__Endpoint` is unset, the API uses in-memory fake storage — suitable for local dev and tests, not production.
+
+`Email__AppBaseUrl` defaults to the first `Cors__AllowedOrigins` entry when unset.
+
+---
+
+## Cloudflare R2 (report photos)
 
 | Variable | Purpose |
 | -------- | ------- |
@@ -40,11 +82,9 @@ Set on the Render web service (or in `.env` locally):
 | `Bucket__SecretKey` | R2 secret access key |
 | `Bucket__Name` | Bucket name (e.g. `amanah-media`) |
 
-When `Bucket__Endpoint` is **unset**, the API uses an in-memory fake storage provider — suitable for local dev and tests, not for production photo persistence across restarts.
-
 Photos are stored under `public/` or `private/` prefixes based on category `photosPrivate`. Report photos are uploaded with `POST /api/v1/reports` (multipart) and written directly to the report prefix on submit.
 
-**Known gap:** if R2 upload succeeds but the database commit fails, promoted files are not deleted automatically today. Phase 07 will add compensating cleanup on submit failure and a scheduled `OrphanedStorageCleanup` job. See [specs/07-lifecycle-retention.md](../specs/07-lifecycle-retention.md#orphaned-storage-cleanup).
+**Known gap:** if R2 upload succeeds but the database commit fails, promoted files are not deleted automatically today. Phase 06 will add compensating cleanup on submit failure and a scheduled `OrphanedStorageCleanup` job. See [specs/06-lifecycle-retention.md](../specs/06-lifecycle-retention.md#orphaned-storage-cleanup).
 
 ---
 

@@ -2,82 +2,46 @@
 
 Lost-and-found platform for Egypt — moderated listings, ownership verification, and in-app messaging. Arabic RTL UI.
 
-**Docs:** [SPEC](specs/SPEC.md) · [API conventions](specs/00-api-conventions.md) · [Phase specs](specs/README.md) · [Deployment](docs/deployment.md) · [Observability](docs/observability.md)
+**Docs:** [SPEC](specs/SPEC.md) · [API conventions](specs/00-api-conventions.md) · [Phase specs](specs/README.md) · [UI context](docs/ui-ux-context.md) · [Deployment](docs/deployment.md) · [Observability](docs/observability.md)
 
 ## Status
 
 | Phase | Topic                                                       | Status       |
 | ----- | ----------------------------------------------------------- | ------------ |
-| 01    | Platform foundation (auth, sessions, deploy, seeds)         | **Complete** |
-| 02    | Report submission                                           | **Complete** |
-| 03    | Admin moderation (queue, resubmit, categories, email)       | **Complete** |
-| 04–08 | Browse, claims, chat, lifecycle, trust & safety             | Planned      |
+| —     | Platform foundation (auth, sessions, deploy, seeds)         | **Complete** |
+| 01    | Report submission                                           | **Complete** |
+| 02    | Admin moderation (queue, resubmit, categories, email)       | **Complete**¹ |
+| 03–07 | Browse, claims, chat, lifecycle, trust & safety             | Not started  |
 
-**Next up:** Phase 04 — public browse and search.
+**Next up:** Phase 03 — public browse and search.
+
+¹ Automated tests complete; manual smoke (especially Resend in staging) pending — see [specs/02-admin-moderation.md](specs/02-admin-moderation.md) §9.
+
+### Shipped (platform foundation)
+
+Auth (phone OTP signup, password sign-in, JWT + httpOnly refresh cookie rotation, password reset, logout-everywhere), admin bootstrap, catalog seeds (8 categories, 27 governorates), Arabic RTL SPA with legal/support pages, full DB schema, structured logging + health probes, production Docker deploy on Render.
+
+**Routes:** `/`, `/login`, `/terms`, `/privacy`, `/safety`, `/support`, `/admin` (redirects to moderation)
 
 ### Shipped (Phase 01)
 
-- Phone OTP sign-up and **password** sign-in (JWT access token + httpOnly refresh cookie rotation)
-- Password reset via OTP; logout and logout-everywhere
-- Admin role guard and bootstrap admin account
-- Catalog seed data (8 categories, 27 governorates)
-- Arabic RTL SPA with legal and support pages
-- Full database schema (EF Core migrations)
-- Structured JSON logging, correlation IDs, `/health` + `/health/ready`, log-emitted metrics
-- Production Docker deploy on Render (single service: API + SPA)
+Lost/found report submission with category fields, hidden verification detail, contact-info blocking, quotas, photo pipeline (EXIF strip, WebP, R2), and normalized search column for Phase 03 browse.
+
+**Routes:** `/report/lost`, `/report/found`, `/my/reports`, `/my/reports/{id}`
+
+Details: [specs/01-report-submission.md](specs/01-report-submission.md)
 
 ### Shipped (Phase 02)
 
-**API**
+Admin FIFO moderation queue (approve/reject, keyword search), reporter edit/resubmit for rejected reports, category/field CRUD, in-app notification center (`ReportApproved` / `ReportRejected`), admin alert email outbox (Resend).
 
-- `POST /api/v1/reports` — create lost/found report (multipart: JSON + optional photos)
-- `GET /api/v1/reports/mine` — reporter's submissions
-- `GET /api/v1/reports/{id}` — report detail (reporter or admin only while pending)
-- `POST /api/v1/reports/{id}/withdraw` — withdraw while `Pending Review`
-- `GET /api/v1/uploads/report-photo/{id}/url` — signed photo URL (reporter/admin)
-- `GET /api/v1/categories` and `GET /api/v1/governorates` — cached catalog keys for forms
+**Routes:** `/admin/moderation`, `/admin/moderation/{id}`, `/admin/categories`, `/notifications` (+ My Reports Rejected/Published tabs)
 
-**Behavior**
-
-- Category-specific fields, hidden verification detail, contact-info blocking, submission quota (3/day), open-report cap (5)
-- Photo pipeline: EXIF strip, WebP thumbnails, R2 storage (`public/` / `private/` by category) with in-memory fallback when `Bucket__*` is unset
-- Normalized search column populated on write (ready for Phase 04 browse)
-
-**Web**
-
-- `/report/lost`, `/report/found` — submission forms with photo upload
-- `/my/reports`, `/my/reports/{id}` — list and detail (withdraw while pending)
-- Home CTAs for report submission; browse/search placeholder (Phase 04)
-
-**Tests**
-
-- Integration tests for auth, catalog, report submission/access/withdraw, and photo upload
-- Unit tests for validators, quota, normalizers, and image processing
-
-### Shipped (Phase 03)
-
-**API**
-
-- Admin moderation: queue, approve/reject, detail, keyword search (`Pending Review` / `Rejected` only)
-- Reporter edit (`PUT`) and resubmit (`POST`) for `Rejected` reports
-- Admin category and field CRUD (deactivate only; cache invalidation on write)
-- Notification center API (`GET`, unread count, mark read, read all)
-- Admin alert email outbox (Resend) on report submit and resubmit
-
-**Web**
-
-- `/admin/moderation`, `/admin/moderation/{id}` — FIFO queue, search, approve/reject
-- `/admin/categories` — category and field management
-- `/my/reports` — Pending Review, Rejected, and Published tabs; edit/resubmit on rejected
-- `/notifications` — notification center with unread badge in header
-
-**Tests**
-
-- `ModerationFlowTests`, `ReportResubmitTests`, `NotificationTests`, `CategoryAdminTests`, `ReportAdminAlertEmailTests`
+Details: [specs/02-admin-moderation.md](specs/02-admin-moderation.md)
 
 ### Not built yet
 
-Public browse/search, claims, chat, resolution, lifecycle jobs — see [phase specs](specs/README.md).
+Public browse/search, claims, chat, resolution, lifecycle jobs, abuse enforcement — see [phase specs](specs/README.md).
 
 ## Stack
 
@@ -98,7 +62,7 @@ web/           Angular SPA
 contracts/     Shared request/response DTOs
 api.Tests/     Integration and unit tests (Testcontainers)
 specs/         Product spec and phased implementation plans
-docs/          Deployment and operations
+docs/          Deployment, observability, and UI context
 ```
 
 ## Local run

@@ -1,7 +1,7 @@
-# Phase 08 - Trust, Safety & Launch Readiness
+# Phase 07 - Trust, Safety & Launch Readiness
 
 **Status:** Not started  
-**Prerequisites:** Phase 07 - Lifecycle, Retention & Account Management
+**Prerequisites:** Phase 06 - Lifecycle, Retention & Account Management
 
 ---
 
@@ -31,7 +31,7 @@ Complete v1 with abuse reporting, admin enforcement (takedown, ban, unban), admi
 
 ### Prior phases
 
-- [ ] Phases 01-07 complete
+- [ ] Platform foundation and Phases 01-06 complete
 
 ### Deferred decisions (Section 14)
 
@@ -77,8 +77,8 @@ Resolve **before starting** this phase:
 ### Database
 
 - `AbuseReport` with status `Open` -> `Resolved`, resolution outcome
-- Reuse Phase 01 `User.IsBanned`, `User.BanReason`; add `User.BannedAt` if not present
-- Enforcement calls `ReportLifecycleService`, `ClaimCleanupService` from Phase 07
+- Reuse platform foundation `User.IsBanned`, `User.BanReason`; add `User.BannedAt` if not present
+- Enforcement calls `ReportLifecycleService`, `ClaimCleanupService` from Phase 06
 
 ### Infrastructure
 
@@ -109,7 +109,7 @@ Full matrix audit - every row must be server-enforced before marking this phase 
 | Claim ended by enforcement | Affected party | this phase |
 | Abuse report resolved | Flagger | this phase |
 
-All prior notification types from Phases 03-07 must still pass regression.
+All prior notification types from Phases 02-06 must still pass regression.
 
 ---
 

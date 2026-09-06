@@ -52,12 +52,20 @@ A real product for real Egyptians — not a demo. Success is measured by **confi
 
 ---
 
+## Localization
+
+- Default language: Arabic (`ar`), RTL in `index.html`
+- Translation files: `web/src/assets/i18n/ar/` — `common`, `categories`, `governorates`, `errors`, `rejection-reasons`, `admin-moderation`, `admin-categories`, `notifications`, `pages`, `reports`
+- Catalog labels (categories, governorates) use English keys in the API; Arabic display strings live in i18n JSON
+
+---
+
 ## Global layout
 
 Every page shares a consistent shell:
 
 - **App shell:** header (logo, nav, login/logout, notifications badge) + footer (Terms, Privacy, Safety, Support)
-- **Admin shell:** separate admin header + navigation for admin tools
+- **Admin shell:** separate admin header + navigation for moderation and categories
 - **Mobile-first** — design for small screens first, scale up for desktop
 
 ---
@@ -66,20 +74,19 @@ Every page shares a consistent shell:
 
 | Page                                  | Purpose                                                                                     |
 | ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| **Home / Landing**                    | Hero, trust pillars, CTAs (report lost / report found; browse coming soon)                  |
-| **Login / Sign up / Forgot password** | Multi-step auth: phone → OTP → profile (signup) or password reset                           |
-| **Report lost**                       | Full form: category, details, location, photos, hidden verification detail, optional reward |
-| **Report found**                      | Same as lost + where the item is held                                                       |
-| **Report submitted (confirmation)**   | “Under review, usually within a day”                                                        |
+| **Home / Landing**                    | Hero, trust pillars, CTAs (report lost / report found)                                      |
+| **Auth (`/login`)**                   | Single page with tabs: sign-in, sign-up (phone → OTP → profile), forgot-password            |
+| **Report lost / found**               | Full form: category, details, location, photos, hidden verification detail, optional reward |
+| **Report form — confirmation**        | Inline state on the same route after submit (“under review, usually within a day”)          |
 | **My Reports**                        | Tabs: Pending review, Rejected, Published (more tabs planned)                               |
-| **My Report detail**                  | View report; rejection reason + resubmit form when rejected                                 |
-| **Notifications**                     | In-app notification center                                                                  |
-| **Terms**                             | Legal — static content page                                                                 |
-| **Privacy**                           | Legal — static content page                                                                 |
-| **Safety**                            | Safe handover tips, abuse reporting guidance                                                |
-| **Support**                           | Contact email, response expectations                                                        |
+| **My Report detail**                  | View report; withdraw while pending; rejection reason + resubmit when rejected              |
+| **Notifications**                     | In-app notification center (moderation events today)                                        |
+| **Terms / Privacy / Safety / Support**| Legal and support static pages                                                              |
 | **Admin — Moderation queue**          | Pending reports, search, FIFO list                                                          |
 | **Admin — Moderation review**         | Approve / reject with reason + note                                                         |
+| **Admin — Categories**                | Category and field management (`/admin/categories`)                                           |
+
+**Nav note:** Browse appears as a **disabled** header link until Phase 03 (no `/browse` route yet).
 
 ---
 
@@ -104,7 +111,7 @@ Every page shares a consistent shell:
 | **My Claims**                             | All claims the user submitted, with status                                           |
 | **My Chats**                              | All chat threads (active or read-only)                                               |
 | **Confirm resolution**                    | Both parties confirm the item was returned                                           |
-| **Withdraw report**                       | Reporter withdraws with optional reason                                              |
+| **Withdraw published report**             | Reporter withdraws `Published` report with optional reason (Phase 06)                |
 | **Flag / report listing**                 | Abuse reporting from browse or chat                                                  |
 | **Login prompt**                          | Modal or redirect when a logged-out user tries a protected action                    |
 
@@ -127,7 +134,6 @@ Every page shares a consistent shell:
 | **Abuse report queue**  | Review flagged listings                     |
 | **Abuse report detail** | Resolve: no action / takedown / ban user    |
 | **User lookup**         | Find user, view activity, ban / unban       |
-| **Category management** | Add, edit, deactivate categories and fields |
 
 ---
 

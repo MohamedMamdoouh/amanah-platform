@@ -12,10 +12,10 @@ Every request gets a correlation ID:
 
 | Field | Source |
 | ----- | ------ |
-| `requestId` | `X-Request-Id` header (generated if missing) |
-| `userId` | JWT subject claim (when authenticated) |
+| `requestId` | `X-Request-Id` header (generated if missing; echoed in response) |
+| `userId` | JWT subject on `http.request.completed` and `api.unhandled_error` when authenticated |
 
-The response echoes `X-Request-Id` so clients and support can correlate failures.
+The Angular SPA does not yet send `X-Request-Id`; the server generates one per request.
 
 ---
 
@@ -39,7 +39,7 @@ Health probe traffic (`GET /health`, `GET /health/ready`) is omitted from reques
 Examples (exact syntax may vary in Render UI):
 
 - **Errors:** level `Error` or `event` = `api.unhandled_error`
-- **Slow requests:** `event` = `http.request.completed` and `DurationMs` > 1000
+- **Slow requests:** `event` = `http.request.completed` and duration > 1000 ms (verify field name in Render before relying on a filter)
 - **Rate limits:** `event` = `metric` and `name` = `rate_limit.rejected`
 - **Trace a request:** `requestId` = `<value from X-Request-Id>`
 - **Report submissions:** `event` = `metric` and `name` = `report.submitted`
@@ -58,12 +58,12 @@ Metrics are emitted as structured log lines (`event: metric`) in Render log expl
 | `http.server.request.errors` | counter | HTTP 5xx responses |
 | `rate_limit.rejected` | counter | Rate limiter rejection |
 | `report.submitted` | counter | Report created successfully |
-| `upload.photo.completed` | counter | Photo upload succeeded |
-| `upload.photo.failed` | counter | Photo upload failed |
 | `sms.send.completed` | counter | OTP SMS sent |
 | `sms.send.failed` | counter | OTP SMS send failed |
 | `otp.outbox.backlog` | gauge | Pending OTP SMS outbox messages each poll |
 | `email.admin_alert.outbox.backlog` | gauge | Pending admin alert email outbox messages each poll |
+
+`upload.photo.completed` / `upload.photo.failed` are defined in `AppMetrics` but not yet instrumented at call sites.
 
 ---
 
@@ -72,7 +72,7 @@ Metrics are emitted as structured log lines (`event: metric`) in Render log expl
 | Endpoint | Purpose |
 | -------- | ------- |
 | `GET /health` | **Liveness** — process is up (always 200) |
-| `GET /health/ready` | **Readiness** — database + R2 (when configured) |
+| `GET /health/ready` | **Readiness** — database + R2 (when configured); returns **503** when unhealthy |
 
 Readiness returns JSON:
 
@@ -109,4 +109,4 @@ When keepalive fails, you’ll get a GitHub email with a link to the failed run.
 
 ## Upgrade path
 
-To add a metrics backend later (e.g. OpenTelemetry + Grafana Cloud), instrument at the `AmanahMetrics` call sites or add an exporter wrapper — log-based metrics already define the names and tags to preserve.
+To add a metrics backend later (e.g. OpenTelemetry + Grafana Cloud), instrument at the `AppMetrics` call sites or add an exporter wrapper — log-based metrics already define the names and tags to preserve.

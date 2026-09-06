@@ -1,7 +1,7 @@
-# Phase 03 - Admin Moderation
+# Phase 02 - Admin Moderation
 
 **Status:** Complete (API + Angular UI + automated tests). Manual smoke checklist (§9) not yet run in staging.  
-**Prerequisites:** Phase 02 - Report Submission
+**Prerequisites:** Phase 01 - Report Submission
 
 ---
 
@@ -22,7 +22,7 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 | Section 8    | Status transitions through `Published` / `Rejected`                             |
 | Section 9    | Admin private-photo access during review                                        |
 | Section 12   | `ModerationAction` audit persistence                                            |
-| Section 15.2 | Moderation acceptance criteria (except expiry - Phase 07)                       |
+| Section 15.2 | Moderation acceptance criteria (except expiry - Phase 06)                       |
 | Section 21   | Transactional email for admin alerts                                            |
 
 **Part II (technical):** Section 21 (email)
@@ -33,8 +33,8 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 
 ### Prior phases
 
-- [x] Phase 01 - Platform Foundation
-- [x] Phase 02 - Report Submission
+- [x] Platform foundation
+- [x] Phase 01 - Report Submission
 
 ### Deferred decisions (Section 14)
 
@@ -57,15 +57,19 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 | GET    | `/api/v1/admin/moderation/search`                | Keyword search incl. Pending/Rejected                    |
 | GET    | `/api/v1/admin/categories`                       | List all categories (incl. inactive)                     |
 | POST   | `/api/v1/admin/categories`                       | Add category                                             |
-| PUT    | `/api/v1/admin/categories/{id}`                  | Edit name, sort order, `photosPrivate`, active flag      |
+| PUT    | `/api/v1/admin/categories/{id}`                  | Edit `code`, sort order, `photosPrivate`, `isActive` (409 if `photosPrivate` changes when reports exist) |
 | POST   | `/api/v1/admin/categories/{id}/fields`           | Add field definition                                     |
 | PUT    | `/api/v1/admin/categories/{id}/fields/{fieldId}` | Edit field definition                                    |
 | POST   | `/api/v1/reports/{id}/resubmit`                  | Reporter resubmits `Rejected` report -> `Pending Review` |
-| PUT    | `/api/v1/reports/{id}`                           | Reporter edits `Rejected` report content                 |
+| PUT    | `/api/v1/reports/{id}`                           | Reporter edits `Rejected` report (`multipart/form-data`, same as create); returns **204** |
 | GET    | `/api/v1/notifications`                          | User notification list                                   |
 | GET    | `/api/v1/notifications/unread-count`             | Unread count for header badge                            |
 | PATCH  | `/api/v1/notifications/{id}/read`                | Mark notification read                                   |
 | POST   | `/api/v1/notifications/read-all`                 | Mark all read                                            |
+
+**HTTP status summary:** queue/search/categories GET → **200**; approve/reject/resubmit/withdraw/update/mark-read → **204**.
+
+**Rejection reason codes:** `rejection.unclear_photos`, `rejection.spam_or_scam`, `rejection.duplicate`, `rejection.insufficient_description`, `rejection.contact_info`, `rejection.prohibited_item`, `rejection.wrong_category`, `rejection.raw_id_number` (i18n in `rejection-reasons.json`).
 
 ### UI routes
 
@@ -100,7 +104,7 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 - Rejection reason enum (8 predefined reasons per Section 5.5)
 - Resubmit validation: re-run contact-info block, re-derive photo privacy on category change
 - Quota exemption: resubmit does not count against daily submission quota; open-cap exempt on resubmit
-- Admin moderation search reuses search column from Phase 02, scoped to include non-public statuses
+- Admin moderation search reuses search column from Phase 01, scoped to include non-public statuses
 
 ---
 
@@ -110,10 +114,10 @@ Server-enforce these matrix rows before marking this phase done:
 
 | Data                       | Roles granted access                                                        |
 | -------------------------- | --------------------------------------------------------------------------- |
-| Private photos             | Reporter (own), Admin (review only - enforcement investigation in Phase 08) |
+| Private photos             | Reporter (own), Admin (review only - enforcement investigation in Phase 07) |
 | Hidden verification detail | Reporter (own) only - Admin still **never** sees this                       |
 | All public report fields   | Reporter (own), Admin                                                       |
-| Withdrawal reason          | Reporter (own), Admin - enforced in Phase 02; regression only in this phase |
+| Withdrawal reason          | Reporter (own), Admin - enforced in Phase 01; regression only in this phase |
 | ModerationAction audit     | Admin only (no read API - writes only; vacuously enforced)                  |
 
 `Pending Review` and `Rejected` reports: not-found for everyone except reporter and admin.
@@ -135,14 +139,14 @@ Admin email (not in-app): new submission waiting in moderation queue (Resend out
 
 Explicitly deferred to later phases:
 
-- Public browse and search UI -> Phase 04
-- Claims -> Phase 05
-- Listing expiry warning and auto-expiry -> Phase 07
-- Rejected report 30-day deletion job -> Phase 07
-- Admin takedown and ban -> Phase 08
-- Abuse report queue -> Phase 08
-- Reporter withdraw while `Published` -> Phase 07
-- My Reports `claim_in_progress` tab -> Phase 05
+- Public browse and search UI -> Phase 03
+- Claims -> Phase 04
+- Listing expiry warning and auto-expiry -> Phase 06
+- Rejected report 30-day deletion job -> Phase 06
+- Admin takedown and ban -> Phase 07
+- Abuse report queue -> Phase 07
+- Reporter withdraw while `Published` -> Phase 06
+- My Reports `claim_in_progress` tab -> Phase 04
 
 ---
 
@@ -150,19 +154,19 @@ Explicitly deferred to later phases:
 
 From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission).
 
-- [x] **Approve flow:** approving a `Pending Review` report sets it to `Published` and it appears in public listings (API-level verification; browse UI in Phase 04)
+- [x] **Approve flow:** approving a `Pending Review` report sets it to `Published` and it appears in public listings (API-level verification; browse UI in Phase 03)
 - [x] **Reject flow:** rejecting sets the status to `Rejected` with the chosen reason and optional note, notifies the reporter, keeps the report and photos, and removes it from the moderation queue. The report is readable by its reporter and the admin, and its URL shows a not-found page to anyone else
 - [x] **Fix and resubmit:** editing and resubmitting a `Rejected` report sets it to `Pending Review`, does not consume the daily submission quota, does not require a free open-report slot, and re-runs the contact-info block
 - [x] **Resubmission cap:** after the 3rd resubmission is rejected, further resubmission of that report is refused with a clear message
 - [x] **Category change on resubmission:** changing a report's category to one with `photosPrivate` makes its existing photos private, and changing to one without makes them public
 - [x] **No editing outside `Rejected`:** content edit attempts are refused while the report is `Pending Review`, `Published`, `Claim In Progress`, or terminal (including reward flag/amount)
-- [x] **Rejected retention:** `ModerationAction` persists now; 30-day report+photo deletion job deferred to Phase 07
+- [x] **Rejected retention:** `ModerationAction` persists now; 30-day report+photo deletion job deferred to Phase 06
 
 **Deferred within v1:**
 
-- [ ] **Listing expiry warning** -> Phase 07
-- [ ] **Listing auto-expiry** -> Phase 07
-- [ ] **No expiry while in review** -> Phase 07 (verify `Pending Review`/`Rejected` never expire by design)
+- [ ] **Listing expiry warning** -> Phase 06
+- [ ] **Listing auto-expiry** -> Phase 06
+- [ ] **No expiry while in review** -> Phase 06 (verify `Pending Review`/`Rejected` never expire by design)
 
 ---
 
@@ -188,10 +192,10 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [ ] Approve report; reporter sees `ReportApproved` notification
 - [ ] Reject with reason; reporter sees rejection reason in My Reports Rejected tab
 - [ ] Reporter edits and resubmits rejected report
-- [ ] Admin manages categories at `/admin/categories`
+- [ ] Admin manages categories at `/admin/categories` (UI implemented; verify in staging)
 - [ ] Admin moderation search finds pending reports by keyword
 - [ ] Staging: Resend admin alert email received on submit and resubmit
 
 ### Phase exit gate
 
-Automated criteria and deliverables are complete. Run manual smoke (especially Resend in staging) before treating Phase 03 as production-ready. Update this doc when manual smoke passes.
+Automated criteria and deliverables are complete. Run manual smoke (especially Resend in staging) before treating Phase 02 as production-ready. Update this doc when manual smoke passes.

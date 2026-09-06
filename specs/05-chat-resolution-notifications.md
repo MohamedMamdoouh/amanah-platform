@@ -1,13 +1,13 @@
-# Phase 06 - Chat, Resolution & Notifications
+# Phase 05 - Chat, Resolution & Notifications
 
 **Status:** Not started  
-**Prerequisites:** Phase 05 - Claims & Verification
+**Prerequisites:** Phase 04 - Claims & Verification
 
 ---
 
 ## 1. Summary
 
-Activate real-time in-app chat via SignalR for approved claims, with text and photo attachments, safety banner, and message rate limits. Implement mutual Confirm Resolved flow (irrevocable confirmations) and claim cancellation before resolution. Complete the notification center with all remaining in-app event types including `NewChatMessage` with view-suppression. Chat threads become read-only on cancellation or resolution; 30-day deletion is deferred to Phase 07.
+Activate real-time in-app chat via SignalR for approved claims, with text and photo attachments, safety banner, and message rate limits. Implement mutual Confirm Resolved flow (irrevocable confirmations) and claim cancellation before resolution. Add **remaining** in-app notification event types (the notification center and moderation events shipped in [Phase 02](./02-admin-moderation.md)) including `NewChatMessage` with view-suppression. Chat threads become read-only on cancellation or resolution; 30-day deletion is deferred to Phase 06.
 
 ---
 
@@ -34,10 +34,10 @@ Activate real-time in-app chat via SignalR for approved claims, with text and ph
 
 ### Prior phases
 
-- [x] Phase 01 - Platform Foundation
-- [x] Phase 02 - Report Submission
-- [x] Phase 03 - Admin Moderation
-- [ ] Phase 05 - Claims & Verification (`ChatThread` records exist on approved claims)
+- [x] Platform foundation
+- [x] Phase 01 - Report Submission
+- [x] Phase 02 - Admin Moderation
+- [ ] Phase 04 - Claims & Verification (`ChatThread` records exist on approved claims)
 
 ### Deferred decisions (Section 14)
 
@@ -45,7 +45,7 @@ Resolve **before starting** this phase:
 
 | Item | Notes |
 | ---- | ----- |
-| SignalR event/payload contract | Define in `specs/signalr-contract.md` before starting this phase |
+| SignalR event/payload contract | Define before starting this phase (see [SPEC.md](./SPEC.md) Section 14) |
 
 ---
 
@@ -101,7 +101,7 @@ Server-enforce these matrix rows before marking this phase done:
 
 | Data | Approved claimant | Reporter | Admin |
 | ---- | ----------------- | -------- | ----- |
-| Chat thread | yes | yes | yes (flagged-listing investigation only - Phase 08) |
+| Chat thread | yes | yes | yes (flagged-listing investigation only - Phase 07) |
 | Claim text and photo | own + reporter | yes | investigation only |
 | Display names | yes | yes | yes |
 | Phone numbers | own | own | yes |
@@ -118,10 +118,10 @@ Chat messages are **not** subject to contact-info block (Section 4.1.3).
 | Counterparty confirmed resolution | Other party | this phase |
 | Report resolved | Both parties | this phase |
 | New chat message | Recipient | this phase |
-| Claim ended by enforcement | Affected party | deferred to Phase 08 |
-| Admin takedown affecting you | Reporter and claimant | deferred to Phase 08 |
+| Claim ended by enforcement | Affected party | deferred to Phase 07 |
+| Admin takedown affecting you | Reporter and claimant | deferred to Phase 07 |
 
-All previously introduced claim/report notifications from Phases 03-05 remain active.
+All previously introduced claim/report notifications from Phases 02-04 remain active.
 
 ---
 
@@ -129,10 +129,10 @@ All previously introduced claim/report notifications from Phases 03-05 remain ac
 
 Explicitly deferred to later phases:
 
-- 30-day chat deletion job -> Phase 07
-- Report-from-chat abuse shortcut -> Phase 08
-- Admin chat access during investigation -> Phase 08
-- Claim-ended-by-enforcement -> Phase 08
+- 30-day chat deletion job -> Phase 06
+- Report-from-chat abuse shortcut -> Phase 07
+- Admin chat access during investigation -> Phase 07
+- Claim-ended-by-enforcement -> Phase 07
 
 ---
 
@@ -148,7 +148,7 @@ From [SPEC.md Section 15.5](./SPEC.md#155-resolution-and-chat).
 
 **Deferred within v1:**
 
-- [ ] **Chat retention (30-day delete)** -> Phase 07
+- [ ] **Chat retention (30-day delete)** -> Phase 06
 
 From [SPEC.md Section 15.9](./SPEC.md#159-notifications).
 
