@@ -31,7 +31,7 @@
   transition: transform var(--transition-fast);
 }
 
-.header__mark svg {
+.header__mark :is(img, svg) {
   display: block;
 }
 

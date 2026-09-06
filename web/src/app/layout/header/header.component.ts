@@ -8,11 +8,20 @@ import { NotificationService } from '../../notifications/notification.service';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { LogoMarkComponent } from '../../shared/ui/logo-mark/logo-mark.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, TranslateModule, BadgeComponent, ButtonComponent, IconComponent],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    TranslateModule,
+    BadgeComponent,
+    ButtonComponent,
+    IconComponent,
+    LogoMarkComponent,
+  ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
 })

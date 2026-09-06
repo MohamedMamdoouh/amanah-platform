@@ -61,7 +61,7 @@
 }
 
 .info-card--highlight {
-  border-color: rgba(0, 77, 64, 0.2);
+  border-color: rgba(8, 96, 96, 0.2);
   background: linear-gradient(135deg, var(--color-accent-soft) 0%, var(--color-surface) 100%);
 }
 
@@ -148,7 +148,7 @@
   padding: var(--space-lg);
   background: linear-gradient(135deg, var(--color-accent-soft) 0%, var(--color-surface) 100%);
   color: var(--color-text);
-  border: 1px solid rgba(0, 77, 64, 0.16);
+  border: 1px solid rgba(8, 96, 96, 0.16);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }

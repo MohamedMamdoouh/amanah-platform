@@ -8,8 +8,8 @@ internal static class AdminAlertEmailTemplates
     private const string ColorSurface = "#ffffff";
     private const string ColorText = "#1a282b";
     private const string ColorTextMuted = "#5c6769";
-    private const string ColorPrimary = "#004d40";
-    private const string ColorWarm = "#c4a574";
+    private const string ColorPrimary = "#086060";
+    private const string ColorWarm = "#e0b890";
     private const string ColorBorder = "#d5dfdb";
     private const string ColorAccentSoft = "#e8f2ed";
 

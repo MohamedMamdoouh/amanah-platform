@@ -7,41 +7,7 @@
       (click)="closeMobileNav()"
     >
       <span class="header__mark" aria-hidden="true">
-        <svg
-          width="36"
-          height="36"
-          viewBox="0 0 32 32"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <rect width="32" height="32" rx="9" fill="var(--color-primary)" />
-          <path
-            d="M11 24.5V15.2c0-3.4 2.1-6.3 5-7.5"
-            stroke="var(--color-on-accent)"
-            stroke-width="2.6"
-            stroke-linecap="round"
-          />
-          <path
-            d="M21 24.5V15.2c0-3.4-2.1-6.3-5-7.5"
-            stroke="var(--color-on-accent)"
-            stroke-width="2.6"
-            stroke-linecap="round"
-          />
-          <path
-            d="M12.2 10.2c1.5-.9 3.3-1.35 5.1-1.1 1.8-.25 3.4.35 4.7 1.35"
-            stroke="var(--color-warm)"
-            stroke-width="1.6"
-            stroke-linecap="round"
-          />
-          <circle cx="16" cy="17.2" r="3.1" fill="var(--color-warm)" />
-          <circle
-            cx="17"
-            cy="16.4"
-            r="0.85"
-            fill="var(--color-on-accent)"
-            opacity="0.4"
-          />
-        </svg>
+        <app-logo-mark [size]="36" />
       </span>
       <span class="header__name">{{ "app.name" | translate }}</span>
     </a>

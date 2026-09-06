@@ -3,11 +3,12 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { ButtonComponent } from '../shared/ui/button/button.component';
 import { IconComponent } from '../shared/ui/icon/icon.component';
+import { LogoMarkComponent } from '../shared/ui/logo-mark/logo-mark.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [TranslateModule, ButtonComponent, IconComponent],
+  imports: [TranslateModule, ButtonComponent, IconComponent, LogoMarkComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })

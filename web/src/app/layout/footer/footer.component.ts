@@ -2,10 +2,12 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
+import { LogoMarkComponent } from '../../shared/ui/logo-mark/logo-mark.component';
+
 @Component({
   selector: 'app-footer',
   standalone: true,
-  imports: [RouterLink, TranslateModule],
+  imports: [RouterLink, TranslateModule, LogoMarkComponent],
   templateUrl: './footer.component.html',
   styleUrl: './footer.component.scss',
 })
