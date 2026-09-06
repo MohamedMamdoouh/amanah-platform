@@ -82,8 +82,21 @@ All jobs use Africa/Cairo day boundaries where applicable. Run on a configurable
 | `ChatRetention` | 30 days after read-only | Delete thread + messages |
 | `OtpCleanup` | 24h after expiry | Delete `OtpCode` rows |
 | `OtpSmsOutboxCleanup` | 30 days after `ProcessedAt` | Delete `Sent` and `Failed` rows from `otp_sms_outbox` (limit queries only need recent history) |
+| `AdminAlertEmailOutboxCleanup` | 30 days after `ProcessedAt` | Delete `Sent` and `Failed` rows from `admin_alert_email_outbox` |
 | `SessionCleanup` | 30 days after expiry/revoke | Delete `RefreshToken` rows |
 | `AccountDeletionPurge` | 30 days after deletion request | Purge direct PII; anonymize sender in messages |
+| `OrphanedStorageCleanup` | Daily (configurable) | Delete R2 objects under report photo prefixes with no matching `ReportPhoto` row (see below) |
+
+### Orphaned storage cleanup
+
+Report submit (`ReportPhotoAttachService`) uploads originals and thumbnails to R2 **before** `SaveChangesAsync`. If the DB write fails after storage succeeds, objects remain in the bucket with no database reference. Phase 02 does not roll back storage on DB failure.
+
+**Phase 07 deliverable:**
+
+1. **Immediate compensating delete (preferred on submit path):** on `SaveChangesAsync` failure after photo promotion, delete the keys written in that request before returning an error to the client.
+2. **Scheduled sweeper (`OrphanedStorageCleanup`):** daily job listing objects under `public/reports/` and `private/reports/` (or equivalent prefixes) and deleting any whose storage keys are not referenced by `ReportPhoto` (and not written within a short grace window, e.g. 1 hour, to avoid racing an in-flight submit).
+
+Implement both where practical: immediate cleanup limits orphan volume; the job is a backstop for partial failures and restarts.
 
 ### Shared utilities
 
@@ -91,6 +104,7 @@ All jobs use Africa/Cairo day boundaries where applicable. Run on a configurable
 - `ClaimCleanupService` - close pending claims on report withdrawal/expiry/takedown
 - `RetentionService` - entity-level deletion per Section 12
 - `AccountDeletionService` - blockers, cleanup side effects
+- `OrphanedStorageCleanup` - R2 keys with no `ReportPhoto` reference (backstop for failed report submits; see §4)
 
 ### Test harness (non-production)
 
@@ -169,6 +183,7 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [ ] Reporter can withdraw `Published` report (must cancel approved claim first)
 - [ ] Withdrawal closes pending claims; optional internal reason recorded
 - [ ] Timer pauses in `Claim In Progress`; resumes with remaining time on cancel
+- [ ] **Orphaned storage:** failed report submit does not leave permanent orphan objects in R2 (immediate delete on DB failure where possible; `OrphanedStorageCleanup` job removes any remaining unreferenced keys)
 
 ---
 
@@ -185,6 +200,7 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [ ] Account deletion blockers enforced
 - [ ] Account deletion cleanup side effects
 - [ ] OTP and session cleanup jobs
+- [ ] Orphaned R2 cleanup after simulated failed report submit (immediate + sweeper job)
 - [ ] `Pending Review`/`Rejected` never expire
 
 ### Manual smoke checklist

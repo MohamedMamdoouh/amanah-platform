@@ -570,7 +570,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 | Reporter never reviews claims                                   | Action-required in-app notifications + claim visibility in My Reports; **10-day auto-withdraw** of pending claims (6.3)                                                 |
 | Reunions never confirmed, so the primary metric undercounts     | Confirmation prompts in chat + counterparty-confirmed notification + optional withdrawal reasons (4.7)                                                                  |
 | Spam / fake accounts                                            | Phone OTP + bot check + admin review + daily quotas                                                                                                                     |
-| OTP cost / OTP bombing                                          | Bot check + per-phone send limits (5.1) + cost monitoring; Unimtx account balance |
+| OTP cost / OTP bombing                                          | Bot check + per-phone send limits (5.1) + cost monitoring; Unimtx account balance                                                                                       |
 | PII exposure (especially IDs)                                   | `photosPrivate` category photos private to reporter and admin only; no raw ID numbers; first name only, never a full name; photo metadata removed on upload             |
 | Contact info bypassing verification                             | Users posting phones/links in public fields to skip claim flow; mitigated by contact-pattern block (4.1.3) + admin rejection reason 5; chat exempt after claim approved |
 | Harassment / extortion via chat                                 | Listing-level abuse reporting (including from chat), safety guidance, anti-extortion Terms, admin ban capability, published support channel                             |
@@ -578,7 +578,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 | Moderation bottleneck                                           | Single-admin model accepted at low volume; email alerts on new submissions; monitor queue latency                                                                       |
 | Thin nationwide density                                         | Accepted at low traffic; monitor by governorate and revisit seeding strategy if needed                                                                                  |
 | PDPL cross-border transfer and missing correction/access rights | Disclosed in the Privacy Policy as accepted v1 gaps pending formal review                                                                                               |
-| Limited operational visibility                                  | Structured JSON logs + correlation IDs + log-emitted metrics on Render; GH Actions keepalive alerting; see [observability.md](../docs/observability.md) |
+| Limited operational visibility                                  | Structured JSON logs + correlation IDs + log-emitted metrics on Render; GH Actions keepalive alerting; see [observability.md](../docs/observability.md)                 |
 | Weak discovery with simple keyword search                       | Keyword search over title, description, category fields and area, with Arabic normalization                                                                             |
 | No link previews on shared URLs                                 | Accepted trade-off for v1                                                                                                                                               |
 
@@ -586,13 +586,14 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 
 ## 14. Deferred Decisions
 
-| Item                                          | Status                                                                                                               |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| OTP / SMS provider                            | **Done** - [Unimtx](https://www.unimtx.com/) via `UnimtxSmsSender` ([deployment.md](../docs/deployment.md)) |
-| API error contract appendix                   | **Resolved** - [00-api-conventions.md](./00-api-conventions.md)                                                      |
-| SignalR event/payload contract                | **Pending** before implementation                                                                                    |
-| Transactional email provider for admin alerts | **To be chosen** before launch                                                                                       |
-| Domain name                                   | **To be chosen** before launch                                                                                       |
+| Item                                          | Status                                                                                                                                                |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OTP / SMS provider                            | **Done** - [Unimtx](https://www.unimtx.com/) via `UnimtxSmsSender` ([deployment.md](../docs/deployment.md))                                           |
+| API error contract appendix                   | **Resolved** - [00-api-conventions.md](./00-api-conventions.md)                                                                                       |
+| SignalR event/payload contract                | **Pending** before implementation                                                                                                                     |
+| Transactional email provider for admin alerts | **Done** — [Resend](https://resend.com/) via `ResendAdminAlertEmailSender` ([deployment.md](../docs/deployment.md))                                   |
+| Orphaned R2 objects on failed report submit   | **Deferred — Phase 07** — compensating delete on DB failure + `OrphanedStorageCleanup` job ([07-lifecycle-retention.md](./07-lifecycle-retention.md)) |
+| Domain name                                   | **To be chosen** before launch                                                                                                                        |
 
 ---
 
@@ -731,7 +732,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `User`                    | normalized phone (`+20...`), display name, role, banned flag + reason, created-at                                                                                                                                                                                                                                                         |
 | `Category`                | code (English key), sort order, `photosPrivate` flag, active flag                                                                                                                                                                                                                                                                         |
-| `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`/`integer`), validation rules (min/max length or int, optional `textFormat` preset such as `letters_and_spaces`), required flag, sort order                                                                                                                                                                                                                                |
+| `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`/`integer`), validation rules (min/max length or int, optional `textFormat` preset such as `letters_and_spaces`), required flag, sort order                                                                                                                                             |
 | `Governorate`             | code (English key), sort order                                                                                                                                                                                                                                                                                                            |
 | `Report`                  | type (Lost/Found), category, title, description, date lost/found, governorate, area text, item-held location (found), status, reward flag/amount, hidden-detail text, withdrawal reason, resubmission count, normalized search text, published-at, published-seconds-elapsed, published-timer-resumed-at, expiry-warning-sent, timestamps |
 | `CategoryField`           | report ref, field key, value                                                                                                                                                                                                                                                                                                              |

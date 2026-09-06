@@ -17,6 +17,7 @@ public sealed class ReportService(
     IReportQuotaService quotaService,
     ReportPhotoAttachService photoAttachService,
     IBucketStorage bucketStorage,
+    AdminSubmissionAlertNotifier adminSubmissionAlertNotifier,
     TimeProvider timeProvider,
     AppMetrics metrics)
 {
@@ -207,6 +208,7 @@ public sealed class ReportService(
         }
 
         dbContext.Reports.Add(report);
+        adminSubmissionAlertNotifier.EnqueuePendingReview(report, category);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         metrics.RecordReportSubmitted();
@@ -516,6 +518,7 @@ public sealed class ReportService(
         report.ResubmissionCount += 1;
         report.UpdatedAt = now;
 
+        adminSubmissionAlertNotifier.EnqueuePendingReview(report, report.Category);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
     }

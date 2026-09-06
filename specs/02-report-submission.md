@@ -81,6 +81,7 @@ None additional - Phase 01 prerequisites must be complete.
 - Photos uploaded with report submit: `POST /api/v1/reports` accepts `multipart/form-data` (`report` JSON part + optional `photos` file parts); processed and stored in one request
 - WebP thumbnail generation on submit
 - Upload rate limiting on report create: 5/min, 20/hour per account (Section 7.5)
+- **Known gap (deferred):** photos are written to R2 before `SaveChangesAsync`. If the DB commit fails after storage succeeds, promoted objects are not deleted and no `Report` / `ReportPhoto` rows exist. Compensating cleanup is planned for **Phase 07** — see [07-lifecycle-retention.md](./07-lifecycle-retention.md#orphaned-storage-cleanup).
 - **Cache consumers:** `GET /api/v1/categories` and `GET /api/v1/governorates` use `ICacheService` with `CacheKeys.Categories` (1h TTL) and `CacheKeys.Governorates` (24h TTL)
 
 ### Shared utilities
@@ -141,6 +142,7 @@ Explicitly deferred to later phases:
 - Claims -> Phase 05
 - Listing expiry and auto-withdraw jobs -> Phase 07
 - Reporter withdraw while `Published` -> Phase 07
+- Orphaned R2 objects after failed report submit (DB commit after photo upload) -> Phase 07
 - In-app notifications -> Phase 03
 
 ---

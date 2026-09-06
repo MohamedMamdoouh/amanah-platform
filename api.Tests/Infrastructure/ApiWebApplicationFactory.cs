@@ -1,7 +1,7 @@
 using Amanah.Api.Services.Catalog;
+using Amanah.Api.Services.External;
 using Amanah.Api.Tests.Auth.Fakes;
 using Amanah.Api.Tests.Catalog;
-using Amanah.Api.Services.External;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -17,6 +17,8 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16").Build();
 
     public RecordingSmsSender SmsSender { get; } = new();
+
+    public RecordingAdminAlertEmailSender AdminAlertEmailSender { get; } = new();
 
     public FakeCaptchaVerifier CaptchaVerifier { get; } = new();
 
@@ -50,6 +52,10 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
                 ["RateLimit:Policies:photo-upload-hourly:PermitLimit"] = "1000",
                 ["RateLimit:Policies:photo-upload-hourly:WindowSeconds"] = "3600",
                 ["RateLimit:Policies:photo-upload-hourly:PartitionBy"] = "userId",
+                ["Email:ApiKey"] = "re_test",
+                ["Email:FromAddress"] = "Amanah <test@example.com>",
+                ["Email:AdminAlertTo"] = "admin@example.com",
+                ["Email:OutboxPollIntervalSeconds"] = "1",
             });
         });
 
@@ -57,10 +63,12 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
         {
             services.RemoveAll<ISmsSender>();
             services.RemoveAll<ICaptchaVerifier>();
+            services.RemoveAll<IAdminAlertEmailSender>();
             services.RemoveAll<ICategoryLoader>();
             services.RemoveAll<IGovernorateLoader>();
             services.AddSingleton<ISmsSender>(SmsSender);
             services.AddSingleton<ICaptchaVerifier>(CaptchaVerifier);
+            services.AddSingleton<IAdminAlertEmailSender>(AdminAlertEmailSender);
             services.AddScoped<CategoryLoader>();
             services.AddScoped<CountingCategoryLoader>(sp =>
                 new CountingCategoryLoader(sp.GetRequiredService<CategoryLoader>()));
@@ -76,6 +84,9 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
         SmsSender.SentMessages.Clear();
         SmsSender.ShouldThrow = false;
         SmsSender.ShouldTimeout = false;
+        AdminAlertEmailSender.SentAlerts.Clear();
+        AdminAlertEmailSender.ShouldThrow = false;
+        AdminAlertEmailSender.FailureStatusCode = null;
         CaptchaVerifier.ShouldSucceed = true;
 
         await _postgres.DisposeAsync();

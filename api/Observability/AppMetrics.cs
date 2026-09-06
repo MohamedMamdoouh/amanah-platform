@@ -45,6 +45,9 @@ public sealed class AppMetrics(ILogger<AppMetrics> logger)
 
     public void SetOtpOutboxBacklog(long count) => LogMetric("otp.outbox.backlog", count, "count");
 
+    public void SetAdminAlertEmailOutboxBacklog(long count) =>
+        LogMetric("email.admin_alert.outbox.backlog", count, "count");
+
     private static void LogMetric(
         ILogger logger,
         string name,
