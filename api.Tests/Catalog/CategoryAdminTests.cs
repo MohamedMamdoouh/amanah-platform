@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Amanah.Api.Data;
+using Amanah.Api.Data.Entities;
 using Amanah.Api.Data.Seeds;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Contracts.Responses.Auth;
@@ -141,6 +142,51 @@ public class CategoryAdminTests(ApiWebApplicationFactory factory) : IClassFixtur
         Assert.True(publicField.Required);
         Assert.Equal(3, publicField.MinLength);
         Assert.Equal(6, publicField.MaxLength);
+    }
+
+    [Fact]
+    public async Task Changing_photos_private_on_category_with_reports_returns_conflict()
+    {
+        await using var scope = await CreateSeededScopeAsync();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var client = factory.CreateClient();
+        await LoginAsAdminAsync(client);
+
+        var phones = await context.Categories.SingleAsync(category => category.Code == "phones");
+        var admin = await context.Users.SingleAsync(user => user.Role == UserRole.Admin);
+        var governorate = await context.Governorates.FirstAsync();
+
+        context.Reports.Add(new Report
+        {
+            Id = Guid.NewGuid(),
+            ReporterId = admin.Id,
+            Type = ReportType.Lost,
+            CategoryId = phones.Id,
+            Title = "Lost phone that needs a title",
+            Description = "A description long enough to satisfy the report schema.",
+            DateLostOrFound = new DateOnly(2026, 9, 1),
+            GovernorateId = governorate.Id,
+            HiddenDetail = "hidden verification detail",
+            Status = ReportStatus.PendingReview,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        });
+        await context.SaveChangesAsync();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/admin/categories/{phones.Id}",
+            new UpdateCategoryRequest
+            {
+                Code = phones.Code,
+                SortOrder = phones.SortOrder,
+                PhotosPrivate = true,
+                IsActive = phones.Active,
+            });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        await context.Entry(phones).ReloadAsync();
+        Assert.False(phones.PhotosPrivate);
     }
 
     [Fact]

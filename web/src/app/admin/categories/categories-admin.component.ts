@@ -29,10 +29,10 @@ type FieldFormValue = {
   type: string;
   required: boolean;
   sortOrder: number;
-  minLength: string;
-  maxLength: string;
-  minInt: string;
-  maxInt: string;
+  minLength: string | number | null;
+  maxLength: string | number | null;
+  minInt: string | number | null;
+  maxInt: string | number | null;
   textFormat: string;
 };
 
@@ -344,11 +344,20 @@ export class CategoriesAdminComponent implements OnInit {
     return request;
   }
 
-  private parseOptionalInt(value: string): number | null {
+  private parseOptionalInt(value: string | number | null | undefined): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? Math.trunc(value) : null;
+    }
+
     const trimmed = value.trim();
     if (!trimmed) {
       return null;
     }
+
     const parsed = Number.parseInt(trimmed, 10);
     return Number.isNaN(parsed) ? null : parsed;
   }
