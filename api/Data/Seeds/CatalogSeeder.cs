@@ -14,7 +14,20 @@ public sealed class CatalogSeeder(
     {
         await SeedCategoriesAsync(cancellationToken);
         await SeedGovernoratesAsync(cancellationToken);
-        await SeedAdminUserAsync(cancellationToken);
+        await SeedBootstrapUserAsync(
+            "ADMIN_PHONE",
+            "ADMIN_PASSWORD",
+            UserRole.Admin,
+            "Admin",
+            promoteExistingUser: true,
+            cancellationToken);
+        await SeedBootstrapUserAsync(
+            "SEED_USER_PHONE",
+            "SEED_USER_PASSWORD",
+            UserRole.User,
+            "User",
+            promoteExistingUser: false,
+            cancellationToken);
     }
 
     private async Task SeedCategoriesAsync(CancellationToken cancellationToken)
@@ -95,32 +108,38 @@ public sealed class CatalogSeeder(
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task SeedAdminUserAsync(CancellationToken cancellationToken)
+    private async Task SeedBootstrapUserAsync(
+        string phoneConfigKey,
+        string passwordConfigKey,
+        UserRole role,
+        string defaultDisplayName,
+        bool promoteExistingUser,
+        CancellationToken cancellationToken)
     {
-        var adminPhone = configuration["ADMIN_PHONE"];
-        if (string.IsNullOrWhiteSpace(adminPhone))
+        var phone = configuration[phoneConfigKey];
+        if (string.IsNullOrWhiteSpace(phone))
         {
-            logger.LogDebug("ADMIN_PHONE is not set; skipping admin bootstrap.");
+            logger.LogDebug("{PhoneConfigKey} is not set; skipping {Role} bootstrap.", phoneConfigKey, role);
             return;
         }
 
-        var adminPassword = configuration["ADMIN_PASSWORD"];
-        if (string.IsNullOrWhiteSpace(adminPassword))
+        var password = configuration[passwordConfigKey];
+        if (string.IsNullOrWhiteSpace(password))
         {
-            logger.LogWarning("ADMIN_PASSWORD is not set; skipping admin bootstrap.");
+            logger.LogWarning("{PasswordConfigKey} is not set; skipping {Role} bootstrap.", passwordConfigKey, role);
             return;
         }
 
-        if (!PhoneNormalizer.TryNormalize(adminPhone, out var normalizedPhone))
+        if (!PhoneNormalizer.TryNormalize(phone, out var normalizedPhone))
         {
-            logger.LogWarning("ADMIN_PHONE is invalid; skipping admin bootstrap.");
+            logger.LogWarning("{PhoneConfigKey} is invalid; skipping {Role} bootstrap.", phoneConfigKey, role);
             return;
         }
 
-        var existingAdmin = await context.Users
-            .AnyAsync(user => user.NormalizedPhone == normalizedPhone && user.Role == UserRole.Admin, cancellationToken);
+        var existingUserWithRole = await context.Users
+            .AnyAsync(user => user.NormalizedPhone == normalizedPhone && user.Role == role, cancellationToken);
 
-        if (existingAdmin)
+        if (existingUserWithRole)
         {
             return;
         }
@@ -130,24 +149,34 @@ public sealed class CatalogSeeder(
 
         if (existingUser is not null)
         {
-            existingUser.Role = UserRole.Admin;
-            existingUser.DisplayName ??= "Admin";
+            if (!promoteExistingUser)
+            {
+                logger.LogDebug(
+                    "User with phone {Phone} already exists with role {ExistingRole}; skipping {Role} bootstrap.",
+                    normalizedPhone,
+                    existingUser.Role,
+                    role);
+                return;
+            }
+
+            existingUser.Role = role;
+            existingUser.DisplayName ??= defaultDisplayName;
         }
         else
         {
-            var adminUser = new User
+            var user = new User
             {
                 NormalizedPhone = normalizedPhone,
-                DisplayName = "Admin",
-                Role = UserRole.Admin,
+                DisplayName = defaultDisplayName,
+                Role = role,
                 CreatedAt = DateTimeOffset.UtcNow,
                 PasswordHash = string.Empty,
             };
-            adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, adminPassword);
-            context.Users.Add(adminUser);
+            user.PasswordHash = passwordHasher.HashPassword(user, password);
+            context.Users.Add(user);
         }
 
         await context.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Admin user bootstrapped for phone {Phone}.", normalizedPhone);
+        logger.LogInformation("{Role} user bootstrapped for phone {Phone}.", role, normalizedPhone);
     }
 }

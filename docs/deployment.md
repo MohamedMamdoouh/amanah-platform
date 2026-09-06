@@ -59,6 +59,8 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 | `TURNSTILE_SITE_KEY` | Yes (Docker build arg) | Turnstile site key in Angular build |
 | `ADMIN_PHONE` | Yes | Bootstrap admin phone (`+20...`) |
 | `ADMIN_PASSWORD` | Yes | Bootstrap admin password (≥8 chars) |
+| `SEED_USER_PHONE` | No | Optional bootstrap normal user for staging/dev (`+20...`); omit in production |
+| `SEED_USER_PASSWORD` | No | Optional bootstrap normal user password (≥8 chars); omit in production |
 | `Bucket__Endpoint` | Yes* | R2 S3 API endpoint |
 | `Bucket__AccessKey` | Yes* | R2 access key ID |
 | `Bucket__SecretKey` | Yes* | R2 secret access key |

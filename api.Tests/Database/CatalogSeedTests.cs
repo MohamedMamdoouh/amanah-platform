@@ -12,6 +12,7 @@ namespace Amanah.Api.Tests.Database;
 public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
   private const string AdminPhone = "+201011111111";
+  private const string SeedUserPhone = "+201022222222";
 
   [Fact]
   public async Task Full_schema_migration_applies_on_database_with_auth_migration()
@@ -122,6 +123,47 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
   }
 
   [Fact]
+  public async Task Seed_bootstraps_normal_user_from_seed_user_phone_and_password()
+  {
+    await RunWithSeededContextAsync(async context =>
+    {
+      PhoneNormalizer.TryNormalize(SeedUserPhone, out var normalizedPhone);
+
+      var user = await context.Users
+        .SingleAsync(u => u.NormalizedPhone == normalizedPhone);
+
+      Assert.Equal(UserRole.User, user.Role);
+      Assert.Equal("User", user.DisplayName);
+      Assert.False(string.IsNullOrWhiteSpace(user.PasswordHash));
+    });
+  }
+
+  [Fact]
+  public async Task Seeded_normal_user_can_login_with_seed_user_password()
+  {
+    await using var scope = factory.Services.CreateAsyncScope();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await context.Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<CatalogSeeder>().SeedAsync();
+
+    var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+    {
+      HandleCookies = true,
+    });
+
+    await using var authContext = new OtpSendTestContext(
+      client,
+      factory.SmsSender,
+      factory.CaptchaVerifier,
+      factory.Services.CreateAsyncScope());
+
+    var (response, session) = await authContext.LoginAsync("01022222222", "UserPass123");
+
+    Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+    Assert.Equal("User", session?.User.Role);
+  }
+
+  [Fact]
   public async Task Documents_ids_first_name_field_has_letters_and_spaces_text_format()
   {
     await RunWithSeededContextAsync(async context =>
@@ -147,6 +189,8 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
     Assert.Equal(8, await context.Categories.CountAsync());
     Assert.Equal(27, await context.Governorates.CountAsync());
     Assert.Equal(1, await context.Users.CountAsync(user => user.Role == UserRole.Admin));
+    Assert.Equal(1, await context.Users.CountAsync(user => user.Role == UserRole.User));
+    Assert.Equal(2, await context.Users.CountAsync());
   }
 
   [Fact]

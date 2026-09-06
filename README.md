@@ -79,6 +79,13 @@ cd web && npm install && npm start
 
 Connection string: `api/appsettings.Development.json`. Production env var names: `.env.example`. SMS uses `ConsoleSmsSender` in Development (OTP printed to the API console). Object storage falls back to in-memory when `Bucket__Endpoint` is unset.
 
+On first startup, migrations and catalog seed run automatically (8 categories, 27 governorates). Dev accounts are bootstrapped from `appsettings.Development.json`:
+
+| Account | Phone (login) | Password | Unlocks |
+| ------- | ------------- | -------- | ------- |
+| Admin | `01011111111` | `AdminPass123` | `/admin/moderation`, `/admin/categories` |
+| User | `01022222222` | `UserPass123` | `/report/lost`, `/report/found`, `/my/reports` |
+
 ## Tests
 
 Requires **Docker** (Testcontainers). Integration tests start **PostgreSQL 16** (`postgres:16`) per test factory — same engine and Npgsql provider as local dev and Supabase production.
