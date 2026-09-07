@@ -28,6 +28,11 @@ public sealed record ResultError(
         string code = ErrorCodes.NotFound) =>
         new(code, message, StatusCodes.Status404NotFound);
 
+    public static ResultError Gone(
+        string message,
+        string code = ErrorCodes.Unavailable) =>
+        new(code, message, StatusCodes.Status410Gone);
+
     public static ResultError Conflict(
         string message,
         string code = ErrorCodes.Conflict) =>

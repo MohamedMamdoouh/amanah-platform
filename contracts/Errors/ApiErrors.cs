@@ -22,6 +22,7 @@ public static class ErrorCodes
     public const string Unauthorized = "auth.unauthorized";
     public const string Forbidden = "auth.forbidden";
     public const string NotFound = "resource.not_found";
+    public const string Unavailable = "resource.unavailable";
     public const string NotImplemented = "resource.not_implemented";
     public const string Conflict = "resource.conflict";
     public const string OtpCooldown = "otp.cooldown";

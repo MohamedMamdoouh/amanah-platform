@@ -74,5 +74,12 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
             .HasForeignKey<Resolution>(resolution => resolution.ReportId);
 
         builder.HasIndex(report => new { report.Status, report.CreatedAt });
+
+        builder.HasIndex(report => report.NormalizedSearchText, "IX_reports_NormalizedSearchText_trgm")
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
+
+        builder.HasIndex(report => new { report.Status, report.PublishedAt })
+            .IsDescending(false, true);
     }
 }
