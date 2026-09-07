@@ -1,3 +1,161 @@
+using Amanah.Api.Data;
+using Amanah.Api.Data.Entities;
+using Amanah.Api.Models.Errors;
+using Amanah.Api.Services.Storage;
+using Amanah.Api.Utilities.Common;
+using Amanah.Contracts.Requests.Browse;
+using Amanah.Contracts.Responses.Browse;
+using Microsoft.EntityFrameworkCore;
+
 namespace Amanah.Api.Services.Browse;
 
-public sealed class BrowseService;
+public sealed class BrowseService(
+    AppDbContext dbContext,
+    IBucketStorage bucketStorage)
+{
+    public async Task<Result<PaginatedResponse<PublicReportSummaryResponse>>> ListReportsAsync(
+        BrowseReportsQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var page = query.Page;
+        var pageSize = query.PageSize;
+
+        IQueryable<Report> reportsQuery = dbContext.Reports
+            .AsNoTracking()
+            .Include(report => report.Category)
+            .Include(report => report.Governorate)
+            .Include(report => report.Reporter)
+            .Include(report => report.Photos)
+            .Where(report =>
+                report.Status == ReportStatus.Published
+                || report.Status == ReportStatus.ClaimInProgress);
+
+        var terms = ArabicNormalizer.BuildSearchTerms(query.Q ?? string.Empty);
+        foreach (var term in terms)
+        {
+            reportsQuery = reportsQuery.Where(report =>
+                report.NormalizedSearchText != null
+                && report.NormalizedSearchText.Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Category))
+        {
+            var categoryCode = query.Category.Trim();
+            reportsQuery = reportsQuery.Where(report => report.Category.Code == categoryCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Governorate))
+        {
+            var governorateCode = query.Governorate.Trim();
+            reportsQuery = reportsQuery.Where(report => report.Governorate.Code == governorateCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Type))
+        {
+            if (!TryParseReportType(query.Type, out var reportType))
+            {
+                return ResultError.BadRequest(
+                    "Please correct the errors in the form.",
+                    errors: new Dictionary<string, string[]>
+                    {
+                        ["type"] = ["Type must be lost or found."],
+                    });
+            }
+
+            reportsQuery = reportsQuery.Where(report => report.Type == reportType);
+        }
+
+        if (query.DateFrom.HasValue)
+        {
+            reportsQuery = reportsQuery.Where(report => report.DateLostOrFound >= query.DateFrom.Value);
+        }
+
+        if (query.DateTo.HasValue)
+        {
+            reportsQuery = reportsQuery.Where(report => report.DateLostOrFound <= query.DateTo.Value);
+        }
+
+        var totalCount = await reportsQuery.CountAsync(cancellationToken);
+
+        var reports = await reportsQuery
+            .OrderByDescending(report => report.PublishedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var totalPages = totalCount == 0
+            ? 0
+            : (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return new PaginatedResponse<PublicReportSummaryResponse>
+        {
+            Items = [.. reports.Select(ToPublicSummary)],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalPages,
+        };
+    }
+
+    private PublicReportSummaryResponse ToPublicSummary(Report report)
+    {
+        var firstPhoto = report.Photos
+            .OrderBy(photo => photo.SortOrder)
+            .FirstOrDefault();
+
+        return new PublicReportSummaryResponse
+        {
+            Id = report.Id,
+            Type = ToApiType(report.Type),
+            Status = ToApiStatus(report.Status),
+            Title = report.Title,
+            CategoryCode = report.Category.Code,
+            GovernorateCode = report.Governorate.Code,
+            PublishedAt = report.PublishedAt,
+            HasReward = report.HasReward,
+            RewardAmount = report.RewardAmount,
+            ReporterDisplayName = report.Reporter.DisplayName ?? string.Empty,
+            ThumbnailUrl = report.Category.PhotosPrivate || firstPhoto?.ThumbnailStorageKey is null
+                ? null
+                : bucketStorage.GetPublicUrl(firstPhoto.ThumbnailStorageKey),
+            AreaText = report.AreaText,
+        };
+    }
+
+    private static string ToApiType(ReportType type) =>
+        type switch
+        {
+            ReportType.Lost => "lost",
+            ReportType.Found => "found",
+            _ => type.ToString().ToLowerInvariant(),
+        };
+
+    private static string ToApiStatus(ReportStatus status) =>
+        status switch
+        {
+            ReportStatus.PendingReview => "pending_review",
+            ReportStatus.Rejected => "rejected",
+            ReportStatus.Published => "published",
+            ReportStatus.ClaimInProgress => "claim_in_progress",
+            ReportStatus.Resolved => "resolved",
+            ReportStatus.Withdrawn => "withdrawn",
+            ReportStatus.RemovedByAdmin => "removed_by_admin",
+            _ => status.ToString().ToLowerInvariant(),
+        };
+
+    private static bool TryParseReportType(string type, out ReportType reportType)
+    {
+        switch (type.Trim().ToLowerInvariant())
+        {
+            case "lost":
+                reportType = ReportType.Lost;
+                return true;
+            case "found":
+                reportType = ReportType.Found;
+                return true;
+            default:
+                reportType = default;
+                return false;
+        }
+    }
+}
