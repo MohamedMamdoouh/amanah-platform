@@ -27,4 +27,18 @@ public sealed class PublicReportsController(BrowseService browseService) : Contr
         var result = await browseService.ListReportsAsync(query, cancellationToken);
         return result.ToActionResult();
     }
+
+    [HttpGet("{id:guid}/public")]
+    [EndpointName(nameof(GetPublicReport))]
+    [EndpointSummary("Get public report detail by ID.")]
+    [ProducesResponseType(typeof(PublicReportDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status410Gone)]
+    public async Task<IActionResult> GetPublicReport(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await browseService.GetPublicDetailAsync(id, cancellationToken);
+        return result.ToActionResult();
+    }
 }

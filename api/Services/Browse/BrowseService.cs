@@ -5,6 +5,7 @@ using Amanah.Api.Services.Storage;
 using Amanah.Api.Utilities.Common;
 using Amanah.Contracts.Requests.Browse;
 using Amanah.Contracts.Responses.Browse;
+using Amanah.Contracts.Responses.Reports;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Services.Browse;
@@ -95,6 +96,102 @@ public sealed class BrowseService(
             TotalCount = totalCount,
             TotalPages = totalPages,
         };
+    }
+
+    public Task<Result<PublicReportDetailResponse>> GetPublicDetailAsync(
+        Guid reportId,
+        CancellationToken cancellationToken = default) =>
+        GetPublicDetailAsync(reportId, expectedType: null, cancellationToken);
+
+    public Task<Result<PublicReportDetailResponse>> GetLostDetailAsync(
+        Guid reportId,
+        CancellationToken cancellationToken = default) =>
+        GetPublicDetailAsync(reportId, ReportType.Lost, cancellationToken);
+
+    public Task<Result<PublicReportDetailResponse>> GetFoundDetailAsync(
+        Guid reportId,
+        CancellationToken cancellationToken = default) =>
+        GetPublicDetailAsync(reportId, ReportType.Found, cancellationToken);
+
+    private async Task<Result<PublicReportDetailResponse>> GetPublicDetailAsync(
+        Guid reportId,
+        ReportType? expectedType,
+        CancellationToken cancellationToken)
+    {
+        var report = await dbContext.Reports
+            .AsNoTracking()
+            .Include(report => report.Category)
+            .Include(report => report.Governorate)
+            .Include(report => report.Reporter)
+            .Include(report => report.CategoryFields)
+            .Include(report => report.Photos)
+            .SingleOrDefaultAsync(report => report.Id == reportId, cancellationToken);
+
+        if (report is null)
+        {
+            return ResultError.NotFound("Report not found.");
+        }
+
+        if (expectedType.HasValue && report.Type != expectedType.Value)
+        {
+            return ResultError.NotFound("Report not found.");
+        }
+
+        return ResolvePublicAccess(report.Status) switch
+        {
+            PublicAccessOutcome.NotFound => ResultError.NotFound("Report not found."),
+            PublicAccessOutcome.Unavailable => ResultError.Gone("This report is no longer available."),
+            _ => ToPublicDetail(report),
+        };
+    }
+
+    private PublicReportDetailResponse ToPublicDetail(Report report) =>
+        new()
+        {
+            Id = report.Id,
+            Type = ToApiType(report.Type),
+            Status = ToApiStatus(report.Status),
+            Title = report.Title,
+            CategoryCode = report.Category.Code,
+            GovernorateCode = report.Governorate.Code,
+            PublishedAt = report.PublishedAt,
+            Description = report.Description,
+            DateLostOrFound = report.DateLostOrFound,
+            AreaText = report.AreaText,
+            HeldLocation = report.HeldLocation,
+            HasReward = report.HasReward,
+            RewardAmount = report.RewardAmount,
+            ReporterDisplayName = report.Reporter.DisplayName ?? string.Empty,
+            CategoryFields = report.CategoryFields
+                .OrderBy(field => field.FieldKey)
+                .ToDictionary(field => field.FieldKey, field => field.Value),
+            Photos = report.Photos
+                .OrderBy(photo => photo.SortOrder)
+                .Select(photo => new ReportPhotoResponse
+                {
+                    Id = photo.Id,
+                    ThumbnailUrl = report.Category.PhotosPrivate || photo.ThumbnailStorageKey is null
+                        ? null
+                        : bucketStorage.GetPublicUrl(photo.ThumbnailStorageKey),
+                    SortOrder = photo.SortOrder,
+                })
+                .ToList(),
+        };
+
+    private static PublicAccessOutcome ResolvePublicAccess(ReportStatus status) =>
+        status switch
+        {
+            ReportStatus.Published or ReportStatus.ClaimInProgress => PublicAccessOutcome.Allowed,
+            ReportStatus.Resolved or ReportStatus.Withdrawn or ReportStatus.RemovedByAdmin
+                => PublicAccessOutcome.Unavailable,
+            _ => PublicAccessOutcome.NotFound,
+        };
+
+    private enum PublicAccessOutcome
+    {
+        Allowed,
+        NotFound,
+        Unavailable,
     }
 
     private PublicReportSummaryResponse ToPublicSummary(Report report)
