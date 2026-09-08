@@ -1,0 +1,14 @@
+{
+  "browse.title": "تصفح البلاغات",
+  "browse.placeholder": "صفحة التصفح قيد الإعداد. ستتمكن قريباً من البحث والتصفية هنا.",
+  "browse.detail.placeholder_title": "تفاصيل البلاغ",
+  "browse.detail.placeholder": "صفحة التفاصيل العامة قيد الإعداد.",
+  "browse.not_found.title": "البلاغ غير موجود",
+  "browse.not_found.lead": "قد يكون الرابط غير صحيح، أو أن البلاغ لم يُنشر بعد، أو أنه غير متاح للعرض العام.",
+  "browse.not_found.cta": "تصفح البلاغات",
+  "browse.not_found.home": "العودة للرئيسية",
+  "browse.unavailable.title": "البلاغ غير متاح",
+  "browse.unavailable.lead": "هذا البلاغ كان منشوراً سابقاً لكنه لم يعد متاحاً — ربما تم حله أو سحبه أو إزالته.",
+  "browse.unavailable.cta": "تصفح البلاغات",
+  "browse.unavailable.home": "العودة للرئيسية"
+}

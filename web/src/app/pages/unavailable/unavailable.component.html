@@ -1,0 +1,18 @@
+<article class="info-page page-container">
+  <header class="info-page__masthead">
+    <div class="error-page__icon" aria-hidden="true">
+      <app-icon name="shield" size="lg" />
+    </div>
+    <h1>{{ 'browse.unavailable.title' | translate }}</h1>
+    <p class="info-page__lead">{{ 'browse.unavailable.lead' | translate }}</p>
+  </header>
+
+  <div class="error-page__actions">
+    <app-button variant="primary" [routerLink]="'/browse'">
+      {{ 'browse.unavailable.cta' | translate }}
+    </app-button>
+    <app-button variant="outline" [routerLink]="'/'">
+      {{ 'browse.unavailable.home' | translate }}
+    </app-button>
+  </div>
+</article>

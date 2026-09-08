@@ -1,0 +1,19 @@
+.public-report-detail__header {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding-block: var(--space-xl);
+}
+
+.public-report-detail__header h1 {
+  margin: 0 0 var(--space-sm);
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.public-report-detail__lead {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: var(--line-height-base);
+}

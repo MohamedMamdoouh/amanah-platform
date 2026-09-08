@@ -3,6 +3,7 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Utilities.Common;
+using Amanah.Api.Utilities.Reports;
 using Amanah.Contracts.Requests.Browse;
 using Amanah.Contracts.Responses.Browse;
 using Amanah.Contracts.Responses.Reports;
@@ -32,12 +33,7 @@ public sealed class BrowseService(
                 || report.Status == ReportStatus.ClaimInProgress);
 
         var terms = ArabicNormalizer.BuildSearchTerms(query.Q ?? string.Empty);
-        foreach (var term in terms)
-        {
-            reportsQuery = reportsQuery.Where(report =>
-                report.NormalizedSearchText != null
-                && report.NormalizedSearchText.Contains(term));
-        }
+        reportsQuery = reportsQuery.WhereMatchesAllSearchTerms(terms);
 
         if (!string.IsNullOrWhiteSpace(query.Category))
         {

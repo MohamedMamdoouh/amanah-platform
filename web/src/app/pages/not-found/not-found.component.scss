@@ -1,0 +1,19 @@
+@use '../shared/legal-page';
+
+.error-page__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: var(--space-md);
+  color: var(--color-primary);
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-full);
+}
+
+.error-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}

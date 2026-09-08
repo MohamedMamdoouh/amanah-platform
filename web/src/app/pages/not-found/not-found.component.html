@@ -1,0 +1,18 @@
+<article class="info-page page-container">
+  <header class="info-page__masthead">
+    <div class="error-page__icon" aria-hidden="true">
+      <app-icon name="search" size="lg" />
+    </div>
+    <h1>{{ 'browse.not_found.title' | translate }}</h1>
+    <p class="info-page__lead">{{ 'browse.not_found.lead' | translate }}</p>
+  </header>
+
+  <div class="error-page__actions">
+    <app-button variant="primary" [routerLink]="'/browse'">
+      {{ 'browse.not_found.cta' | translate }}
+    </app-button>
+    <app-button variant="outline" [routerLink]="'/'">
+      {{ 'browse.not_found.home' | translate }}
+    </app-button>
+  </div>
+</article>

@@ -6,13 +6,17 @@ import { ModerationReviewComponent } from './admin/moderation/moderation-review.
 import { CategoriesAdminComponent } from './admin/categories/categories-admin.component';
 import { authGuard, guestGuard, adminGuard } from './auth/auth.guards';
 import { LoginComponent } from './auth/login/login.component';
+import { BrowseComponent } from './browse/browse.component';
+import { PublicReportDetailComponent } from './browse/public-report-detail.component';
 import { HomeComponent } from './home/home.component';
 import { AppShellComponent } from './layout/app-shell/app-shell.component';
 import { NotificationsComponent } from './notifications/notifications.component';
+import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { PrivacyComponent } from './pages/privacy/privacy.component';
 import { SafetyComponent } from './pages/safety/safety.component';
 import { SupportComponent } from './pages/support/support.component';
 import { TermsComponent } from './pages/terms/terms.component';
+import { UnavailableComponent } from './pages/unavailable/unavailable.component';
 import { MyReportsComponent } from './reports/my-reports/my-reports.component';
 import { ReportDetailComponent } from './reports/report-detail/report-detail.component';
 import { ReportFormComponent } from './reports/report-form/report-form.component';
@@ -23,6 +27,19 @@ export const routes: Routes = [
     component: AppShellComponent,
     children: [
       { path: '', component: HomeComponent },
+      { path: 'browse', component: BrowseComponent },
+      {
+        path: 'lost/:id',
+        component: PublicReportDetailComponent,
+        data: { type: 'lost' },
+      },
+      {
+        path: 'found/:id',
+        component: PublicReportDetailComponent,
+        data: { type: 'found' },
+      },
+      { path: 'not-found', component: NotFoundComponent },
+      { path: 'unavailable', component: UnavailableComponent },
       { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
       {
         path: 'report/lost',

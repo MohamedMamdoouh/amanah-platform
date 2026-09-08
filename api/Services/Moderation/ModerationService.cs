@@ -4,6 +4,7 @@ using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Services.Reports;
 using Amanah.Api.Utilities.Common;
+using Amanah.Api.Utilities.Reports;
 using Amanah.Api.Utilities.Notifications;
 using Amanah.Contracts.Requests.Admin;
 using Amanah.Contracts.Responses.Admin;
@@ -51,12 +52,7 @@ public sealed class ModerationService(
                 report.Status == ReportStatus.PendingReview
                 || report.Status == ReportStatus.Rejected);
 
-        foreach (var term in terms)
-        {
-            reportsQuery = reportsQuery.Where(report =>
-                report.NormalizedSearchText != null
-                && report.NormalizedSearchText.Contains(term));
-        }
+        reportsQuery = reportsQuery.WhereMatchesAllSearchTerms(terms);
 
         var reports = await reportsQuery
             .OrderByDescending(report => report.CreatedAt)
