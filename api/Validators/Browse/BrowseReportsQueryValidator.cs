@@ -19,7 +19,7 @@ public sealed class BrowseReportsQueryValidator : AbstractValidator<BrowseReport
 
         RuleFor(query => query.Type)
             .Must(type => string.IsNullOrWhiteSpace(type)
-                || AllowedTypes.Contains(type.Trim(), StringComparer.Ordinal))
+                || AllowedTypes.Contains(type.Trim(), StringComparer.OrdinalIgnoreCase))
             .WithMessage("Type must be lost or found.");
 
         RuleFor(query => query.DateTo)
