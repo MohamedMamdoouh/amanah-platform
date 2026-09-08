@@ -1,6 +1,174 @@
 <section class="browse page-container" aria-labelledby="browse-title">
-  <header class="browse__header">
-    <h1 id="browse-title">{{ 'browse.title' | translate }}</h1>
-    <p class="browse__lead">{{ 'browse.placeholder' | translate }}</p>
-  </header>
+  <app-page-header
+    [title]="'browse.title' | translate"
+    [intro]="'browse.intro' | translate"
+  />
+
+  <div class="browse__toolbar">
+    <app-form-field
+      class="browse__search"
+      [label]="'browse.search_label' | translate"
+      htmlFor="browse-search"
+    >
+      <app-search-input
+        id="browse-search"
+        [formControl]="searchControl"
+        [placeholder]="'browse.search_placeholder' | translate"
+        [ariaLabel]="'browse.search_label' | translate"
+      />
+    </app-form-field>
+
+    <div
+      class="browse__filters"
+      [attr.aria-label]="'browse.filters_label' | translate"
+    >
+      <label class="form-field browse__filter">
+        <span class="form-label">{{
+          "browse.filter_category" | translate
+        }}</span>
+        <select
+          class="form-input"
+          [value]="filters().category"
+          (change)="onFilterChange('category', $any($event.target).value)"
+        >
+          <option value="">{{ "browse.filter_all" | translate }}</option>
+          @for (category of catalog().categories; track category.code) {
+            <option [value]="category.code">
+              {{ categoryLabel(category.code) }}
+            </option>
+          }
+        </select>
+      </label>
+
+      <label class="form-field browse__filter">
+        <span class="form-label">{{
+          "browse.filter_governorate" | translate
+        }}</span>
+        <select
+          class="form-input"
+          [value]="filters().governorate"
+          (change)="onFilterChange('governorate', $any($event.target).value)"
+        >
+          <option value="">{{ "browse.filter_all" | translate }}</option>
+          @for (governorate of catalog().governorates; track governorate.code) {
+            <option [value]="governorate.code">
+              {{ governorateLabel(governorate.code) }}
+            </option>
+          }
+        </select>
+      </label>
+
+      <label class="form-field browse__filter">
+        <span class="form-label">{{ "browse.filter_type" | translate }}</span>
+        <select
+          class="form-input"
+          [value]="filters().type"
+          (change)="onFilterChange('type', $any($event.target).value)"
+        >
+          <option value="">{{ "browse.filter_type_all" | translate }}</option>
+          <option value="lost">
+            {{ "browse.filter_type_lost" | translate }}
+          </option>
+          <option value="found">
+            {{ "browse.filter_type_found" | translate }}
+          </option>
+        </select>
+      </label>
+
+      <label class="form-field browse__filter">
+        <span class="form-label">{{
+          "browse.filter_date_from" | translate
+        }}</span>
+        <input
+          class="form-input"
+          type="date"
+          [value]="filters().dateFrom"
+          (change)="onFilterChange('dateFrom', $any($event.target).value)"
+        />
+      </label>
+
+      <label class="form-field browse__filter">
+        <span class="form-label">{{
+          "browse.filter_date_to" | translate
+        }}</span>
+        <input
+          class="form-input"
+          type="date"
+          [value]="filters().dateTo"
+          (change)="onFilterChange('dateTo', $any($event.target).value)"
+        />
+      </label>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <app-loading-indicator
+      class="browse__loading"
+      [label]="'browse.loading' | translate"
+    />
+  } @else if (error()) {
+    <app-alert variant="error">{{ error() }}</app-alert>
+  } @else if (items().length === 0) {
+    <app-empty-state [title]="'browse.empty' | translate" />
+  } @else {
+    @if (totalCount() > 0) {
+      <p class="browse__summary">
+        {{
+          "browse.results_count"
+            | translate
+              : {
+                  count: totalCount(),
+                  page: currentPage(),
+                  pages: totalPages(),
+                }
+        }}
+      </p>
+    }
+
+    <ul class="browse__list">
+      @for (report of items(); track report.id) {
+        <li>
+          <app-listing-card
+            [title]="report.title"
+            [typeLabel]="typeLabel(report.type)"
+            [subtitle]="
+              categoryLabel(report.categoryCode) +
+              ' · ' +
+              governorateLabel(report.governorateCode)
+            "
+            [location]="report.areaText ?? null"
+            [date]="(report.publishedAt | date: 'medium') ?? ''"
+            [imageUrl]="report.thumbnailUrl ?? null"
+            [badgeLabel]="
+              report.status === 'claim_in_progress'
+                ? statusLabel(report.status)
+                : null
+            "
+            [badgeVariant]="badgeVariant(report.status)"
+            [routerLink]="detailRoute(report)"
+            [actionLabel]="'browse.view_detail' | translate"
+          />
+        </li>
+      }
+    </ul>
+
+    @if (totalPages() > 1) {
+      <nav
+        class="browse__pagination"
+        [attr.aria-label]="'browse.pagination_label' | translate"
+      >
+        @for (page of pageNumbers(); track page) {
+          <button
+            type="button"
+            class="browse__page"
+            [class.browse__page--active]="page === currentPage()"
+            [attr.aria-current]="page === currentPage() ? 'page' : null"
+            (click)="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+        }
+      </nav>
+    }
+  }
 </section>
