@@ -8,7 +8,7 @@ Implementation specs for Amanah, in recommended reading order. Authoritative **b
 | 00 | [00-api-conventions.md](./00-api-conventions.md) | API error envelope, status codes, versioning | Reference |
 | 01 | [01-report-submission.md](./01-report-submission.md) | Lost/found report creation | Complete |
 | 02 | [02-admin-moderation.md](./02-admin-moderation.md) | Moderation queue, resubmit, categories, notifications | Complete (manual smoke pending) |
-| 03 | [03-browse-discovery.md](./03-browse-discovery.md) | Browse, search, filters | Not started |
+| 03 | [03-browse-discovery.md](./03-browse-discovery.md) | Browse, search, filters | Complete |
 | 04 | [04-claims-verification.md](./04-claims-verification.md) | Claims and ownership verification | Not started |
 | 05 | [05-chat-resolution-notifications.md](./05-chat-resolution-notifications.md) | Chat, resolution (+ remaining notification events) | Not started |
 | 06 | [06-lifecycle-retention.md](./06-lifecycle-retention.md) | Expiry, retention, account deletion | Not started |

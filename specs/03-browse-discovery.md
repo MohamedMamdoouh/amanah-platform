@@ -1,6 +1,6 @@
 # Phase 03 - Browse & Discovery
 
-**Status:** Not started  
+**Status:** Complete  
 **Prerequisites:** Phase 02 - Admin Moderation
 
 ---
@@ -129,18 +129,18 @@ Explicitly deferred to later phases:
 
 From [SPEC.md Section 15.3](./SPEC.md#153-browse-search-visibility-and-urls).
 
-- [ ] **Listing scope:** browse and filter requests return `Published` and `Claim In Progress` reports and nothing else
-- [ ] **Claim In Progress presentation:** a `Claim In Progress` report is publicly readable, labelled as having a claim in progress, and its claim action is unavailable
-- [ ] **Search behavior:** a query matches only reports where every query word appears, in any order and case-insensitively, across title, description, public category field values, and area text, after Arabic normalization - so a query using a bare alef, a haa in place of taa marbuta, tatweel, or no diacritics still matches the equivalent stored text
-- [ ] **Filters:** category, governorate, type, and date range combine with the keyword query using AND
-- [ ] **URL behavior:** `Resolved`, `Withdrawn`, and `Removed by Admin` show a permanently-unavailable page; `Pending Review` and `Rejected` show a not-found page to everyone but their reporter and the admin; missing IDs and wrong-type links show a not-found page
+- [x] **Listing scope:** browse and filter requests return `Published` and `Claim In Progress` reports and nothing else
+- [x] **Claim In Progress presentation:** a `Claim In Progress` report is publicly readable, labelled as having a claim in progress, and its claim action is unavailable
+- [x] **Search behavior:** a query matches only reports where every query word appears, in any order and case-insensitively, across title, description, public category field values, and area text, after Arabic normalization - so a query using a bare alef, a haa in place of taa marbuta, tatweel, or no diacritics still matches the equivalent stored text
+- [x] **Filters:** category, governorate, type, and date range combine with the keyword query using AND
+- [x] **URL behavior:** `Resolved`, `Withdrawn`, and `Removed by Admin` show a permanently-unavailable page; `Pending Review` and `Rejected` show a not-found page to everyone but their reporter and the admin; missing IDs and wrong-type links show a not-found page
 
 **Additional phase gate:**
 
-- [ ] Sort: newest published first
-- [ ] Pagination: 20 per page, numbered pages
-- [ ] Logged-out visitors see same content as logged-in on public reports
-- [ ] Claim and message action stubs prompt login when logged out (full message/chat in Phase 05)
+- [x] Sort: newest published first
+- [x] Pagination: 20 per page, numbered pages
+- [x] Logged-out visitors see same content as logged-in on public reports
+- [x] Claim and message action stubs prompt login when logged out (full message/chat in Phase 05)
 
 ---
 
@@ -148,22 +148,22 @@ From [SPEC.md Section 15.3](./SPEC.md#153-browse-search-visibility-and-urls).
 
 ### Automated tests
 
-- [ ] Browse returns only `Published` and `Claim In Progress`
-- [ ] Arabic normalization search: alef variants, taa marbuta/haa, tatweel, diacritics
-- [ ] All-terms AND logic
-- [ ] Filters combine with keyword (AND)
-- [ ] Pagination and sort order
-- [ ] URL status routing (not-found, permanently-unavailable)
-- [ ] Private photos and hidden detail never in public API responses
-- [ ] Wrong-type URL (`/lost/{id}` for found report) -> not-found
+- [x] Browse returns only `Published` and `Claim In Progress`
+- [x] Arabic normalization search: alef variants, taa marbuta/haa, tatweel, diacritics
+- [x] All-terms AND logic
+- [x] Filters combine with keyword (AND)
+- [x] Pagination and sort order
+- [x] URL status routing (not-found, permanently-unavailable)
+- [x] Private photos and hidden detail never in public API responses
+- [x] Wrong-type URL (`/lost/{id}` for found report) -> not-found
 
 ### Manual smoke checklist
 
-- [ ] Browse as logged-out visitor; search and filter work
-- [ ] Open `/lost/{id}` and `/found/{id}` for published report
-- [ ] `Claim In Progress` report shows label; claim button disabled/prompts login
-- [ ] Resolved report URL shows permanently-unavailable page
-- [ ] Pending report URL shows not-found to other users
+- [x] Browse as logged-out visitor; search and filter work
+- [x] Open `/lost/{id}` and `/found/{id}` for published report
+- [x] `Claim In Progress` report shows label; claim button disabled/prompts login
+- [x] Resolved report URL shows permanently-unavailable page
+- [x] Pending report URL shows not-found to other users
 
 ### Phase exit gate
 

@@ -14,6 +14,8 @@ namespace Amanah.Api.Tests.Browse;
 
 public static class BrowseTestHelpers
 {
+    private static int _defaultPublishedAtSequence;
+
     public static HttpClient CreateAnonymousClient(ApiWebApplicationFactory factory) =>
         factory.CreateClient(new WebApplicationFactoryClientOptions
         {
@@ -123,6 +125,7 @@ public static class BrowseTestHelpers
 
         var categoryFieldValues = options.CategoryFields.Values.ToList();
         var now = options.Timestamp ?? DateTimeOffset.UtcNow;
+        var publishedAt = options.PublishedAt ?? DefaultPublishedAtForStatus(options.Status);
 
         var report = new Report
         {
@@ -140,7 +143,7 @@ public static class BrowseTestHelpers
             Status = options.Status,
             HasReward = options.HasReward,
             RewardAmount = options.RewardAmount,
-            PublishedAt = options.PublishedAt,
+            PublishedAt = publishedAt,
             CreatedAt = now,
             UpdatedAt = now,
             NormalizedSearchText = SearchTextBuilder.Build(
@@ -181,6 +184,15 @@ public static class BrowseTestHelpers
         return report.Id;
     }
 
+    private static DateTimeOffset? DefaultPublishedAtForStatus(ReportStatus status) =>
+        status is ReportStatus.PendingReview or ReportStatus.Rejected
+            ? null
+            : NextDefaultPublishedAt();
+
+    private static DateTimeOffset NextDefaultPublishedAt() =>
+        new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero)
+            .AddSeconds(Interlocked.Increment(ref _defaultPublishedAtSequence));
+
     public sealed class SeedReportOptions
     {
         public ReportStatus Status { get; init; } = ReportStatus.Published;
@@ -204,7 +216,7 @@ public static class BrowseTestHelpers
 
         public string HiddenDetail { get; init; } = "Contains a photo of my family inside.";
 
-        public DateTimeOffset? PublishedAt { get; init; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset? PublishedAt { get; init; }
 
         public DateTimeOffset? Timestamp { get; init; }
 

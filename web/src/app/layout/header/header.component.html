@@ -21,9 +21,13 @@
       >
         {{ "nav.home" | translate }}
       </a>
-      <span class="header__link header__link--disabled" aria-disabled="true">
+      <a
+        routerLink="/browse"
+        class="header__link"
+        routerLinkActive="header__link--active"
+      >
         {{ "nav.browse" | translate }}
-      </span>
+      </a>
       <a
         routerLink="/safety"
         class="header__link"
@@ -118,9 +122,14 @@
     >
       {{ "nav.home" | translate }}
     </a>
-    <span class="header__drawer-link header__drawer-link--disabled">{{
-      "nav.browse" | translate
-    }}</span>
+    <a
+      routerLink="/browse"
+      class="header__drawer-link"
+      routerLinkActive="header__drawer-link--active"
+      (click)="closeMobileNav()"
+    >
+      {{ "nav.browse" | translate }}
+    </a>
     <a
       routerLink="/safety"
       class="header__drawer-link"

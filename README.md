@@ -11,9 +11,10 @@ Lost-and-found platform for Egypt — moderated listings, ownership verification
 | —     | Platform foundation (auth, sessions, deploy, seeds)         | **Complete** |
 | 01    | Report submission                                           | **Complete** |
 | 02    | Admin moderation (queue, resubmit, categories, email)       | **Complete**¹ |
-| 03–07 | Browse, claims, chat, lifecycle, trust & safety             | Not started  |
+| 03    | Browse & discovery (search, filters, public detail)         | **Complete** |
+| 04–07 | Claims, chat, lifecycle, trust & safety                     | Not started  |
 
-**Next up:** Phase 03 — public browse and search.
+**Next up:** Phase 04 — claims and ownership verification.
 
 ¹ Automated tests complete; manual smoke (especially Resend in staging) pending — see [specs/02-admin-moderation.md](specs/02-admin-moderation.md) §9.
 
@@ -21,7 +22,7 @@ Lost-and-found platform for Egypt — moderated listings, ownership verification
 
 Auth (phone OTP signup, password sign-in, JWT + httpOnly refresh cookie rotation, password reset, logout-everywhere), admin bootstrap, catalog seeds (8 categories, 27 governorates), Arabic RTL SPA with legal/support pages, full DB schema, structured logging + health probes, production Docker deploy on Render.
 
-**Routes:** `/`, `/login`, `/terms`, `/privacy`, `/safety`, `/support`, `/admin` (redirects to moderation)
+**Routes:** `/`, `/browse`, `/login`, `/terms`, `/privacy`, `/safety`, `/support`, `/admin` (redirects to moderation)
 
 ### Shipped (Phase 01)
 
@@ -39,9 +40,17 @@ Admin FIFO moderation queue (approve/reject, keyword search), reporter edit/resu
 
 Details: [specs/02-admin-moderation.md](specs/02-admin-moderation.md)
 
+### Shipped (Phase 03)
+
+Public browse listing with Arabic keyword search, filters, pagination, and status-aware public detail pages (`/lost/{id}`, `/found/{id}`) with not-found and permanently-unavailable routing. Claim and message action stubs prompt login (full flows in Phases 04–05).
+
+**Routes:** `/browse`, `/lost/{id}`, `/found/{id}`, `/not-found`, `/unavailable`
+
+Details: [specs/03-browse-discovery.md](specs/03-browse-discovery.md)
+
 ### Not built yet
 
-Public browse/search, claims, chat, resolution, lifecycle jobs, abuse enforcement — see [phase specs](specs/README.md).
+Claims, chat, resolution, lifecycle jobs, abuse enforcement — see [phase specs](specs/README.md).
 
 ## Stack
 
