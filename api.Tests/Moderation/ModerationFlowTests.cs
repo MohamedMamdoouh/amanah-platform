@@ -234,6 +234,26 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
     }
 
     [Fact]
+    public async Task Search_with_thousands_of_terms_stays_responsive()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var (_, created) = await context.SubmitReportAsync(
+            TestReportHelpers.BuildValidLostRequest(title: "Unique sapphire wallet"));
+        Assert.NotNull(created);
+
+        await LoginAsAdminAsync(context);
+
+        var terms = string.Join('+', Enumerable.Repeat("sapphire", 3000));
+        var response = await context.Client.GetAsync(
+            $"/api/v1/admin/moderation/search?q={terms}");
+        var body = await response.Content.ReadFromJsonAsync<ModerationSearchResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Contains(body.Items, item => item.Id == created.Id);
+    }
+
+    [Fact]
     public async Task Search_does_not_return_published_reports()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);

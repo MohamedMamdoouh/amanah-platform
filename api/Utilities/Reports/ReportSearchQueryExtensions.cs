@@ -5,11 +5,13 @@ namespace Amanah.Api.Utilities.Reports;
 
 public static class ReportSearchQueryExtensions
 {
+    public const int MaxSearchTerms = 24;
+
     public static IQueryable<Report> WhereMatchesAllSearchTerms(
         this IQueryable<Report> query,
         IEnumerable<string> terms)
     {
-        foreach (var term in terms)
+        foreach (var term in terms.Take(MaxSearchTerms))
         {
             var pattern = $"%{term}%";
             query = query.Where(report =>
