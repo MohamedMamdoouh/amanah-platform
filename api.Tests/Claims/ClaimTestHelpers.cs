@@ -10,6 +10,7 @@ using Amanah.Api.Tests.Reports;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Auth;
+using Amanah.Contracts.Responses.Browse;
 using Amanah.Contracts.Responses.Claims;
 using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
@@ -150,6 +151,34 @@ public static class ClaimTestHelpers
 
     public static async Task<HttpResponseMessage> RejectClaimAsync(HttpClient client, Guid claimId) =>
         await client.PostAsync($"/api/v1/claims/{claimId}/reject", null);
+
+    public static async Task<HttpResponseMessage> WithdrawClaimAsync(HttpClient client, Guid claimId) =>
+        await client.PostAsync($"/api/v1/claims/{claimId}/withdraw", null);
+
+    public static async Task<(HttpResponseMessage Response, ClaimDetailResponse? Body)> GetClaimAsync(
+        HttpClient client,
+        Guid claimId)
+    {
+        var response = await client.GetAsync($"/api/v1/claims/{claimId}");
+        ClaimDetailResponse? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<ClaimDetailResponse>()
+            : null;
+
+        return (response, body);
+    }
+
+    public static async Task<(HttpResponseMessage Response, PaginatedResponse<MyClaimSummaryResponse>? Body)> GetMyClaimsAsync(
+        HttpClient client,
+        int page = 1,
+        int pageSize = 20)
+    {
+        var response = await client.GetAsync($"/api/v1/claims/mine?page={page}&pageSize={pageSize}");
+        PaginatedResponse<MyClaimSummaryResponse>? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<PaginatedResponse<MyClaimSummaryResponse>>()
+            : null;
+
+        return (response, body);
+    }
 
     public static void AuthenticateReporter(HttpClient client, ReportTestContext context) =>
         Authenticate(client, context.Session.AccessToken);

@@ -6,6 +6,7 @@ using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Notifications;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
+using Amanah.Contracts.Responses.Browse;
 using Amanah.Contracts.Responses.Claims;
 using Microsoft.EntityFrameworkCore;
 
@@ -252,6 +253,126 @@ public sealed class ClaimService(
         return Result.Ok();
     }
 
+    public async Task<Result> WithdrawAsync(
+        Guid claimId,
+        Guid claimantId,
+        CancellationToken cancellationToken = default)
+    {
+        var claim = await dbContext.Claims
+            .Include(existingClaim => existingClaim.Report)
+            .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
+
+        if (claim is null || claim.ClaimantId != claimantId)
+        {
+            return ResultError.NotFound("Claim not found.");
+        }
+
+        if (claim.Status != ClaimStatus.Pending)
+        {
+            return ResultError.Conflict("Only pending claims can be withdrawn.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        claim.Status = ClaimStatus.Withdrawn;
+        claim.ReviewedAt = now;
+        claim.CountsAsFailure = false;
+
+        dbContext.Notifications.Add(CreateNotification(
+            claim.Report.ReporterId,
+            NotificationTypes.ClaimWithdrawnByClaimant,
+            new NotificationPayload(
+                NotificationTypes.ClaimWithdrawnByClaimant,
+                now,
+                DeepLink: $"/my/reports/{claim.ReportId}",
+                ReportId: claim.ReportId),
+            now));
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result.Ok();
+    }
+
+    public async Task<Result<PaginatedResponse<MyClaimSummaryResponse>>> GetMineAsync(
+        Guid claimantId,
+        MyClaimsQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        if (query.Page < 1)
+        {
+            return ResultError.BadRequest(
+                "Please correct the errors in the form.",
+                errors: new Dictionary<string, string[]>
+                {
+                    ["page"] = ["Page must be at least 1."],
+                });
+        }
+
+        if (query.PageSize is < 1 or > 50)
+        {
+            return ResultError.BadRequest(
+                "Please correct the errors in the form.",
+                errors: new Dictionary<string, string[]>
+                {
+                    ["pageSize"] = ["Page size must be between 1 and 50."],
+                });
+        }
+
+        var claimsQuery = dbContext.Claims
+            .AsNoTracking()
+            .Include(claim => claim.Report)
+            .ThenInclude(report => report.Reporter)
+            .Where(claim => claim.ClaimantId == claimantId);
+
+        var totalCount = await claimsQuery.CountAsync(cancellationToken);
+
+        var claims = await claimsQuery
+            .OrderByDescending(claim => claim.SubmittedAt)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync(cancellationToken);
+
+        var totalPages = totalCount == 0
+            ? 0
+            : (int)Math.Ceiling(totalCount / (double)query.PageSize);
+
+        return new PaginatedResponse<MyClaimSummaryResponse>
+        {
+            Items = claims.Select(ToMyClaimSummary).ToList(),
+            Page = query.Page,
+            PageSize = query.PageSize,
+            TotalCount = totalCount,
+            TotalPages = totalPages,
+        };
+    }
+
+    public async Task<Result<ClaimDetailResponse>> GetByIdAsync(
+        Guid claimId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var claim = await dbContext.Claims
+            .AsNoTracking()
+            .Include(existingClaim => existingClaim.Report)
+            .ThenInclude(report => report.Reporter)
+            .Include(existingClaim => existingClaim.Claimant)
+            .Include(existingClaim => existingClaim.ChatThread)
+            .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
+
+        if (claim is null)
+        {
+            return ResultError.NotFound("Claim not found.");
+        }
+
+        var isClaimant = claim.ClaimantId == userId;
+        var isReporter = claim.Report.ReporterId == userId;
+        if (!isClaimant && !isReporter)
+        {
+            return ResultError.NotFound("Claim not found.");
+        }
+
+        return ToClaimDetail(claim);
+    }
+
     private static Notification CreateNotification(
         Guid userId,
         string type,
@@ -272,6 +393,60 @@ public sealed class ClaimService(
         ReportType.Lost => $"/lost/{report.Id}",
         ReportType.Found => $"/found/{report.Id}",
         _ => $"/reports/{report.Id}",
+    };
+
+    private static ClaimDetailResponse ToClaimDetail(Claim claim) =>
+        new()
+        {
+            Id = claim.Id,
+            Status = MapClaimStatus(claim.Status),
+            SubmittedAnswer = claim.SubmittedAnswer,
+            HasPhoto = !string.IsNullOrWhiteSpace(claim.PhotoStorageKey),
+            SubmittedAt = claim.SubmittedAt,
+            ReviewedAt = claim.ReviewedAt,
+            ReviewerDecision = claim.ReviewerDecision,
+            DecisionReason = claim.DecisionReason,
+            AttemptNumber = claim.AttemptNumber,
+            ChatThreadId = claim.ChatThread?.Id,
+            ReportId = claim.ReportId,
+            ReportType = MapReportType(claim.Report.Type),
+            ReportStatus = MapReportStatus(claim.Report.Status),
+            ReportTitle = claim.Report.Title,
+            ClaimantDisplayName = claim.Claimant.DisplayName ?? string.Empty,
+            ReporterDisplayName = claim.Report.Reporter.DisplayName ?? string.Empty,
+        };
+
+    private static MyClaimSummaryResponse ToMyClaimSummary(Claim claim) =>
+        new()
+        {
+            Id = claim.Id,
+            Status = MapClaimStatus(claim.Status),
+            SubmittedAt = claim.SubmittedAt,
+            ReviewedAt = claim.ReviewedAt,
+            DecisionReason = claim.DecisionReason,
+            ReportId = claim.ReportId,
+            ReportType = MapReportType(claim.Report.Type),
+            ReportTitle = claim.Report.Title,
+            ReporterDisplayName = claim.Report.Reporter.DisplayName ?? string.Empty,
+        };
+
+    private static string MapReportType(ReportType type) => type switch
+    {
+        ReportType.Lost => "lost",
+        ReportType.Found => "found",
+        _ => type.ToString().ToLowerInvariant(),
+    };
+
+    private static string MapReportStatus(ReportStatus status) => status switch
+    {
+        ReportStatus.PendingReview => "pending_review",
+        ReportStatus.Rejected => "rejected",
+        ReportStatus.Published => "published",
+        ReportStatus.ClaimInProgress => "claim_in_progress",
+        ReportStatus.Resolved => "resolved",
+        ReportStatus.Withdrawn => "withdrawn",
+        ReportStatus.RemovedByAdmin => "removed_by_admin",
+        _ => status.ToString().ToLowerInvariant(),
     };
 
     private static string MapClaimStatus(ClaimStatus status) => status switch

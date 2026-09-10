@@ -9,4 +9,6 @@ public static class NotificationTypes
     public const string ClaimApproved = "ClaimApproved";
 
     public const string ClaimRejected = "ClaimRejected";
+
+    public const string ClaimWithdrawnByClaimant = "ClaimWithdrawnByClaimant";
 }
