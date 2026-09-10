@@ -54,6 +54,12 @@ public static class ErrorCodes
     public const string ReportContactInfo = "report.contact_info";
     public const string ReportResubmitCap = "report.resubmit_cap";
 
+    public const string ClaimDailyQuota = "claim.daily_quota";
+    public const string ClaimAttemptLimit = "claim.attempt_limit";
+    public const string ClaimPendingExists = "claim.pending_exists";
+    public const string ClaimOwnReport = "claim.own_report";
+    public const string ClaimInvalidStatus = "claim.invalid_status";
+
     public const string UploadInvalidFormat = "upload.invalid_format";
     public const string UploadTooLarge = "upload.too_large";
     public const string UploadStorageFailed = "upload.storage_failed";

@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddCategoryAdminServices();
         services.AddEmailServices(configuration);
         services.AddReportServices();
+        services.AddClaimServices();
         services.AddModerationServices();
         services.AddBrowseServices();
         services.AddBucketStorage();
