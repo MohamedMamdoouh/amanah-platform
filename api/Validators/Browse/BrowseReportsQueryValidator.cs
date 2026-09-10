@@ -7,8 +7,14 @@ public sealed class BrowseReportsQueryValidator : AbstractValidator<BrowseReport
 {
     private static readonly string[] AllowedTypes = ["lost", "found"];
 
+    private const int MaxQueryLength = 200;
+
     public BrowseReportsQueryValidator()
     {
+        RuleFor(query => query.Q)
+            .MaximumLength(MaxQueryLength)
+            .WithMessage($"Search query must be {MaxQueryLength} characters or fewer.");
+
         RuleFor(query => query.Page)
             .GreaterThanOrEqualTo(1)
             .WithMessage("Page must be at least 1.");

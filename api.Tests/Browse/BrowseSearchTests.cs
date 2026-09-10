@@ -100,6 +100,25 @@ public class BrowseSearchTests(ApiWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task Search_with_oversized_query_is_rejected_without_crashing_the_api()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var client = BrowseTestHelpers.CreateAnonymousClient(factory);
+
+        var reportId = await BrowseTestHelpers.SeedReportAsync(
+            context,
+            new BrowseTestHelpers.SeedReportOptions { Title = "Blue leather wallet" });
+
+        var terms = string.Join('+', Enumerable.Repeat("a", 3000));
+        var (oversizedResponse, _) = await BrowseTestHelpers.GetBrowseAsync(client, $"q={terms}");
+        var (followUpResponse, followUpBody) = await BrowseTestHelpers.GetBrowseAsync(client, "q=wallet");
+
+        Assert.Equal(HttpStatusCode.BadRequest, oversizedResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, followUpResponse.StatusCode);
+        Assert.Contains(followUpBody!.Items, item => item.Id == reportId);
+    }
+
+    [Fact]
     public async Task Filters_combine_with_keyword_using_AND()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
