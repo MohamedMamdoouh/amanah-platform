@@ -1,10 +1,132 @@
-<section class="public-report-detail page-container" aria-labelledby="public-report-detail-title">
-  <header class="public-report-detail__header">
-    <h1 id="public-report-detail-title">
-      {{ 'browse.detail.placeholder_title' | translate }}
-    </h1>
-    <p class="public-report-detail__lead">
-      {{ 'browse.detail.placeholder' | translate }}
-    </p>
-  </header>
+<section
+  class="public-report-detail page-container"
+  aria-labelledby="public-report-detail-title"
+>
+  @if (loading()) {
+    <app-loading-indicator [label]="'browse.detail.loading' | translate" />
+  } @else if (error()) {
+    <app-alert>{{ error() }}</app-alert>
+  } @else if (report()) {
+    @let detail = report()!;
+    <app-page-header
+      [backLink]="'/browse'"
+      [backLabel]="'browse.detail.back' | translate"
+      [title]="detail.title"
+      [intro]="
+        typeLabel(detail.type) +
+        ' · ' +
+        statusLabel(detail.status) +
+        (detail.publishedAt
+          ? ' · ' + (detail.publishedAt | date: 'medium')
+          : '')
+      "
+    >
+      <app-badge [variant]="statusBadgeVariant(detail.status)">
+        {{ statusLabel(detail.status) }}
+      </app-badge>
+    </app-page-header>
+
+    @if (displayPhotos().length > 0) {
+      <section
+        class="public-report-detail__photos"
+        [attr.aria-label]="'reports.form.photos_title' | translate"
+      >
+        <h2>{{ "reports.form.photos_title" | translate }}</h2>
+        <div class="public-report-detail__photo-grid">
+          @for (photo of displayPhotos(); track photo.id) {
+            <img [src]="photo.url" alt="" class="public-report-detail__photo" />
+          }
+        </div>
+      </section>
+    }
+
+    <app-card variant="flat" padding="md">
+      <dl class="public-report-detail__fields">
+        <div>
+          <dt>{{ "reports.detail.category" | translate }}</dt>
+          <dd>{{ categoryLabel(detail.categoryCode) }}</dd>
+        </div>
+        <div>
+          <dt>{{ "reports.detail.governorate" | translate }}</dt>
+          <dd>{{ governorateLabel(detail.governorateCode) }}</dd>
+        </div>
+        <div>
+          <dt>
+            @if (isFound()) {
+              {{ "reports.form.date_found" | translate }}
+            } @else {
+              {{ "reports.form.date_lost" | translate }}
+            }
+          </dt>
+          <dd>{{ detail.dateLostOrFound }}</dd>
+        </div>
+        @if (detail.areaText) {
+          <div>
+            <dt>{{ "reports.form.area" | translate }}</dt>
+            <dd>{{ detail.areaText }}</dd>
+          </div>
+        }
+        @if (detail.heldLocation) {
+          <div>
+            <dt>{{ "reports.form.held_location" | translate }}</dt>
+            <dd>{{ detail.heldLocation }}</dd>
+          </div>
+        }
+        <div>
+          <dt>{{ "reports.form.description" | translate }}</dt>
+          <dd>{{ detail.description }}</dd>
+        </div>
+        @for (entry of categoryFieldEntries(); track entry[0]) {
+          <div>
+            <dt>{{ fieldLabel(entry[0]) }}</dt>
+            <dd>{{ entry[1] }}</dd>
+          </div>
+        }
+        @if (detail.hasReward && detail.rewardAmount) {
+          <div>
+            <dt>{{ "reports.form.reward_amount" | translate }}</dt>
+            <dd>{{ detail.rewardAmount }}</dd>
+          </div>
+        }
+        <div>
+          <dt>{{ "browse.detail.reporter" | translate }}</dt>
+          <dd>{{ detail.reporterDisplayName }}</dd>
+        </div>
+      </dl>
+    </app-card>
+
+    <section
+      class="public-report-detail__actions"
+      aria-labelledby="public-report-actions-title"
+    >
+      <h2 id="public-report-actions-title">
+        {{ "browse.detail.actions_title" | translate }}
+      </h2>
+
+      <div class="public-report-detail__action-buttons">
+        <app-button
+          variant="primary"
+          [disabled]="isClaimDisabled()"
+          (clicked)="onClaimClick()"
+        >
+          {{ "browse.detail.claim_button" | translate }}
+        </app-button>
+
+        <app-button
+          variant="secondary"
+          [disabled]="isMessageDisabled()"
+          (clicked)="onMessageClick()"
+        >
+          {{ "browse.detail.message_button" | translate }}
+        </app-button>
+      </div>
+
+      @if (claimHint(); as claimNote) {
+        <p class="public-report-detail__action-note">{{ claimNote }}</p>
+      }
+      @if (messageHint(); as messageNote) {
+        <p class="public-report-detail__action-note">{{ messageNote }}</p>
+      }
+    </section>
+  }
 </section>
