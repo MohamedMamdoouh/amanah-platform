@@ -1,7 +1,9 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Claims;
+using Amanah.Api.Utilities.Notifications;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Claims;
@@ -16,6 +18,8 @@ public sealed class ClaimService(
     TimeProvider timeProvider) : IClaimService
 {
     public const int MaxCountedFailures = 3;
+
+    public const string AutoRejectReason = "Another claim approved";
 
     public async Task<Result<SubmitClaimResponse>> SubmitAsync(
         Guid reportId,
@@ -123,6 +127,152 @@ public sealed class ClaimService(
             Status = MapClaimStatus(claim.Status),
         };
     }
+
+    public async Task<Result> ApproveAsync(
+        Guid claimId,
+        Guid reporterId,
+        CancellationToken cancellationToken = default)
+    {
+        var claim = await dbContext.Claims
+            .Include(existingClaim => existingClaim.Report)
+            .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
+
+        if (claim is null || claim.Report.ReporterId != reporterId)
+        {
+            return ResultError.NotFound("Claim not found.");
+        }
+
+        if (claim.Status != ClaimStatus.Pending)
+        {
+            return ResultError.Conflict("Only pending claims can be approved.");
+        }
+
+        if (claim.Report.Status != ReportStatus.Published)
+        {
+            return ResultError.Conflict("Claims can only be approved on published reports.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        claim.Status = ClaimStatus.Approved;
+        claim.ReviewedAt = now;
+        claim.ReviewerDecision = "approved";
+
+        claim.Report.Status = ReportStatus.ClaimInProgress;
+        claim.Report.UpdatedAt = now;
+
+        // Phase 05 activates messaging on this thread; until then it is a placeholder record only.
+        var chatThread = new ChatThread
+        {
+            Id = Guid.NewGuid(),
+            ClaimId = claim.Id,
+            CreatedAt = now,
+        };
+
+        dbContext.ChatThreads.Add(chatThread);
+
+        var otherPendingClaims = await dbContext.Claims
+            .Where(existingClaim =>
+                existingClaim.ReportId == claim.ReportId
+                && existingClaim.Status == ClaimStatus.Pending
+                && existingClaim.Id != claim.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var otherClaim in otherPendingClaims)
+        {
+            otherClaim.Status = ClaimStatus.Rejected;
+            otherClaim.ReviewedAt = now;
+            otherClaim.ReviewerDecision = "rejected";
+            otherClaim.DecisionReason = AutoRejectReason;
+            otherClaim.CountsAsFailure = false;
+
+            dbContext.Notifications.Add(CreateNotification(
+                otherClaim.ClaimantId,
+                NotificationTypes.ClaimRejected,
+                new NotificationPayload(
+                    NotificationTypes.ClaimRejected,
+                    now,
+                    DeepLink: BuildReportDeepLink(claim.Report),
+                    ReportId: claim.Report.Id,
+                    Note: AutoRejectReason),
+                now));
+        }
+
+        dbContext.Notifications.Add(CreateNotification(
+            claim.ClaimantId,
+            NotificationTypes.ClaimApproved,
+            new NotificationPayload(
+                NotificationTypes.ClaimApproved,
+                now,
+                DeepLink: $"/my/chats/{chatThread.Id}",
+                ReportId: claim.Report.Id),
+            now));
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result.Ok();
+    }
+
+    public async Task<Result> RejectAsync(
+        Guid claimId,
+        Guid reporterId,
+        CancellationToken cancellationToken = default)
+    {
+        var claim = await dbContext.Claims
+            .Include(existingClaim => existingClaim.Report)
+            .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
+
+        if (claim is null || claim.Report.ReporterId != reporterId)
+        {
+            return ResultError.NotFound("Claim not found.");
+        }
+
+        if (claim.Status != ClaimStatus.Pending)
+        {
+            return ResultError.Conflict("Only pending claims can be rejected.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        claim.Status = ClaimStatus.Rejected;
+        claim.ReviewedAt = now;
+        claim.ReviewerDecision = "rejected";
+        claim.CountsAsFailure = true;
+
+        dbContext.Notifications.Add(CreateNotification(
+            claim.ClaimantId,
+            NotificationTypes.ClaimRejected,
+            new NotificationPayload(
+                NotificationTypes.ClaimRejected,
+                now,
+                DeepLink: BuildReportDeepLink(claim.Report),
+                ReportId: claim.Report.Id),
+            now));
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result.Ok();
+    }
+
+    private static Notification CreateNotification(
+        Guid userId,
+        string type,
+        NotificationPayload payload,
+        DateTimeOffset createdAt) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Type = type,
+            PayloadJson = payload.ToJson(),
+            IsRead = false,
+            CreatedAt = createdAt,
+        };
+
+    private static string BuildReportDeepLink(Report report) => report.Type switch
+    {
+        ReportType.Lost => $"/lost/{report.Id}",
+        ReportType.Found => $"/found/{report.Id}",
+        _ => $"/reports/{report.Id}",
+    };
 
     private static string MapClaimStatus(ClaimStatus status) => status switch
     {

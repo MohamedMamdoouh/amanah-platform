@@ -12,4 +12,14 @@ public interface IClaimService
         SubmitClaimRequest request,
         IFormFile? photo,
         CancellationToken cancellationToken = default);
+
+    Task<Result> ApproveAsync(
+        Guid claimId,
+        Guid reporterId,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> RejectAsync(
+        Guid claimId,
+        Guid reporterId,
+        CancellationToken cancellationToken = default);
 }

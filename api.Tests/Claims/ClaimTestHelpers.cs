@@ -144,4 +144,13 @@ public static class ClaimTestHelpers
 
         return (response, body);
     }
+
+    public static async Task<HttpResponseMessage> ApproveClaimAsync(HttpClient client, Guid claimId) =>
+        await client.PostAsync($"/api/v1/claims/{claimId}/approve", null);
+
+    public static async Task<HttpResponseMessage> RejectClaimAsync(HttpClient client, Guid claimId) =>
+        await client.PostAsync($"/api/v1/claims/{claimId}/reject", null);
+
+    public static void AuthenticateReporter(HttpClient client, ReportTestContext context) =>
+        Authenticate(client, context.Session.AccessToken);
 }
