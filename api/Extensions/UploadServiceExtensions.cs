@@ -8,6 +8,7 @@ public static class UploadServiceExtensions
     {
         services.AddSingleton<ReportImageProcessor>();
         services.AddScoped<ReportPhotoPresignService>();
+        services.AddScoped<ClaimPhotoPresignService>();
 
         return services;
     }

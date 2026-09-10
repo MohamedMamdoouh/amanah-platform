@@ -45,6 +45,9 @@ public sealed class FakeBucketStorage : IBucketStorage
         return Task.CompletedTask;
     }
 
+    public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_objects.ContainsKey(key));
+
     public string GetPublicUrl(string key) => $"https://fake.local/{key}";
 
     public Uri GetPreSignedUrl(string key, TimeSpan expiry)

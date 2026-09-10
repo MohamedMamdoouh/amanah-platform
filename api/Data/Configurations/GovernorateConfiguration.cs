@@ -10,10 +10,7 @@ public sealed class GovernorateConfiguration : IEntityTypeConfiguration<Governor
     {
         builder.ToTable("governorates");
 
-        builder.HasKey(governorate => governorate.Id);
-
-        builder.Property(governorate => governorate.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(governorate => governorate.Code)
             .HasMaxLength(40)

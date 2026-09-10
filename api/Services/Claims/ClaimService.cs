@@ -12,6 +12,7 @@ namespace Amanah.Api.Services.Claims;
 public sealed class ClaimService(
     AppDbContext dbContext,
     IClaimQuotaService quotaService,
+    ClaimPhotoAttachService claimPhotoAttachService,
     TimeProvider timeProvider) : IClaimService
 {
     public const int MaxCountedFailures = 3;
@@ -20,6 +21,7 @@ public sealed class ClaimService(
         Guid reportId,
         Guid claimantId,
         SubmitClaimRequest request,
+        IFormFile? photo,
         CancellationToken cancellationToken = default)
     {
         var validationErrors = ClaimContentValidator.Validate(request.SubmittedAnswer);
@@ -100,6 +102,17 @@ public sealed class ClaimService(
             AttemptNumber = attemptNumber,
             CountsAsFailure = false,
         };
+
+        if (photo is not null)
+        {
+            var photoResult = await claimPhotoAttachService.AttachAsync(claim.Id, photo, cancellationToken);
+            if (!photoResult.IsSuccess)
+            {
+                return photoResult.Error!;
+            }
+
+            claim.PhotoStorageKey = photoResult.Value;
+        }
 
         dbContext.Claims.Add(claim);
         await dbContext.SaveChangesAsync(cancellationToken);

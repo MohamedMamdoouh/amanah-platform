@@ -1,6 +1,6 @@
 # Phase 04 - Claims & Verification
 
-**Status:** Not started  
+**Status:** In progress (backend 04.1–04.2 shipped; 04.3+ and frontend pending)  
 **Prerequisites:** Phase 03 - Browse & Discovery
 
 ---
@@ -49,15 +49,21 @@ None additional.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| POST | `/api/v1/reports/{id}/claims` | Submit claim on `Published` report |
+| POST | `/api/v1/reports/{id}/claims` | Submit claim on `Published` report (`multipart/form-data`: JSON `claim` + optional `photo`; returns **200** `{ id, status }`) — **shipped** |
 | GET | `/api/v1/reports/{id}/claims` | Reporter: list claims on own report |
 | POST | `/api/v1/claims/{id}/approve` | Reporter approves -> `Claim In Progress` |
 | POST | `/api/v1/claims/{id}/reject` | Reporter rejects claim |
 | POST | `/api/v1/claims/{id}/withdraw` | Claimant withdraws `Pending` claim |
 | GET | `/api/v1/claims/mine` | Claimant's claims (My Claims) |
 | GET | `/api/v1/claims/{id}` | Claim detail (claimant or reporter) |
-| POST | `/api/v1/uploads/claim-photo` | Upload claim photo (private bucket) |
-| GET | `/api/v1/uploads/claim-photo/{id}/url` | Pre-signed URL (claimant, reporter, admin on investigation) |
+| GET | `/api/v1/uploads/claim-photo/{id}/url` | Pre-signed URL for claim photo (claimant, reporter; admin stub 403 until Phase 07) — **shipped** |
+
+**Claim submit multipart** (mirrors report create):
+
+- Part `claim`: JSON `{ "submittedAnswer": "..." }` (text form field)
+- Part `photo`: optional single image file (max **one**; same format/size rules as report photos)
+- Rate limiting: `photo-upload` policy when a photo part is present (5/min + 20/hour per user)
+- Invalid photo → **400** with `upload.*` or `validation.failed` on `photo`; **no claim row created**
 
 ### UI routes
 
@@ -77,8 +83,10 @@ None additional.
 
 ### Infrastructure
 
-- Cloudflare R2 `private/` prefix for claim photos
-- Pre-signed URLs (5-minute expiry) for claim photo access
+- Cloudflare R2 `private/claims/{claimId}/{uploadId}` prefix for claim photos (original + `_thumb.webp`)
+- Claim photo uploaded in the same request as claim submit (not a separate staging endpoint)
+- Pre-signed URLs (5-minute expiry) for claim photo access via `GET /uploads/claim-photo/{claimId}/url`
+- **Known gap (same as reports):** photo is written to R2 before `SaveChangesAsync`. If the DB commit fails after storage succeeds, promoted objects are not deleted. Compensating cleanup → Phase 06 (`ClaimPhotoCleanup` in [06-lifecycle-retention.md](./06-lifecycle-retention.md))
 
 ### Shared utilities
 
@@ -142,13 +150,13 @@ Explicitly deferred to later phases:
 
 From [SPEC.md Section 15.4](./SPEC.md#154-claiming-and-review).
 
-- [ ] **Claim creation constraints:** a logged-in non-reporter submitting 10-500 characters on a `Published` report creates a `Pending` claim. Claim creation is refused on any other status without consuming an attempt, and refused when that user already has an open `Pending` claim on the report
+- [x] **Claim creation constraints:** a logged-in non-reporter submitting 10-500 characters on a `Published` report creates a `Pending` claim. Claim creation is refused on any other status without consuming an attempt, and refused when that user already has an open `Pending` claim on the report (backend; direction-specific prompt validation still pending)
 - [ ] **Direction-specific prompt:** the claim form asks the finder to describe the item they found on a lost report, and asks the owner to describe and prove the item on a found report
-- [ ] **Claim photo:** at most one photo may be attached, and it is visible only to the reporter and, during a flagged-listing investigation, the admin
+- [x] **Claim photo:** at most one photo may be attached, and it is visible only to the reporter and, during a flagged-listing investigation, the admin (backend upload + presign; reporter UI in 04.8)
 - [ ] **Claimant withdrawal:** withdrawing a pending claim sets it to `Withdrawn`, consumes no attempt, and notifies the reporter
 - [ ] **Approval side effects:** the claim becomes `Approved`, the report becomes `Claim In Progress`, a chat thread is created, and all other pending claims become `Rejected` with the reason `Another claim approved`, notified, with no attempt consumed
 - [ ] **Attempt counting:** manual reporter rejections and claimant-initiated cancellations of an approved claim each consume one attempt; reporter-initiated cancellations, claimant withdrawals, **10-day auto-withdrawals**, auto-rejections, auto-closures, and refused claims do not. After 3 counted failures, further claims on that report by that user are blocked with a clear message
-- [ ] **Daily claim quota:** at 5 claim submissions in the current Africa/Cairo day, the next claim is rejected with clear quota messaging
+- [x] **Daily claim quota:** at 5 claim submissions in the current Africa/Cairo day, the next claim is rejected with clear quota messaging (backend)
 - [ ] **Pending claim closure:** `ClaimCleanupService` closes pending claims with no attempt consumed and sends `ClaimClosedReportUnavailable` (unit/integration test). **E2E** closure when a `Published` report is withdrawn, expired, or taken down → Phase 05/07 (withdraw of `Published` is not available until Phase 06)
 
 **Deferred within v1:**
@@ -168,16 +176,29 @@ For CI and manual QA before Phase 06 ships the job:
 
 ### Automated tests
 
-- [ ] Claim creation on `Published` only; refused on other statuses
-- [ ] One open `Pending` claim per user per report
-- [ ] Direction-specific validation and contact-info block
+- [x] Claim creation on `Published` only; refused on other statuses
+- [x] One open `Pending` claim per user per report
+- [ ] Direction-specific validation and contact-info block (contact-info block shipped; lost/found prompt validation pending)
+- [x] Contact-info block on claim text
 - [ ] Approve: report -> `Claim In Progress`, thread created, others auto-rejected
 - [ ] Reject: attempt consumed, notification sent
 - [ ] Withdraw: no attempt consumed
-- [ ] 3-attempt limit enforced
-- [ ] Daily quota (5/day)
-- [ ] Claim photo private; pre-signed URL access control
+- [x] 3-attempt limit enforced
+- [x] Daily quota (5/day)
+- [x] Claim photo via multipart submit; invalid/more-than-one photo rejected without creating claim
+- [x] Claim photo private; pre-signed URL access control (claimant, reporter; admin 403 stub)
 - [ ] `ClaimCleanupService.ClosePendingClaimsAsync` (direct service test; not E2E withdraw)
+
+### Backend implementation notes (04.1–04.2)
+
+| Area | Location |
+| ---- | -------- |
+| Submit route | `ReportsController.SubmitClaim` (multipart) |
+| Form parsing | `ClaimSubmitFormParser` (`claim` JSON + optional `photo`) |
+| Claim logic | `ClaimService`, `ClaimQuotaService`, `ClaimContentValidator` |
+| Photo attach | `ClaimPhotoAttachService` → R2 via `ClaimPhotoStorageKeys` |
+| Photo view | `ClaimPhotoPresignService` → `UploadsController.GetClaimPhotoUrl` |
+| Contracts | `SubmitClaimRequest`, `SubmitClaimResponse`, `ClaimPhotoPresignResponse` |
 
 ### Manual smoke checklist
 

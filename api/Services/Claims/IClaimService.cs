@@ -10,5 +10,6 @@ public interface IClaimService
         Guid reportId,
         Guid claimantId,
         SubmitClaimRequest request,
+        IFormFile? photo,
         CancellationToken cancellationToken = default);
 }

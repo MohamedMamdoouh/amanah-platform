@@ -1,6 +1,9 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Models.Common;
 using Amanah.Api.Tests.Auth;
 using Amanah.Api.Tests.Browse;
 using Amanah.Api.Tests.Reports;
@@ -8,6 +11,7 @@ using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Auth;
 using Amanah.Contracts.Responses.Claims;
+using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Tests.Claims;
@@ -20,9 +24,29 @@ public static class ClaimTestHelpers
     public static async Task<(HttpResponseMessage Response, SubmitClaimResponse? Body)> SubmitClaimAsync(
         HttpClient client,
         Guid reportId,
-        SubmitClaimRequest request)
+        SubmitClaimRequest request,
+        IReadOnlyList<byte[]>? photoContents = null,
+        string photoContentType = "image/jpeg")
     {
-        var response = await client.PostAsJsonAsync($"/api/v1/reports/{reportId}/claims", request);
+        using var content = new MultipartFormDataContent();
+        content.Add(
+            new StringContent(
+                JsonSerializer.Serialize(request, ApiJson.SerializerOptions),
+                Encoding.UTF8,
+                "application/json"),
+            "claim");
+
+        if (photoContents is not null)
+        {
+            for (var i = 0; i < photoContents.Count; i++)
+            {
+                var photoContent = new ByteArrayContent(photoContents[i]);
+                photoContent.Headers.ContentType = new MediaTypeHeaderValue(photoContentType);
+                content.Add(photoContent, "photo", $"claim-photo{i}.jpg");
+            }
+        }
+
+        var response = await client.PostAsync($"/api/v1/reports/{reportId}/claims", content);
         SubmitClaimResponse? body = response.IsSuccessStatusCode
             ? await response.Content.ReadFromJsonAsync<SubmitClaimResponse>()
             : null;
@@ -108,4 +132,16 @@ public static class ClaimTestHelpers
     public static async Task<int> CountClaimsAsync(ReportTestContext context, Guid reportId, Guid claimantId) =>
         await context.DbContext.Claims
             .CountAsync(claim => claim.ReportId == reportId && claim.ClaimantId == claimantId);
+
+    public static async Task<(HttpResponseMessage Response, ClaimPhotoPresignResponse? Body)> GetClaimPhotoUrlAsync(
+        HttpClient client,
+        Guid claimId)
+    {
+        var response = await client.GetAsync($"/api/v1/uploads/claim-photo/{claimId}/url");
+        ClaimPhotoPresignResponse? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<ClaimPhotoPresignResponse>()
+            : null;
+
+        return (response, body);
+    }
 }

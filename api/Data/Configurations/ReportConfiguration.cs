@@ -10,10 +10,7 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
     {
         builder.ToTable("reports");
 
-        builder.HasKey(report => report.Id);
-
-        builder.Property(report => report.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(report => report.Type)
             .HasMaxLength(10)

@@ -776,6 +776,8 @@ Implementation for section 5.1:
 
 - **Formats:** JPEG, PNG, WebP; max 5 MB per file (report photos, claim photo, chat attachments).
 - **Processing:** EXIF stripped; server generates WebP thumbnails.
+- **Report photos:** multipart on `POST /reports` (`photos` parts).
+- **Claim photo:** optional single file on `POST /reports/{id}/claims` (`photo` part); stored under R2 `private/claims/...`; viewed via pre-signed URL.
 - **Private media:** pre-signed URLs (section 16).
 
 ---

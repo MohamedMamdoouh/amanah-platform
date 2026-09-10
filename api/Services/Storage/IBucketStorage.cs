@@ -10,6 +10,8 @@ public interface IBucketStorage
 
     Task DeleteManyAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default);
 
+    Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default);
+
     string GetPublicUrl(string key);
 
     Uri GetPreSignedUrl(string key, TimeSpan expiry);

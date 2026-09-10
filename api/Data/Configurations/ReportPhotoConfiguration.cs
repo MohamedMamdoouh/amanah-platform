@@ -10,10 +10,7 @@ public sealed class ReportPhotoConfiguration : IEntityTypeConfiguration<ReportPh
     {
         builder.ToTable("report_photos");
 
-        builder.HasKey(photo => photo.Id);
-
-        builder.Property(photo => photo.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(photo => photo.StorageKey)
             .HasMaxLength(200)

@@ -1,3 +1,4 @@
+using System.Net;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amanah.Api.Options;
@@ -52,6 +53,19 @@ public sealed class R2BucketStorage(
         foreach (var key in keys)
         {
             await DeleteAsync(key, cancellationToken);
+        }
+    }
+
+    public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _client.GetObjectMetadataAsync(_options.Name, key, cancellationToken);
+            return true;
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return false;
         }
     }
 

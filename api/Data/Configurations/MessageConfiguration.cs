@@ -10,10 +10,7 @@ public sealed class MessageConfiguration : IEntityTypeConfiguration<Message>
     {
         builder.ToTable("messages");
 
-        builder.HasKey(message => message.Id);
-
-        builder.Property(message => message.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(message => message.Body)
             .HasMaxLength(2000)

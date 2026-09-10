@@ -75,7 +75,7 @@ Shared across phases (not repeated in phase tables):
 | `resource.not_found` | 404 | Entity missing or caller lacks visibility (same response either way) |
 | `resource.conflict` | 409 | Invalid state transition (e.g. withdraw non-pending report) |
 
-Phase 02 moderation failures use shared `resource.conflict` / `resource.not_found` (no `moderation.*` namespace). Later phases add `claim.*`, etc.
+Phase 02 moderation failures use shared `resource.conflict` / `resource.not_found` (no `moderation.*` namespace). Phase 04 adds `claim.*` (see below).
 
 ### Field validation (`field.*`)
 
@@ -118,6 +118,8 @@ Report create/validation also returns `validation.failed` (400) with field keys:
 
 `POST /api/v1/reports` (multipart with photos) may return `rate_limit.exceeded` (429) from the `photo-upload` middleware policy (5/min + 20/hour per user when `photo-upload-hourly` is configured).
 
+Claim submit uses the same `upload.*` codes on the `photo` field when an optional photo part is present (see Phase 04).
+
 ---
 
 ## Error codes - Phase 02 (moderation)
@@ -128,11 +130,43 @@ Report create/validation also returns `validation.failed` (400) with field keys:
 
 ---
 
+## Error codes - Phase 04 (claims — partial, 04.1–04.2)
+
+### Claim (`claim.*`)
+
+| Code | HTTP | When | `errors` map |
+| ---- | ---- | ---- | ------------ |
+| `claim.daily_quota` | 429 | 5+ claim submissions in the current Cairo day | No — summary only; `Retry-After` until next Cairo midnight |
+| `claim.attempt_limit` | 429 | 3 counted failures on the same report | No — summary only |
+| `claim.pending_exists` | 409 | User already has an open `Pending` claim on this report | No |
+| `claim.own_report` | 409 | Claimant is the report owner | No |
+| `claim.invalid_status` | 409 | Report is not `Published` (no attempt consumed) | No |
+
+Claim submit validation also returns `validation.failed` (400) with field keys: `submittedAnswer` (length, contact-info block, direction-specific prompt when implemented).
+
+### Claim photo (multipart)
+
+`POST /api/v1/reports/{id}/claims` accepts `multipart/form-data`:
+
+| Part | Required | Content |
+| ---- | -------- | ------- |
+| `claim` | Yes | JSON `{ "submittedAnswer": "..." }` |
+| `photo` | No | Single image file (max one part; same rules as report photos) |
+
+- Invalid or oversized photo → **400** with `upload.*` or `validation.failed` on `photo`; **no claim row created**
+- More than one `photo` part → **400** `validation.failed` on `photo`
+- When a photo part is present, `rate_limit.exceeded` (429) may apply via the `photo-upload` policy (same as report create)
+
+`GET /api/v1/uploads/claim-photo/{claimId}/url` returns a 5-minute presigned URL for claimant or reporter; admin access is stubbed (403) until Phase 07.
+
+---
+
 ## Success response conventions
 
 | Endpoint pattern | Status | Body |
 | ---------------- | ------ | ---- |
 | `POST /api/v1/reports` | 200 | `{ id, status }` |
+| `POST /api/v1/reports/{id}/claims` | 200 | `{ id, status }` |
 | `POST /api/v1/auth/otp/send` | 204 | — |
 | Approve, reject, resubmit, withdraw, update, mark-read | 204 | — |
 | List/detail GET endpoints | 200 | Resource JSON |
@@ -237,6 +271,25 @@ The request passed validation and the OTP was enqueued. SMS delivery happens asy
   "code": "upload.too_large",
   "message": "Image must not exceed 5 MB.",
   "errors": { "photos[0]": ["Image must not exceed 5 MB."] }
+}
+```
+
+**429 claim quota** - `POST /api/v1/reports/{id}/claims` + header `Retry-After: <seconds>`
+
+```json
+{
+  "code": "claim.daily_quota",
+  "message": "You have reached the daily limit of 5 claims. Try again after midnight (Cairo time)."
+}
+```
+
+**400 claim photo** - `POST /api/v1/reports/{id}/claims` (multipart, `photo` part)
+
+```json
+{
+  "code": "upload.invalid_format",
+  "message": "Unsupported image format.",
+  "errors": { "photo": ["Unsupported image format."] }
 }
 ```
 

@@ -10,10 +10,7 @@ public sealed class ResolutionConfiguration : IEntityTypeConfiguration<Resolutio
     {
         builder.ToTable("resolutions");
 
-        builder.HasKey(resolution => resolution.Id);
-
-        builder.Property(resolution => resolution.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.HasIndex(resolution => resolution.ReportId)
             .IsUnique();

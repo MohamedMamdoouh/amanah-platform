@@ -10,10 +10,7 @@ public sealed class CategoryFieldDefinitionConfiguration : IEntityTypeConfigurat
     {
         builder.ToTable("category_field_definitions");
 
-        builder.HasKey(definition => definition.Id);
-
-        builder.Property(definition => definition.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(definition => definition.FieldKey)
             .HasMaxLength(40)

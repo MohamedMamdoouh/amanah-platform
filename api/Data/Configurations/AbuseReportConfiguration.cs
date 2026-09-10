@@ -10,10 +10,7 @@ public sealed class AbuseReportConfiguration : IEntityTypeConfiguration<AbuseRep
     {
         builder.ToTable("abuse_reports");
 
-        builder.HasKey(report => report.Id);
-
-        builder.Property(report => report.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(report => report.Reason)
             .HasMaxLength(40)

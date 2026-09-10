@@ -10,10 +10,7 @@ public sealed class AdminAlertEmailOutboxConfiguration : IEntityTypeConfiguratio
     {
         builder.ToTable("admin_alert_email_outbox");
 
-        builder.HasKey(message => message.Id);
-
-        builder.Property(message => message.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(message => message.ReportType)
             .HasMaxLength(8)

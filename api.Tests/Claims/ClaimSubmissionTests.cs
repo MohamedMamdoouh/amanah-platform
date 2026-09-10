@@ -3,6 +3,7 @@ using Amanah.Api.Services.Claims;
 using Amanah.Api.Tests.Browse;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
+using Amanah.Api.Tests.Uploads;
 using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Reports;
 using Amanah.Contracts.Errors;
@@ -263,6 +264,79 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
         Assert.Equal(System.Net.HttpStatusCode.TooManyRequests, quotaResponse.StatusCode);
         Assert.Equal(ErrorCodes.ClaimDailyQuota, error?.Code);
         Assert.True(quotaResponse.Headers.RetryAfter is not null);
+    }
+
+    [Fact]
+    public async Task Submit_with_photo_attaches_storage_key()
+    {
+        await using var context = await CreateContextAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
+
+        var (response, body) = await ClaimTestHelpers.SubmitClaimAsync(
+            context.Client,
+            reportId,
+            new SubmitClaimRequest
+            {
+                SubmittedAnswer = ClaimTestHelpers.ValidAnswer,
+            },
+            [TestImageFactory.CreateMinimalJpeg()]);
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+
+        var claim = await context.DbContext.Claims.SingleAsync(existingClaim => existingClaim.Id == body.Id);
+        Assert.NotNull(claim.PhotoStorageKey);
+        Assert.StartsWith($"private/claims/{claim.Id:N}/", claim.PhotoStorageKey, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Submit_rejects_invalid_photo_without_creating_claim()
+    {
+        await using var context = await CreateContextAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
+
+        var (response, _) = await ClaimTestHelpers.SubmitClaimAsync(
+            context.Client,
+            reportId,
+            new SubmitClaimRequest
+            {
+                SubmittedAnswer = ClaimTestHelpers.ValidAnswer,
+            },
+            ["not-an-image"u8.ToArray()]);
+        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ErrorCodes.UploadInvalidFormat, error?.Code);
+        Assert.Contains("photo", error!.Errors!.Keys);
+        Assert.Equal(0, await ClaimTestHelpers.CountClaimsAsync(context, reportId, claimantSession.User.Id));
+    }
+
+    [Fact]
+    public async Task Submit_rejects_more_than_one_photo()
+    {
+        await using var context = await CreateContextAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
+
+        var (response, _) = await ClaimTestHelpers.SubmitClaimAsync(
+            context.Client,
+            reportId,
+            new SubmitClaimRequest
+            {
+                SubmittedAnswer = ClaimTestHelpers.ValidAnswer,
+            },
+            [TestImageFactory.CreateMinimalJpeg(), TestImageFactory.CreateMinimalJpeg()]);
+        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
+        Assert.Contains("photo", error!.Errors!.Keys);
+        Assert.Equal(0, await ClaimTestHelpers.CountClaimsAsync(context, reportId, claimantSession.User.Id));
     }
 
     [Fact]

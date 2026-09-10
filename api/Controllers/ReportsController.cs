@@ -2,7 +2,6 @@ using Amanah.Api.Auth;
 using Amanah.Api.Services.Claims;
 using Amanah.Api.Services.Reports;
 using Amanah.Contracts.Errors;
-using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Requests.Reports;
 using Amanah.Contracts.Responses.Claims;
 using Amanah.Contracts.Responses.Reports;
@@ -21,7 +20,8 @@ public sealed class ReportsController(
     ReportService reportService,
     IClaimService claimService,
     ReportCreateFormParser createFormParser,
-    ReportUpdateFormParser updateFormParser) : ControllerBase
+    ReportUpdateFormParser updateFormParser,
+    ClaimSubmitFormParser claimSubmitFormParser) : ControllerBase
 {
     [HttpPost]
     [Consumes("multipart/form-data")]
@@ -132,6 +132,8 @@ public sealed class ReportsController(
     }
 
     [HttpPost("{id:guid}/claims")]
+    [Consumes("multipart/form-data")]
+    [EnableRateLimiting("photo-upload")]
     [EndpointName(nameof(SubmitClaim))]
     [EndpointSummary("Submit a claim on a published report.")]
     [ProducesResponseType(typeof(SubmitClaimResponse), StatusCodes.Status200OK)]
@@ -140,14 +142,25 @@ public sealed class ReportsController(
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SubmitClaim(
         Guid id,
-        [FromBody] SubmitClaimRequest request,
         CancellationToken cancellationToken)
     {
         User.TryGetUserId(out var userId);
 
-        var result = await claimService.SubmitAsync(id, userId, request, cancellationToken);
+        var parsed = await claimSubmitFormParser.ParseAsync(Request, cancellationToken);
+        if (!parsed.IsSuccess)
+        {
+            return parsed.Error!.ToActionResult();
+        }
+
+        var result = await claimService.SubmitAsync(
+            id,
+            userId,
+            parsed.Value!.Request,
+            parsed.Value.Photo,
+            cancellationToken);
         return result.ToActionResult();
     }
 

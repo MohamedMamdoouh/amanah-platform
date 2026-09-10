@@ -10,10 +10,7 @@ public sealed class OtpSmsOutboxConfiguration : IEntityTypeConfiguration<OtpSmsO
     {
         builder.ToTable("otp_sms_outbox");
 
-        builder.HasKey(message => message.Id);
-
-        builder.Property(message => message.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(message => message.Phone)
             .HasMaxLength(16)

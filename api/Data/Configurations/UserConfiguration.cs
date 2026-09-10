@@ -10,10 +10,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.ToTable("users");
 
-        builder.HasKey(user => user.Id);
-
-        builder.Property(user => user.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(user => user.NormalizedPhone)
             .HasMaxLength(16)

@@ -10,10 +10,7 @@ public sealed class ChatThreadConfiguration : IEntityTypeConfiguration<ChatThrea
     {
         builder.ToTable("chat_threads");
 
-        builder.HasKey(thread => thread.Id);
-
-        builder.Property(thread => thread.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(thread => thread.CreatedAt)
             .IsRequired();

@@ -10,10 +10,7 @@ public sealed class NotificationConfiguration : IEntityTypeConfiguration<Notific
     {
         builder.ToTable("notifications");
 
-        builder.HasKey(notification => notification.Id);
-
-        builder.Property(notification => notification.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(notification => notification.Type)
             .HasMaxLength(40)

@@ -10,10 +10,7 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
     {
         builder.ToTable("refresh_tokens");
 
-        builder.HasKey(refreshToken => refreshToken.Id);
-
-        builder.Property(refreshToken => refreshToken.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(refreshToken => refreshToken.UserId)
             .IsRequired();

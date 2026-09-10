@@ -10,10 +10,7 @@ public sealed class ClaimConfiguration : IEntityTypeConfiguration<Claim>
     {
         builder.ToTable("claims");
 
-        builder.HasKey(claim => claim.Id);
-
-        builder.Property(claim => claim.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(claim => claim.Status)
             .HasMaxLength(15)

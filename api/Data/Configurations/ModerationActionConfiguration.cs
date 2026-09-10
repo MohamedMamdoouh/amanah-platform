@@ -10,10 +10,7 @@ public sealed class ModerationActionConfiguration : IEntityTypeConfiguration<Mod
     {
         builder.ToTable("moderation_actions");
 
-        builder.HasKey(action => action.Id);
-
-        builder.Property(action => action.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(action => action.Decision)
             .HasMaxLength(15)

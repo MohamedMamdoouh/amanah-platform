@@ -10,10 +10,7 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         builder.ToTable("categories");
 
-        builder.HasKey(category => category.Id);
-
-        builder.Property(category => category.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(category => category.Code)
             .HasMaxLength(40)

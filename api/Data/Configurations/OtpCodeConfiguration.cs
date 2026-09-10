@@ -10,10 +10,7 @@ public sealed class OtpCodeConfiguration : IEntityTypeConfiguration<OtpCode>
     {
         builder.ToTable("otp_codes");
 
-        builder.HasKey(otpCode => otpCode.Id);
-
-        builder.Property(otpCode => otpCode.Id)
-            .ValueGeneratedNever();
+        builder.ConfigureGuidId();
 
         builder.Property(otpCode => otpCode.Phone)
             .HasMaxLength(16)
