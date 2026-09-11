@@ -103,15 +103,28 @@
         {{ "browse.detail.actions_title" | translate }}
       </h2>
 
-      <div class="public-report-detail__action-buttons">
-        <app-button
-          variant="primary"
-          [disabled]="isClaimDisabled()"
-          (clicked)="onClaimClick()"
-        >
-          {{ "browse.detail.claim_button" | translate }}
-        </app-button>
+      @if (showClaimForm()) {
+        <app-claim-form
+          [reportId]="detail.id"
+          [reportType]="detail.type"
+        />
+      } @else {
+        <div class="public-report-detail__action-buttons">
+          <app-button
+            variant="primary"
+            [disabled]="isClaimDisabled()"
+            (clicked)="onClaimClick()"
+          >
+            {{ "browse.detail.claim_button" | translate }}
+          </app-button>
+        </div>
 
+        @if (claimHint(); as claimNote) {
+          <p class="public-report-detail__action-note">{{ claimNote }}</p>
+        }
+      }
+
+      <div class="public-report-detail__action-buttons">
         <app-button
           variant="secondary"
           [disabled]="isMessageDisabled()"
@@ -120,10 +133,6 @@
           {{ "browse.detail.message_button" | translate }}
         </app-button>
       </div>
-
-      @if (claimHint(); as claimNote) {
-        <p class="public-report-detail__action-note">{{ claimNote }}</p>
-      }
       @if (messageHint(); as messageNote) {
         <p class="public-report-detail__action-note">{{ messageNote }}</p>
       }

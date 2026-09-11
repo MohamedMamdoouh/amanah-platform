@@ -52,6 +52,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.public-report-detail__actions app-claim-form {
+  display: block;
+  margin-bottom: var(--space-md);
 }
 
 .public-report-detail__action-note {

@@ -1,0 +1,41 @@
+@if (submitted()) {
+  <app-empty-state
+    variant="success"
+    [title]="'claims.confirmation.title' | translate"
+    [description]="'claims.confirmation.message' | translate"
+  />
+} @else {
+  @if (summaryError()) {
+    <app-alert variant="error">{{ summaryError() }}</app-alert>
+  }
+
+  <form class="claim-form" [formGroup]="form" (ngSubmit)="submit()">
+    <label class="form-field">
+      <span class="form-label">{{ promptKey() | translate }}</span>
+      <textarea
+        formControlName="submittedAnswer"
+        class="form-textarea"
+        [class.form-textarea--error]="fieldError('submittedAnswer')"
+        rows="5"
+        [attr.aria-describedby]="'claim-answer-hint'"
+      ></textarea>
+      <p id="claim-answer-hint" class="form-hint">
+        {{ "claims.form.contact_info_note" | translate }}
+      </p>
+      @if (fieldError("submittedAnswer")) {
+        <span class="form-error" role="alert">{{
+          fieldError("submittedAnswer")
+        }}</span>
+      }
+    </label>
+
+    <app-button
+      type="submit"
+      variant="primary"
+      [disabled]="submitting()"
+      [loading]="submitting()"
+    >
+      {{ "claims.form.submit" | translate }}
+    </app-button>
+  </form>
+}

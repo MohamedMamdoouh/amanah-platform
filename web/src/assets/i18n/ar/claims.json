@@ -1,0 +1,11 @@
+{
+  "claims.form.prompt_lost": "صف الغرض الذي وجدته.",
+  "claims.form.prompt_found": "صف الغرض الذي فقدته وأي شيء يثبت أنه ملكك.",
+  "claims.form.contact_info_note": "لا تُدرج أرقام هواتف أو روابط أو حسابات تواصل — سيتم مشاركة بيانات التواصل بعد قبول المطالبة.",
+  "claims.form.answer_required": "الوصف مطلوب.",
+  "claims.form.answer_min_length": "يجب أن يكون الوصف {{min}} أحرف على الأقل.",
+  "claims.form.answer_max_length": "يجب ألا يتجاوز الوصف {{max}} حرفاً.",
+  "claims.form.submit": "إرسال المطالبة",
+  "claims.confirmation.title": "تم إرسال المطالبة",
+  "claims.confirmation.message": "سيتم إخطار صاحب البلاغ بمطالبتك. يمكنك متابعة حالتها من صفحة مطالباتي عند توفرها."
+}

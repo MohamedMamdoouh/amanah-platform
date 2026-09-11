@@ -16,6 +16,7 @@ import { ButtonComponent } from '../shared/ui/button/button.component';
 import { CardComponent } from '../shared/ui/card/card.component';
 import { LoadingIndicatorComponent } from '../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../shared/ui/page-header/page-header.component';
+import { ClaimFormComponent } from '../claims/claim-form/claim-form.component';
 import { BrowseService, mapBrowseError } from './browse.service';
 import { PublicReportDetail } from './models/browse.models';
 
@@ -27,6 +28,7 @@ import { PublicReportDetail } from './models/browse.models';
     BadgeComponent,
     ButtonComponent,
     CardComponent,
+    ClaimFormComponent,
     DatePipe,
     LoadingIndicatorComponent,
     PageHeaderComponent,
@@ -125,10 +127,12 @@ export class PublicReportDetailComponent implements OnInit {
     return this.isPublished() && !this.auth.isLoggedIn();
   }
 
+  showClaimForm(): boolean {
+    return this.isPublished() && this.auth.isLoggedIn();
+  }
+
   isClaimDisabled(): boolean {
-    return (
-      this.isClaimInProgress() || (this.isPublished() && this.auth.isLoggedIn())
-    );
+    return this.isClaimInProgress();
   }
 
   canClickMessage(): boolean {
@@ -146,10 +150,6 @@ export class PublicReportDetailComponent implements OnInit {
 
     if (this.isPublished() && !this.auth.isLoggedIn()) {
       return this.translate.instant('browse.detail.claim_login_required');
-    }
-
-    if (this.isPublished() && this.auth.isLoggedIn()) {
-      return this.translate.instant('browse.detail.claim_coming_soon');
     }
 
     return null;
