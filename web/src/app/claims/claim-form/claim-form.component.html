@@ -3,7 +3,11 @@
     variant="success"
     [title]="'claims.confirmation.title' | translate"
     [description]="'claims.confirmation.message' | translate"
-  />
+  >
+    <app-button variant="primary" [routerLink]="'/my/claims'">
+      {{ "claims.confirmation.view_mine" | translate }}
+    </app-button>
+  </app-empty-state>
 } @else {
   @if (summaryError()) {
     <app-alert variant="error">{{ summaryError() }}</app-alert>

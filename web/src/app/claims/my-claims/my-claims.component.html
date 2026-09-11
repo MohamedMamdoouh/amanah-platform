@@ -1,0 +1,53 @@
+<section class="my-claims page-container" aria-labelledby="my-claims-title">
+  <app-page-header
+    [title]="'claims.mine.title' | translate"
+    [intro]="'claims.mine.intro' | translate"
+  />
+
+  @if (actionError()) {
+    <app-alert variant="error">{{ actionError() }}</app-alert>
+  }
+
+  @if (loading()) {
+    <app-loading-indicator [label]="'claims.mine.loading' | translate" />
+  } @else if (error()) {
+    <app-alert variant="error">{{ error() }}</app-alert>
+  } @else if (claims().length === 0) {
+    <app-empty-state [title]="'claims.mine.empty' | translate">
+      <app-button variant="primary" [routerLink]="'/browse'">
+        {{ "claims.mine.browse" | translate }}
+      </app-button>
+    </app-empty-state>
+  } @else {
+    <ul class="my-claims__list">
+      @for (claim of claims(); track claim.id) {
+        <li class="my-claims__item">
+          <app-listing-card
+            [title]="claim.reportTitle"
+            [typeLabel]="typeLabel(claim.reportType)"
+            [subtitle]="claim.reporterDisplayName"
+            [date]="(claim.submittedAt | date: 'medium') ?? ''"
+            [badgeLabel]="statusLabel(claim.status)"
+            [badgeVariant]="badgeVariant(claim.status)"
+            [routerLink]="reportLink(claim)"
+            [actionLabel]="'claims.mine.view_report' | translate"
+          />
+          @if (claim.decisionReason) {
+            <p class="my-claims__reason">{{ claim.decisionReason }}</p>
+          }
+          @if (canWithdraw(claim)) {
+            <app-button
+              variant="outline"
+              size="sm"
+              [loading]="withdrawingId() === claim.id"
+              [disabled]="withdrawingId() !== null"
+              (clicked)="withdraw(claim)"
+            >
+              {{ "claims.mine.withdraw" | translate }}
+            </app-button>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

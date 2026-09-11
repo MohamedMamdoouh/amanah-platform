@@ -215,6 +215,18 @@ public static class ClaimTestHelpers
         return (response, body);
     }
 
+    public static async Task<(HttpResponseMessage Response, IReadOnlyList<ReportClaimSummaryResponse>? Body)> GetReportClaimsAsync(
+        HttpClient client,
+        Guid reportId)
+    {
+        var response = await client.GetAsync($"/api/v1/reports/{reportId}/claims");
+        IReadOnlyList<ReportClaimSummaryResponse>? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<IReadOnlyList<ReportClaimSummaryResponse>>()
+            : null;
+
+        return (response, body);
+    }
+
     public static async Task<(HttpResponseMessage Response, PaginatedResponse<MyClaimSummaryResponse>? Body)> GetMyClaimsAsync(
         HttpClient client,
         int page = 1,

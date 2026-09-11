@@ -37,6 +37,28 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task Submit_notifies_reporter_of_new_claim()
+    {
+        await using var context = await CreateContextAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
+
+        var (response, body) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, reportId);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+
+        var notification = await context.DbContext.Notifications
+            .AsNoTracking()
+            .SingleAsync(item =>
+                item.UserId == context.Session.User.Id
+                && item.Type == "NewClaimSubmitted");
+        Assert.Equal("NewClaimSubmitted", notification.Type);
+        Assert.Contains($"/my/reports/{reportId}", notification.PayloadJson, StringComparison.Ordinal);
+        Assert.Contains("#claims-section", notification.PayloadJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Submit_on_published_found_report_creates_pending_claim()
     {
         await using var context = await CreateContextAsync(factory);

@@ -34,7 +34,7 @@ Implement background scheduled jobs for listing expiry, pending-claim timeout, a
 - [x] Platform foundation
 - [x] Phase 01 - Report Submission
 - [x] Phase 02 - Admin Moderation
-- [ ] Phase 04 - Claims & Verification
+- [x] Phase 04 - Claims & Verification (`ClaimCleanupService` unit-tested; wire to report lifecycle in this phase)
 - [ ] Phase 05 - Chat, Resolution & Notifications
 
 ### Deferred decisions (Section 14)
@@ -112,7 +112,7 @@ Implement both where practical: immediate cleanup limits orphan volume; the job 
 | ------ | ------- |
 | `LISTING_EXPIRY_DAYS` | Override 90-day expiry (e.g. `1` for tests) |
 | `LISTING_EXPIRY_WARNING_DAYS_BEFORE` | Override 7-day warning offset (default `7`; warning fires at `LISTING_EXPIRY_DAYS -` this value) |
-| `CLAIM_TIMEOUT_MINUTES` | Override 10-day claim timeout (from Phase 04 stub) |
+| `CLAIM_TIMEOUT_MINUTES` | Override 10-day claim timeout (env documented in Phase 04; job ships in this phase) |
 | `RETENTION_DAYS_OVERRIDE` | Override all 30-day retention windows (rejected reports, chat, sessions, account PII purge) |
 | `POST /api/v1/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI (supersedes Phase 04 `trigger-claim-timeout` stub) |
 

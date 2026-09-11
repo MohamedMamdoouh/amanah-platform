@@ -37,7 +37,7 @@ Activate real-time in-app chat via SignalR for approved claims, with text and ph
 - [x] Platform foundation
 - [x] Phase 01 - Report Submission
 - [x] Phase 02 - Admin Moderation
-- [ ] Phase 04 - Claims & Verification (`ChatThread` records exist on approved claims)
+- [x] Phase 04 - Claims & Verification (`ChatThread` placeholder rows created on claim approval; no messaging yet)
 
 ### Deferred decisions (Section 14)
 
@@ -121,7 +121,7 @@ Chat messages are **not** subject to contact-info block (Section 4.1.3).
 | Claim ended by enforcement | Affected party | deferred to Phase 07 |
 | Admin takedown affecting you | Reporter and claimant | deferred to Phase 07 |
 
-All previously introduced claim/report notifications from Phases 02-04 remain active.
+Claim/report notification types from Phases 02–04 (`ReportApproved`, `ReportRejected`, `NewClaimSubmitted`, `ClaimWithdrawnByClaimant`, `ClaimApproved`, `ClaimRejected`, `ClaimClosedReportUnavailable`) remain active. This phase adds chat and resolution events.
 
 ---
 

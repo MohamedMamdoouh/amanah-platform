@@ -141,11 +141,11 @@ Implemented in Phase 02 ([02-admin-moderation.md](./02-admin-moderation.md)): ad
 
 Still deferred to later phases:
 
-- Public browse and search -> Phase 03
-- Claims -> Phase 04
 - Listing expiry and auto-withdraw jobs -> Phase 06
 - Reporter withdraw while `Published` -> Phase 06
 - Orphaned R2 objects after failed report submit (DB commit after photo upload) -> Phase 06
+
+Shipped in later phases: public browse (Phase 03), claims (Phase 04).
 
 ---
 

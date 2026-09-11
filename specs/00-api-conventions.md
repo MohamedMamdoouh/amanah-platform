@@ -130,7 +130,7 @@ Claim submit uses the same `upload.*` codes on the `photo` field when an optiona
 
 ---
 
-## Error codes - Phase 04 (claims — partial, 04.1–04.2)
+## Error codes - Phase 04 (claims)
 
 ### Claim (`claim.*`)
 
@@ -142,7 +142,20 @@ Claim submit uses the same `upload.*` codes on the `photo` field when an optiona
 | `claim.own_report` | 409 | Claimant is the report owner | No |
 | `claim.invalid_status` | 409 | Report is not `Published` (no attempt consumed) | No |
 
-Claim submit validation also returns `validation.failed` (400) with field keys: `submittedAnswer` (length, contact-info block, direction-specific prompt when implemented).
+Claim submit validation also returns `validation.failed` (400) with field keys: `submittedAnswer` (length, contact-info block). Direction-specific prompt enforcement is frontend-only in Phase 04.
+
+### Claim review and reads
+
+| Method | Route | Success | Notes |
+| ------ | ----- | ------- | ----- |
+| GET | `/api/v1/reports/{id}/claims` | 200 `ReportClaimSummaryResponse[]` | Reporter only |
+| GET | `/api/v1/claims/mine` | 200 paginated `MyClaimSummaryResponse` | Claimant only |
+| GET | `/api/v1/claims/{id}` | 200 `ClaimDetailResponse` | Claimant or reporter |
+| POST | `/api/v1/claims/{id}/approve` | 204 | Reporter; report → `claim_in_progress` |
+| POST | `/api/v1/claims/{id}/reject` | 204 | Reporter; counts as failure |
+| POST | `/api/v1/claims/{id}/withdraw` | 204 | Claimant; pending only |
+
+Claim notifications: `NewClaimSubmitted`, `ClaimApproved`, `ClaimRejected`, `ClaimWithdrawnByClaimant`, `ClaimClosedReportUnavailable` (see `NotificationTypes.cs`).
 
 ### Claim photo (multipart)
 
@@ -180,7 +193,7 @@ Angular maps `code` → `error.{code}` in `web/src/assets/i18n/ar/errors.json` v
 - `summary(error)` — translated summary, falling back to `message`
 - `fieldErrors(error)` — `errors` map for inline form display
 
-Report UI also uses `web/src/assets/i18n/ar/reports.json` for form copy.
+Report UI uses `web/src/assets/i18n/ar/reports.json`; claim UI uses `claims.json` and `notifications.json` for claim event labels.
 
 ---
 

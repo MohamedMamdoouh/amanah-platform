@@ -2,7 +2,7 @@
 
 Lost-and-found platform for Egypt — moderated listings, ownership verification, and in-app messaging. Arabic RTL UI.
 
-**Docs:** [SPEC](specs/SPEC.md) · [API conventions](specs/00-api-conventions.md) · [Phase specs](specs/README.md) · [UI context](docs/ui-ux-context.md) · [Deployment](docs/deployment.md) · [Observability](docs/observability.md)
+**Docs:** [SPEC](specs/SPEC.md) · [API conventions](specs/00-api-conventions.md) · [Phase specs](specs/README.md) · [Deployment](docs/deployment.md) · [Observability](docs/observability.md)
 
 ## Status
 
@@ -10,19 +10,22 @@ Lost-and-found platform for Egypt — moderated listings, ownership verification
 | ----- | ----------------------------------------------------------- | ------------ |
 | —     | Platform foundation (auth, sessions, deploy, seeds)         | **Complete** |
 | 01    | Report submission                                           | **Complete** |
-| 02    | Admin moderation (queue, resubmit, categories, email)       | **Complete**¹ |
+| 02    | Admin moderation (queue, resubmit, categories, email)       | **Complete**² |
 | 03    | Browse & discovery (search, filters, public detail)         | **Complete** |
-| 04–07 | Claims, chat, lifecycle, trust & safety                     | Not started  |
+| 04    | Claims & verification (submit, review, photos, My Claims)   | **Complete**¹ |
+| 05–07 | Chat, lifecycle, trust & safety                             | Not started  |
 
-**Next up:** Phase 04 — claims and ownership verification.
+**Next up:** Phase 05 — chat and resolution.
 
-¹ Automated tests complete; manual smoke (especially Resend in staging) pending — see [specs/02-admin-moderation.md](specs/02-admin-moderation.md) §9.
+¹ Phase 04 — automated tests complete; manual smoke pending — [specs/04-claims-verification.md](specs/04-claims-verification.md) §9.
+
+² Phase 02 — automated tests complete; manual smoke (especially Resend in staging) pending — [specs/02-admin-moderation.md](specs/02-admin-moderation.md) §9.
 
 ### Shipped (platform foundation)
 
 Auth (phone OTP signup, password sign-in, JWT + httpOnly refresh cookie rotation, password reset, logout-everywhere), admin bootstrap, catalog seeds (8 categories, 27 governorates), Arabic RTL SPA with legal/support pages, full DB schema, structured logging + health probes, production Docker deploy on Render.
 
-**Routes:** `/`, `/browse`, `/login`, `/terms`, `/privacy`, `/safety`, `/support`, `/admin` (redirects to moderation)
+**Routes:** `/`, `/browse`, `/login`, `/notifications`, `/terms`, `/privacy`, `/safety`, `/support`, `/admin` (redirects to moderation)
 
 ### Shipped (Phase 01)
 
@@ -42,15 +45,23 @@ Details: [specs/02-admin-moderation.md](specs/02-admin-moderation.md)
 
 ### Shipped (Phase 03)
 
-Public browse listing with Arabic keyword search, filters, pagination, and status-aware public detail pages (`/lost/{id}`, `/found/{id}`) with not-found and permanently-unavailable routing. Claim and message action stubs prompt login (full flows in Phases 04–05).
+Public browse listing with Arabic keyword search, filters, pagination, and status-aware public detail pages (`/lost/{id}`, `/found/{id}`) with not-found and permanently-unavailable routing.
 
 **Routes:** `/browse`, `/lost/{id}`, `/found/{id}`, `/not-found`, `/unavailable`
 
 Details: [specs/03-browse-discovery.md](specs/03-browse-discovery.md)
 
+### Shipped (Phase 04)
+
+Claim submission on published reports (multipart text + optional photo), daily quota and attempt limits, reporter approve/reject with auto-reject of competing claims, claimant withdraw, My Claims list, reporter claims section on report detail with presigned photos, in-app notifications for claim events. `ChatThread` rows created on approval but messaging UI deferred to Phase 05.
+
+**Routes:** `/my/claims` (+ claim form on `/lost/{id}`, `/found/{id}`; claims review on `/my/reports/{id}`; `claim_in_progress` tab on `/my/reports`)
+
+Details: [specs/04-claims-verification.md](specs/04-claims-verification.md)
+
 ### Not built yet
 
-Claims, chat, resolution, lifecycle jobs, abuse enforcement — see [phase specs](specs/README.md).
+Chat, resolution, lifecycle jobs, abuse enforcement — see [phase specs](specs/README.md).
 
 ## Stack
 
@@ -93,7 +104,7 @@ On first startup, migrations and catalog seed run automatically (8 categories, 2
 | Account | Phone (login) | Password | Unlocks |
 | ------- | ------------- | -------- | ------- |
 | Admin | `01011111111` | `AdminPass123` | `/admin/moderation`, `/admin/categories` |
-| User | `01022222222` | `UserPass123` | `/report/lost`, `/report/found`, `/my/reports` |
+| User | `01022222222` | `UserPass123` | `/report/lost`, `/report/found`, `/my/reports`, `/my/claims`, `/browse` |
 
 ## Tests
 

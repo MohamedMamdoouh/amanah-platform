@@ -131,6 +131,22 @@ public sealed class ReportsController(
         return result.ToActionResult();
     }
 
+    [HttpGet("{id:guid}/claims")]
+    [EndpointName(nameof(GetReportClaims))]
+    [EndpointSummary("List claims on the authenticated reporter's report.")]
+    [ProducesResponseType(typeof(IReadOnlyList<ReportClaimSummaryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetReportClaims(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        User.TryGetUserId(out var userId);
+
+        var result = await claimService.GetByReportAsync(id, userId, cancellationToken);
+        return result.ToActionResult();
+    }
+
     [HttpPost("{id:guid}/claims")]
     [Consumes("multipart/form-data")]
     [EnableRateLimiting("photo-upload")]

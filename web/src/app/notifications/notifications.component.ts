@@ -81,7 +81,20 @@ export class NotificationsComponent implements OnInit {
       }
     }
 
-    await this.router.navigateByUrl(item.payload.deepLink);
+    let deepLink = item.payload.deepLink;
+
+    if (deepLink.startsWith('/my/chats/')) {
+      deepLink = '/my/claims';
+    } else if (
+      (item.payload.type === 'ClaimWithdrawnByClaimant' ||
+        item.payload.type === 'NewClaimSubmitted') &&
+      deepLink.startsWith('/my/reports/') &&
+      !deepLink.includes('#')
+    ) {
+      deepLink = `${deepLink}#claims-section`;
+    }
+
+    await this.router.navigateByUrl(deepLink);
   }
 
   private async loadNotifications(): Promise<void> {

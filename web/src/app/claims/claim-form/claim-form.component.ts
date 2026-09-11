@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, input, signal, viewChild } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -24,6 +25,7 @@ const MAX_LENGTH = 500;
     EmptyStateComponent,
     PhotoUploadComponent,
     ReactiveFormsModule,
+    RouterLink,
     TranslateModule,
   ],
   templateUrl: './claim-form.component.html',

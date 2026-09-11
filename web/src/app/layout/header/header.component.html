@@ -50,6 +50,13 @@
         >
           {{ "nav.my_reports" | translate }}
         </a>
+        <a
+          routerLink="/my/claims"
+          class="header__link"
+          routerLinkActive="header__link--active"
+        >
+          {{ "nav.my_claims" | translate }}
+        </a>
       }
     </nav>
 
@@ -154,6 +161,13 @@
         (click)="closeMobileNav()"
       >
         {{ "nav.my_reports" | translate }}
+      </a>
+      <a
+        routerLink="/my/claims"
+        class="header__drawer-link"
+        (click)="closeMobileNav()"
+      >
+        {{ "nav.my_claims" | translate }}
       </a>
       <a
         routerLink="/notifications"

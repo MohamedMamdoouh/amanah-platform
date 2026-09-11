@@ -16,7 +16,11 @@ import { TabItem, TabsComponent } from '../../shared/ui/tabs/tabs.component';
 import { ReportStatus, ReportSummary } from '../models/report.models';
 import { ReportService } from '../report.service';
 
-type MyReportsTab = 'pending_review' | 'rejected' | 'published';
+type MyReportsTab =
+  | 'pending_review'
+  | 'rejected'
+  | 'published'
+  | 'claim_in_progress';
 
 @Component({
   selector: 'app-my-reports',
@@ -46,7 +50,12 @@ export class MyReportsComponent implements OnInit {
   readonly reports = signal<ReportSummary[]>([]);
   readonly activeTab = signal<MyReportsTab>('pending_review');
 
-  readonly tabs: MyReportsTab[] = ['pending_review', 'rejected', 'published'];
+  readonly tabs: MyReportsTab[] = [
+    'pending_review',
+    'rejected',
+    'published',
+    'claim_in_progress',
+  ];
 
   ngOnInit(): void {
     void this.loadReports(this.activeTab());
@@ -85,6 +94,9 @@ export class MyReportsComponent implements OnInit {
     }
     if (status === 'rejected') {
       return 'rejected';
+    }
+    if (status === 'claim_in_progress') {
+      return 'claim';
     }
     return 'pending';
   }

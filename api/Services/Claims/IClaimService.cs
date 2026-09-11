@@ -38,4 +38,9 @@ public interface IClaimService
         Guid claimId,
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    Task<Result<IReadOnlyList<ReportClaimSummaryResponse>>> GetByReportAsync(
+        Guid reportId,
+        Guid reporterId,
+        CancellationToken cancellationToken = default);
 }

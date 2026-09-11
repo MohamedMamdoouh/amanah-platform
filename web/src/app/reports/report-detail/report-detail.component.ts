@@ -26,6 +26,7 @@ import { CardComponent } from '../../shared/ui/card/card.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
+import { ReportClaimsSectionComponent } from '../../claims/report-claims-section/report-claims-section.component';
 import { ReportPhotoUploadService } from '../../uploads/report-photo-upload.service';
 import {
   ReportDetail,
@@ -53,6 +54,7 @@ interface DisplayPhoto {
     SpinnerComponent,
     TranslateModule,
     PhotoUploadComponent,
+    ReportClaimsSectionComponent,
   ],
   templateUrl: './report-detail.component.html',
   styleUrl: './report-detail.component.scss',
@@ -186,6 +188,24 @@ export class ReportDetailComponent implements OnInit {
     return this.report()?.status === 'rejected';
   }
 
+  showClaimsSection(): boolean {
+    const status = this.report()?.status;
+    return status === 'published' || status === 'claim_in_progress';
+  }
+
+  canReviewClaims(): boolean {
+    return this.report()?.status === 'published';
+  }
+
+  async onClaimReviewed(): Promise<void> {
+    const report = this.report();
+    if (!report) {
+      return;
+    }
+
+    await this.loadReport(report.id);
+  }
+
   isFound(): boolean {
     return this.report()?.type === 'found';
   }
@@ -291,6 +311,19 @@ export class ReportDetailComponent implements OnInit {
     }
   }
 
+  private scrollToClaimsSectionIfNeeded(): void {
+    if (this.route.snapshot.fragment !== 'claims-section') {
+      return;
+    }
+
+    queueMicrotask(() => {
+      document.getElementById('claims-section')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }
+
   private async loadReport(id: string): Promise<void> {
     try {
       const report = await firstValueFrom(this.reportService.getById(id));
@@ -303,6 +336,7 @@ export class ReportDetailComponent implements OnInit {
       }
 
       void this.loadPhotos(report);
+      this.scrollToClaimsSectionIfNeeded();
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 404) {
         this.error.set(this.translate.instant('reports.detail.not_found'));

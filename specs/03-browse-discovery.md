@@ -79,7 +79,7 @@ Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (l
 - Arabic normalization for query: alef variants, `ى` -> `ي`, `ة` -> `ه`, strip tatweel/diacritics, collapse whitespace, lowercase
 - All-terms AND matching via `ILIKE '%term%'` per normalized term
 - Status-based response filtering: strip private photos, hidden detail, reporter phone
-- `Claim In Progress` label on listing and detail; claim CTA shows login prompt or disabled state until Phase 04
+- `Claim In Progress` label on listing and detail; claim CTA prompts login when logged out, shows claim form on `Published` reports when logged in (Phase 04), disabled on `Claim In Progress`
 
 ---
 
@@ -117,7 +117,6 @@ URL access by status (Section 4.4):
 
 Explicitly deferred to later phases:
 
-- Claim submission and claim CTA functionality -> Phase 04
 - Chat and messaging -> Phase 05
 - Abuse flagging UI -> Phase 07
 - Social link previews -> out of scope v1 (Section 10)
@@ -140,7 +139,8 @@ From [SPEC.md Section 15.3](./SPEC.md#153-browse-search-visibility-and-urls).
 - [x] Sort: newest published first
 - [x] Pagination: 20 per page, numbered pages
 - [x] Logged-out visitors see same content as logged-in on public reports
-- [x] Claim and message action stubs prompt login when logged out (full message/chat in Phase 05)
+- [x] Claim action prompts login when logged out; claim form on `Published` reports when logged in (Phase 04)
+- [x] Message action stub prompts login when logged out (full chat in Phase 05)
 
 ---
 

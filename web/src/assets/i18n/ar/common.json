@@ -28,6 +28,7 @@
   "nav.logout": "تسجيل الخروج",
   "nav.admin": "لوحة الإدارة",
   "nav.my_reports": "بلاغاتي",
+  "nav.my_claims": "مطالباتي",
   "auth.login.title": "تسجيل الدخول",
   "auth.login.title_signin": "تسجيل الدخول",
   "auth.login.title_signup": "إنشاء حساب",

@@ -1,0 +1,135 @@
+<section
+  class="report-claims"
+  id="claims-section"
+  aria-labelledby="report-claims-title"
+>
+  <h2 id="report-claims-title">{{ "claims.review.title" | translate }}</h2>
+  <p class="report-claims__intro">{{ "claims.review.intro" | translate }}</p>
+
+  @if (actionError()) {
+    <app-alert variant="error">{{ actionError() }}</app-alert>
+  }
+
+  @if (loading()) {
+    <app-loading-indicator [label]="'claims.review.loading' | translate" />
+  } @else if (error()) {
+    <app-alert variant="error">{{ error() }}</app-alert>
+  } @else if (claims().length === 0) {
+    <p class="report-claims__empty">{{ "claims.review.empty" | translate }}</p>
+  } @else {
+    <ul class="report-claims__list">
+      @for (claim of claims(); track claim.id) {
+        <li class="report-claims__card">
+          <div class="report-claims__header">
+            <div>
+              <p class="report-claims__claimant">{{ claim.claimantDisplayName }}</p>
+              <p class="report-claims__meta">
+                {{ claim.submittedAt | date: "medium" }}
+                · {{ "claims.review.attempt" | translate: { n: claim.attemptNumber } }}
+              </p>
+            </div>
+            <app-badge [variant]="badgeVariant(claim.status)">
+              {{ statusLabel(claim.status) }}
+            </app-badge>
+          </div>
+
+          <p class="report-claims__answer">{{ claim.submittedAnswer }}</p>
+
+          @if (claim.hasPhoto) {
+            <div class="report-claims__photo">
+              @if (photoState(claim.id); as photo) {
+                @if (photo.loading) {
+                  <span class="report-claims__photo-loading">
+                    <app-spinner size="sm" />
+                    {{ "reports.detail.photo_loading" | translate }}
+                  </span>
+                } @else if (photo.url) {
+                  <img
+                    [src]="photo.url"
+                    alt=""
+                    class="report-claims__photo-image"
+                  />
+                }
+              }
+            </div>
+          }
+
+          @if (claim.decisionReason) {
+            <p class="report-claims__reason">{{ claim.decisionReason }}</p>
+          }
+
+          @if (canActOn(claim)) {
+            <div class="report-claims__actions">
+              <app-button
+                variant="primary"
+                size="sm"
+                [disabled]="actingClaimId() !== null"
+                (clicked)="openApprove(claim.id)"
+              >
+                {{ "claims.review.approve" | translate }}
+              </app-button>
+              <app-button
+                variant="outline"
+                size="sm"
+                [disabled]="actingClaimId() !== null"
+                (clicked)="openReject(claim.id)"
+              >
+                {{ "claims.review.reject" | translate }}
+              </app-button>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (confirmApproveId()) {
+    <div
+      class="report-claims__dialog"
+      role="dialog"
+      aria-labelledby="approve-claim-title"
+    >
+      <h3 id="approve-claim-title">
+        {{ "claims.review.approve_title" | translate }}
+      </h3>
+      <p>{{ "claims.review.approve_intro" | translate }}</p>
+      <div class="report-claims__dialog-actions">
+        <app-button variant="ghost" (clicked)="closeDialogs()">
+          {{ "claims.review.cancel" | translate }}
+        </app-button>
+        <app-button
+          variant="primary"
+          [loading]="actingClaimId() === confirmApproveId()"
+          (clicked)="confirmApprove()"
+        >
+          {{ "claims.review.approve_confirm" | translate }}
+        </app-button>
+      </div>
+    </div>
+  }
+
+  @if (confirmRejectId()) {
+    <div
+      class="report-claims__dialog"
+      role="dialog"
+      aria-labelledby="reject-claim-title"
+    >
+      <h3 id="reject-claim-title">
+        {{ "claims.review.reject_title" | translate }}
+      </h3>
+      <p>{{ "claims.review.reject_intro" | translate }}</p>
+      <div class="report-claims__dialog-actions">
+        <app-button variant="ghost" (clicked)="closeDialogs()">
+          {{ "claims.review.cancel" | translate }}
+        </app-button>
+        <app-button
+          variant="outline"
+          [loading]="actingClaimId() === confirmRejectId()"
+          (clicked)="confirmReject()"
+        >
+          {{ "claims.review.reject_confirm" | translate }}
+        </app-button>
+      </div>
+    </div>
+  }
+</section>

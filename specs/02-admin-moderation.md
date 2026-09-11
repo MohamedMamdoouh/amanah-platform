@@ -139,14 +139,13 @@ Admin email (not in-app): new submission waiting in moderation queue (Resend out
 
 Explicitly deferred to later phases:
 
-- Public browse and search UI -> Phase 03
-- Claims -> Phase 04
 - Listing expiry warning and auto-expiry -> Phase 06
 - Rejected report 30-day deletion job -> Phase 06
 - Admin takedown and ban -> Phase 07
 - Abuse report queue -> Phase 07
 - Reporter withdraw while `Published` -> Phase 06
-- My Reports `claim_in_progress` tab -> Phase 04
+
+Shipped in later phases: public browse (Phase 03), claims and My Reports `claim_in_progress` tab (Phase 04).
 
 ---
 

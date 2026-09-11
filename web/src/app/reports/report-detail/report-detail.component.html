@@ -295,6 +295,14 @@
         </section>
       }
 
+      @if (showClaimsSection()) {
+        <app-report-claims-section
+          [reportId]="detail.id"
+          [canReview]="canReviewClaims()"
+          (reviewed)="onClaimReviewed()"
+        />
+      }
+
       @if (canWithdraw()) {
         <div class="report-detail__actions">
           <button

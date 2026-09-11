@@ -135,4 +135,47 @@ public class ClaimVisibilityTests(ApiWebApplicationFactory factory) : IClassFixt
         Assert.Equal("claim_in_progress", body.ReportStatus);
         Assert.Equal(chatThreadId, body.ChatThreadId);
     }
+
+    [Fact]
+    public async Task Reporter_can_list_claims_on_own_report()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
+
+        var (_, submitted) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, reportId);
+        Assert.NotNull(submitted);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var (response, body) = await ClaimTestHelpers.GetReportClaimsAsync(context.Client, reportId);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Single(body);
+        Assert.Equal(submitted.Id, body[0].Id);
+        Assert.Equal("pending", body[0].Status);
+        Assert.Equal(ClaimTestHelpers.ValidAnswer, body[0].SubmittedAnswer);
+        Assert.Equal("Claimant", body[0].ClaimantDisplayName);
+    }
+
+    [Fact]
+    public async Task Stranger_cannot_list_claims_on_report()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
+        await ClaimTestHelpers.SubmitClaimAsync(context.Client, reportId);
+
+        var strangerSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, strangerSession.AccessToken);
+
+        var (response, error) = await ClaimTestHelpers.GetReportClaimsAsync(context.Client, reportId);
+        var apiError = await ClaimTestHelpers.ReadErrorAsync(response);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(ErrorCodes.NotFound, apiError?.Code);
+        Assert.Null(error);
+    }
 }

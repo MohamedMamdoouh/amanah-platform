@@ -120,6 +120,17 @@ public sealed class ClaimService(
         }
 
         dbContext.Claims.Add(claim);
+
+        dbContext.Notifications.Add(CreateNotification(
+            report.ReporterId,
+            NotificationTypes.NewClaimSubmitted,
+            new NotificationPayload(
+                NotificationTypes.NewClaimSubmitted,
+                now,
+                DeepLink: $"/my/reports/{reportId}#claims-section",
+                ReportId: reportId),
+            now));
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return new SubmitClaimResponse
@@ -373,6 +384,30 @@ public sealed class ClaimService(
         return ToClaimDetail(claim);
     }
 
+    public async Task<Result<IReadOnlyList<ReportClaimSummaryResponse>>> GetByReportAsync(
+        Guid reportId,
+        Guid reporterId,
+        CancellationToken cancellationToken = default)
+    {
+        var report = await dbContext.Reports
+            .AsNoTracking()
+            .SingleOrDefaultAsync(existingReport => existingReport.Id == reportId, cancellationToken);
+
+        if (report is null || report.ReporterId != reporterId)
+        {
+            return ResultError.NotFound("Report not found.");
+        }
+
+        var claims = await dbContext.Claims
+            .AsNoTracking()
+            .Include(claim => claim.Claimant)
+            .Where(claim => claim.ReportId == reportId)
+            .OrderByDescending(claim => claim.SubmittedAt)
+            .ToListAsync(cancellationToken);
+
+        return claims.Select(ToReportClaimSummary).ToList();
+    }
+
     private static Notification CreateNotification(
         Guid userId,
         string type,
@@ -414,6 +449,20 @@ public sealed class ClaimService(
             ReportTitle = claim.Report.Title,
             ClaimantDisplayName = claim.Claimant.DisplayName ?? string.Empty,
             ReporterDisplayName = claim.Report.Reporter.DisplayName ?? string.Empty,
+        };
+
+    private static ReportClaimSummaryResponse ToReportClaimSummary(Claim claim) =>
+        new()
+        {
+            Id = claim.Id,
+            Status = MapClaimStatus(claim.Status),
+            SubmittedAnswer = claim.SubmittedAnswer,
+            HasPhoto = !string.IsNullOrWhiteSpace(claim.PhotoStorageKey),
+            SubmittedAt = claim.SubmittedAt,
+            ReviewedAt = claim.ReviewedAt,
+            DecisionReason = claim.DecisionReason,
+            AttemptNumber = claim.AttemptNumber,
+            ClaimantDisplayName = claim.Claimant.DisplayName ?? string.Empty,
         };
 
     private static MyClaimSummaryResponse ToMyClaimSummary(Claim claim) =>

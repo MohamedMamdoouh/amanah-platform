@@ -23,7 +23,7 @@ One public origin serves both the app and `/api/v1/*`.
 5. **Resend** (optional until staging) — create account, verify domain (or use `onboarding@resend.dev`), configure admin alert email
 6. **Keepalive** (optional) — scheduled ping to avoid free-tier spin-down
 
-Verify `/health`, `/health/ready`, the home page, sign-in/sign-up, and report submission after deploy.
+Verify `/health`, `/health/ready`, the home page, sign-in/sign-up, report submission, and claim submit/review flows after deploy (see [specs/04-claims-verification.md](../specs/04-claims-verification.md) §9 manual smoke).
 
 See [observability.md](observability.md) for logs, metrics, and alerting.
 
@@ -75,7 +75,7 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 
 ---
 
-## Cloudflare R2 (report photos)
+## Cloudflare R2 (report and claim photos)
 
 | Variable | Purpose |
 | -------- | ------- |
@@ -84,9 +84,9 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 | `Bucket__SecretKey` | R2 secret access key |
 | `Bucket__Name` | Bucket name (e.g. `amanah-media`) |
 
-Photos are stored under `public/` or `private/` prefixes based on category `photosPrivate`. Report photos are uploaded with `POST /api/v1/reports` (multipart) and written directly to the report prefix on submit.
+Photos are stored under `public/` or `private/` prefixes based on category `photosPrivate`. Report photos are uploaded with `POST /api/v1/reports` (multipart) and written directly to the report prefix on submit. Claim photos use `private/claims/{claimId}/…`, uploaded in the same multipart request as `POST /api/v1/reports/{id}/claims`, and served via short-lived presigned URLs (`GET /api/v1/uploads/claim-photo/{claimId}/url`).
 
-**Known gap:** if R2 upload succeeds but the database commit fails, promoted files are not deleted automatically today. Phase 06 will add compensating cleanup on submit failure and a scheduled `OrphanedStorageCleanup` job. See [specs/06-lifecycle-retention.md](../specs/06-lifecycle-retention.md#orphaned-storage-cleanup).
+**Known gap:** if R2 upload succeeds but the database commit fails, promoted files are not deleted automatically today (report photos on create/update and claim photos on submit). Phase 06 will add compensating cleanup on submit failure and scheduled orphan sweeps. See [specs/06-lifecycle-retention.md](../specs/06-lifecycle-retention.md#orphaned-storage-cleanup).
 
 ---
 

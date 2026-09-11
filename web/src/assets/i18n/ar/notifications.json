@@ -8,5 +8,9 @@
   "notifications.unread_badge": "{{count}}",
   "notifications.type.ReportApproved": "تم اعتماد بلاغك",
   "notifications.type.ReportRejected": "تم رفض بلاغك",
+  "notifications.type.NewClaimSubmitted": "مطالبة جديدة على بلاغك",
+  "notifications.type.ClaimApproved": "تم قبول مطالبتك",
+  "notifications.type.ClaimRejected": "تم رفض مطالبتك",
+  "notifications.type.ClaimWithdrawnByClaimant": "سُحبت مطالبة على بلاغك",
   "notifications.open_report": "عرض البلاغ"
 }

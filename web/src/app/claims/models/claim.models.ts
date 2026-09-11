@@ -6,3 +6,65 @@ export interface SubmitClaimResponse {
   id: string;
   status: string;
 }
+
+export type ClaimStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'withdrawn'
+  | 'cancelled';
+
+export interface MyClaimSummary {
+  id: string;
+  status: ClaimStatus;
+  submittedAt: string;
+  reviewedAt?: string | null;
+  decisionReason?: string | null;
+  reportId: string;
+  reportType: 'lost' | 'found';
+  reportTitle: string;
+  reporterDisplayName: string;
+}
+
+export interface ReportClaimSummary {
+  id: string;
+  status: ClaimStatus;
+  submittedAnswer: string;
+  hasPhoto: boolean;
+  submittedAt: string;
+  reviewedAt?: string | null;
+  decisionReason?: string | null;
+  attemptNumber: number;
+  claimantDisplayName: string;
+}
+
+export interface ClaimDetail {
+  id: string;
+  status: ClaimStatus;
+  submittedAnswer: string;
+  hasPhoto: boolean;
+  submittedAt: string;
+  reviewedAt?: string | null;
+  reviewerDecision?: string | null;
+  decisionReason?: string | null;
+  attemptNumber: number;
+  chatThreadId?: string | null;
+  reportId: string;
+  reportType: 'lost' | 'found';
+  reportStatus: string;
+  reportTitle: string;
+  claimantDisplayName: string;
+  reporterDisplayName: string;
+}
+
+export interface PaginatedClaimsResponse {
+  items: MyClaimSummary[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface ClaimPhotoPresignResponse {
+  url: string;
+}
