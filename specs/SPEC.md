@@ -592,7 +592,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `Re
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | OTP / SMS provider                            | **Done** - [Unimtx](https://www.unimtx.com/) via `UnimtxSmsSender` ([deployment.md](../docs/deployment.md))                                           |
 | API error contract appendix                   | **Resolved** - [00-api-conventions.md](./00-api-conventions.md)                                                                                       |
-| SignalR event/payload contract                | **Pending** before implementation                                                                                                                     |
+| SignalR event/payload contract                | **Resolved** — [05-signalr-contract.md](./05-signalr-contract.md)                                                                                     |
 | Transactional email provider for admin alerts | **Done** — [Resend](https://resend.com/) via `ResendAdminAlertEmailSender` ([deployment.md](../docs/deployment.md))                                   |
 | Orphaned R2 objects on failed report submit   | **Deferred — Phase 06** — compensating delete on DB failure + `OrphanedStorageCleanup` job ([06-lifecycle-retention.md](./06-lifecycle-retention.md)) |
 | Domain name                                   | **To be chosen** before launch                                                                                                                        |
@@ -705,7 +705,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 ## 16. Architecture & Stack
 
 - **Frontend:** Angular 19 SPA, Arabic-first RTL layout. Plain client-side rendering - no SSR in v1.
-- **Backend:** ASP.NET Core 10 Web API, with SignalR for real-time chat (5.6).
+- **Backend:** ASP.NET Core 10 Web API, with SignalR for real-time chat (5.6). Hub contract: [05-signalr-contract.md](./05-signalr-contract.md).
 - **Database:** PostgreSQL (EF Core + Npgsql). Hosted on **Supabase** in production (managed Postgres). Local dev uses native PostgreSQL on Windows; integration tests use PostgreSQL via Testcontainers.
 - **Hosting:** **Render** Free Docker web service — serves Angular SPA and .NET API from one origin. See [deployment.md](../docs/deployment.md).
 - **Object storage:** **Cloudflare R2** (S3-compatible) - `public/` and `private/` prefixes for media.

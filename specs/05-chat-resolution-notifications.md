@@ -25,6 +25,7 @@ Activate real-time in-app chat via SignalR for approved claims, with text and ph
 | Section 15.9 | Notifications acceptance criteria |
 | Section 16 | SignalR for real-time chat |
 | Section 20.1 | Notification payload contract |
+| [05-signalr-contract.md](./05-signalr-contract.md) | SignalR hub methods, events, presence, REST fallback |
 
 **Part II (technical):** Section 16 (SignalR), Section 20.1
 
@@ -41,11 +42,9 @@ Activate real-time in-app chat via SignalR for approved claims, with text and ph
 
 ### Deferred decisions (Section 14)
 
-Resolve **before starting** this phase:
-
 | Item | Notes |
 | ---- | ----- |
-| SignalR event/payload contract | Define before starting this phase (see [SPEC.md](./SPEC.md) Section 14) |
+| SignalR event/payload contract | **Resolved** — [05-signalr-contract.md](./05-signalr-contract.md) |
 
 ---
 
