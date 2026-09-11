@@ -39,6 +39,6 @@
   </div>
 
   <p class="photo-upload__hint form-hint">
-    {{ 'reports.photos.hint' | translate: { max: maxPhotos } }}
+    {{ hintKey() | translate: { max: maxPhotos() } }}
   </p>
 </div>

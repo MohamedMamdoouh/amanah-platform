@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, inject, input, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +9,7 @@ import { ReportType } from '../../reports/models/report.models';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { PhotoUploadComponent } from '../../reports/photo-upload/photo-upload.component';
 import { ClaimService } from '../claim.service';
 
 const MIN_LENGTH = 10;
@@ -21,6 +22,7 @@ const MAX_LENGTH = 500;
     AlertComponent,
     ButtonComponent,
     EmptyStateComponent,
+    PhotoUploadComponent,
     ReactiveFormsModule,
     TranslateModule,
   ],
@@ -32,6 +34,7 @@ export class ClaimFormComponent {
   private readonly claimService = inject(ClaimService);
   private readonly apiErrors = inject(ApiErrorService);
   private readonly translate = inject(TranslateService);
+  private readonly photoUpload = viewChild(PhotoUploadComponent);
 
   readonly reportId = input.required<string>();
   readonly reportType = input.required<ReportType>();
@@ -41,6 +44,7 @@ export class ClaimFormComponent {
   readonly submittedId = signal<string | null>(null);
   readonly summaryError = signal<string | null>(null);
   readonly fieldErrors = signal<Record<string, string[]>>({});
+  readonly selectedPhoto = signal<File | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     submittedAnswer: [
@@ -61,6 +65,14 @@ export class ClaimFormComponent {
     return this.isFound()
       ? 'claims.form.prompt_found'
       : 'claims.form.prompt_lost';
+  }
+
+  photoFieldError(): string | null {
+    return this.fieldErrors()['photo']?.[0] ?? null;
+  }
+
+  onPhotoChange(photos: File[]): void {
+    this.selectedPhoto.set(photos[0] ?? null);
   }
 
   fieldError(name: string): string | null {
@@ -106,9 +118,11 @@ export class ClaimFormComponent {
 
     try {
       const response = await firstValueFrom(
-        this.claimService.submit(this.reportId(), {
-          submittedAnswer: answer,
-        }),
+        this.claimService.submit(
+          this.reportId(),
+          { submittedAnswer: answer },
+          this.selectedPhoto() ?? undefined,
+        ),
       );
       this.submittedId.set(response.id);
       this.submitted.set(true);
@@ -131,8 +145,14 @@ export class ClaimFormComponent {
       return;
     }
 
+    const errors = this.apiErrors.fieldErrors(apiError);
     this.summaryError.set(this.apiErrors.summary(apiError));
-    this.fieldErrors.set(this.apiErrors.fieldErrors(apiError));
+    this.fieldErrors.set(errors);
+
+    if (errors['photo']) {
+      this.selectedPhoto.set(null);
+      this.photoUpload()?.clear();
+    }
   }
 
   private clearErrors(): void {

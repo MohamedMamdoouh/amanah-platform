@@ -31,19 +31,19 @@ export class PhotoUploadComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly disabled = input(false);
+  readonly maxPhotos = input(MAX_PHOTOS);
+  readonly hintKey = input('reports.photos.hint');
   readonly photosChange = output<File[]>();
 
   readonly photos = signal<LocalPhoto[]>([]);
   readonly error = signal<string | null>(null);
-
-  readonly maxPhotos = MAX_PHOTOS;
 
   constructor() {
     this.destroyRef.onDestroy(() => this.revokeAllPreviews(this.photos()));
   }
 
   canAddMore(): boolean {
-    return this.photos().length < MAX_PHOTOS;
+    return this.photos().length < this.maxPhotos();
   }
 
   onFilesSelected(event: Event): void {
@@ -52,7 +52,7 @@ export class PhotoUploadComponent {
     input.value = '';
 
     for (const file of files) {
-      if (this.photos().length >= MAX_PHOTOS) {
+      if (this.photos().length >= this.maxPhotos()) {
         break;
       }
 
@@ -69,6 +69,13 @@ export class PhotoUploadComponent {
 
       this.addPhoto(file);
     }
+  }
+
+  clear(): void {
+    this.revokeAllPreviews(this.photos());
+    this.photos.set([]);
+    this.error.set(null);
+    this.photosChange.emit([]);
   }
 
   removePhoto(id: string): void {

@@ -29,6 +29,20 @@
       }
     </label>
 
+    <div class="form-field">
+      <span class="form-label">{{ "claims.form.photo_title" | translate }}</span>
+      <app-photo-upload
+        [disabled]="submitting()"
+        [maxPhotos]="1"
+        hintKey="claims.form.photo_hint"
+        (photosChange)="onPhotoChange($event)"
+      />
+      <p class="form-hint">{{ "claims.form.photo_privacy_note" | translate }}</p>
+      @if (photoFieldError()) {
+        <span class="form-error" role="alert">{{ photoFieldError() }}</span>
+      }
+    </div>
+
     <app-button
       type="submit"
       variant="primary"
