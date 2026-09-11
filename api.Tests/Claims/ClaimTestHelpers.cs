@@ -130,6 +130,54 @@ public static class ClaimTestHelpers
         await context.DbContext.SaveChangesAsync();
     }
 
+    public static async Task<Guid> SeedPendingClaimAsync(
+        ReportTestContext context,
+        Guid reportId,
+        Guid claimantId,
+        int attemptNumber = 1)
+    {
+        var claimId = Guid.NewGuid();
+        context.DbContext.Claims.Add(new Claim
+        {
+            Id = claimId,
+            ReportId = reportId,
+            ClaimantId = claimantId,
+            Status = ClaimStatus.Pending,
+            SubmittedAnswer = ValidAnswer,
+            SubmittedAt = DateTimeOffset.UtcNow.AddHours(-1),
+            AttemptNumber = attemptNumber,
+            CountsAsFailure = false,
+        });
+
+        await context.DbContext.SaveChangesAsync();
+        return claimId;
+    }
+
+    public static async Task<Guid> SeedApprovedClaimAsync(
+        ReportTestContext context,
+        Guid reportId,
+        Guid claimantId,
+        int attemptNumber = 1)
+    {
+        var claimId = Guid.NewGuid();
+        context.DbContext.Claims.Add(new Claim
+        {
+            Id = claimId,
+            ReportId = reportId,
+            ClaimantId = claimantId,
+            Status = ClaimStatus.Approved,
+            SubmittedAnswer = ValidAnswer,
+            SubmittedAt = DateTimeOffset.UtcNow.AddHours(-2),
+            AttemptNumber = attemptNumber,
+            CountsAsFailure = false,
+            ReviewedAt = DateTimeOffset.UtcNow.AddHours(-1),
+            ReviewerDecision = "approved",
+        });
+
+        await context.DbContext.SaveChangesAsync();
+        return claimId;
+    }
+
     public static async Task<int> CountClaimsAsync(ReportTestContext context, Guid reportId, Guid claimantId) =>
         await context.DbContext.Claims
             .CountAsync(claim => claim.ReportId == reportId && claim.ClaimantId == claimantId);

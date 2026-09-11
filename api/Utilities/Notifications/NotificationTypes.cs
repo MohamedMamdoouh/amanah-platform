@@ -11,4 +11,6 @@ public static class NotificationTypes
     public const string ClaimRejected = "ClaimRejected";
 
     public const string ClaimWithdrawnByClaimant = "ClaimWithdrawnByClaimant";
+
+    public const string ClaimClosedReportUnavailable = "ClaimClosedReportUnavailable";
 }
