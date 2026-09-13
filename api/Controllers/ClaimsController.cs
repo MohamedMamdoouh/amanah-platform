@@ -1,5 +1,6 @@
 using Amanah.Api.Auth;
 using Amanah.Api.Services.Claims;
+using Amanah.Api.Services.Resolution;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Browse;
@@ -14,7 +15,9 @@ namespace Amanah.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/claims")]
 [Authorize]
-public sealed class ClaimsController(IClaimService claimService) : ControllerBase
+public sealed class ClaimsController(
+    IClaimService claimService,
+    ResolutionService resolutionService) : ControllerBase
 {
     [HttpGet("mine")]
     [EndpointName(nameof(GetMyClaims))]
@@ -90,6 +93,36 @@ public sealed class ClaimsController(IClaimService claimService) : ControllerBas
         User.TryGetUserId(out var claimantId);
 
         var result = await claimService.WithdrawAsync(id, claimantId, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [HttpPost("{id:guid}/confirm-resolution")]
+    [EndpointName(nameof(ConfirmResolution))]
+    [EndpointSummary("Confirm that the item was returned for an approved claim.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ConfirmResolution(Guid id, CancellationToken cancellationToken)
+    {
+        User.TryGetUserId(out var userId);
+
+        var result = await resolutionService.ConfirmResolutionAsync(id, userId, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    [EndpointName(nameof(CancelClaim))]
+    [EndpointSummary("Cancel an approved claim before mutual resolution confirmation.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CancelClaim(Guid id, CancellationToken cancellationToken)
+    {
+        User.TryGetUserId(out var userId);
+
+        var result = await resolutionService.CancelAsync(id, userId, cancellationToken);
         return result.ToActionResult();
     }
 }
