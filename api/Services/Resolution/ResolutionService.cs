@@ -180,6 +180,12 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
         claim.Report.Status = ReportStatus.Published;
         claim.Report.UpdatedAt = now;
 
+        if (resolution is not null)
+        {
+            dbContext.Resolutions.Remove(resolution);
+            claim.Report.Resolution = null;
+        }
+
         if (claim.ChatThread is not null)
         {
             claim.ChatThread.ReadOnlyAt = now;
