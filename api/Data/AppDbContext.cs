@@ -35,6 +35,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<Message> Messages => Set<Message>();
 
+    public DbSet<ChatAttachment> ChatAttachments => Set<ChatAttachment>();
+
     public DbSet<Notification> Notifications => Set<Notification>();
 
     public DbSet<AbuseReport> AbuseReports => Set<AbuseReport>();

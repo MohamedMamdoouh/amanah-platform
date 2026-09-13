@@ -107,7 +107,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
     }
 
     [Fact]
-    public async Task Attachment_id_is_rejected_in_this_phase()
+    public async Task Unknown_attachment_id_is_rejected()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);

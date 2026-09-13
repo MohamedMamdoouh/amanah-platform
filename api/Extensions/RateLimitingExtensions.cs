@@ -58,30 +58,20 @@ public sealed class ConfigureRateLimiterOptions(
 
         foreach (var (policyName, policy) in _rateLimit.Policies)
         {
-            if (string.Equals(policyName, "photo-upload-hourly", StringComparison.OrdinalIgnoreCase))
+            if (policyName.EndsWith("-hourly", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            if (string.Equals(policyName, "photo-upload", StringComparison.OrdinalIgnoreCase)
-                && _rateLimit.Policies.TryGetValue("photo-upload-hourly", out var hourlyPolicy))
+            var hourlyPolicyName = $"{policyName}-hourly";
+            if (_rateLimit.Policies.TryGetValue(hourlyPolicyName, out var hourlyPolicy))
             {
                 options.AddPolicy(policyName, httpContext =>
                 {
                     var partitionKey = ResolvePartitionKey(httpContext, policy.PartitionBy);
                     return RateLimitPartition.Get(partitionKey, _ => RateLimiter.CreateChained(
-                        new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = policy.PermitLimit,
-                            Window = TimeSpan.FromSeconds(policy.WindowSeconds),
-                            QueueLimit = 0,
-                        }),
-                        new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = hourlyPolicy.PermitLimit,
-                            Window = TimeSpan.FromSeconds(hourlyPolicy.WindowSeconds),
-                            QueueLimit = 0,
-                        })));
+                        CreateFixedWindowLimiter(policy),
+                        CreateFixedWindowLimiter(hourlyPolicy)));
                 });
                 continue;
             }
@@ -89,14 +79,20 @@ public sealed class ConfigureRateLimiterOptions(
             options.AddPolicy(policyName, httpContext =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     ResolvePartitionKey(httpContext, policy.PartitionBy),
-                    _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = policy.PermitLimit,
-                        Window = TimeSpan.FromSeconds(policy.WindowSeconds),
-                        QueueLimit = 0,
-                    }));
+                    _ => ToFixedWindowOptions(policy)));
         }
     }
+
+    private static FixedWindowRateLimiter CreateFixedWindowLimiter(RateLimitPolicyOptions policy) =>
+        new(ToFixedWindowOptions(policy));
+
+    private static FixedWindowRateLimiterOptions ToFixedWindowOptions(RateLimitPolicyOptions policy) =>
+        new()
+        {
+            PermitLimit = policy.PermitLimit,
+            Window = TimeSpan.FromSeconds(policy.WindowSeconds),
+            QueueLimit = 0,
+        };
 
     private static string ResolvePartitionKey(HttpContext httpContext, string partitionBy)
     {

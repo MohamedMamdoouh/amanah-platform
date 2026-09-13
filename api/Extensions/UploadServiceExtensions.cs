@@ -9,6 +9,8 @@ public static class UploadServiceExtensions
         services.AddSingleton<ReportImageProcessor>();
         services.AddScoped<ReportPhotoPresignService>();
         services.AddScoped<ClaimPhotoPresignService>();
+        services.AddScoped<ChatAttachmentAttachService>();
+        services.AddScoped<ChatAttachmentPresignService>();
 
         return services;
     }

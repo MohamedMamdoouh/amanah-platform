@@ -57,6 +57,7 @@ public sealed class ReportTestContext : IAsyncDisposable
         await setupContext.ReportPhotos.ExecuteDeleteAsync();
         await setupContext.Notifications.ExecuteDeleteAsync();
         await setupContext.ModerationActions.ExecuteDeleteAsync();
+        await setupContext.ChatAttachments.ExecuteDeleteAsync();
         await setupContext.Messages.ExecuteDeleteAsync();
         await setupContext.ChatThreads.ExecuteDeleteAsync();
         await setupContext.Claims.ExecuteDeleteAsync();

@@ -75,13 +75,25 @@ public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvide
         SendMessageRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.AttachmentId is not null)
+        ChatAttachment? attachment = null;
+        if (request.AttachmentId is Guid attachmentId)
         {
-            return ResultError.NotFound("Attachment not found.");
+            attachment = await dbContext.ChatAttachments
+                .SingleOrDefaultAsync(
+                    item => item.Id == attachmentId
+                        && item.ChatThreadId == threadId
+                        && item.UploaderId == userId
+                        && item.MessageId == null,
+                    cancellationToken);
+
+            if (attachment is null)
+            {
+                return ResultError.NotFound("Attachment not found.");
+            }
         }
 
         var normalizedBody = NormalizeBody(request.Body);
-        if (string.IsNullOrEmpty(normalizedBody))
+        if (string.IsNullOrEmpty(normalizedBody) && attachment is null)
         {
             return ResultError.BadRequest(
                 "Message cannot be empty.",
@@ -123,10 +135,16 @@ public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvide
             ChatThreadId = thread.Id,
             SenderId = userId,
             Body = normalizedBody,
+            AttachmentStorageKey = attachment?.StorageKey,
             SentAt = now,
         };
 
         dbContext.Messages.Add(message);
+
+        if (attachment is not null)
+        {
+            attachment.MessageId = message.Id;
+        }
 
         var counterpartyId = thread.Claim.Report.ReporterId == userId
             ? thread.Claim.ClaimantId
@@ -146,7 +164,10 @@ public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvide
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return ToMessageResponse(message, sender.DisplayName ?? string.Empty);
+        return ToMessageResponse(
+            message,
+            sender.DisplayName ?? string.Empty,
+            attachment?.Id);
     }
 
     private async Task<ChatThread?> LoadThreadAsync(
@@ -184,6 +205,7 @@ public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvide
         var messagesQuery = dbContext.Messages
             .AsNoTracking()
             .Include(message => message.Sender)
+            .Include(message => message.Attachment)
             .Where(message => message.ChatThreadId == threadId);
 
         if (beforeMessageId is Guid cursorMessageId)
@@ -293,7 +315,10 @@ public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvide
             ReadOnlyAt = thread.ReadOnlyAt,
             Resolution = ToResolutionState(thread, userId, isReporter),
             Messages = messages
-                .Select(message => ToMessageResponse(message, message.Sender.DisplayName ?? string.Empty))
+                .Select(message => ToMessageResponse(
+                    message,
+                    message.Sender.DisplayName ?? string.Empty,
+                    message.Attachment?.Id))
                 .ToList(),
         };
     }
@@ -324,7 +349,10 @@ public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvide
         };
     }
 
-    private static ChatMessageResponse ToMessageResponse(Message message, string senderDisplayName) =>
+    private static ChatMessageResponse ToMessageResponse(
+        Message message,
+        string senderDisplayName,
+        Guid? attachmentId = null) =>
         new()
         {
             Id = message.Id,
@@ -332,7 +360,7 @@ public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvide
             SenderId = message.SenderId,
             SenderDisplayName = senderDisplayName,
             Body = message.Body,
-            AttachmentId = null,
+            AttachmentId = attachmentId ?? message.Attachment?.Id,
             SentAt = message.SentAt,
         };
 

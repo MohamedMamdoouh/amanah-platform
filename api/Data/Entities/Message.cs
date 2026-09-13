@@ -16,5 +16,7 @@ public class Message : IEntity
 
     public string? AttachmentStorageKey { get; set; }
 
+    public ChatAttachment? Attachment { get; set; }
+
     public DateTimeOffset SentAt { get; set; }
 }

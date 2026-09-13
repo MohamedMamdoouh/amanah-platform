@@ -6,6 +6,7 @@ using Amanah.Contracts.Responses.Chats;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Amanah.Api.Controllers;
 
@@ -53,6 +54,7 @@ public sealed class ChatsController(ChatService chatService) : ControllerBase
     }
 
     [HttpPost("{threadId:guid}/messages")]
+    [EnableRateLimiting("chat-message")]
     [EndpointName(nameof(SendChatMessage))]
     [EndpointSummary("Send a chat message via REST fallback.")]
     [ProducesResponseType(typeof(ChatMessageResponse), StatusCodes.Status201Created)]
@@ -60,6 +62,7 @@ public sealed class ChatsController(ChatService chatService) : ControllerBase
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> SendChatMessage(
         Guid threadId,
         [FromBody] SendMessageRequest request,
