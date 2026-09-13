@@ -24,6 +24,10 @@ public sealed class NotificationPayloadResponse
 
     public Guid? ReportId { get; init; }
 
+    public Guid? ClaimId { get; init; }
+
+    public Guid? ChatThreadId { get; init; }
+
     public string? ReasonCode { get; init; }
 
     public string? Note { get; init; }

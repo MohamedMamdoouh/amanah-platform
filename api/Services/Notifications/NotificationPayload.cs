@@ -9,7 +9,9 @@ public sealed record NotificationPayload(
     string DeepLink,
     Guid? ReportId = null,
     string? ReasonCode = null,
-    string? Note = null)
+    string? Note = null,
+    Guid? ClaimId = null,
+    Guid? ChatThreadId = null)
 {
     public string ToJson() =>
         JsonSerializer.Serialize(this, ApiJson.SerializerOptions);

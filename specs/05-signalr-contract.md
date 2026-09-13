@@ -21,8 +21,8 @@ Real-time chat hub contract for [Phase 05](./05-chat-resolution-notifications.md
 
 - **Required:** valid JWT access token (same signing key and claims as REST; see [SPEC.md section 18](./SPEC.md#18-authentication--sessions)).
 - **Connect:** unauthenticated or expired tokens are rejected; the connection does not open.
-- **Token delivery:** `access_token` query parameter on the negotiate/WebSocket URL (browser WebSocket handshake cannot set `Authorization`). The Angular client passes the current access token from session storage.
-- **Refresh:** if the access token expires while connected, the client disconnects, refreshes via `POST /api/v1/auth/refresh`, and reconnects with the new token. Hub state (`JoinThread` membership) is re-established after reconnect.
+- **Token delivery:** `access_token` query parameter on the negotiate/WebSocket URL (browser WebSocket handshake cannot set `Authorization`). The Angular client passes the current access token from the in-memory session (`AuthService.getAccessToken()`), via `accessTokenFactory` on the SignalR connection. The refresh token stays in an HTTP-only cookie (same as REST); it is not sent on the WebSocket URL.
+- **Refresh:** if the access token expires while connected, the client disconnects, calls `POST /api/v1/auth/refresh` (cookie sent automatically with `withCredentials`), applies the new access token to `AuthService`, and reconnects with the new token. Hub state (`JoinThread` membership) is re-established after reconnect.
 - **Banned users:** rejected on connect (same as REST `auth.banned`).
 
 ---
@@ -227,7 +227,7 @@ Chat REST endpoints use the standard API error envelope ([00-api-conventions.md]
 - On `MessageReceived`, append to the in-memory list if `id` is not already present (idempotent for sender echo).
 - On `ThreadReadOnly`, set local read-only flag and disable input.
 - Automatic reconnect: use SignalR built-in reconnect with backoff; after reconnect, re-call `JoinThread` for the open thread.
-- Access token: pass via `accessTokenFactory` returning the current JWT (refresh before connect if expired).
+- Access token: `accessTokenFactory: () => auth.getAccessToken() ?? ''` (in-memory; not `sessionStorage`). Call `auth.refreshSession()` before `start()` if the token may be expired.
 
 ---
 

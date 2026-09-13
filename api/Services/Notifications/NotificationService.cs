@@ -100,6 +100,8 @@ public sealed class NotificationService(AppDbContext dbContext, TimeProvider tim
                 CreatedAt = payload.CreatedAt,
                 DeepLink = payload.DeepLink,
                 ReportId = payload.ReportId,
+                ClaimId = payload.ClaimId,
+                ChatThreadId = payload.ChatThreadId,
                 ReasonCode = payload.ReasonCode,
                 Note = payload.Note,
             },
