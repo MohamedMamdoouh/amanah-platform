@@ -173,6 +173,17 @@ public sealed class ClaimService(
         claim.Report.Status = ReportStatus.ClaimInProgress;
         claim.Report.UpdatedAt = now;
 
+        // Drop any leftover Resolution from a prior cancelled claim (or a confirm/cancel
+        // race) so the new approved claim always starts with a clean mutual-confirm slate.
+        var staleResolution = await dbContext.Resolutions
+            .SingleOrDefaultAsync(
+                existingResolution => existingResolution.ReportId == claim.ReportId,
+                cancellationToken);
+        if (staleResolution is not null)
+        {
+            dbContext.Resolutions.Remove(staleResolution);
+        }
+
         // Phase 05 activates messaging on this thread; until then it is a placeholder record only.
         var chatThread = new ChatThread
         {
