@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddReportServices();
         services.AddClaimServices();
         services.AddResolutionServices();
+        services.AddChatServices();
         services.AddModerationServices();
         services.AddBrowseServices();
         services.AddBucketStorage();
