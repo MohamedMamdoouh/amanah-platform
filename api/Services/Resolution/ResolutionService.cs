@@ -35,6 +35,13 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
                 ErrorCodes.ClaimInvalidStatus);
         }
 
+        if (claim.Report.Status != ReportStatus.ClaimInProgress)
+        {
+            return ResultError.Conflict(
+                "Only claims on in-progress reports can be confirmed.",
+                ErrorCodes.ClaimInvalidStatus);
+        }
+
         var resolution = claim.Report.Resolution;
         if (isReporter && resolution?.ReporterConfirmedAt is not null)
         {
@@ -177,14 +184,27 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
 
         claim.Status = ClaimStatus.Cancelled;
         claim.CancelledByUserId = userId;
+        if (isClaimant)
+        {
+            claim.CountsAsFailure = true;
+        }
+
         claim.Report.Status = ReportStatus.Published;
         claim.Report.UpdatedAt = now;
 
-        if (resolution is not null)
+        // Always delete by report id so a concurrent confirm that committed after our
+        // initial load cannot leave a stale Resolution for the next claim cycle.
+        var resolutionToRemove = resolution
+            ?? await dbContext.Resolutions
+                .SingleOrDefaultAsync(
+                    existingResolution => existingResolution.ReportId == claim.ReportId,
+                    cancellationToken);
+        if (resolutionToRemove is not null)
         {
-            dbContext.Resolutions.Remove(resolution);
-            claim.Report.Resolution = null;
+            dbContext.Resolutions.Remove(resolutionToRemove);
         }
+
+        claim.Report.Resolution = null;
 
         if (claim.ChatThread is not null)
         {
