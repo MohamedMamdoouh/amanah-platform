@@ -180,6 +180,15 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
         claim.Report.Status = ReportStatus.Published;
         claim.Report.UpdatedAt = now;
 
+        // Resolution is 1:1 with the report. A cancelled claim abandons any partial
+        // confirmation so a later approved claim cannot inherit stale confirm timestamps
+        // (which would let one party alone resolve, or permanently block the other).
+        if (resolution is not null)
+        {
+            dbContext.Resolutions.Remove(resolution);
+            claim.Report.Resolution = null;
+        }
+
         if (claim.ChatThread is not null)
         {
             claim.ChatThread.ReadOnlyAt = now;

@@ -122,6 +122,49 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
             .AsNoTracking()
             .SingleAsync(existingReport => existingReport.Id == scenario.ReportId);
         Assert.Equal(ReportStatus.Published, report.Status);
+
+        Assert.False(await context.DbContext.Resolutions
+            .AnyAsync(existingResolution => existingResolution.ReportId == scenario.ReportId));
+    }
+
+    [Fact]
+    public async Task Cancel_after_partial_confirm_clears_resolution_so_next_claim_requires_mutual_confirm()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
+
+        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        var firstConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
+        Assert.Equal(HttpStatusCode.NoContent, firstConfirm.StatusCode);
+
+        ResolutionTestHelpers.AuthenticateClaimant(context.Client, scenario.ClaimantSession);
+        var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
+        Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
+
+        var nextClaimant = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, nextClaimant.AccessToken);
+        var (_, nextClaim) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, scenario.ReportId);
+        Assert.NotNull(nextClaim);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var approveResponse = await ClaimTestHelpers.ApproveClaimAsync(context.Client, nextClaim.Id);
+        Assert.Equal(HttpStatusCode.NoContent, approveResponse.StatusCode);
+
+        ClaimTestHelpers.Authenticate(context.Client, nextClaimant.AccessToken);
+        var claimantOnlyConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, nextClaim.Id);
+        Assert.Equal(HttpStatusCode.NoContent, claimantOnlyConfirm.StatusCode);
+
+        var reportAfterOneConfirm = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(existingReport => existingReport.Id == scenario.ReportId);
+        Assert.Equal(ReportStatus.ClaimInProgress, reportAfterOneConfirm.Status);
+
+        var resolution = await context.DbContext.Resolutions
+            .AsNoTracking()
+            .SingleAsync(existingResolution => existingResolution.ReportId == scenario.ReportId);
+        Assert.Null(resolution.ReporterConfirmedAt);
+        Assert.NotNull(resolution.ClaimantConfirmedAt);
+        Assert.Null(resolution.ResolvedAt);
     }
 
     [Fact]
