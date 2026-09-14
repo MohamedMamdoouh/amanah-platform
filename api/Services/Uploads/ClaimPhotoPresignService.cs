@@ -1,7 +1,10 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
+using Amanah.Api.Utilities.Claims;
+using Amanah.Api.Utilities.Uploads;
 using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,8 +14,6 @@ public sealed class ClaimPhotoPresignService(
     AppDbContext dbContext,
     IBucketStorage bucketStorage)
 {
-    private static readonly TimeSpan PresignLifetime = TimeSpan.FromMinutes(5);
-
     public async Task<Result<ClaimPhotoPresignResponse>> GetClaimPhotoUrlAsync(
         Guid claimId,
         Guid userId,
@@ -21,7 +22,7 @@ public sealed class ClaimPhotoPresignService(
     {
         var claim = await dbContext.Claims
             .AsNoTracking()
-            .Include(existingClaim => existingClaim.Report)
+            .WithReportInclude()
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
         if (claim is null || string.IsNullOrWhiteSpace(claim.PhotoStorageKey))
@@ -35,19 +36,19 @@ public sealed class ClaimPhotoPresignService(
             return ResultError.Forbidden("Admin claim photo access is not available yet.");
         }
 
-        var isClaimant = claim.ClaimantId == userId;
-        var isReporter = claim.Report.ReporterId == userId;
-        if (!isClaimant && !isReporter)
+        if (!ClaimAccessAuthorization.IsReporterOrClaimant(claim, userId))
         {
             return ResultError.NotFound("Photo not found.");
         }
 
         var thumbnailKey = ClaimPhotoStorageKeys.ThumbnailForOriginal(claim.PhotoStorageKey);
-        var storageKey = await bucketStorage.ExistsAsync(thumbnailKey, cancellationToken)
-            ? thumbnailKey
-            : claim.PhotoStorageKey;
+        var storageKey = await StorageKeyResolver.ResolvePreferExistingThumbnailAsync(
+            bucketStorage,
+            claim.PhotoStorageKey,
+            thumbnailKey,
+            cancellationToken);
 
-        var url = bucketStorage.GetPreSignedUrl(storageKey, PresignLifetime);
+        var url = bucketStorage.GetPreSignedUrl(storageKey, PresignConstants.Lifetime);
 
         return new ClaimPhotoPresignResponse
         {

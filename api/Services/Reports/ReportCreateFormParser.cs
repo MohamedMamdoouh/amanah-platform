@@ -13,23 +13,21 @@ public sealed record ReportCreateForm(
 
 public sealed class ReportCreateFormParser(IValidator<CreateReportRequest> validator)
 {
-    private const int MaxPhotos = 5;
-
     public async Task<Result<ReportCreateForm>> ParseAsync(
         HttpRequest request,
         CancellationToken cancellationToken = default)
     {
         if (!request.HasFormContentType)
         {
-            return ReportPartError("Report submission must use multipart form data.");
+            return ReportFormParserCore.ReportPartError("Report submission must use multipart form data.");
         }
 
         var form = await request.ReadFormAsync(cancellationToken);
 
-        var reportJson = await ReadReportJsonAsync(form, cancellationToken);
+        var reportJson = await ReportFormParserCore.ReadReportJsonAsync(form, cancellationToken);
         if (string.IsNullOrWhiteSpace(reportJson))
         {
-            return ReportPartError("Report data is required.");
+            return ReportFormParserCore.ReportPartError("Report data is required.");
         }
 
         CreateReportRequest? reportRequest;
@@ -41,88 +39,30 @@ public sealed class ReportCreateFormParser(IValidator<CreateReportRequest> valid
         }
         catch (JsonException)
         {
-            return ReportPartError("Report data is invalid.");
+            return ReportFormParserCore.ReportPartError("Report data is invalid.");
         }
 
         if (reportRequest is null)
         {
-            return ReportPartError("Report data is required.");
+            return ReportFormParserCore.ReportPartError("Report data is required.");
         }
 
         var validationResult = await validator.ValidateAsync(reportRequest, cancellationToken);
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors
-                .GroupBy(failure => failure.PropertyName, StringComparer.Ordinal)
-                .ToDictionary(
-                    group => JsonNamingPolicy.CamelCase.ConvertName(group.Key),
-                    group => group.Select(failure => failure.ErrorMessage).ToArray());
-
             return ResultError.BadRequest(
                 "Please correct the errors in the form.",
                 ErrorCodes.ValidationFailed,
-                errors);
+                ReportFormParserCore.MapValidationErrors(validationResult));
         }
 
         var photoFiles = form.Files.GetFiles("photos");
-        if (photoFiles.Count > MaxPhotos)
+        var photoError = ReportFormParserCore.ValidatePhotos(photoFiles);
+        if (photoError is not null)
         {
-            return ResultError.BadRequest(
-                "Please correct the errors in the form.",
-                ErrorCodes.ValidationFailed,
-                new Dictionary<string, string[]>
-                {
-                    ["photos"] = [$"At most {MaxPhotos} photos are allowed."],
-                });
-        }
-
-        var photoErrors = new Dictionary<string, string[]>();
-        for (var index = 0; index < photoFiles.Count; index++)
-        {
-            if (photoFiles[index].Length == 0)
-            {
-                photoErrors[$"photos[{index}]"] = ["Photo file is required."];
-            }
-        }
-
-        if (photoErrors.Count > 0)
-        {
-            return ResultError.BadRequest(
-                "Please correct the errors in the form.",
-                ErrorCodes.ValidationFailed,
-                photoErrors);
+            return photoError;
         }
 
         return new ReportCreateForm(reportRequest, photoFiles);
     }
-
-    private static async Task<string> ReadReportJsonAsync(
-        IFormCollection form,
-        CancellationToken cancellationToken)
-    {
-        var reportJson = form["report"].ToString();
-        if (!string.IsNullOrWhiteSpace(reportJson))
-        {
-            return reportJson;
-        }
-
-        // Angular FormData.append(name, new Blob(...)) is a file part, not a string field.
-        var reportFile = form.Files.GetFile("report");
-        if (reportFile is null || reportFile.Length == 0)
-        {
-            return string.Empty;
-        }
-
-        using var reader = new StreamReader(reportFile.OpenReadStream());
-        return await reader.ReadToEndAsync(cancellationToken);
-    }
-
-    private static ResultError ReportPartError(string message) =>
-        ResultError.BadRequest(
-            "Please correct the errors in the form.",
-            ErrorCodes.ValidationFailed,
-            new Dictionary<string, string[]>
-            {
-                ["report"] = [message],
-            });
 }

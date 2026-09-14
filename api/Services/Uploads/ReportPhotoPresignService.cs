@@ -2,6 +2,7 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
+using Amanah.Api.Utilities.Uploads;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
@@ -12,8 +13,6 @@ public sealed class ReportPhotoPresignService(
     AppDbContext dbContext,
     IBucketStorage bucketStorage)
 {
-    private static readonly TimeSpan PresignLifetime = TimeSpan.FromMinutes(5);
-
     public async Task<Result<ReportPhotoPresignResponse>> GetReportPhotoUrlAsync(
         Guid photoId,
         Guid userId,
@@ -48,8 +47,10 @@ public sealed class ReportPhotoPresignService(
             return ResultError.NotFound("Photo not found.");
         }
 
-        var storageKey = photo.ThumbnailStorageKey ?? photo.StorageKey;
-        var url = bucketStorage.GetPreSignedUrl(storageKey, PresignLifetime);
+        var storageKey = StorageKeyResolver.ResolvePreferThumbnail(
+            photo.StorageKey,
+            photo.ThumbnailStorageKey);
+        var url = bucketStorage.GetPreSignedUrl(storageKey, PresignConstants.Lifetime);
 
         return new ReportPhotoPresignResponse
         {

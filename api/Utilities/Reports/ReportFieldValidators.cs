@@ -3,6 +3,23 @@ using Amanah.Api.Utilities.Common;
 
 namespace Amanah.Api.Utilities.Reports;
 
+internal static class ValidationErrors
+{
+    public static void Add(
+        Dictionary<string, string[]> errors,
+        string fieldKey,
+        string message)
+    {
+        if (errors.TryGetValue(fieldKey, out var existing))
+        {
+            errors[fieldKey] = [.. existing, message];
+            return;
+        }
+
+        errors[fieldKey] = [message];
+    }
+}
+
 // Top-level date lost/found validation (Cairo calendar).
 public static class ReportDateValidator
 {
@@ -43,7 +60,7 @@ public static class CategoryFieldValidator
         {
             if (!definitionByKey.ContainsKey(fieldKey))
             {
-                AddError(errors, fieldKey, "Unknown category field.");
+                ValidationErrors.Add(errors, fieldKey, "Unknown category field.");
             }
         }
 
@@ -55,7 +72,7 @@ public static class CategoryFieldValidator
 
             if (definition.Required && normalized.Length == 0)
             {
-                AddError(errors, definition.FieldKey, "This field is required.");
+                ValidationErrors.Add(errors, definition.FieldKey, "This field is required.");
                 continue;
             }
 
@@ -85,20 +102,20 @@ public static class CategoryFieldValidator
     {
         if (definition.MinLength is int minLength && normalized.Length < minLength)
         {
-            AddError(errors, definition.FieldKey, $"Must be at least {minLength} characters.");
+            ValidationErrors.Add(errors, definition.FieldKey, $"Must be at least {minLength} characters.");
             return;
         }
 
         if (definition.MaxLength is int maxLength && normalized.Length > maxLength)
         {
-            AddError(errors, definition.FieldKey, $"Must be at most {maxLength} characters.");
+            ValidationErrors.Add(errors, definition.FieldKey, $"Must be at most {maxLength} characters.");
             return;
         }
 
         if (definition.TextFormat == CategoryTextFormat.LettersAndSpaces
             && !normalized.All(character => char.IsLetter(character) || character == ' '))
         {
-            AddError(errors, definition.FieldKey, "Must contain letters and spaces only.");
+            ValidationErrors.Add(errors, definition.FieldKey, "Must contain letters and spaces only.");
         }
     }
 
@@ -109,34 +126,20 @@ public static class CategoryFieldValidator
     {
         if (!int.TryParse(normalized, out var value))
         {
-            AddError(errors, definition.FieldKey, "Must be a whole number.");
+            ValidationErrors.Add(errors, definition.FieldKey, "Must be a whole number.");
             return;
         }
 
         if (definition.MinInt is int minInt && value < minInt)
         {
-            AddError(errors, definition.FieldKey, $"Must be at least {minInt}.");
+            ValidationErrors.Add(errors, definition.FieldKey, $"Must be at least {minInt}.");
             return;
         }
 
         if (definition.MaxInt is int maxInt && value > maxInt)
         {
-            AddError(errors, definition.FieldKey, $"Must be at most {maxInt}.");
+            ValidationErrors.Add(errors, definition.FieldKey, $"Must be at most {maxInt}.");
         }
-    }
-
-    private static void AddError(
-        Dictionary<string, string[]> errors,
-        string fieldKey,
-        string message)
-    {
-        if (errors.TryGetValue(fieldKey, out var existing))
-        {
-            errors[fieldKey] = [.. existing, message];
-            return;
-        }
-
-        errors[fieldKey] = [message];
     }
 }
 
@@ -186,19 +189,19 @@ public static class ReportContentValidator
     {
         if (title.Length == 0)
         {
-            AddError(errors, TitleField, "Title is required.");
+            ValidationErrors.Add(errors, TitleField, "Title is required.");
             return;
         }
 
         if (title.Length < TitleMinLength)
         {
-            AddError(errors, TitleField, $"Title must be at least {TitleMinLength} characters.");
+            ValidationErrors.Add(errors, TitleField, $"Title must be at least {TitleMinLength} characters.");
             return;
         }
 
         if (title.Length > TitleMaxLength)
         {
-            AddError(errors, TitleField, $"Title must be at most {TitleMaxLength} characters.");
+            ValidationErrors.Add(errors, TitleField, $"Title must be at most {TitleMaxLength} characters.");
         }
     }
 
@@ -206,19 +209,19 @@ public static class ReportContentValidator
     {
         if (description.Length == 0)
         {
-            AddError(errors, DescriptionField, "Description is required.");
+            ValidationErrors.Add(errors, DescriptionField, "Description is required.");
             return;
         }
 
         if (description.Length < DescriptionMinLength)
         {
-            AddError(errors, DescriptionField, $"Description must be at least {DescriptionMinLength} characters.");
+            ValidationErrors.Add(errors, DescriptionField, $"Description must be at least {DescriptionMinLength} characters.");
             return;
         }
 
         if (description.Length > DescriptionMaxLength)
         {
-            AddError(errors, DescriptionField, $"Description must be at most {DescriptionMaxLength} characters.");
+            ValidationErrors.Add(errors, DescriptionField, $"Description must be at most {DescriptionMaxLength} characters.");
         }
     }
 
@@ -226,19 +229,19 @@ public static class ReportContentValidator
     {
         if (hiddenDetail.Length == 0)
         {
-            AddError(errors, HiddenDetailField, "Hidden verification detail is required.");
+            ValidationErrors.Add(errors, HiddenDetailField, "Hidden verification detail is required.");
             return;
         }
 
         if (hiddenDetail.Length < HiddenDetailMinLength)
         {
-            AddError(errors, HiddenDetailField, $"Hidden verification detail must be at least {HiddenDetailMinLength} characters.");
+            ValidationErrors.Add(errors, HiddenDetailField, $"Hidden verification detail must be at least {HiddenDetailMinLength} characters.");
             return;
         }
 
         if (hiddenDetail.Length > HiddenDetailMaxLength)
         {
-            AddError(errors, HiddenDetailField, $"Hidden verification detail must be at most {HiddenDetailMaxLength} characters.");
+            ValidationErrors.Add(errors, HiddenDetailField, $"Hidden verification detail must be at most {HiddenDetailMaxLength} characters.");
         }
     }
 
@@ -246,7 +249,7 @@ public static class ReportContentValidator
     {
         if (areaText is not null && areaText.Length > AreaTextMaxLength)
         {
-            AddError(errors, AreaTextField, $"Area must be at most {AreaTextMaxLength} characters.");
+            ValidationErrors.Add(errors, AreaTextField, $"Area must be at most {AreaTextMaxLength} characters.");
         }
     }
 
@@ -259,13 +262,13 @@ public static class ReportContentValidator
         {
             if (rewardAmount is not int amount)
             {
-                AddError(errors, RewardAmountField, "Reward amount is required when a reward is offered.");
+                ValidationErrors.Add(errors, RewardAmountField, "Reward amount is required when a reward is offered.");
                 return;
             }
 
             if (amount < RewardMinAmount || amount > RewardMaxAmount)
             {
-                AddError(
+                ValidationErrors.Add(
                     errors,
                     RewardAmountField,
                     $"Reward amount must be between {RewardMinAmount} and {RewardMaxAmount} EGP.");
@@ -276,7 +279,7 @@ public static class ReportContentValidator
 
         if (rewardAmount is not null)
         {
-            AddError(errors, RewardAmountField, "Reward amount must be empty when no reward is offered.");
+            ValidationErrors.Add(errors, RewardAmountField, "Reward amount must be empty when no reward is offered.");
         }
     }
 
@@ -289,7 +292,7 @@ public static class ReportContentValidator
         {
             if (!string.IsNullOrEmpty(heldLocation))
             {
-                AddError(errors, HeldLocationField, "Held location is only allowed for found reports.");
+                ValidationErrors.Add(errors, HeldLocationField, "Held location is only allowed for found reports.");
             }
 
             return;
@@ -297,28 +300,14 @@ public static class ReportContentValidator
 
         if (string.IsNullOrEmpty(heldLocation))
         {
-            AddError(errors, HeldLocationField, "Held location is required for found reports.");
+            ValidationErrors.Add(errors, HeldLocationField, "Held location is required for found reports.");
             return;
         }
 
         if (heldLocation.Length > HeldLocationMaxLength)
         {
-            AddError(errors, HeldLocationField, $"Held location must be at most {HeldLocationMaxLength} characters.");
+            ValidationErrors.Add(errors, HeldLocationField, $"Held location must be at most {HeldLocationMaxLength} characters.");
         }
-    }
-
-    private static void AddError(
-        Dictionary<string, string[]> errors,
-        string fieldKey,
-        string message)
-    {
-        if (errors.TryGetValue(fieldKey, out var existing))
-        {
-            errors[fieldKey] = [.. existing, message];
-            return;
-        }
-
-        errors[fieldKey] = [message];
     }
 }
 
