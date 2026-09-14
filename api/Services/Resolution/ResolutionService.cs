@@ -1,7 +1,9 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
+using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Notifications;
 using Amanah.Contracts.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -21,8 +23,8 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
             return ResultError.NotFound("Claim not found.");
         }
 
-        var isReporter = claim.Report.ReporterId == userId;
-        var isClaimant = claim.ClaimantId == userId;
+        var isReporter = ClaimAccessAuthorization.IsReporter(claim, userId);
+        var isClaimant = ClaimAccessAuthorization.IsClaimant(claim, userId);
         if (!isReporter && !isClaimant)
         {
             return ResultError.NotFound("Claim not found.");
@@ -94,9 +96,9 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
                 claim.ChatThread.ReadOnlyAt = now;
             }
 
-            var deepLink = BuildReportDeepLink(claim.Report);
+            var deepLink = ReportDeepLinkBuilder.ForPublicReport(claim.Report);
 
-            dbContext.Notifications.Add(CreateNotification(
+            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
                 claim.Report.ReporterId,
                 NotificationTypes.ReportResolved,
                 new NotificationPayload(
@@ -108,7 +110,7 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
                     ChatThreadId: claim.ChatThread?.Id),
                 now));
 
-            dbContext.Notifications.Add(CreateNotification(
+            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
                 claim.ClaimantId,
                 NotificationTypes.ReportResolved,
                 new NotificationPayload(
@@ -123,13 +125,13 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
         else
         {
             var counterpartyId = isReporter ? claim.ClaimantId : claim.Report.ReporterId;
-            dbContext.Notifications.Add(CreateNotification(
+            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
                 counterpartyId,
                 NotificationTypes.CounterpartyConfirmedResolution,
                 new NotificationPayload(
                     NotificationTypes.CounterpartyConfirmedResolution,
                     now,
-                    DeepLink: BuildReportDeepLink(claim.Report),
+                    DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
                     ReportId: claim.ReportId,
                     ClaimId: claim.Id,
                     ChatThreadId: claim.ChatThread?.Id),
@@ -151,8 +153,8 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
             return ResultError.NotFound("Claim not found.");
         }
 
-        var isReporter = claim.Report.ReporterId == userId;
-        var isClaimant = claim.ClaimantId == userId;
+        var isReporter = ClaimAccessAuthorization.IsReporter(claim, userId);
+        var isClaimant = ClaimAccessAuthorization.IsClaimant(claim, userId);
         if (!isReporter && !isClaimant)
         {
             return ResultError.NotFound("Claim not found.");
@@ -212,13 +214,13 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
         }
 
         var counterpartyId = isReporter ? claim.ClaimantId : claim.Report.ReporterId;
-        dbContext.Notifications.Add(CreateNotification(
+        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
             counterpartyId,
             NotificationTypes.ClaimCancelledByCounterparty,
             new NotificationPayload(
                 NotificationTypes.ClaimCancelledByCounterparty,
                 now,
-                DeepLink: BuildReportDeepLink(claim.Report),
+                DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
                 ReportId: claim.ReportId,
                 ClaimId: claim.Id,
                 ChatThreadId: claim.ChatThread?.Id),
@@ -230,30 +232,6 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
 
     private Task<Claim?> LoadClaimAsync(Guid claimId, CancellationToken cancellationToken) =>
         dbContext.Claims
-            .Include(existingClaim => existingClaim.Report)
-            .ThenInclude(report => report.Resolution)
-            .Include(existingClaim => existingClaim.ChatThread)
+            .WithResolutionDetailIncludes()
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
-
-    private static Notification CreateNotification(
-        Guid userId,
-        string type,
-        NotificationPayload payload,
-        DateTimeOffset createdAt) =>
-        new()
-        {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            Type = type,
-            PayloadJson = payload.ToJson(),
-            IsRead = false,
-            CreatedAt = createdAt,
-        };
-
-    private static string BuildReportDeepLink(Report report) => report.Type switch
-    {
-        ReportType.Lost => $"/lost/{report.Id}",
-        ReportType.Found => $"/found/{report.Id}",
-        _ => $"/reports/{report.Id}",
-    };
 }
