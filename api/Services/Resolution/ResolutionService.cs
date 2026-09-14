@@ -1,14 +1,21 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Notifications;
+using Amanah.Contracts.Chats;
 using Amanah.Contracts.Errors;
+using Amanah.Contracts.Responses.Chats;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Services.Resolution;
 
-public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeProvider)
+public sealed class ResolutionService(
+    AppDbContext dbContext,
+    TimeProvider timeProvider,
+    IHubContext<ChatHub> hubContext)
 {
     public async Task<Result> ConfirmResolutionAsync(
         Guid claimId,
@@ -83,6 +90,8 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
         var bothConfirmed = resolution.ReporterConfirmedAt is not null
             && resolution.ClaimantConfirmedAt is not null;
 
+        ChatThread? readOnlyThread = null;
+
         if (bothConfirmed)
         {
             resolution.ResolvedAt = now;
@@ -92,6 +101,7 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
             if (claim.ChatThread is not null)
             {
                 claim.ChatThread.ReadOnlyAt = now;
+                readOnlyThread = claim.ChatThread;
             }
 
             var deepLink = BuildReportDeepLink(claim.Report);
@@ -137,6 +147,12 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (readOnlyThread is not null)
+        {
+            await BroadcastThreadReadOnlyAsync(readOnlyThread, cancellationToken);
+        }
+
         return Result.Ok();
     }
 
@@ -206,9 +222,11 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
 
         claim.Report.Resolution = null;
 
+        ChatThread? readOnlyThread = null;
         if (claim.ChatThread is not null)
         {
             claim.ChatThread.ReadOnlyAt = now;
+            readOnlyThread = claim.ChatThread;
         }
 
         var counterpartyId = isReporter ? claim.ClaimantId : claim.Report.ReporterId;
@@ -225,7 +243,33 @@ public sealed class ResolutionService(AppDbContext dbContext, TimeProvider timeP
             now));
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (readOnlyThread is not null)
+        {
+            await BroadcastThreadReadOnlyAsync(readOnlyThread, cancellationToken);
+        }
+
         return Result.Ok();
+    }
+
+    private async Task BroadcastThreadReadOnlyAsync(
+        ChatThread thread,
+        CancellationToken cancellationToken)
+    {
+        if (thread.ReadOnlyAt is null)
+        {
+            return;
+        }
+
+        var payload = new ChatThreadReadOnlyResponse
+        {
+            ThreadId = thread.Id,
+            ReadOnlyAt = thread.ReadOnlyAt.Value,
+        };
+
+        await hubContext.Clients
+            .Group(ChatHubGroups.ForThread(thread.Id))
+            .SendAsync(ChatHubEvents.ThreadReadOnly, payload, cancellationToken);
     }
 
     private Task<Claim?> LoadClaimAsync(Guid claimId, CancellationToken cancellationToken) =>

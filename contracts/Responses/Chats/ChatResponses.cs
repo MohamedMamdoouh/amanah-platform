@@ -73,3 +73,10 @@ public sealed class ChatMessageResponse
 
     public DateTimeOffset SentAt { get; init; }
 }
+
+public sealed class ChatThreadReadOnlyResponse
+{
+    public required Guid ThreadId { get; init; }
+
+    public required DateTimeOffset ReadOnlyAt { get; init; }
+}
