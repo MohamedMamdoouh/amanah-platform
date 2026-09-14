@@ -130,7 +130,7 @@
         <li>
           <app-listing-card
             [title]="report.title"
-            [typeLabel]="typeLabel(report.type)"
+            [typeLabel]="domainLabels.reportType(report.type)"
             [subtitle]="
               categoryLabel(report.categoryCode) +
               ' · ' +
@@ -141,10 +141,10 @@
             [imageUrl]="report.thumbnailUrl ?? null"
             [badgeLabel]="
               report.status === 'claim_in_progress'
-                ? statusLabel(report.status)
+                ? domainLabels.reportStatus(report.status)
                 : null
             "
-            [badgeVariant]="badgeVariant(report.status)"
+            [badgeVariant]="domainLabels.reportBadgeVariant(report.status, 'browse')"
             [routerLink]="detailRoute(report)"
             [actionLabel]="'browse.view_detail' | translate"
           />

@@ -24,11 +24,11 @@
         <li class="my-claims__item">
           <app-listing-card
             [title]="claim.reportTitle"
-            [typeLabel]="typeLabel(claim.reportType)"
+            [typeLabel]="domainLabels.reportType(claim.reportType)"
             [subtitle]="claim.reporterDisplayName"
             [date]="(claim.submittedAt | date: 'medium') ?? ''"
-            [badgeLabel]="statusLabel(claim.status)"
-            [badgeVariant]="badgeVariant(claim.status)"
+            [badgeLabel]="domainLabels.claimStatus(claim.status)"
+            [badgeVariant]="domainLabels.claimBadgeVariant(claim.status)"
             [routerLink]="reportLink(claim)"
             [actionLabel]="'claims.mine.view_report' | translate"
           />

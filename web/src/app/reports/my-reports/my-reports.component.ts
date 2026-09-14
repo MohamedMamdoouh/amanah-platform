@@ -5,8 +5,8 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
+import { DomainLabelService } from '../../i18n/domain-label.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
-import { BadgeVariant } from '../../shared/ui/badge/badge.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { ListingCardComponent } from '../../shared/ui/listing-card/listing-card.component';
@@ -43,6 +43,7 @@ type MyReportsTab =
 export class MyReportsComponent implements OnInit {
   private readonly reportService = inject(ReportService);
   private readonly catalogLabels = inject(CatalogLabelService);
+  protected readonly domainLabels = inject(DomainLabelService);
   private readonly translate = inject(TranslateService);
 
   readonly loading = signal(true);
@@ -78,27 +79,6 @@ export class MyReportsComponent implements OnInit {
 
   governorateLabel(code: string): string {
     return this.catalogLabels.governorate(code);
-  }
-
-  typeLabel(type: string): string {
-    return this.translate.instant(`reports.type.${type}`);
-  }
-
-  statusLabel(status: string): string {
-    return this.translate.instant(`reports.status.${status}`);
-  }
-
-  badgeVariant(status: string): BadgeVariant {
-    if (status === 'published') {
-      return 'published';
-    }
-    if (status === 'rejected') {
-      return 'rejected';
-    }
-    if (status === 'claim_in_progress') {
-      return 'claim';
-    }
-    return 'pending';
   }
 
   tabLabel(tab: MyReportsTab): string {

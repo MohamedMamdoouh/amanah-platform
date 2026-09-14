@@ -4,6 +4,9 @@ import {
   ReportStatus,
   ReportType,
 } from '../../reports/models/report.models';
+import { PaginatedResponse } from '../../shared/models/pagination.models';
+
+export type { PaginatedResponse };
 
 export type BrowseViewState =
   | { status: 'loading' }
@@ -19,14 +22,6 @@ export const EMPTY_BROWSE_CATALOG: BrowseCatalog = {
   categories: [],
   governorates: [],
 };
-
-export interface PaginatedResponse<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  totalCount: number;
-  totalPages: number;
-}
 
 export interface PublicReportSummary {
   id: string;
