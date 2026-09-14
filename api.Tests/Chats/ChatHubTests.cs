@@ -108,4 +108,48 @@ public class ChatHubTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
             await connection.DisposeAsync();
         }
     }
+
+    [Fact]
+    public async Task Claim_cancel_broadcasts_ThreadReadOnly_to_joined_members()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
+        var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
+
+        var reporterConnection = await ChatTestHelpers.ConnectHubAsync(factory, context.Session.AccessToken);
+        var claimantConnection = await ChatTestHelpers.ConnectHubAsync(factory, scenario.ClaimantSession.AccessToken);
+
+        try
+        {
+            var received = new TaskCompletionSource<ChatThreadReadOnlyResponse>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            claimantConnection.On<ChatThreadReadOnlyResponse>(ChatHubEvents.ThreadReadOnly, payload =>
+            {
+                received.TrySetResult(payload);
+            });
+
+            await reporterConnection.InvokeAsync(ChatHubMethods.JoinThread, threadId.ToString());
+            await claimantConnection.InvokeAsync(ChatHubMethods.JoinThread, threadId.ToString());
+
+            ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+            var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
+            Assert.Equal(System.Net.HttpStatusCode.NoContent, cancelResponse.StatusCode);
+
+                        var payload = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(threadId, payload.ThreadId);
+            Assert.NotEqual(default, payload.ReadOnlyAt);
+
+            var thread = await context.DbContext.ChatThreads
+                .AsNoTracking()
+                .SingleAsync(item => item.Id == threadId);
+            Assert.NotNull(thread.ReadOnlyAt);
+            Assert.True(
+                (thread.ReadOnlyAt.Value - payload.ReadOnlyAt).Duration() < TimeSpan.FromSeconds(1));
+        }
+        finally
+        {
+            await reporterConnection.DisposeAsync();
+            await claimantConnection.DisposeAsync();
+        }
+    }
 }
