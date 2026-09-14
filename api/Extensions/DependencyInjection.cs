@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddClaimServices();
         services.AddResolutionServices();
         services.AddChatServices();
+        services.AddChatSignalR();
         services.AddModerationServices();
         services.AddBrowseServices();
         services.AddBucketStorage();
@@ -75,6 +76,7 @@ public static class DependencyInjection
         app.UseAuthorization();
         app.UseRateLimiter();
         app.MapControllers();
+        app.MapChatHub();
         app.MapObservabilityEndpoints();
 
         if (app.Environment.IsProduction())

@@ -1,5 +1,6 @@
 using Amanah.Api.Auth;
 using Amanah.Api.Options;
+using Amanah.Contracts.Chats;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -22,6 +23,22 @@ public static class JwtAuthenticationExtensions
             .AddJwtBearer(options =>
             {
                 options.MapInboundClaims = false;
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken)
+                            && path.StartsWithSegments(ChatHubRoutes.Path))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {

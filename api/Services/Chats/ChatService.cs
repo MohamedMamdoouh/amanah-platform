@@ -1,16 +1,23 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Notifications;
+using Amanah.Contracts.Chats;
 using Amanah.Contracts.Requests.Chats;
 using Amanah.Contracts.Responses.Chats;
 using Amanah.Contracts.Responses.Claims;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Services.Chats;
 
-public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvider)
+public sealed class ChatService(
+    AppDbContext dbContext,
+    TimeProvider timeProvider,
+    IHubContext<ChatHub> hubContext,
+    ChatPresenceTracker presenceTracker)
 {
     private const int DefaultMessageLimit = 50;
     private const int MaxMessageLimit = 100;
@@ -68,6 +75,18 @@ public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvide
 
         return ToThreadDetail(thread, userId, messages);
     }
+
+    public Task<bool> IsParticipantAsync(
+        Guid threadId,
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.ChatThreads
+            .AsNoTracking()
+            .AnyAsync(
+                thread => thread.Id == threadId
+                    && (thread.Claim.Report.ReporterId == userId
+                        || thread.Claim.ClaimantId == userId),
+                cancellationToken);
 
     public async Task<Result<ChatMessageResponse>> SendMessageAsync(
         Guid threadId,
@@ -150,24 +169,33 @@ public sealed class ChatService(AppDbContext dbContext, TimeProvider timeProvide
             ? thread.Claim.ClaimantId
             : thread.Claim.Report.ReporterId;
 
-        dbContext.Notifications.Add(CreateNotification(
-            counterpartyId,
-            NotificationTypes.NewChatMessage,
-            new NotificationPayload(
+        if (!presenceTracker.IsViewing(counterpartyId, thread.Id))
+        {
+            dbContext.Notifications.Add(CreateNotification(
+                counterpartyId,
                 NotificationTypes.NewChatMessage,
-                now,
-                DeepLink: $"/my/chats/{thread.Id}",
-                ReportId: thread.Claim.ReportId,
-                ClaimId: thread.ClaimId,
-                ChatThreadId: thread.Id),
-            now));
+                new NotificationPayload(
+                    NotificationTypes.NewChatMessage,
+                    now,
+                    DeepLink: $"/my/chats/{thread.Id}",
+                    ReportId: thread.Claim.ReportId,
+                    ClaimId: thread.ClaimId,
+                    ChatThreadId: thread.Id),
+                now));
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return ToMessageResponse(
+        var response = ToMessageResponse(
             message,
             sender.DisplayName ?? string.Empty,
             attachment?.Id);
+
+        await hubContext.Clients
+            .Group(ChatHubGroups.ForThread(thread.Id))
+            .SendAsync(ChatHubEvents.MessageReceived, response, cancellationToken);
+
+        return response;
     }
 
     private async Task<ChatThread?> LoadThreadAsync(

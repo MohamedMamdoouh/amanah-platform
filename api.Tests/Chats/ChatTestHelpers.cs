@@ -2,10 +2,14 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Amanah.Api.Tests.Claims;
+using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Resolution;
+using Amanah.Contracts.Chats;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Chats;
 using Amanah.Contracts.Responses.Chats;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Amanah.Api.Tests.Chats;
 
@@ -73,4 +77,21 @@ public static class ChatTestHelpers
 
     public static async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response) =>
         await ClaimTestHelpers.ReadErrorAsync(response);
+
+    public static async Task<HubConnection> ConnectHubAsync(
+        WebApplicationFactory<ApiAssemblyMarker> factory,
+        string accessToken)
+    {
+        var connection = new HubConnectionBuilder()
+            .WithUrl(new Uri(factory.Server.BaseAddress!, ChatHubRoutes.Path.TrimStart('/')), options =>
+            {
+                options.AccessTokenProvider = () => Task.FromResult<string?>(accessToken);
+                options.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler();
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        await connection.StartAsync();
+        return connection;
+    }
 }
