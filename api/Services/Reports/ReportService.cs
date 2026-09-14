@@ -1,5 +1,6 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Observability;
 using Amanah.Api.Services.Storage;
@@ -37,7 +38,7 @@ public sealed class ReportService(
         CancellationToken cancellationToken = default)
     {
         var normalized = NormalizeRequest(request);
-        if (!TryParseReportType(normalized.Type, out var reportType))
+        if (!ReportApiStrings.TryParseType(normalized.Type, out var reportType))
         {
             return ResultError.BadRequest(
                 "Please correct the errors in the form.",
@@ -216,7 +217,7 @@ public sealed class ReportService(
         return new CreateReportResponse
         {
             Id = report.Id,
-            Status = ToApiStatus(report.Status),
+            Status = ReportApiStrings.ToStatus(report.Status),
         };
     }
 
@@ -229,8 +230,7 @@ public sealed class ReportService(
         {
             var closedReports = await dbContext.Reports
                 .AsNoTracking()
-                .Include(report => report.Category)
-                .Include(report => report.Governorate)
+                .WithOwnerSummaryIncludes()
                 .Where(report => report.ReporterId == reporterId
                     && ClosedStatuses.Contains(report.Status))
                 .OrderByDescending(report => report.CreatedAt)
@@ -242,7 +242,7 @@ public sealed class ReportService(
             };
         }
 
-        var statusFilter = ParseStatusFilter(status);
+        var statusFilter = ReportApiStrings.ParseStatusFilter(status);
         if (!string.IsNullOrWhiteSpace(status) && statusFilter is null)
         {
             return ResultError.BadRequest(
@@ -255,8 +255,7 @@ public sealed class ReportService(
 
         var query = dbContext.Reports
             .AsNoTracking()
-            .Include(report => report.Category)
-            .Include(report => report.Governorate)
+            .WithOwnerSummaryIncludes()
             .Where(report => report.ReporterId == reporterId);
 
         if (statusFilter is ReportStatus filter)
@@ -282,10 +281,7 @@ public sealed class ReportService(
     {
         var report = await dbContext.Reports
             .AsNoTracking()
-            .Include(report => report.Category)
-            .Include(report => report.Governorate)
-            .Include(report => report.CategoryFields)
-            .Include(report => report.Photos)
+            .WithOwnerDetailIncludes()
             .SingleOrDefaultAsync(report => report.Id == reportId, cancellationToken);
 
         if (report is null)
@@ -608,7 +604,7 @@ public sealed class ReportService(
 
         return new NormalizedCreateReportRequest
         {
-            Type = ToApiType(report.Type),
+            Type = ReportApiStrings.ToType(report.Type),
             CategoryCode = report.Category.Code,
             Title = report.Title,
             Description = report.Description,
@@ -743,8 +739,8 @@ public sealed class ReportService(
         new()
         {
             Id = report.Id,
-            Type = ToApiType(report.Type),
-            Status = ToApiStatus(report.Status),
+            Type = ReportApiStrings.ToType(report.Type),
+            Status = ReportApiStrings.ToStatus(report.Status),
             Title = report.Title,
             CategoryCode = report.Category.Code,
             GovernorateCode = report.Governorate.Code,
@@ -766,8 +762,8 @@ public sealed class ReportService(
         new()
         {
             Id = report.Id,
-            Type = ToApiType(report.Type),
-            Status = ToApiStatus(report.Status),
+            Type = ReportApiStrings.ToType(report.Type),
+            Status = ReportApiStrings.ToStatus(report.Status),
             Title = report.Title,
             CategoryCode = report.Category.Code,
             GovernorateCode = report.Governorate.Code,
@@ -792,62 +788,13 @@ public sealed class ReportService(
                 .Select(photo => new ReportPhotoResponse
                 {
                     Id = photo.Id,
-                    ThumbnailUrl = report.Category.PhotosPrivate || photo.ThumbnailStorageKey is null
-                        ? null
-                        : bucketStorage.GetPublicUrl(photo.ThumbnailStorageKey),
+                    ThumbnailUrl = ReportPhotoUrlMapper.ToThumbnailUrl(
+                        bucketStorage,
+                        report.Category.PhotosPrivate,
+                        photo.ThumbnailStorageKey),
                     SortOrder = photo.SortOrder,
                 })
                 .ToList(),
-        };
-
-    private static string ToApiType(ReportType type) =>
-        type switch
-        {
-            ReportType.Lost => "lost",
-            ReportType.Found => "found",
-            _ => type.ToString().ToLowerInvariant(),
-        };
-
-    private static string ToApiStatus(ReportStatus status) =>
-        status switch
-        {
-            ReportStatus.PendingReview => "pending_review",
-            ReportStatus.Rejected => "rejected",
-            ReportStatus.Published => "published",
-            ReportStatus.ClaimInProgress => "claim_in_progress",
-            ReportStatus.Resolved => "resolved",
-            ReportStatus.Withdrawn => "withdrawn",
-            ReportStatus.RemovedByAdmin => "removed_by_admin",
-            _ => status.ToString().ToLowerInvariant(),
-        };
-
-    private static bool TryParseReportType(string type, out ReportType reportType)
-    {
-        switch (type)
-        {
-            case "lost":
-                reportType = ReportType.Lost;
-                return true;
-            case "found":
-                reportType = ReportType.Found;
-                return true;
-            default:
-                reportType = default;
-                return false;
-        }
-    }
-
-    private static ReportStatus? ParseStatusFilter(string? status) =>
-        status switch
-        {
-            null or "" or "pending_review" => ReportStatus.PendingReview,
-            "rejected" => ReportStatus.Rejected,
-            "published" => ReportStatus.Published,
-            "claim_in_progress" => ReportStatus.ClaimInProgress,
-            "resolved" => ReportStatus.Resolved,
-            "withdrawn" => ReportStatus.Withdrawn,
-            "removed_by_admin" => ReportStatus.RemovedByAdmin,
-            _ => null,
         };
 
     private sealed class NormalizedCreateReportRequest

@@ -1,11 +1,12 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Services.Reports;
 using Amanah.Api.Utilities.Common;
-using Amanah.Api.Utilities.Reports;
 using Amanah.Api.Utilities.Notifications;
+using Amanah.Api.Utilities.Reports;
 using Amanah.Contracts.Requests.Admin;
 using Amanah.Contracts.Responses.Admin;
 using Amanah.Contracts.Responses.Reports;
@@ -23,7 +24,7 @@ public sealed class ModerationService(
     {
         var reports = await dbContext.Reports
             .AsNoTracking()
-            .Include(report => report.Category)
+            .WithCategoryInclude()
             .Where(report => report.Status == ReportStatus.PendingReview)
             .OrderBy(report => report.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -47,7 +48,7 @@ public sealed class ModerationService(
 
         IQueryable<Report> reportsQuery = dbContext.Reports
             .AsNoTracking()
-            .Include(report => report.Category)
+            .WithCategoryInclude()
             .Where(report =>
                 report.Status == ReportStatus.PendingReview
                 || report.Status == ReportStatus.Rejected);
@@ -101,20 +102,15 @@ public sealed class ModerationService(
             CreatedAt = now,
         });
 
-        var payload = new NotificationPayload(
+        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
+            report.ReporterId,
             NotificationTypes.ReportApproved,
-            now,
-            DeepLink: $"/my/reports/{report.Id}",
-            ReportId: report.Id);
-
-        dbContext.Notifications.Add(new Notification
-        {
-            UserId = report.ReporterId,
-            Type = NotificationTypes.ReportApproved,
-            PayloadJson = payload.ToJson(),
-            IsRead = false,
-            CreatedAt = now,
-        });
+            new NotificationPayload(
+                NotificationTypes.ReportApproved,
+                now,
+                DeepLink: ReportDeepLinkBuilder.ForMyReport(report.Id),
+                ReportId: report.Id),
+            now));
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
@@ -153,22 +149,17 @@ public sealed class ModerationService(
             CreatedAt = now,
         });
 
-        var payload = new NotificationPayload(
+        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
+            report.ReporterId,
             NotificationTypes.ReportRejected,
-            now,
-            DeepLink: $"/my/reports/{report.Id}",
-            ReportId: report.Id,
-            ReasonCode: request.ReasonCode,
-            Note: request.Note);
-
-        dbContext.Notifications.Add(new Notification
-        {
-            UserId = report.ReporterId,
-            Type = NotificationTypes.ReportRejected,
-            PayloadJson = payload.ToJson(),
-            IsRead = false,
-            CreatedAt = now,
-        });
+            new NotificationPayload(
+                NotificationTypes.ReportRejected,
+                now,
+                DeepLink: ReportDeepLinkBuilder.ForMyReport(report.Id),
+                ReportId: report.Id,
+                ReasonCode: request.ReasonCode,
+                Note: request.Note),
+            now));
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
@@ -178,27 +169,10 @@ public sealed class ModerationService(
         new()
         {
             Id = report.Id,
-            Type = report.Type switch
-            {
-                ReportType.Lost => "lost",
-                ReportType.Found => "found",
-                _ => report.Type.ToString().ToLowerInvariant(),
-            },
+            Type = ReportApiStrings.ToType(report.Type),
             Title = report.Title,
             CategoryCode = report.Category.Code,
-            Status = MapStatus(report.Status),
+            Status = ReportApiStrings.ToStatus(report.Status),
             CreatedAt = report.CreatedAt,
         };
-
-    private static string MapStatus(ReportStatus status) => status switch
-    {
-        ReportStatus.PendingReview => "pending_review",
-        ReportStatus.Rejected => "rejected",
-        ReportStatus.Published => "published",
-        ReportStatus.ClaimInProgress => "claim_in_progress",
-        ReportStatus.Resolved => "resolved",
-        ReportStatus.Withdrawn => "withdrawn",
-        ReportStatus.RemovedByAdmin => "removed_by_admin",
-        _ => status.ToString().ToLowerInvariant(),
-    };
 }
