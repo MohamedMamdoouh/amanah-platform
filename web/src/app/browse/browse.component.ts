@@ -20,8 +20,8 @@ import {
 
 import { CatalogService } from '../catalog/catalog.service';
 import { CatalogLabelService } from '../i18n/catalog-label.service';
+import { DomainLabelService } from '../i18n/domain-label.service';
 import { AlertComponent } from '../shared/ui/alert/alert.component';
-import { BadgeVariant } from '../shared/ui/badge/badge.component';
 import { EmptyStateComponent } from '../shared/ui/empty-state/empty-state.component';
 import { FormFieldComponent } from '../shared/ui/form-field/form-field.component';
 import { ListingCardComponent } from '../shared/ui/listing-card/listing-card.component';
@@ -64,6 +64,7 @@ export class BrowseComponent implements OnInit {
   private readonly browseService = inject(BrowseService);
   private readonly catalogService = inject(CatalogService);
   private readonly catalogLabels = inject(CatalogLabelService);
+  protected readonly domainLabels = inject(DomainLabelService);
   private readonly translate = inject(TranslateService);
 
   private readonly catalogFailed = signal(false);
@@ -132,18 +133,6 @@ export class BrowseComponent implements OnInit {
     return this.catalogLabels.governorate(code);
   }
 
-  typeLabel(type: string): string {
-    return this.translate.instant(`reports.type.${type}`);
-  }
-
-  statusLabel(status: string): string {
-    return this.translate.instant(`reports.status.${status}`);
-  }
-
-  badgeVariant(status: string): BadgeVariant {
-    return status === 'claim_in_progress' ? 'claim' : 'published';
-  }
-
   detailRoute(report: PublicReportSummary): string[] {
     return report.type === 'lost'
       ? ['/lost', report.id]
@@ -168,25 +157,44 @@ export class BrowseComponent implements OnInit {
     }
   }
 
-  private async loadCatalog(): Promise<void> {
-    try {
-      this.catalog.set(
-        await firstValueFrom(this.catalogService.getBrowseOptions()),
-      );
-      this.catalogFailed.set(false);
-    } catch {
-      this.catalogFailed.set(true);
-      this.catalog.set(EMPTY_BROWSE_CATALOG);
-    }
-  }
-
   private navigateWithParams(
-    patch: Record<string, string | number | null | undefined>,
+    patch: Partial<Record<keyof typeof EMPTY_BROWSE_FILTERS, string | number | null>>,
   ): void {
+    const current = this.filters();
+    const next = { ...current, ...patch };
+
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: patch,
+      queryParams: {
+        q: next.q || null,
+        category: next.category || null,
+        governorate: next.governorate || null,
+        type: next.type || null,
+        dateFrom: next.dateFrom || null,
+        dateTo: next.dateTo || null,
+        page: next.page === 1 ? null : next.page,
+      },
       queryParamsHandling: 'merge',
     });
+  }
+
+  private async loadCatalog(): Promise<void> {
+    try {
+      const [categories, governorates] = await Promise.all([
+        firstValueFrom(this.catalogService.getCategories()),
+        firstValueFrom(this.catalogService.getGovernorates()),
+      ]);
+
+      this.catalog.set({
+        categories: [...categories.items].sort(
+          (a, b) => a.sortOrder - b.sortOrder,
+        ),
+        governorates: [...governorates.items].sort(
+          (a, b) => a.sortOrder - b.sortOrder,
+        ),
+      });
+    } catch {
+      this.catalogFailed.set(true);
+    }
   }
 }

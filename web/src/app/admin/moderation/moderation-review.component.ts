@@ -6,8 +6,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
+import { ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
+import { DomainLabelService } from '../../i18n/domain-label.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CardComponent } from '../../shared/ui/card/card.component';
@@ -15,14 +16,13 @@ import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loa
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import { ReportDetail } from '../../reports/models/report.models';
+import {
+  DisplayPhoto,
+  initialDisplayPhotos,
+  loadDisplayPhotos,
+} from '../../uploads/photo-loader.util';
 import { ReportPhotoUploadService } from '../../uploads/report-photo-upload.service';
 import { AdminModerationService } from '../admin-moderation.service';
-
-interface DisplayPhoto {
-  id: string;
-  url: string | null;
-  loading: boolean;
-}
 
 const REJECTION_REASON_CODES = [
   'rejection.unclear_photos',
@@ -60,6 +60,7 @@ export class ModerationReviewComponent implements OnInit {
   private readonly uploadService = inject(ReportPhotoUploadService);
   private readonly catalogLabels = inject(CatalogLabelService);
   private readonly apiErrors = inject(ApiErrorService);
+  protected readonly domainLabels = inject(DomainLabelService);
   private readonly translate = inject(TranslateService);
 
   readonly loading = signal(true);
@@ -106,10 +107,6 @@ export class ModerationReviewComponent implements OnInit {
     return this.catalogLabels.field(report.categoryCode, fieldKey);
   }
 
-  typeLabel(type: string): string {
-    return this.translate.instant(`reports.type.${type}`);
-  }
-
   reasonLabel(code: string): string {
     return this.translate.instant(code);
   }
@@ -150,7 +147,7 @@ export class ModerationReviewComponent implements OnInit {
       );
       await this.router.navigate(['/admin/moderation']);
     } catch (error) {
-      this.actionError.set(this.parseError(error));
+      this.actionError.set(this.apiErrors.messageFromHttpError(error));
     } finally {
       this.approving.set(false);
     }
@@ -177,7 +174,7 @@ export class ModerationReviewComponent implements OnInit {
       );
       await this.router.navigate(['/admin/moderation']);
     } catch (error) {
-      this.actionError.set(this.parseError(error));
+      this.actionError.set(this.apiErrors.messageFromHttpError(error));
     } finally {
       this.rejecting.set(false);
     }
@@ -200,28 +197,10 @@ export class ModerationReviewComponent implements OnInit {
   }
 
   private async loadPhotos(report: ReportDetail): Promise<void> {
-    const displayPhotos: DisplayPhoto[] = report.photos.map((photo) => ({
-      id: photo.id,
-      url: photo.thumbnailUrl ?? null,
-      loading: !photo.thumbnailUrl,
-    }));
+    const displayPhotos = initialDisplayPhotos(report.photos);
     this.photos.set(displayPhotos);
-
-    await Promise.all(
-      displayPhotos.map(async (photo) => {
-        if (photo.url) {
-          return;
-        }
-
-        try {
-          const presign = await firstValueFrom(
-            this.uploadService.getPresignedUrl(photo.id),
-          );
-          this.updatePhoto(photo.id, { url: presign.url, loading: false });
-        } catch {
-          this.updatePhoto(photo.id, { loading: false });
-        }
-      }),
+    await loadDisplayPhotos(displayPhotos, this.uploadService, (photoId, patch) =>
+      this.updatePhoto(photoId, patch),
     );
   }
 
@@ -234,16 +213,5 @@ export class ModerationReviewComponent implements OnInit {
         item.id === photoId ? { ...item, ...patch } : item,
       ),
     );
-  }
-
-  private parseError(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const apiError = error.error as ApiErrorBody | null;
-      if (apiError?.code) {
-        return this.apiErrors.summary(apiError);
-      }
-    }
-
-    return this.translate.instant('error.internal.error');
   }
 }

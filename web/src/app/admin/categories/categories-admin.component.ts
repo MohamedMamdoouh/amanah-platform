@@ -1,10 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
+import { ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
@@ -240,21 +239,10 @@ export class CategoriesAdminComponent implements OnInit {
       const response = await firstValueFrom(this.categoriesService.list());
       this.categories.set(response.items);
     } catch (err) {
-      this.error.set(this.parseError(err));
+      this.error.set(this.apiErrors.messageFromHttpError(err));
     } finally {
       this.loading.set(false);
     }
-  }
-
-  private parseError(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const apiError = error.error as ApiErrorBody | null;
-      if (apiError?.code) {
-        return this.apiErrors.summary(apiError);
-      }
-    }
-
-    return this.translate.instant('error.internal.error');
   }
 
   private async runSave(action: () => Promise<void>): Promise<void> {
@@ -266,7 +254,7 @@ export class CategoriesAdminComponent implements OnInit {
       await action();
       await this.loadCategories();
     } catch (err) {
-      this.error.set(this.parseError(err));
+      this.error.set(this.apiErrors.messageFromHttpError(err));
     } finally {
       this.saving.set(false);
     }

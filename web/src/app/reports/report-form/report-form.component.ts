@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -12,20 +11,21 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { CatalogService } from '../../catalog/catalog.service';
-import {
-  Category,
-  CategoryFieldDefinition,
-} from '../../catalog/models/catalog.models';
-import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
+import { Category } from '../../catalog/models/catalog.models';
+import { ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
-import { CreateReportRequest, ReportType } from '../models/report.models';
+import { ReportType } from '../models/report.models';
 import { PhotoUploadComponent } from '../photo-upload/photo-upload.component';
 import { ReportService } from '../report.service';
+import {
+  buildCategoryFieldsGroup,
+  buildCreateReportRequest,
+} from '../shared/report-form.helpers';
 
 @Component({
   selector: 'app-report-form',
@@ -130,7 +130,7 @@ export class ReportFormComponent implements OnInit {
     return this.reportType() === 'found';
   }
 
-  fieldDefinitions(): CategoryFieldDefinition[] {
+  fieldDefinitions() {
     return [...(this.selectedCategory()?.fieldDefinitions ?? [])].sort(
       (a, b) => a.sortOrder - b.sortOrder,
     );
@@ -197,30 +197,10 @@ export class ReportFormComponent implements OnInit {
     this.clearErrors();
     this.submitting.set(true);
 
-    const value = this.form.getRawValue();
-    const categoryFields: Record<string, string> = {};
-    for (const [key, fieldValue] of Object.entries(value.categoryFields)) {
-      if (typeof fieldValue === 'string' && fieldValue.trim().length > 0) {
-        categoryFields[key] = fieldValue.trim();
-      }
-    }
-
-    const request: CreateReportRequest = {
-      type: this.reportType(),
-      categoryCode: value.categoryCode,
-      title: value.title.trim(),
-      description: value.description.trim(),
-      dateLostOrFound: value.dateLostOrFound,
-      governorateCode: value.governorateCode,
-      areaText: value.areaText.trim() || null,
-      heldLocation: this.isFound() ? value.heldLocation.trim() : null,
-      hasReward: value.hasReward,
-      rewardAmount: value.hasReward
-        ? parseRewardAmount(value.rewardAmount)
-        : null,
-      hiddenDetail: value.hiddenDetail.trim(),
-      categoryFields,
-    };
+    const request = buildCreateReportRequest(
+      this.reportType(),
+      this.form.getRawValue(),
+    );
 
     try {
       const response = await firstValueFrom(
@@ -229,7 +209,8 @@ export class ReportFormComponent implements OnInit {
       this.submittedId.set(response.id);
       this.submitted.set(true);
     } catch (error) {
-      this.handleError(error);
+      this.summaryError.set(this.apiErrors.messageFromHttpError(error));
+      this.fieldErrors.set(this.apiErrors.formErrorsFromHttpError(error));
     } finally {
       this.submitting.set(false);
     }
@@ -259,47 +240,10 @@ export class ReportFormComponent implements OnInit {
     const category =
       this.categories().find((item) => item.code === code) ?? null;
     this.selectedCategory.set(category);
-    this.rebuildCategoryFields(category);
-  }
-
-  private rebuildCategoryFields(category: Category | null): void {
-    const group = this.fb.group({});
-
-    for (const definition of category?.fieldDefinitions ?? []) {
-      const validators = this.buildFieldValidators(definition);
-      group.addControl(definition.fieldKey, this.fb.control('', validators));
-    }
-
-    this.form.setControl('categoryFields', group);
-  }
-
-  private buildFieldValidators(definition: CategoryFieldDefinition) {
-    const validators = [];
-
-    if (definition.required) {
-      validators.push(Validators.required);
-    }
-
-    if (definition.type === 'Text') {
-      if (definition.minLength != null) {
-        validators.push(Validators.minLength(definition.minLength));
-      }
-      if (definition.maxLength != null) {
-        validators.push(Validators.maxLength(definition.maxLength));
-      }
-    }
-
-    if (definition.type === 'Integer') {
-      validators.push(Validators.pattern(/^-?\d+$/));
-      if (definition.minInt != null) {
-        validators.push(Validators.min(definition.minInt));
-      }
-      if (definition.maxInt != null) {
-        validators.push(Validators.max(definition.maxInt));
-      }
-    }
-
-    return validators;
+    this.form.setControl(
+      'categoryFields',
+      buildCategoryFieldsGroup(this.fb, category),
+    );
   }
 
   private updateRewardValidators(hasReward: boolean): void {
@@ -317,22 +261,6 @@ export class ReportFormComponent implements OnInit {
     control.updateValueAndValidity();
   }
 
-  private handleError(error: unknown): void {
-    if (!(error instanceof HttpErrorResponse)) {
-      this.summaryError.set(this.translate.instant('error.internal.error'));
-      return;
-    }
-
-    const apiError = error.error as ApiErrorBody | null;
-    if (!apiError?.code) {
-      this.summaryError.set(this.translate.instant('error.internal.error'));
-      return;
-    }
-
-    this.summaryError.set(this.apiErrors.summary(apiError));
-    this.fieldErrors.set(this.apiErrors.fieldErrors(apiError));
-  }
-
   private clearErrors(): void {
     this.summaryError.set(null);
     this.fieldErrors.set({});
@@ -344,17 +272,4 @@ export class ReportFormComponent implements OnInit {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
-}
-
-function parseRewardAmount(raw: unknown): number | null {
-  if (typeof raw === 'number' && Number.isFinite(raw)) {
-    return Math.trunc(raw);
-  }
-
-  if (typeof raw === 'string' && raw.trim().length > 0) {
-    const parsed = Number.parseInt(raw, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  return null;
 }

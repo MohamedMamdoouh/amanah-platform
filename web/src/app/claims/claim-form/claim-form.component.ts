@@ -1,11 +1,10 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, input, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
+import { ApiErrorService } from '../../i18n/api-error.service';
 import { ReportType } from '../../reports/models/report.models';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -129,31 +128,16 @@ export class ClaimFormComponent {
       this.submittedId.set(response.id);
       this.submitted.set(true);
     } catch (error) {
-      this.handleError(error);
+      this.summaryError.set(this.apiErrors.messageFromHttpError(error));
+      const errors = this.apiErrors.formErrorsFromHttpError(error);
+      this.fieldErrors.set(errors);
+
+      if (errors['photo']) {
+        this.selectedPhoto.set(null);
+        this.photoUpload()?.clear();
+      }
     } finally {
       this.submitting.set(false);
-    }
-  }
-
-  private handleError(error: unknown): void {
-    if (!(error instanceof HttpErrorResponse)) {
-      this.summaryError.set(this.translate.instant('error.internal.error'));
-      return;
-    }
-
-    const apiError = error.error as ApiErrorBody | null;
-    if (!apiError?.code) {
-      this.summaryError.set(this.translate.instant('error.internal.error'));
-      return;
-    }
-
-    const errors = this.apiErrors.fieldErrors(apiError);
-    this.summaryError.set(this.apiErrors.summary(apiError));
-    this.fieldErrors.set(errors);
-
-    if (errors['photo']) {
-      this.selectedPhoto.set(null);
-      this.photoUpload()?.clear();
     }
   }
 
