@@ -1,6 +1,7 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Utilities.Chats;
 using Amanah.Api.Observability;
 using Amanah.Api.Services.Storage;
 using Amanah.Contracts.Errors;
@@ -28,7 +29,7 @@ public sealed class ChatAttachmentAttachService(
             .ThenInclude(claim => claim.Report)
             .SingleOrDefaultAsync(existingThread => existingThread.Id == threadId, cancellationToken);
 
-        if (thread is null || !IsParticipant(thread, userId))
+        if (thread is null || !ChatParticipantAuthorization.IsParticipant(thread, userId))
         {
             return ResultError.NotFound("Chat thread not found.");
         }
@@ -110,6 +111,4 @@ public sealed class ChatAttachmentAttachService(
         return new ChatAttachmentUploadResponse { Id = attachment.Id };
     }
 
-    private static bool IsParticipant(ChatThread thread, Guid userId) =>
-        thread.Claim.Report.ReporterId == userId || thread.Claim.ClaimantId == userId;
 }

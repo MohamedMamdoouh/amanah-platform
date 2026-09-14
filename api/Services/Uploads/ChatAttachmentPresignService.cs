@@ -1,6 +1,8 @@
 using Amanah.Api.Data;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
+using Amanah.Api.Utilities.Chats;
+using Amanah.Api.Utilities.Uploads;
 using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,8 +12,6 @@ public sealed class ChatAttachmentPresignService(
     AppDbContext dbContext,
     IBucketStorage bucketStorage)
 {
-    private static readonly TimeSpan PresignLifetime = TimeSpan.FromMinutes(5);
-
     public async Task<Result<ChatAttachmentPresignResponse>> GetAttachmentUrlAsync(
         Guid attachmentId,
         Guid userId,
@@ -24,18 +24,18 @@ public sealed class ChatAttachmentPresignService(
             .ThenInclude(claim => claim.Report)
             .SingleOrDefaultAsync(existingAttachment => existingAttachment.Id == attachmentId, cancellationToken);
 
-        if (attachment is null || !IsParticipant(attachment, userId))
+        if (attachment is null || !ChatParticipantAuthorization.IsParticipant(attachment, userId))
         {
             return ResultError.NotFound("Attachment not found.");
         }
 
-        var thumbnailKey = attachment.ThumbnailStorageKey;
-        var storageKey = thumbnailKey is not null
-            && await bucketStorage.ExistsAsync(thumbnailKey, cancellationToken)
-            ? thumbnailKey
-            : attachment.StorageKey;
+        var storageKey = await StorageKeyResolver.ResolvePreferExistingThumbnailAsync(
+            bucketStorage,
+            attachment.StorageKey,
+            attachment.ThumbnailStorageKey,
+            cancellationToken);
 
-        var url = bucketStorage.GetPreSignedUrl(storageKey, PresignLifetime);
+        var url = bucketStorage.GetPreSignedUrl(storageKey, PresignConstants.Lifetime);
 
         return new ChatAttachmentPresignResponse
         {
@@ -43,9 +43,4 @@ public sealed class ChatAttachmentPresignService(
         };
     }
 
-    private static bool IsParticipant(Data.Entities.ChatAttachment attachment, Guid userId)
-    {
-        var thread = attachment.ChatThread;
-        return thread.Claim.Report.ReporterId == userId || thread.Claim.ClaimantId == userId;
-    }
 }

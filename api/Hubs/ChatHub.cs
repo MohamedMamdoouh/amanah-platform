@@ -81,6 +81,8 @@ public sealed class ChatHub(ChatService chatService, ChatPresenceTracker presenc
         {
             throw new HubException(result.Error!.Message);
         }
+
+        // Message is already sent to the group & handled by the ChatService
     }
 
     public override Task OnDisconnectedAsync(Exception? exception)
