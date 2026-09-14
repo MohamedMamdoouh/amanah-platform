@@ -196,7 +196,7 @@ public class PublicDetailTests(ApiWebApplicationFactory factory) : IClassFixture
             TestReportHelpers.BuildValidLostRequest(title: "Published phone with photo"),
             [TestImageFactory.CreateMinimalJpeg()]);
         Assert.NotNull(created);
-        await BrowseTestHelpers.ApproveAsAdminAsync(context, created.Id);
+        await HttpTestHelpers.ApproveAsAdminAsync(context, created.Id);
 
         var (response, body) = await BrowseTestHelpers.GetPublicDetailAsync(client, created.Id);
 
@@ -239,7 +239,7 @@ public class PublicDetailTests(ApiWebApplicationFactory factory) : IClassFixture
         GetPublicDetailWithErrorAsync(HttpClient client, Guid reportId)
     {
         var (response, _) = await BrowseTestHelpers.GetPublicDetailAsync(client, reportId);
-        var error = await BrowseTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 
@@ -247,7 +247,7 @@ public class PublicDetailTests(ApiWebApplicationFactory factory) : IClassFixture
         GetLostDetailWithErrorAsync(HttpClient client, Guid reportId)
     {
         var (response, _) = await BrowseTestHelpers.GetLostDetailAsync(client, reportId);
-        var error = await BrowseTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 }

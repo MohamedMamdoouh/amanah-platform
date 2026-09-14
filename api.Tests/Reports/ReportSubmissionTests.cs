@@ -58,7 +58,7 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
             dateLostOrFound: CairoTime.TodayInCairo().AddDays(1));
 
         var (response, _) = await context.SubmitReportAsync(request);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
@@ -73,7 +73,7 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
             title: "Call me 01012345678 please");
 
         var (response, _) = await context.SubmitReportAsync(request);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains(
@@ -105,7 +105,7 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
             });
 
         var (response, _) = await context.SubmitReportAsync(request);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("colour", error!.Errors!.Keys);
@@ -125,7 +125,7 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
 
         var (response, _) = await context.SubmitReportAsync(
             TestReportHelpers.BuildValidLostRequest(title: "Lost black iPhone 4"));
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.TooManyRequests, response.StatusCode);
         Assert.Equal(ErrorCodes.ReportDailyQuota, error?.Code);
@@ -161,7 +161,7 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
         await context.DbContext.SaveChangesAsync();
 
         var (response, _) = await context.SubmitReportAsync(request);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.TooManyRequests, response.StatusCode);
         Assert.Equal(ErrorCodes.ReportOpenCap, error?.Code);
@@ -255,7 +255,7 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
             heldLocation: "At Ramses police station");
 
         var (response, _) = await context.SubmitReportAsync(request);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains(ReportContentValidator.HeldLocationField, error!.Errors!.Keys);

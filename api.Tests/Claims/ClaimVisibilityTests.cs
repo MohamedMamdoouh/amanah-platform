@@ -67,7 +67,7 @@ public class ClaimVisibilityTests(ApiWebApplicationFactory factory) : IClassFixt
         ClaimTestHelpers.Authenticate(context.Client, strangerSession.AccessToken);
 
         var (response, errorBody) = await ClaimTestHelpers.GetClaimAsync(context.Client, submitted.Id);
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(ErrorCodes.NotFound, error?.Code);
@@ -172,7 +172,7 @@ public class ClaimVisibilityTests(ApiWebApplicationFactory factory) : IClassFixt
         ClaimTestHelpers.Authenticate(context.Client, strangerSession.AccessToken);
 
         var (response, error) = await ClaimTestHelpers.GetReportClaimsAsync(context.Client, reportId);
-        var apiError = await ClaimTestHelpers.ReadErrorAsync(response);
+        var apiError = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(ErrorCodes.NotFound, apiError?.Code);

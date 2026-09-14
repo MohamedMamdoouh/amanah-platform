@@ -1,4 +1,5 @@
 using System.Net;
+using Amanah.Api.Tests.Claims;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 using Amanah.Api.Tests.Resolution;
@@ -21,7 +22,7 @@ public class ChatRateLimitTests : IClassFixture<ChatRateLimitWebApplicationFacto
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
 
         for (var i = 0; i < 2; i++)
         {
@@ -32,7 +33,7 @@ public class ChatRateLimitTests : IClassFixture<ChatRateLimitWebApplicationFacto
         var limited = await ChatTestHelpers.SendMessageAsync(context.Client, threadId, "Too many");
         Assert.Equal(HttpStatusCode.TooManyRequests, limited.Response.StatusCode);
 
-        var error = await ChatTestHelpers.ReadErrorAsync(limited.Response);
+        var error = await HttpTestHelpers.ReadErrorAsync(limited.Response);
         Assert.NotNull(error);
         Assert.Equal(ErrorCodes.RateLimitExceeded, error.Code);
     }

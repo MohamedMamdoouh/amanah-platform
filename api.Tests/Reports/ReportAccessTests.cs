@@ -95,7 +95,7 @@ public class ReportAccessTests(ApiWebApplicationFactory factory) : IClassFixture
         string status)
     {
         var (response, _) = await context.GetMineAsync(status);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 
@@ -104,7 +104,7 @@ public class ReportAccessTests(ApiWebApplicationFactory factory) : IClassFixture
         Guid reportId)
     {
         var response = await context.Client.GetAsync($"/api/v1/reports/{reportId}");
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 }

@@ -7,7 +7,6 @@ using Amanah.Api.Data.Seeds;
 using Amanah.Api.Models.Common;
 using Amanah.Api.Tests.Auth;
 using Amanah.Api.Tests.Infrastructure;
-using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Reports;
 using Amanah.Contracts.Responses.Auth;
 using Amanah.Contracts.Responses.Reports;
@@ -221,9 +220,6 @@ public sealed class ReportTestContext : IAsyncDisposable
 
     public async Task<HttpResponseMessage> ResubmitReportAsync(Guid id) =>
         await Client.PostAsync($"/api/v1/reports/{id}/resubmit", null);
-
-    public async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response) =>
-        await Auth.ReadErrorAsync(response);
 
     public ValueTask DisposeAsync() => _scope.DisposeAsync();
 }

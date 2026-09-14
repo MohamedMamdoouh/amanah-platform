@@ -206,7 +206,7 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         string purpose = OtpPurposes.Signup)
     {
         var (response, _) = await context.VerifyOtpAsync(phone, code, purpose);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 

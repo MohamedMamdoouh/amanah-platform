@@ -123,7 +123,7 @@ public class ReportPhotoPresignTests(ApiWebApplicationFactory factory) : IClassF
         Guid photoId)
     {
         var (response, _) = await context.GetPhotoUrlAsync(photoId);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 }

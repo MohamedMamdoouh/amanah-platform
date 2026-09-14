@@ -88,7 +88,7 @@ public class PasswordResetTests(ApiWebApplicationFactory factory) : IClassFixtur
         var (response, session) = await context.ResetPasswordAsync(
             verifyBody!.ResetToken!,
             "NewPass123");
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Equal(ErrorCodes.Banned, error?.Code);
@@ -126,7 +126,7 @@ public class PasswordResetTests(ApiWebApplicationFactory factory) : IClassFixtur
         await context.RegisterNewUserAsync();
 
         var response = await context.SendOtpAsync("01012345678", OtpPurposes.Signup);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(ErrorCodes.AccountExists, error?.Code);
@@ -139,7 +139,7 @@ public class PasswordResetTests(ApiWebApplicationFactory factory) : IClassFixtur
         string password)
     {
         var (response, _) = await context.LoginAsync(phone, password);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 
@@ -148,7 +148,7 @@ public class PasswordResetTests(ApiWebApplicationFactory factory) : IClassFixtur
         string refreshToken)
     {
         var (response, _) = await context.RefreshAsync(refreshToken);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 

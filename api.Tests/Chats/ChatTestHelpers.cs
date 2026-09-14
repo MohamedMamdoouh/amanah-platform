@@ -3,9 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Amanah.Api.Tests.Claims;
 using Amanah.Api.Tests.Infrastructure;
-using Amanah.Api.Tests.Resolution;
 using Amanah.Contracts.Chats;
-using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Chats;
 using Amanah.Contracts.Responses.Chats;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -74,9 +72,6 @@ public static class ChatTestHelpers
         Guid threadId,
         string body) =>
         SendMessageAsync(client, threadId, new SendMessageRequest { Body = body });
-
-    public static async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response) =>
-        await ClaimTestHelpers.ReadErrorAsync(response);
 
     public static async Task<HubConnection> ConnectHubAsync(
         WebApplicationFactory<ApiAssemblyMarker> factory,

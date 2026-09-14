@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
@@ -36,7 +35,7 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
     public async Task Get_moderation_queue_as_admin_returns_queue()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.GetAsync("/api/v1/admin/moderation/queue");
         var body = await response.Content.ReadFromJsonAsync<ModerationQueueResponse>();
@@ -51,7 +50,7 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
     public async Task Get_admin_categories_as_admin_returns_category_list()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.GetAsync("/api/v1/admin/categories");
         var body = await response.Content.ReadFromJsonAsync<AdminCategoryListResponse>();
@@ -65,7 +64,7 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
     public async Task Reject_report_with_invalid_reason_returns_bad_request()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.PostAsJsonAsync(
             $"/api/v1/admin/moderation/reports/{Guid.NewGuid()}/reject",
@@ -74,7 +73,7 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
                 ReasonCode = "rejection.invalid_reason",
             });
 
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
@@ -86,7 +85,7 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
     public async Task Reject_report_with_valid_reason_as_admin_returns_not_found_for_missing_report()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.PostAsJsonAsync(
             $"/api/v1/admin/moderation/reports/{Guid.NewGuid()}/reject",
@@ -96,19 +95,9 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
                 Note = "Please add more detail about the item.",
             });
 
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(ErrorCodes.NotFound, error?.Code);
-    }
-
-    private static async Task LoginAsAdminAsync(ReportTestContext context)
-    {
-        var (loginResponse, adminSession) = await context.Auth.LoginAsync("01011111111", "AdminPass123");
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-        Assert.NotNull(adminSession);
-
-        context.Client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", adminSession.AccessToken);
     }
 }

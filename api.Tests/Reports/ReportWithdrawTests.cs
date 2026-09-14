@@ -35,7 +35,7 @@ public class ReportWithdrawTests(ApiWebApplicationFactory factory) : IClassFixtu
 
         await using var otherContext = await ReportTestContext.CreateAsync(factory);
         var response = await otherContext.WithdrawReportAsync(created.Id);
-        var error = await otherContext.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(ErrorCodes.NotFound, error?.Code);
@@ -53,7 +53,7 @@ public class ReportWithdrawTests(ApiWebApplicationFactory factory) : IClassFixtu
         await context.DbContext.SaveChangesAsync();
 
         var response = await context.WithdrawReportAsync(created.Id);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(ErrorCodes.Conflict, error?.Code);

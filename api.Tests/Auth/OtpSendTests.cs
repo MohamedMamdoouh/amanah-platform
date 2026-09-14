@@ -62,7 +62,7 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
 
         var response = await context.SendOtpAsync("12345");
 
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
 
 
@@ -92,7 +92,7 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
 
         var response = await context.SendOtpAsync("01012345678");
 
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
 
 
@@ -132,7 +132,7 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
 
         var secondResponse = await context.SendOtpAsync("01012345678");
 
-        var error = await context.ReadErrorAsync(secondResponse);
+        var error = await HttpTestHelpers.ReadErrorAsync(secondResponse);
 
 
 
@@ -196,7 +196,7 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
 
         var response = await context.SendOtpAsync("01012345678");
 
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
 
 
@@ -276,7 +276,7 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
 
         var response = await context.SendOtpAsync("01012345678");
 
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
 
 

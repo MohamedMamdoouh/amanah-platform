@@ -7,7 +7,6 @@ using Amanah.Api.Models.Common;
 using Amanah.Api.Tests.Auth;
 using Amanah.Api.Tests.Browse;
 using Amanah.Api.Tests.Reports;
-using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Auth;
 using Amanah.Contracts.Responses.Browse;
@@ -63,9 +62,6 @@ public static class ClaimTestHelpers
         {
             SubmittedAnswer = submittedAnswer,
         });
-
-    public static async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response) =>
-        await response.Content.ReadFromJsonAsync<ApiError>();
 
     public static async Task<Guid> PublishLostReportAsync(ReportTestContext context) =>
         await BrowseTestHelpers.SubmitAndPublishAsync(

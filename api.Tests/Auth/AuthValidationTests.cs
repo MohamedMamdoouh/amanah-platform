@@ -15,7 +15,7 @@ public class AuthValidationTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await CreateContextAsync();
 
         var response = await context.SendOtpAsync(string.Empty);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
@@ -28,7 +28,7 @@ public class AuthValidationTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await CreateContextAsync();
 
         var (response, body) = await context.RefreshAsync();
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Equal(ErrorCodes.RefreshInvalid, error?.Code);
@@ -46,7 +46,7 @@ public class AuthValidationTests(ApiWebApplicationFactory factory) : IClassFixtu
             verifyBody!.SignupToken!,
             "Ahmed",
             acceptTerms: false);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
@@ -67,7 +67,7 @@ public class AuthValidationTests(ApiWebApplicationFactory factory) : IClassFixtu
         request.Headers.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", session.AccessToken);
         var response = await clientWithoutCookies.SendAsync(request);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Equal(ErrorCodes.RefreshInvalid, error?.Code);

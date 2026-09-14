@@ -180,7 +180,7 @@ public class ClaimReviewTests(ApiWebApplicationFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NoContent, firstApprove.StatusCode);
 
         var secondApprove = await ClaimTestHelpers.ApproveClaimAsync(context.Client, submitted.Id);
-        var error = await ClaimTestHelpers.ReadErrorAsync(secondApprove);
+        var error = await HttpTestHelpers.ReadErrorAsync(secondApprove);
 
         Assert.Equal(HttpStatusCode.Conflict, secondApprove.StatusCode);
         Assert.Equal(ErrorCodes.Conflict, error?.Code);
@@ -202,7 +202,7 @@ public class ClaimReviewTests(ApiWebApplicationFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NoContent, firstReject.StatusCode);
 
         var secondReject = await ClaimTestHelpers.RejectClaimAsync(context.Client, submitted.Id);
-        var error = await ClaimTestHelpers.ReadErrorAsync(secondReject);
+        var error = await HttpTestHelpers.ReadErrorAsync(secondReject);
 
         Assert.Equal(HttpStatusCode.Conflict, secondReject.StatusCode);
         Assert.Equal(ErrorCodes.Conflict, error?.Code);
@@ -220,7 +220,7 @@ public class ClaimReviewTests(ApiWebApplicationFactory factory) : IClassFixture<
         Assert.NotNull(submitted);
 
         var response = await ClaimTestHelpers.ApproveClaimAsync(context.Client, submitted.Id);
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(ErrorCodes.NotFound, error?.Code);
@@ -238,7 +238,7 @@ public class ClaimReviewTests(ApiWebApplicationFactory factory) : IClassFixture<
         Assert.NotNull(submitted);
 
         var response = await ClaimTestHelpers.RejectClaimAsync(context.Client, submitted.Id);
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(ErrorCodes.NotFound, error?.Code);

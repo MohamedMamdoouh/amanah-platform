@@ -20,7 +20,7 @@ public class ChatAttachmentTests(ApiWebApplicationFactory factory) : IClassFixtu
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var (response, body) = await ChatAttachmentTestHelpers.UploadAsync(
             context.Client,
             threadId,
@@ -44,7 +44,7 @@ public class ChatAttachmentTests(ApiWebApplicationFactory factory) : IClassFixtu
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var upload = await ChatAttachmentTestHelpers.UploadAsync(
             context.Client,
             threadId,
@@ -83,7 +83,7 @@ public class ChatAttachmentTests(ApiWebApplicationFactory factory) : IClassFixtu
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var upload = await ChatAttachmentTestHelpers.UploadAsync(
             context.Client,
             threadId,
@@ -108,7 +108,7 @@ public class ChatAttachmentTests(ApiWebApplicationFactory factory) : IClassFixtu
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var upload = await ChatAttachmentTestHelpers.UploadAsync(
             context.Client,
             threadId,
@@ -153,7 +153,7 @@ public class ChatAttachmentTests(ApiWebApplicationFactory factory) : IClassFixtu
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var upload = await ChatAttachmentTestHelpers.UploadAsync(
             context.Client,
             threadId,
@@ -166,7 +166,7 @@ public class ChatAttachmentTests(ApiWebApplicationFactory factory) : IClassFixtu
             new SendMessageRequest { AttachmentId = upload.Body.Id });
         Assert.Equal(HttpStatusCode.Created, send.Response.StatusCode);
 
-        ResolutionTestHelpers.AuthenticateClaimant(context.Client, scenario.ClaimantSession);
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
         var presignResponse = await ChatAttachmentTestHelpers.GetPresignedUrlAsync(
             context.Client,
             upload.Body.Id);
@@ -185,7 +185,7 @@ public class ChatAttachmentTests(ApiWebApplicationFactory factory) : IClassFixtu
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var upload = await ChatAttachmentTestHelpers.UploadAsync(
             context.Client,
             threadId,

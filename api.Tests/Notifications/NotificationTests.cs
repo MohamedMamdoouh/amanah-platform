@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
@@ -16,7 +15,7 @@ public class NotificationTests(ApiWebApplicationFactory factory) : IClassFixture
         var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
         Assert.NotNull(created);
 
-        await ApproveAsAdminAsync(context, created.Id);
+        await HttpTestHelpers.ApproveAsAdminAsync(context, created.Id);
 
         var unreadResponse = await context.Client.GetAsync("/api/v1/notifications/unread-count");
         var unread = await unreadResponse.Content.ReadFromJsonAsync<NotificationUnreadCountResponse>();
@@ -33,7 +32,7 @@ public class NotificationTests(ApiWebApplicationFactory factory) : IClassFixture
         var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
         Assert.NotNull(created);
 
-        await ApproveAsAdminAsync(context, created.Id);
+        await HttpTestHelpers.ApproveAsAdminAsync(context, created.Id);
 
         var listResponse = await context.Client.GetAsync("/api/v1/notifications");
         var list = await listResponse.Content.ReadFromJsonAsync<NotificationListResponse>();
@@ -63,8 +62,8 @@ public class NotificationTests(ApiWebApplicationFactory factory) : IClassFixture
         Assert.NotNull(first);
         Assert.NotNull(second);
 
-        await ApproveAsAdminAsync(context, first.Id);
-        await ApproveAsAdminAsync(context, second.Id);
+        await HttpTestHelpers.ApproveAsAdminAsync(context, first.Id);
+        await HttpTestHelpers.ApproveAsAdminAsync(context, second.Id);
 
         var markAllResponse = await context.Client.PostAsync("/api/v1/notifications/read-all", null);
         Assert.Equal(HttpStatusCode.NoContent, markAllResponse.StatusCode);
@@ -74,23 +73,5 @@ public class NotificationTests(ApiWebApplicationFactory factory) : IClassFixture
 
         Assert.NotNull(unread);
         Assert.Equal(0, unread.Count);
-    }
-
-    private static async Task ApproveAsAdminAsync(ReportTestContext context, Guid reportId)
-    {
-        var (loginResponse, adminSession) = await context.Auth.LoginAsync("01011111111", "AdminPass123");
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-        Assert.NotNull(adminSession);
-
-        context.Client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", adminSession.AccessToken);
-
-        var approveResponse = await context.Client.PostAsync(
-            $"/api/v1/admin/moderation/reports/{reportId}/approve",
-            null);
-        Assert.Equal(HttpStatusCode.NoContent, approveResponse.StatusCode);
-
-        context.Client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", context.Session.AccessToken);
     }
 }

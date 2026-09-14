@@ -22,7 +22,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var approveResponse = await context.Client.PostAsync(
             $"/api/v1/admin/moderation/reports/{created.Id}/approve",
@@ -54,7 +54,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var rejectResponse = await context.Client.PostAsJsonAsync(
             $"/api/v1/admin/moderation/reports/{created.Id}/reject",
@@ -95,7 +95,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var firstApprove = await context.Client.PostAsync(
             $"/api/v1/admin/moderation/reports/{created.Id}/approve",
@@ -105,7 +105,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         var secondApprove = await context.Client.PostAsync(
             $"/api/v1/admin/moderation/reports/{created.Id}/approve",
             null);
-        var error = await context.ReadErrorAsync(secondApprove);
+        var error = await HttpTestHelpers.ReadErrorAsync(secondApprove);
 
         Assert.Equal(HttpStatusCode.Conflict, secondApprove.StatusCode);
         Assert.Equal(ErrorCodes.Conflict, error?.Code);
@@ -118,7 +118,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.GetAsync(
             $"/api/v1/admin/moderation/reports/{created.Id}");
@@ -136,7 +136,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var rejectResponse = await context.Client.PostAsJsonAsync(
             $"/api/v1/admin/moderation/reports/{created.Id}/reject",
@@ -175,7 +175,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         Assert.NotNull(first);
         Assert.NotNull(second);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.GetAsync("/api/v1/admin/moderation/queue");
         var queue = await response.Content.ReadFromJsonAsync<ModerationQueueResponse>();
@@ -194,7 +194,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
         await context.Client.PostAsJsonAsync(
             $"/api/v1/admin/moderation/reports/{created.Id}/reject",
             new RejectReportRequest
@@ -221,7 +221,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
             TestReportHelpers.BuildValidLostRequest(title: "Unique sapphire wallet"));
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.GetAsync(
             "/api/v1/admin/moderation/search?q=sapphire");
@@ -241,7 +241,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
             TestReportHelpers.BuildValidLostRequest(title: "Unique sapphire wallet"));
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var terms = string.Join('+', Enumerable.Repeat("sapphire", 3000));
         var response = await context.Client.GetAsync(
@@ -261,7 +261,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
             TestReportHelpers.BuildValidLostRequest(title: "Published emerald ring"));
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var approveResponse = await context.Client.PostAsync(
             $"/api/v1/admin/moderation/reports/{created.Id}/approve",
@@ -285,7 +285,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
             TestReportHelpers.BuildValidLostRequest(title: "حقيبة مدرسة زرقاء"));
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.GetAsync(
             "/api/v1/admin/moderation/search?q=مدرسه");
@@ -304,7 +304,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
             TestReportHelpers.BuildValidLostRequest(title: "Rejected ruby necklace"));
         Assert.NotNull(created);
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
         await context.Client.PostAsJsonAsync(
             $"/api/v1/admin/moderation/reports/{created.Id}/reject",
             new RejectReportRequest
@@ -328,7 +328,7 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
 
-        await LoginAsAdminAsync(context);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.GetAsync("/api/v1/admin/moderation/search?q=");
         var body = await response.Content.ReadFromJsonAsync<ModerationSearchResponse>();
@@ -336,15 +336,5 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
         Assert.Empty(body.Items);
-    }
-
-    private static async Task LoginAsAdminAsync(ReportTestContext context)
-    {
-        var (loginResponse, adminSession) = await context.Auth.LoginAsync("01011111111", "AdminPass123");
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-        Assert.NotNull(adminSession);
-
-        context.Client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", adminSession.AccessToken);
     }
 }

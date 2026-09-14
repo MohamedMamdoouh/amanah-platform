@@ -1,6 +1,5 @@
 using Amanah.Api.Tests.Claims;
 using Amanah.Api.Tests.Reports;
-using Amanah.Contracts.Errors;
 using Amanah.Contracts.Responses.Auth;
 
 namespace Amanah.Api.Tests.Resolution;
@@ -40,18 +39,9 @@ public static class ResolutionTestHelpers
         return new ApprovedClaimScenario(reportId, submitted.Id, claimantSession, reporterContext);
     }
 
-    public static void AuthenticateReporter(HttpClient client, ReportTestContext context) =>
-        ClaimTestHelpers.AuthenticateReporter(client, context);
-
-    public static void AuthenticateClaimant(HttpClient client, AuthSessionResponse session) =>
-        ClaimTestHelpers.Authenticate(client, session.AccessToken);
-
     public static Task<HttpResponseMessage> ConfirmResolutionAsync(HttpClient client, Guid claimId) =>
         client.PostAsync($"/api/v1/claims/{claimId}/confirm-resolution", null);
 
     public static Task<HttpResponseMessage> CancelClaimAsync(HttpClient client, Guid claimId) =>
         client.PostAsync($"/api/v1/claims/{claimId}/cancel", null);
-
-    public static async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response) =>
-        await ClaimTestHelpers.ReadErrorAsync(response);
 }

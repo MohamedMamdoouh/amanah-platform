@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Amanah.Api.Tests.Claims;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 using Amanah.Api.Tests.Resolution;
@@ -19,7 +20,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var (response, body) = await ChatTestHelpers.SendMessageAsync(
             context.Client,
             threadId,
@@ -44,11 +45,11 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var first = await ChatTestHelpers.SendMessageAsync(context.Client, threadId, "First message");
         Assert.Equal(HttpStatusCode.Created, first.Response.StatusCode);
 
-        ResolutionTestHelpers.AuthenticateClaimant(context.Client, scenario.ClaimantSession);
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
         var second = await ChatTestHelpers.SendMessageAsync(context.Client, threadId, "Second message");
         Assert.Equal(HttpStatusCode.Created, second.Response.StatusCode);
 
@@ -70,7 +71,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 
@@ -81,7 +82,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
-        var error = await ChatTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         Assert.NotNull(error);
         Assert.Equal(ErrorCodes.Conflict, error.Code);
     }
@@ -93,7 +94,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var (response, _) = await ChatTestHelpers.SendMessageAsync(
             context.Client,
             threadId,
@@ -101,7 +102,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
-        var error = await ChatTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         Assert.NotNull(error);
         Assert.Equal(ErrorCodes.ValidationFailed, error.Code);
     }
@@ -113,7 +114,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var (response, _) = await ChatTestHelpers.SendMessageAsync(
             context.Client,
             threadId,
@@ -133,7 +134,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var (response, _) = await ChatTestHelpers.SendMessageAsync(
             context.Client,
             threadId,
@@ -156,7 +157,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var send = await ChatTestHelpers.SendMessageAsync(context.Client, threadId, "Latest preview text");
         Assert.Equal(HttpStatusCode.Created, send.Response.StatusCode);
 

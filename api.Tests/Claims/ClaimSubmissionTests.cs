@@ -87,7 +87,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
         ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
 
         var (claimResponse, _) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, created.Id);
-        var error = await ClaimTestHelpers.ReadErrorAsync(claimResponse);
+        var error = await HttpTestHelpers.ReadErrorAsync(claimResponse);
 
         Assert.Equal(System.Net.HttpStatusCode.Conflict, claimResponse.StatusCode);
         Assert.Equal(ErrorCodes.ClaimInvalidStatus, error?.Code);
@@ -101,7 +101,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
         var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
 
         var (response, _) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, reportId);
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(ErrorCodes.ClaimOwnReport, error?.Code);
@@ -123,7 +123,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
             context.Client,
             reportId,
             "Another description that should not create a second pending claim.");
-        var error = await ClaimTestHelpers.ReadErrorAsync(secondResponse);
+        var error = await HttpTestHelpers.ReadErrorAsync(secondResponse);
 
         Assert.Equal(System.Net.HttpStatusCode.Conflict, secondResponse.StatusCode);
         Assert.Equal(ErrorCodes.ClaimPendingExists, error?.Code);
@@ -142,7 +142,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
             context.Client,
             reportId,
             "Please call me on 01012345678 about this wallet.");
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
@@ -164,7 +164,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
             context.Client,
             reportId,
             "Too short");
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains(ClaimContentValidator.FieldName, error!.Errors!.Keys);
@@ -219,7 +219,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
         ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
 
         var (response, _) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, reportId);
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(ErrorCodes.ClaimAttemptLimit, error?.Code);
@@ -281,7 +281,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
         }
 
         var (quotaResponse, _) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, reportIds[^1]);
-        var error = await ClaimTestHelpers.ReadErrorAsync(quotaResponse);
+        var error = await HttpTestHelpers.ReadErrorAsync(quotaResponse);
 
         Assert.Equal(System.Net.HttpStatusCode.TooManyRequests, quotaResponse.StatusCode);
         Assert.Equal(ErrorCodes.ClaimDailyQuota, error?.Code);
@@ -329,7 +329,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
                 SubmittedAnswer = ClaimTestHelpers.ValidAnswer,
             },
             ["not-an-image"u8.ToArray()]);
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.UploadInvalidFormat, error?.Code);
@@ -353,7 +353,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
                 SubmittedAnswer = ClaimTestHelpers.ValidAnswer,
             },
             [TestImageFactory.CreateMinimalJpeg(), TestImageFactory.CreateMinimalJpeg()]);
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
@@ -369,7 +369,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
         ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
 
         var (response, _) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, Guid.NewGuid());
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(ErrorCodes.NotFound, error?.Code);

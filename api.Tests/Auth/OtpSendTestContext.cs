@@ -4,7 +4,6 @@ using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Contracts.Responses.Auth;
-using Amanah.Contracts.Errors;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Services.External;
 using Amanah.Api.Tests.Auth.Fakes;
@@ -241,11 +240,6 @@ public sealed class OtpSendTestContext : IAsyncDisposable
     public static void AssertRefreshCookieSet(HttpResponseMessage response)
     {
         Assert.NotNull(ExtractRefreshToken(response));
-    }
-
-    public async Task<ApiError?> ReadErrorAsync(HttpResponseMessage response)
-    {
-        return await response.Content.ReadFromJsonAsync<ApiError>();
     }
 
     public async Task WaitForSmsCountAsync(int expectedCount, TimeSpan? timeout = null)

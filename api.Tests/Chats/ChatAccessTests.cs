@@ -50,7 +50,7 @@ public class ChatAccessTests(ApiWebApplicationFactory factory) : IClassFixture<A
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 
@@ -69,11 +69,11 @@ public class ChatAccessTests(ApiWebApplicationFactory factory) : IClassFixture<A
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var reporterConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, reporterConfirm.StatusCode);
 
-        ResolutionTestHelpers.AuthenticateClaimant(context.Client, scenario.ClaimantSession);
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
         var claimantConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, claimantConfirm.StatusCode);
 
@@ -92,7 +92,7 @@ public class ChatAccessTests(ApiWebApplicationFactory factory) : IClassFixture<A
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
         var threadId = await ChatTestHelpers.GetThreadIdAsync(context.Client, scenario.ClaimId);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 
@@ -111,7 +111,7 @@ public class ChatAccessTests(ApiWebApplicationFactory factory) : IClassFixture<A
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateClaimant(context.Client, scenario.ClaimantSession);
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
         var listResponse = await ChatTestHelpers.ListChatsAsync(context.Client);
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
 

@@ -108,7 +108,7 @@ public class ClaimWithdrawTests(ApiWebApplicationFactory factory) : IClassFixtur
 
         ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
         var withdrawResponse = await ClaimTestHelpers.WithdrawClaimAsync(context.Client, submitted.Id);
-        var error = await ClaimTestHelpers.ReadErrorAsync(withdrawResponse);
+        var error = await HttpTestHelpers.ReadErrorAsync(withdrawResponse);
 
         Assert.Equal(HttpStatusCode.Conflict, withdrawResponse.StatusCode);
         Assert.Equal(ErrorCodes.Conflict, error?.Code);
@@ -127,7 +127,7 @@ public class ClaimWithdrawTests(ApiWebApplicationFactory factory) : IClassFixtur
 
         ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var response = await ClaimTestHelpers.WithdrawClaimAsync(context.Client, submitted.Id);
-        var error = await ClaimTestHelpers.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(ErrorCodes.NotFound, error?.Code);

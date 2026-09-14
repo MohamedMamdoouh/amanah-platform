@@ -16,7 +16,7 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var response = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -47,11 +47,11 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var firstConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, firstConfirm.StatusCode);
 
-        ResolutionTestHelpers.AuthenticateClaimant(context.Client, scenario.ClaimantSession);
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
         var secondConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, secondConfirm.StatusCode);
 
@@ -87,14 +87,14 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var confirmResponse = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, confirmResponse.StatusCode);
 
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.Conflict, cancelResponse.StatusCode);
 
-        var error = await ResolutionTestHelpers.ReadErrorAsync(cancelResponse);
+        var error = await HttpTestHelpers.ReadErrorAsync(cancelResponse);
         Assert.NotNull(error);
         Assert.Equal(ErrorCodes.ClaimInvalidStatus, error.Code);
     }
@@ -105,11 +105,11 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var confirmResponse = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, confirmResponse.StatusCode);
 
-        ResolutionTestHelpers.AuthenticateClaimant(context.Client, scenario.ClaimantSession);
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 
@@ -133,11 +133,11 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var firstConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, firstConfirm.StatusCode);
 
-        ResolutionTestHelpers.AuthenticateClaimant(context.Client, scenario.ClaimantSession);
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 
@@ -173,7 +173,7 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 
@@ -233,7 +233,7 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context, foundReport: true);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var response = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
@@ -251,7 +251,7 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateClaimant(context.Client, scenario.ClaimantSession);
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 
@@ -277,7 +277,7 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
 
         ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
         var (submitResponse, _) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, scenario.ReportId);
-        var error = await ClaimTestHelpers.ReadErrorAsync(submitResponse);
+        var error = await HttpTestHelpers.ReadErrorAsync(submitResponse);
 
         Assert.Equal(HttpStatusCode.Conflict, submitResponse.StatusCode);
         Assert.Equal(ErrorCodes.ClaimAttemptLimit, error?.Code);
@@ -289,7 +289,7 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 
@@ -306,7 +306,7 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 

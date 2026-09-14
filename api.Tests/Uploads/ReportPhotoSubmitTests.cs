@@ -37,7 +37,7 @@ public class ReportPhotoSubmitTests(ApiWebApplicationFactory factory) : IClassFi
         var (response, error) = await context.SubmitReportAsync(
             request,
             [TestImageFactory.CreateOversizedJpeg()]);
-        var apiError = await context.ReadErrorAsync(response);
+        var apiError = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.UploadTooLarge, apiError?.Code);
@@ -55,7 +55,7 @@ public class ReportPhotoSubmitTests(ApiWebApplicationFactory factory) : IClassFi
             request,
             ["not-an-image"u8.ToArray()],
             "image/jpeg");
-        var apiError = await context.ReadErrorAsync(response);
+        var apiError = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.UploadInvalidFormat, apiError?.Code);
@@ -73,7 +73,7 @@ public class ReportPhotoSubmitTests(ApiWebApplicationFactory factory) : IClassFi
             .ToArray();
 
         var (response, _) = await context.SubmitReportAsync(request, photos);
-        var apiError = await context.ReadErrorAsync(response);
+        var apiError = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("photos", apiError!.Errors!.Keys);
@@ -89,7 +89,7 @@ public class ReportPhotoSubmitTests(ApiWebApplicationFactory factory) : IClassFi
             request,
             [TestImageFactory.CreateMinimalJpeg(), "not-an-image"u8.ToArray()],
             "image/jpeg");
-        var apiError = await context.ReadErrorAsync(response);
+        var apiError = await HttpTestHelpers.ReadErrorAsync(response);
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.UploadInvalidFormat, apiError?.Code);

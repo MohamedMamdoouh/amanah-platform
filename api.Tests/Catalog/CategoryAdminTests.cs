@@ -1,11 +1,9 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Data.Seeds;
 using Amanah.Api.Tests.Infrastructure;
-using Amanah.Contracts.Responses.Auth;
 using Amanah.Contracts.Requests.Admin;
 using Amanah.Contracts.Responses.Admin;
 using Amanah.Contracts.Responses.Catalog;
@@ -21,7 +19,7 @@ public class CategoryAdminTests(ApiWebApplicationFactory factory) : IClassFixtur
     {
         await using var scope = await CreateSeededScopeAsync();
         var client = factory.CreateClient();
-        await LoginAsAdminAsync(client);
+        await HttpTestHelpers.LoginAsAdminAsync(client);
 
         var createResponse = await client.PostAsJsonAsync(
             "/api/v1/admin/categories",
@@ -57,7 +55,7 @@ public class CategoryAdminTests(ApiWebApplicationFactory factory) : IClassFixtur
         await using var scope = await CreateSeededScopeAsync();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var client = factory.CreateClient();
-        await LoginAsAdminAsync(client);
+        await HttpTestHelpers.LoginAsAdminAsync(client);
 
         var category = await context.Categories.SingleAsync(category => category.Code == "other");
         var updateResponse = await client.PutAsJsonAsync(
@@ -77,7 +75,7 @@ public class CategoryAdminTests(ApiWebApplicationFactory factory) : IClassFixtur
         Assert.NotNull(publicList);
         Assert.DoesNotContain(publicList.Items, item => item.Code == "other");
 
-        await LoginAsAdminAsync(client);
+        await HttpTestHelpers.LoginAsAdminAsync(client);
         var adminList = await client.GetFromJsonAsync<AdminCategoryListResponse>("/api/v1/admin/categories");
         Assert.NotNull(adminList);
         Assert.Contains(adminList.Items, item => item.Code == "other" && !item.IsActive);
@@ -89,7 +87,7 @@ public class CategoryAdminTests(ApiWebApplicationFactory factory) : IClassFixtur
         await using var scope = await CreateSeededScopeAsync();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var client = factory.CreateClient();
-        await LoginAsAdminAsync(client);
+        await HttpTestHelpers.LoginAsAdminAsync(client);
 
         var phones = await context.Categories
             .Include(category => category.FieldDefinitions)
@@ -150,7 +148,7 @@ public class CategoryAdminTests(ApiWebApplicationFactory factory) : IClassFixtur
         await using var scope = await CreateSeededScopeAsync();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var client = factory.CreateClient();
-        await LoginAsAdminAsync(client);
+        await HttpTestHelpers.LoginAsAdminAsync(client);
 
         var phones = await context.Categories.SingleAsync(category => category.Code == "phones");
         var admin = await context.Users.SingleAsync(user => user.Role == UserRole.Admin);
@@ -194,7 +192,7 @@ public class CategoryAdminTests(ApiWebApplicationFactory factory) : IClassFixtur
     {
         await using var scope = await CreateSeededScopeAsync();
         var client = factory.CreateClient();
-        await LoginAsAdminAsync(client);
+        await HttpTestHelpers.LoginAsAdminAsync(client);
 
         var response = await client.PostAsJsonAsync(
             "/api/v1/admin/categories",
@@ -207,20 +205,6 @@ public class CategoryAdminTests(ApiWebApplicationFactory factory) : IClassFixtur
             });
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-    }
-
-    private async Task LoginAsAdminAsync(HttpClient client)
-    {
-        var loginResponse = await client.PostAsJsonAsync(
-            "/api/v1/auth/login",
-            new { phone = "01011111111", password = "AdminPass123" });
-        var adminSession = await loginResponse.Content.ReadFromJsonAsync<AuthSessionResponse>();
-
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-        Assert.NotNull(adminSession);
-
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", adminSession.AccessToken);
     }
 
     private async Task<AsyncServiceScope> CreateSeededScopeAsync()

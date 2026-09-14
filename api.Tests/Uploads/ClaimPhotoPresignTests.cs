@@ -131,7 +131,7 @@ public class ClaimPhotoPresignTests(ApiWebApplicationFactory factory) : IClassFi
         Guid claimId)
     {
         var (response, _) = await ClaimTestHelpers.GetClaimPhotoUrlAsync(context.Client, claimId);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 }

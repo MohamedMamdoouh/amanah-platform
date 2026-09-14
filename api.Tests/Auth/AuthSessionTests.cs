@@ -281,7 +281,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         bool acceptTerms = true)
     {
         var (response, _) = await context.RegisterAsync(signupToken, displayName, acceptTerms: acceptTerms);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 
@@ -291,7 +291,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         string password = TestAuthHelpers.DefaultPassword)
     {
         var (response, _) = await context.LoginAsync(phone, password);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 
@@ -300,7 +300,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         string? refreshToken)
     {
         var (response, _) = await context.RefreshAsync(refreshToken);
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 
@@ -308,7 +308,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         OtpSendTestContext context)
     {
         var (response, _) = await context.GetMeAsync();
-        var error = await context.ReadErrorAsync(response);
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
         return (response, error);
     }
 

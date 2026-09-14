@@ -140,7 +140,7 @@ public class ReportResubmitTests(ApiWebApplicationFactory factory) : IClassFixtu
         await context.DbContext.SaveChangesAsync();
 
         var resubmitResponse = await context.ResubmitReportAsync(created.Id);
-        var error = await context.ReadErrorAsync(resubmitResponse);
+        var error = await HttpTestHelpers.ReadErrorAsync(resubmitResponse);
 
         Assert.Equal(HttpStatusCode.BadRequest, resubmitResponse.StatusCode);
         Assert.Contains(
@@ -165,7 +165,7 @@ public class ReportResubmitTests(ApiWebApplicationFactory factory) : IClassFixtu
         }
 
         var fourthResubmit = await context.ResubmitReportAsync(created.Id);
-        var error = await context.ReadErrorAsync(fourthResubmit);
+        var error = await HttpTestHelpers.ReadErrorAsync(fourthResubmit);
 
         Assert.Equal(HttpStatusCode.Conflict, fourthResubmit.StatusCode);
         Assert.Equal(ErrorCodes.ReportResubmitCap, error?.Code);
@@ -243,7 +243,7 @@ public class ReportResubmitTests(ApiWebApplicationFactory factory) : IClassFixtu
                     ["first_name_on_document"] = "Ahmed",
                 }),
             ["not-an-image"u8.ToArray()]);
-        var error = await context.ReadErrorAsync(updateResponse.Response);
+        var error = await HttpTestHelpers.ReadErrorAsync(updateResponse.Response);
 
         Assert.Equal(HttpStatusCode.BadRequest, updateResponse.Response.StatusCode);
         Assert.Equal(ErrorCodes.UploadInvalidFormat, error?.Code);
@@ -267,7 +267,7 @@ public class ReportResubmitTests(ApiWebApplicationFactory factory) : IClassFixtu
         var updateResponse = await context.UpdateReportAsync(
             created.Id,
             TestReportHelpers.BuildValidUpdateRequest(title: "Updated title"));
-        var error = await context.ReadErrorAsync(updateResponse.Response);
+        var error = await HttpTestHelpers.ReadErrorAsync(updateResponse.Response);
 
         Assert.Equal(HttpStatusCode.Conflict, updateResponse.Response.StatusCode);
         Assert.Equal(ErrorCodes.Conflict, error?.Code);
