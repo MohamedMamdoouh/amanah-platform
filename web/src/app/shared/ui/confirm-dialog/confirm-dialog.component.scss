@@ -1,0 +1,23 @@
+.confirm-dialog {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.confirm-dialog h3 {
+  margin: 0 0 var(--space-xs);
+  font-size: 1rem;
+}
+
+.confirm-dialog p {
+  margin: 0 0 var(--space-md);
+  color: var(--color-text-muted);
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}

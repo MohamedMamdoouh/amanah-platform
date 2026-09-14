@@ -1,5 +1,4 @@
 import { DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   inject,
@@ -11,17 +10,17 @@ import {
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ClaimPhotoUploadService } from '../../uploads/claim-photo-upload.service';
+import { ApiErrorService } from '../../i18n/api-error.service';
+import { DomainLabelService } from '../../i18n/domain-label.service';
+import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
-import {
-  BadgeComponent,
-  BadgeVariant,
-} from '../../shared/ui/badge/badge.component';
+import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
+import { ClaimPhotoUploadService } from '../../uploads/claim-photo-upload.service';
 import { ClaimService } from '../claim.service';
-import { ClaimStatus, ReportClaimSummary } from '../models/claim.models';
+import { ReportClaimSummary } from '../models/claim.models';
 
 interface ClaimPhotoState {
   url: string | null;
@@ -35,6 +34,7 @@ interface ClaimPhotoState {
     AlertComponent,
     BadgeComponent,
     ButtonComponent,
+    ConfirmDialogComponent,
     DatePipe,
     LoadingIndicatorComponent,
     SpinnerComponent,
@@ -46,6 +46,8 @@ interface ClaimPhotoState {
 export class ReportClaimsSectionComponent implements OnInit {
   private readonly claimService = inject(ClaimService);
   private readonly photoService = inject(ClaimPhotoUploadService);
+  private readonly apiErrors = inject(ApiErrorService);
+  protected readonly domainLabels = inject(DomainLabelService);
   private readonly translate = inject(TranslateService);
 
   readonly reportId = input.required<string>();
@@ -64,23 +66,6 @@ export class ReportClaimsSectionComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadClaims();
-  }
-
-  statusLabel(status: ClaimStatus): string {
-    return this.translate.instant(`claims.status.${status}`);
-  }
-
-  badgeVariant(status: ClaimStatus): BadgeVariant {
-    switch (status) {
-      case 'approved':
-        return 'approved';
-      case 'rejected':
-        return 'rejected';
-      case 'pending':
-        return 'pending';
-      default:
-        return 'neutral';
-    }
   }
 
   canActOn(claim: ReportClaimSummary): boolean {
@@ -144,7 +129,11 @@ export class ReportClaimsSectionComponent implements OnInit {
       this.reviewed.emit();
       await this.loadClaims();
     } catch (error) {
-      this.actionError.set(this.parseError(error));
+      this.actionError.set(
+        this.apiErrors.messageFromHttpError(error, {
+          conflictKey: 'claims.review.invalid_status',
+        }),
+      );
     } finally {
       this.actingClaimId.set(null);
     }
@@ -197,13 +186,5 @@ export class ReportClaimsSectionComponent implements OnInit {
       ...current,
       [claimId]: { ...current[claimId], ...patch },
     }));
-  }
-
-  private parseError(error: unknown): string {
-    if (error instanceof HttpErrorResponse && error.status === 409) {
-      return this.translate.instant('claims.review.invalid_status');
-    }
-
-    return this.translate.instant('error.internal.error');
   }
 }

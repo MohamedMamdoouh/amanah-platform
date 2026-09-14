@@ -11,7 +11,7 @@
       [title]="detail.title"
       [intro]="(detail.createdAt | date: 'medium') ?? ''"
     >
-      <span class="label-caps">{{ typeLabel(detail.type) }}</span>
+      <span class="label-caps">{{ domainLabels.reportType(detail.type) }}</span>
     </app-page-header>
 
     <app-card variant="flat" padding="md">

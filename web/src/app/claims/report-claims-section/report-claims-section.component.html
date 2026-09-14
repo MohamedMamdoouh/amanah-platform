@@ -28,8 +28,8 @@
                 · {{ "claims.review.attempt" | translate: { n: claim.attemptNumber } }}
               </p>
             </div>
-            <app-badge [variant]="badgeVariant(claim.status)">
-              {{ statusLabel(claim.status) }}
+            <app-badge [variant]="domainLabels.claimBadgeVariant(claim.status)">
+              {{ domainLabels.claimStatus(claim.status) }}
             </app-badge>
           </div>
 
@@ -84,52 +84,29 @@
   }
 
   @if (confirmApproveId()) {
-    <div
-      class="report-claims__dialog"
-      role="dialog"
-      aria-labelledby="approve-claim-title"
-    >
-      <h3 id="approve-claim-title">
-        {{ "claims.review.approve_title" | translate }}
-      </h3>
-      <p>{{ "claims.review.approve_intro" | translate }}</p>
-      <div class="report-claims__dialog-actions">
-        <app-button variant="ghost" (clicked)="closeDialogs()">
-          {{ "claims.review.cancel" | translate }}
-        </app-button>
-        <app-button
-          variant="primary"
-          [loading]="actingClaimId() === confirmApproveId()"
-          (clicked)="confirmApprove()"
-        >
-          {{ "claims.review.approve_confirm" | translate }}
-        </app-button>
-      </div>
-    </div>
+    <app-confirm-dialog
+      titleId="approve-claim-title"
+      [title]="'claims.review.approve_title' | translate"
+      [intro]="'claims.review.approve_intro' | translate"
+      [cancelLabel]="'claims.review.cancel' | translate"
+      [confirmLabel]="'claims.review.approve_confirm' | translate"
+      [loading]="actingClaimId() === confirmApproveId()"
+      (cancelled)="closeDialogs()"
+      (confirmed)="confirmApprove()"
+    />
   }
 
   @if (confirmRejectId()) {
-    <div
-      class="report-claims__dialog"
-      role="dialog"
-      aria-labelledby="reject-claim-title"
-    >
-      <h3 id="reject-claim-title">
-        {{ "claims.review.reject_title" | translate }}
-      </h3>
-      <p>{{ "claims.review.reject_intro" | translate }}</p>
-      <div class="report-claims__dialog-actions">
-        <app-button variant="ghost" (clicked)="closeDialogs()">
-          {{ "claims.review.cancel" | translate }}
-        </app-button>
-        <app-button
-          variant="outline"
-          [loading]="actingClaimId() === confirmRejectId()"
-          (clicked)="confirmReject()"
-        >
-          {{ "claims.review.reject_confirm" | translate }}
-        </app-button>
-      </div>
-    </div>
+    <app-confirm-dialog
+      titleId="reject-claim-title"
+      [title]="'claims.review.reject_title' | translate"
+      [intro]="'claims.review.reject_intro' | translate"
+      [cancelLabel]="'claims.review.cancel' | translate"
+      [confirmLabel]="'claims.review.reject_confirm' | translate"
+      confirmVariant="outline"
+      [loading]="actingClaimId() === confirmRejectId()"
+      (cancelled)="closeDialogs()"
+      (confirmed)="confirmReject()"
+    />
   }
 </section>

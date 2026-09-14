@@ -1,0 +1,25 @@
+<div
+  class="confirm-dialog"
+  role="dialog"
+  [attr.aria-labelledby]="titleId()"
+>
+  <h3 [id]="titleId()">{{ title() }}</h3>
+  <p>{{ intro() }}</p>
+  <div class="confirm-dialog__actions">
+    <app-button
+      variant="ghost"
+      [disabled]="loading() || disabled()"
+      (clicked)="cancelled.emit()"
+    >
+      {{ cancelLabel() }}
+    </app-button>
+    <app-button
+      [variant]="confirmVariant()"
+      [loading]="loading()"
+      [disabled]="disabled()"
+      (clicked)="confirmed.emit()"
+    >
+      {{ confirmLabel() }}
+    </app-button>
+  </div>
+</div>
