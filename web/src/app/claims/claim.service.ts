@@ -49,7 +49,9 @@ export class ClaimService {
   findApprovedClaimForReport(
     reportId: string,
   ): Observable<MyClaimSummary | null> {
-    const pageSize = 100;
+    // Must stay within GET /claims/mine pageSize max (1–50) or the lookup 400s
+    // and claimant confirm/cancel UI never appears on public report detail.
+    const pageSize = 50;
 
     const scanPage = (page: number): Observable<MyClaimSummary | null> =>
       this.getMine(page, pageSize).pipe(

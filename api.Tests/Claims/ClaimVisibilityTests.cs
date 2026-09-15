@@ -106,6 +106,36 @@ public class ClaimVisibilityTests(ApiWebApplicationFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task Get_mine_rejects_page_size_above_max()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
+        await ClaimTestHelpers.SubmitClaimAsync(context.Client, reportId);
+
+        var (tooLargeResponse, _) = await ClaimTestHelpers.GetMyClaimsAsync(
+            context.Client,
+            page: 1,
+            pageSize: 100);
+        var tooLargeError = await HttpTestHelpers.ReadErrorAsync(tooLargeResponse);
+
+        Assert.Equal(HttpStatusCode.BadRequest, tooLargeResponse.StatusCode);
+        Assert.Equal(ErrorCodes.ValidationFailed, tooLargeError?.Code);
+        Assert.Contains("pageSize", tooLargeError?.Errors?.Keys ?? []);
+
+        var (maxResponse, maxBody) = await ClaimTestHelpers.GetMyClaimsAsync(
+            context.Client,
+            page: 1,
+            pageSize: 50);
+
+        Assert.Equal(HttpStatusCode.OK, maxResponse.StatusCode);
+        Assert.NotNull(maxBody);
+        Assert.Equal(1, maxBody.TotalCount);
+        Assert.Equal(50, maxBody.PageSize);
+    }
+
+    [Fact]
     public async Task Approved_claim_detail_includes_chat_thread_id_for_claimant()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
