@@ -1,0 +1,114 @@
+<section class="chat-thread page-container" aria-labelledby="chat-thread-title">
+  @if (loading()) {
+    <app-loading-indicator [label]="'chats.thread.loading' | translate" />
+  } @else if (error()) {
+    <app-page-header
+      [title]="'chats.thread.title' | translate"
+      [backLink]="'/my/chats'"
+      [backLabel]="'chats.thread.back' | translate"
+    />
+    <app-alert variant="error">{{ error() }}</app-alert>
+  } @else if (thread()) {
+    <app-page-header
+      [title]="thread()!.reportTitle"
+      [intro]="
+        'chats.thread.with_counterparty'
+          | translate: { name: thread()!.counterpartyDisplayName }
+      "
+      [backLink]="'/my/chats'"
+      [backLabel]="'chats.thread.back' | translate"
+    >
+      <a class="chat-thread__report-link" [routerLink]="reportLink()">
+        {{ "chats.thread.view_report" | translate }}
+      </a>
+    </app-page-header>
+
+    <app-safety-banner />
+
+    @if (isReadOnly()) {
+      <app-alert variant="info">
+        {{ "chats.thread.read_only_notice" | translate }}
+      </app-alert>
+    }
+
+    @if (sendError()) {
+      <app-alert variant="error">{{ sendError() }}</app-alert>
+    }
+
+    <div class="chat-thread__panel">
+      @if (hasOlderMessages()) {
+        <div class="chat-thread__load-more">
+          <app-button
+            variant="ghost"
+            size="sm"
+            [loading]="loadingOlder()"
+            [disabled]="loadingOlder()"
+            (clicked)="loadOlderMessages()"
+          >
+            {{ "chats.thread.load_older" | translate }}
+          </app-button>
+        </div>
+      }
+
+      <div
+        class="chat-thread__messages"
+        role="log"
+        [attr.aria-label]="'chats.thread.messages' | translate"
+      >
+        @if (messages().length === 0) {
+          <p class="chat-thread__empty">
+            {{ "chats.thread.empty" | translate }}
+          </p>
+        } @else {
+          @for (message of messages(); track message.id) {
+            <article
+              class="chat-thread__message"
+              [class.chat-thread__message--own]="isOwnMessage(message)"
+            >
+              <header class="chat-thread__message-header">
+                <span class="chat-thread__sender">{{
+                  message.senderDisplayName
+                }}</span>
+                <time class="chat-thread__time" [dateTime]="message.sentAt">
+                  {{ message.sentAt | date: "short" }}
+                </time>
+              </header>
+              <p class="chat-thread__body">{{ message.body }}</p>
+            </article>
+          }
+        }
+        <div #messagesEnd class="chat-thread__scroll-anchor"></div>
+      </div>
+
+      <form
+        class="chat-thread__composer"
+        (ngSubmit)="sendMessage()"
+        [attr.aria-disabled]="isReadOnly()"
+      >
+        <label class="sr-only" for="chat-message-input">
+          {{ "chats.thread.input_label" | translate }}
+        </label>
+        <textarea
+          id="chat-message-input"
+          class="form-textarea chat-thread__input"
+          rows="3"
+          [placeholder]="'chats.thread.input_placeholder' | translate"
+          [disabled]="isReadOnly() || sending()"
+          [ngModel]="draft()"
+          (ngModelChange)="draft.set($event)"
+          name="messageBody"
+        ></textarea>
+        <div class="chat-thread__composer-actions">
+          <app-button
+            variant="primary"
+            type="submit"
+            [loading]="sending()"
+            [disabled]="isReadOnly() || sending() || !draft().trim()"
+          >
+            {{ "chats.thread.send" | translate }}
+          </app-button>
+        </div>
+      </form>
+    </div>
+  }
+</section>

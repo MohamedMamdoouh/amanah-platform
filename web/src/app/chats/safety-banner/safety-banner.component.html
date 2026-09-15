@@ -1,0 +1,16 @@
+<aside class="safety-banner" role="note" aria-labelledby="safety-banner-title">
+  <div class="safety-banner__icon" aria-hidden="true">
+    <app-icon name="shield" size="md" />
+  </div>
+  <div class="safety-banner__content">
+    <p id="safety-banner-title" class="safety-banner__title">
+      {{ "chats.safety.title" | translate }}
+    </p>
+    <p class="safety-banner__body">
+      {{ "chats.safety.body" | translate }}
+    </p>
+    <a routerLink="/safety" class="safety-banner__link">
+      {{ "chats.safety.link" | translate }}
+    </a>
+  </div>
+</aside>

@@ -1,0 +1,38 @@
+<section class="my-chats page-container" aria-labelledby="my-chats-title">
+  <app-page-header
+    [title]="'chats.list.title' | translate"
+    [intro]="'chats.list.intro' | translate"
+  />
+
+  @if (loading()) {
+    <app-loading-indicator [label]="'chats.list.loading' | translate" />
+  } @else if (error()) {
+    <app-alert variant="error">{{ error() }}</app-alert>
+  } @else if (threads().length === 0) {
+    <app-empty-state [title]="'chats.list.empty' | translate">
+      <app-button variant="primary" [routerLink]="'/my/claims'">
+        {{ "chats.list.view_claims" | translate }}
+      </app-button>
+    </app-empty-state>
+  } @else {
+    <ul class="my-chats__list">
+      @for (thread of threads(); track thread.id) {
+        <li class="my-chats__item">
+          <app-listing-card
+            [title]="thread.reportTitle"
+            [typeLabel]="domainLabels.reportType(thread.reportType)"
+            [subtitle]="thread.counterpartyDisplayName"
+            [date]="(threadDate(thread) | date: 'medium') ?? ''"
+            [badgeLabel]="statusLabel(thread)"
+            [badgeVariant]="statusBadgeVariant(thread)"
+            [routerLink]="threadLink(thread)"
+            [actionLabel]="'chats.list.open' | translate"
+          />
+          @if (thread.lastMessagePreview) {
+            <p class="my-chats__preview">{{ threadSubtitle(thread) }}</p>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

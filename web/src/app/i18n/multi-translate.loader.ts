@@ -15,6 +15,7 @@ const translationFiles = [
   'reports',
   'browse',
   'claims',
+  'chats',
 ];
 
 export class MultiTranslateHttpLoader implements TranslateLoader {

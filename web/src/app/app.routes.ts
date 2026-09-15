@@ -17,6 +17,8 @@ import { SafetyComponent } from './pages/safety/safety.component';
 import { SupportComponent } from './pages/support/support.component';
 import { TermsComponent } from './pages/terms/terms.component';
 import { UnavailableComponent } from './pages/unavailable/unavailable.component';
+import { ChatThreadComponent } from './chats/chat-thread/chat-thread.component';
+import { MyChatsComponent } from './chats/my-chats/my-chats.component';
 import { MyClaimsComponent } from './claims/my-claims/my-claims.component';
 import { MyReportsComponent } from './reports/my-reports/my-reports.component';
 import { ReportDetailComponent } from './reports/report-detail/report-detail.component';
@@ -57,6 +59,16 @@ export const routes: Routes = [
       {
         path: 'my/claims',
         component: MyClaimsComponent,
+        canActivate: [authGuard],
+      },
+      {
+        path: 'my/chats',
+        component: MyChatsComponent,
+        canActivate: [authGuard],
+      },
+      {
+        path: 'my/chats/:threadId',
+        component: ChatThreadComponent,
         canActivate: [authGuard],
       },
       {

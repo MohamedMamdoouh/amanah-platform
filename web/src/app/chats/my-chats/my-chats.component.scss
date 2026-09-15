@@ -1,0 +1,22 @@
+.my-chats__list {
+  display: grid;
+  gap: var(--space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.my-chats__item {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.my-chats__preview {
+  margin: 0;
+  padding-inline-start: var(--space-sm);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
