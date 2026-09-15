@@ -9,9 +9,9 @@
       [backLink]="'/my/reports'"
       [backLabel]="'reports.detail.back' | translate"
       [title]="detail.title"
-      [intro]="statusLabel(detail.status) + ' · ' + (detail.createdAt | date: 'medium')"
+      [intro]="domainLabels.reportStatus(detail.status) + ' · ' + (detail.createdAt | date: 'medium')"
     >
-      <span class="label-caps">{{ typeLabel(detail.type) }}</span>
+      <span class="label-caps">{{ domainLabels.reportType(detail.type) }}</span>
     </app-page-header>
 
     @if (canEdit()) {
@@ -300,6 +300,13 @@
           [reportId]="detail.id"
           [canReview]="canReviewClaims()"
           (reviewed)="onClaimReviewed()"
+        />
+      }
+
+      @if (showResolutionActions()) {
+        <app-claim-resolution-actions
+          [claimId]="approvedClaimId()!"
+          (changed)="onResolutionChanged()"
         />
       }
 

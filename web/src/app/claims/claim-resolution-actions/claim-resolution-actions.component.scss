@@ -1,0 +1,52 @@
+.claim-resolution {
+  margin-top: var(--space-lg);
+}
+
+.claim-resolution h2 {
+  font-size: 1rem;
+  margin: 0 0 var(--space-xs);
+}
+
+.claim-resolution__intro,
+.claim-resolution__status {
+  margin: 0 0 var(--space-md);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-base);
+}
+
+.claim-resolution__status {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+}
+
+.claim-resolution__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.claim-resolution__dialog {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.claim-resolution__dialog h3 {
+  margin: 0 0 var(--space-xs);
+  font-size: 1rem;
+}
+
+.claim-resolution__dialog p {
+  margin: 0 0 var(--space-md);
+  color: var(--color-text-muted);
+}
+
+.claim-resolution__dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}

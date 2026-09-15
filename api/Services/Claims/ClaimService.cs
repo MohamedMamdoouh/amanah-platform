@@ -1,9 +1,13 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Claims;
+using Amanah.Api.Utilities.Common;
 using Amanah.Api.Utilities.Notifications;
+using Amanah.Api.Utilities.Reports;
+using Amanah.Api.Utilities.Resolution;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Browse;
@@ -121,13 +125,13 @@ public sealed class ClaimService(
 
         dbContext.Claims.Add(claim);
 
-        dbContext.Notifications.Add(CreateNotification(
+        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
             report.ReporterId,
             NotificationTypes.NewClaimSubmitted,
             new NotificationPayload(
                 NotificationTypes.NewClaimSubmitted,
                 now,
-                DeepLink: $"/my/reports/{reportId}#claims-section",
+                DeepLink: $"{ReportDeepLinkBuilder.ForMyReport(reportId)}#claims-section",
                 ReportId: reportId),
             now));
 
@@ -136,7 +140,7 @@ public sealed class ClaimService(
         return new SubmitClaimResponse
         {
             Id = claim.Id,
-            Status = MapClaimStatus(claim.Status),
+            Status = ClaimApiStrings.ToStatus(claim.Status),
         };
     }
 
@@ -146,10 +150,10 @@ public sealed class ClaimService(
         CancellationToken cancellationToken = default)
     {
         var claim = await dbContext.Claims
-            .Include(existingClaim => existingClaim.Report)
+            .WithReportInclude()
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
-        if (claim is null || claim.Report.ReporterId != reporterId)
+        if (claim is null || !ClaimAccessAuthorization.IsReporter(claim, reporterId))
         {
             return ResultError.NotFound("Claim not found.");
         }
@@ -209,19 +213,19 @@ public sealed class ClaimService(
             otherClaim.DecisionReason = AutoRejectReason;
             otherClaim.CountsAsFailure = false;
 
-            dbContext.Notifications.Add(CreateNotification(
+            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
                 otherClaim.ClaimantId,
                 NotificationTypes.ClaimRejected,
                 new NotificationPayload(
                     NotificationTypes.ClaimRejected,
                     now,
-                    DeepLink: BuildReportDeepLink(claim.Report),
+                    DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
                     ReportId: claim.Report.Id,
                     Note: AutoRejectReason),
                 now));
         }
 
-        dbContext.Notifications.Add(CreateNotification(
+        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
             claim.ClaimantId,
             NotificationTypes.ClaimApproved,
             new NotificationPayload(
@@ -241,10 +245,10 @@ public sealed class ClaimService(
         CancellationToken cancellationToken = default)
     {
         var claim = await dbContext.Claims
-            .Include(existingClaim => existingClaim.Report)
+            .WithReportInclude()
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
-        if (claim is null || claim.Report.ReporterId != reporterId)
+        if (claim is null || !ClaimAccessAuthorization.IsReporter(claim, reporterId))
         {
             return ResultError.NotFound("Claim not found.");
         }
@@ -261,13 +265,13 @@ public sealed class ClaimService(
         claim.ReviewerDecision = "rejected";
         claim.CountsAsFailure = true;
 
-        dbContext.Notifications.Add(CreateNotification(
+        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
             claim.ClaimantId,
             NotificationTypes.ClaimRejected,
             new NotificationPayload(
                 NotificationTypes.ClaimRejected,
                 now,
-                DeepLink: BuildReportDeepLink(claim.Report),
+                DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
                 ReportId: claim.Report.Id),
             now));
 
@@ -281,10 +285,10 @@ public sealed class ClaimService(
         CancellationToken cancellationToken = default)
     {
         var claim = await dbContext.Claims
-            .Include(existingClaim => existingClaim.Report)
+            .WithReportInclude()
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
-        if (claim is null || claim.ClaimantId != claimantId)
+        if (claim is null || !ClaimAccessAuthorization.IsClaimant(claim, claimantId))
         {
             return ResultError.NotFound("Claim not found.");
         }
@@ -300,13 +304,13 @@ public sealed class ClaimService(
         claim.ReviewedAt = now;
         claim.CountsAsFailure = false;
 
-        dbContext.Notifications.Add(CreateNotification(
+        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
             claim.Report.ReporterId,
             NotificationTypes.ClaimWithdrawnByClaimant,
             new NotificationPayload(
                 NotificationTypes.ClaimWithdrawnByClaimant,
                 now,
-                DeepLink: $"/my/reports/{claim.ReportId}",
+                DeepLink: ReportDeepLinkBuilder.ForMyReport(claim.ReportId),
                 ReportId: claim.ReportId),
             now));
 
@@ -353,18 +357,11 @@ public sealed class ClaimService(
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
 
-        var totalPages = totalCount == 0
-            ? 0
-            : (int)Math.Ceiling(totalCount / (double)query.PageSize);
-
-        return new PaginatedResponse<MyClaimSummaryResponse>
-        {
-            Items = claims.Select(ToMyClaimSummary).ToList(),
-            Page = query.Page,
-            PageSize = query.PageSize,
-            TotalCount = totalCount,
-            TotalPages = totalPages,
-        };
+        return Pagination.Create(
+            claims.Select(ToMyClaimSummary).ToList(),
+            query.Page,
+            query.PageSize,
+            totalCount);
     }
 
     public async Task<Result<ClaimDetailResponse>> GetByIdAsync(
@@ -374,10 +371,7 @@ public sealed class ClaimService(
     {
         var claim = await dbContext.Claims
             .AsNoTracking()
-            .Include(existingClaim => existingClaim.Report)
-            .ThenInclude(report => report.Reporter)
-            .Include(existingClaim => existingClaim.Claimant)
-            .Include(existingClaim => existingClaim.ChatThread)
+            .WithClaimDetailIncludes()
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
         if (claim is null)
@@ -385,14 +379,12 @@ public sealed class ClaimService(
             return ResultError.NotFound("Claim not found.");
         }
 
-        var isClaimant = claim.ClaimantId == userId;
-        var isReporter = claim.Report.ReporterId == userId;
-        if (!isClaimant && !isReporter)
+        if (!ClaimAccessAuthorization.IsReporterOrClaimant(claim, userId))
         {
             return ResultError.NotFound("Claim not found.");
         }
 
-        return ToClaimDetail(claim);
+        return ToClaimDetail(claim, userId);
     }
 
     public async Task<Result<IReadOnlyList<ReportClaimSummaryResponse>>> GetByReportAsync(
@@ -419,33 +411,14 @@ public sealed class ClaimService(
         return claims.Select(ToReportClaimSummary).ToList();
     }
 
-    private static Notification CreateNotification(
-        Guid userId,
-        string type,
-        NotificationPayload payload,
-        DateTimeOffset createdAt) =>
-        new()
-        {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            Type = type,
-            PayloadJson = payload.ToJson(),
-            IsRead = false,
-            CreatedAt = createdAt,
-        };
-
-    private static string BuildReportDeepLink(Report report) => report.Type switch
+    private static ClaimDetailResponse ToClaimDetail(Claim claim, Guid userId)
     {
-        ReportType.Lost => $"/lost/{report.Id}",
-        ReportType.Found => $"/found/{report.Id}",
-        _ => $"/reports/{report.Id}",
-    };
+        var isReporter = ClaimAccessAuthorization.IsReporter(claim, userId);
 
-    private static ClaimDetailResponse ToClaimDetail(Claim claim) =>
-        new()
+        return new()
         {
             Id = claim.Id,
-            Status = MapClaimStatus(claim.Status),
+            Status = ClaimApiStrings.ToStatus(claim.Status),
             SubmittedAnswer = claim.SubmittedAnswer,
             HasPhoto = !string.IsNullOrWhiteSpace(claim.PhotoStorageKey),
             SubmittedAt = claim.SubmittedAt,
@@ -455,18 +428,20 @@ public sealed class ClaimService(
             AttemptNumber = claim.AttemptNumber,
             ChatThreadId = claim.ChatThread?.Id,
             ReportId = claim.ReportId,
-            ReportType = MapReportType(claim.Report.Type),
-            ReportStatus = MapReportStatus(claim.Report.Status),
+            ReportType = ReportApiStrings.ToType(claim.Report.Type),
+            ReportStatus = ReportApiStrings.ToStatus(claim.Report.Status),
             ReportTitle = claim.Report.Title,
             ClaimantDisplayName = claim.Claimant.DisplayName ?? string.Empty,
             ReporterDisplayName = claim.Report.Reporter.DisplayName ?? string.Empty,
+            Resolution = ResolutionStateMapper.FromClaim(claim, isReporter),
         };
+    }
 
     private static ReportClaimSummaryResponse ToReportClaimSummary(Claim claim) =>
         new()
         {
             Id = claim.Id,
-            Status = MapClaimStatus(claim.Status),
+            Status = ClaimApiStrings.ToStatus(claim.Status),
             SubmittedAnswer = claim.SubmittedAnswer,
             HasPhoto = !string.IsNullOrWhiteSpace(claim.PhotoStorageKey),
             SubmittedAt = claim.SubmittedAt,
@@ -480,42 +455,13 @@ public sealed class ClaimService(
         new()
         {
             Id = claim.Id,
-            Status = MapClaimStatus(claim.Status),
+            Status = ClaimApiStrings.ToStatus(claim.Status),
             SubmittedAt = claim.SubmittedAt,
             ReviewedAt = claim.ReviewedAt,
             DecisionReason = claim.DecisionReason,
             ReportId = claim.ReportId,
-            ReportType = MapReportType(claim.Report.Type),
+            ReportType = ReportApiStrings.ToType(claim.Report.Type),
             ReportTitle = claim.Report.Title,
             ReporterDisplayName = claim.Report.Reporter.DisplayName ?? string.Empty,
         };
-
-    private static string MapReportType(ReportType type) => type switch
-    {
-        ReportType.Lost => "lost",
-        ReportType.Found => "found",
-        _ => type.ToString().ToLowerInvariant(),
-    };
-
-    private static string MapReportStatus(ReportStatus status) => status switch
-    {
-        ReportStatus.PendingReview => "pending_review",
-        ReportStatus.Rejected => "rejected",
-        ReportStatus.Published => "published",
-        ReportStatus.ClaimInProgress => "claim_in_progress",
-        ReportStatus.Resolved => "resolved",
-        ReportStatus.Withdrawn => "withdrawn",
-        ReportStatus.RemovedByAdmin => "removed_by_admin",
-        _ => status.ToString().ToLowerInvariant(),
-    };
-
-    private static string MapClaimStatus(ClaimStatus status) => status switch
-    {
-        ClaimStatus.Pending => "pending",
-        ClaimStatus.Approved => "approved",
-        ClaimStatus.Rejected => "rejected",
-        ClaimStatus.Withdrawn => "withdrawn",
-        ClaimStatus.Cancelled => "cancelled",
-        _ => status.ToString().ToLowerInvariant(),
-    };
 }

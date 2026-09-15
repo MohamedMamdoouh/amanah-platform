@@ -1,11 +1,13 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 import { environment } from '../../environments/environment';
+import { PaginatedResponse } from '../shared/models/pagination.models';
 import {
   ClaimDetail,
-  PaginatedClaimsResponse,
+  MyClaimSummary,
   ReportClaimSummary,
   SubmitClaimRequest,
   SubmitClaimResponse,
@@ -33,15 +35,40 @@ export class ClaimService {
     );
   }
 
-  getMine(page = 1, pageSize = 20): Observable<PaginatedClaimsResponse> {
+  getMine(page = 1, pageSize = 20): Observable<PaginatedResponse<MyClaimSummary>> {
     const params = new HttpParams()
       .set('page', page)
       .set('pageSize', pageSize);
 
-    return this.http.get<PaginatedClaimsResponse>(
+    return this.http.get<PaginatedResponse<MyClaimSummary>>(
       `${environment.apiBaseUrl}/claims/mine`,
       { params },
     );
+  }
+
+  findApprovedClaimForReport(
+    reportId: string,
+  ): Observable<MyClaimSummary | null> {
+    const pageSize = 100;
+
+    const scanPage = (page: number): Observable<MyClaimSummary | null> =>
+      this.getMine(page, pageSize).pipe(
+        switchMap((response) => {
+          const found = response.items.find(
+            (claim) =>
+              claim.reportId === reportId && claim.status === 'approved',
+          );
+          if (found) {
+            return of(found);
+          }
+          if (page >= response.totalPages) {
+            return of(null);
+          }
+          return scanPage(page + 1);
+        }),
+      );
+
+    return scanPage(1);
   }
 
   getByReport(reportId: string): Observable<ReportClaimSummary[]> {
@@ -73,6 +100,20 @@ export class ClaimService {
   withdraw(claimId: string): Observable<void> {
     return this.http.post<void>(
       `${environment.apiBaseUrl}/claims/${claimId}/withdraw`,
+      null,
+    );
+  }
+
+  confirmResolution(claimId: string): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiBaseUrl}/claims/${claimId}/confirm-resolution`,
+      null,
+    );
+  }
+
+  cancelClaim(claimId: string): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiBaseUrl}/claims/${claimId}/cancel`,
       null,
     );
   }

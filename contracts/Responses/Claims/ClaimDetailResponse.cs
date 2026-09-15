@@ -33,6 +33,8 @@ public sealed class ClaimDetailResponse
     public required string ClaimantDisplayName { get; init; }
 
     public required string ReporterDisplayName { get; init; }
+
+    public ResolutionStateResponse? Resolution { get; init; }
 }
 
 public sealed class ReportClaimSummaryResponse
@@ -75,4 +77,6 @@ public sealed class MyClaimSummaryResponse
     public required string ReportTitle { get; init; }
 
     public required string ReporterDisplayName { get; init; }
+
+    public ResolutionStateResponse? Resolution { get; init; }
 }

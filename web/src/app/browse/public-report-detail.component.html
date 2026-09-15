@@ -13,16 +13,16 @@
       [backLabel]="'browse.detail.back' | translate"
       [title]="detail.title"
       [intro]="
-        typeLabel(detail.type) +
+        domainLabels.reportType(detail.type) +
         ' · ' +
-        statusLabel(detail.status) +
+        domainLabels.reportStatus(detail.status) +
         (detail.publishedAt
           ? ' · ' + (detail.publishedAt | date: 'medium')
           : '')
       "
     >
-      <app-badge [variant]="statusBadgeVariant(detail.status)">
-        {{ statusLabel(detail.status) }}
+      <app-badge [variant]="domainLabels.reportBadgeVariant(detail.status, 'browse')">
+        {{ domainLabels.reportStatus(detail.status) }}
       </app-badge>
     </app-page-header>
 
@@ -137,5 +137,12 @@
         <p class="public-report-detail__action-note">{{ messageNote }}</p>
       }
     </section>
+
+    @if (showResolutionActions()) {
+      <app-claim-resolution-actions
+        [claimId]="approvedClaimId()!"
+        (changed)="onResolutionChanged()"
+      />
+    }
   }
 </section>

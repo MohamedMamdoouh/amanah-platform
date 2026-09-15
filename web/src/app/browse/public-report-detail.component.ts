@@ -5,18 +5,22 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../auth/auth.service';
+import { ClaimFormComponent } from '../claims/claim-form/claim-form.component';
+import { ClaimResolutionActionsComponent } from '../claims/claim-resolution-actions/claim-resolution-actions.component';
+import { ClaimService } from '../claims/claim.service';
+import {
+  loadClaimantApprovedClaimId,
+  showResolutionActions,
+} from '../claims/resolution/resolution.helpers';
 import { CatalogLabelService } from '../i18n/catalog-label.service';
+import { DomainLabelService } from '../i18n/domain-label.service';
 import { ReportType } from '../reports/models/report.models';
 import { AlertComponent } from '../shared/ui/alert/alert.component';
-import {
-  BadgeComponent,
-  BadgeVariant,
-} from '../shared/ui/badge/badge.component';
+import { BadgeComponent } from '../shared/ui/badge/badge.component';
 import { ButtonComponent } from '../shared/ui/button/button.component';
 import { CardComponent } from '../shared/ui/card/card.component';
 import { LoadingIndicatorComponent } from '../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../shared/ui/page-header/page-header.component';
-import { ClaimFormComponent } from '../claims/claim-form/claim-form.component';
 import { BrowseService, mapBrowseError } from './browse.service';
 import { PublicReportDetail } from './models/browse.models';
 
@@ -29,6 +33,7 @@ import { PublicReportDetail } from './models/browse.models';
     ButtonComponent,
     CardComponent,
     ClaimFormComponent,
+    ClaimResolutionActionsComponent,
     DatePipe,
     LoadingIndicatorComponent,
     PageHeaderComponent,
@@ -43,11 +48,14 @@ export class PublicReportDetailComponent implements OnInit {
   private readonly browseService = inject(BrowseService);
   private readonly catalogLabels = inject(CatalogLabelService);
   private readonly auth = inject(AuthService);
+  private readonly claimService = inject(ClaimService);
+  protected readonly domainLabels = inject(DomainLabelService);
   private readonly translate = inject(TranslateService);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly report = signal<PublicReportDetail | null>(null);
+  readonly approvedClaimId = signal<string | null>(null);
 
   readonly displayPhotos = computed(() => {
     const detail = this.report();
@@ -86,18 +94,6 @@ export class PublicReportDetailComponent implements OnInit {
   fieldLabel(fieldKey: string): string {
     const categoryCode = this.report()?.categoryCode ?? '';
     return this.catalogLabels.field(categoryCode, fieldKey);
-  }
-
-  typeLabel(type: string): string {
-    return this.translate.instant(`reports.type.${type}`);
-  }
-
-  statusLabel(status: string): string {
-    return this.translate.instant(`reports.status.${status}`);
-  }
-
-  statusBadgeVariant(status: string): BadgeVariant {
-    return status === 'claim_in_progress' ? 'claim' : 'published';
   }
 
   categoryFieldEntries(): [string, string][] {
@@ -183,6 +179,28 @@ export class PublicReportDetailComponent implements OnInit {
     });
   }
 
+  showResolutionActions(): boolean {
+    const detail = this.report();
+    if (!detail) {
+      return false;
+    }
+
+    return showResolutionActions({
+      reportStatus: detail.status,
+      approvedClaimId: this.approvedClaimId(),
+      isLoggedIn: this.auth.isLoggedIn(),
+    });
+  }
+
+  async onResolutionChanged(): Promise<void> {
+    const detail = this.report();
+    if (!detail) {
+      return;
+    }
+
+    await this.loadReport(detail.id, detail.type);
+  }
+
   private async loadReport(id: string, type: ReportType): Promise<void> {
     const request$ =
       type === 'lost'
@@ -192,6 +210,15 @@ export class PublicReportDetailComponent implements OnInit {
     try {
       const detail = await firstValueFrom(request$);
       this.report.set(detail);
+      this.approvedClaimId.set(
+        this.auth.isLoggedIn()
+          ? await loadClaimantApprovedClaimId(
+              this.claimService,
+              id,
+              detail.status,
+            )
+          : null,
+      );
       this.loading.set(false);
     } catch (error) {
       const route = mapBrowseError(error);

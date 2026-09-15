@@ -38,5 +38,21 @@
   "claims.review.reject_intro": "سيُستهلك من محاولات المطالب ويُخطَر بقرار الرفض.",
   "claims.review.reject_confirm": "تأكيد الرفض",
   "claims.review.cancel": "إلغاء",
-  "claims.review.invalid_status": "لا يمكن تنفيذ هذا الإجراء على المطالبة الحالية."
+  "claims.review.invalid_status": "لا يمكن تنفيذ هذا الإجراء على المطالبة الحالية.",
+  "claims.resolution.title": "إتمام التسليم",
+  "claims.resolution.intro": "عندما يتم إرجاع الشيء بنجاح، يؤكّد كلا الطرفين التسليم لإغلاق البلاغ.",
+  "claims.resolution.confirm_button": "تأكيد التسليم",
+  "claims.resolution.cancel_button": "إلغاء المطالبة",
+  "claims.resolution.confirm_title": "تأكيد التسليم؟",
+  "claims.resolution.confirm_intro": "تأكيدك نهائي — لن تتمكن من إلغاء المطالبة بعد التأكيد.",
+  "claims.resolution.confirm_submit": "تأكيد",
+  "claims.resolution.cancel_title": "إلغاء المطالبة؟",
+  "claims.resolution.cancel_intro": "سيُعاد البلاغ إلى «منشور» وتصبح المحادثة للقراءة فقط.",
+  "claims.resolution.cancel_submit": "إلغاء المطالبة",
+  "claims.resolution.cancel_dialog_cancel": "تراجع",
+  "claims.resolution.status_resolved": "تم حل البلاغ — شكراً لتعاونكم.",
+  "claims.resolution.status_awaiting_counterparty": "تم تأكيدك — في انتظار تأكيد الطرف الآخر.",
+  "claims.resolution.status_awaiting_you": "أكّد الطرف الآخر — يرجى تأكيدك لإتمام الحل.",
+  "claims.resolution.status_pending": "لا يزال التسليم قيد المتابعة.",
+  "claims.resolution.loading": "جارٍ التحميل…"
 }

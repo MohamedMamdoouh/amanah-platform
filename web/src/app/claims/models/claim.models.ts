@@ -38,6 +38,14 @@ export interface ReportClaimSummary {
   claimantDisplayName: string;
 }
 
+export interface ResolutionState {
+  reporterConfirmedAt?: string | null;
+  claimantConfirmedAt?: string | null;
+  resolvedAt?: string | null;
+  currentUserHasConfirmed: boolean;
+  currentUserCanCancel: boolean;
+}
+
 export interface ClaimDetail {
   id: string;
   status: ClaimStatus;
@@ -55,14 +63,7 @@ export interface ClaimDetail {
   reportTitle: string;
   claimantDisplayName: string;
   reporterDisplayName: string;
-}
-
-export interface PaginatedClaimsResponse {
-  items: MyClaimSummary[];
-  page: number;
-  pageSize: number;
-  totalCount: number;
-  totalPages: number;
+  resolution?: ResolutionState | null;
 }
 
 export interface ClaimPhotoPresignResponse {

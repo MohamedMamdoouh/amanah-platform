@@ -1,0 +1,77 @@
+@if (loading()) {
+  <app-loading-indicator [label]="'claims.resolution.loading' | translate" />
+} @else if (error()) {
+  <app-alert variant="error">{{ error() }}</app-alert>
+} @else if (showSection()) {
+  <section
+    class="claim-resolution"
+    aria-labelledby="claim-resolution-title"
+  >
+    <h2 id="claim-resolution-title">
+      {{ "claims.resolution.title" | translate }}
+    </h2>
+    <p class="claim-resolution__intro">
+      {{ "claims.resolution.intro" | translate }}
+    </p>
+
+    @if (actionError()) {
+      <app-alert variant="error">{{ actionError() }}</app-alert>
+    }
+
+    @if (statusMessage(); as status) {
+      <p class="claim-resolution__status">{{ status }}</p>
+    }
+
+    @if (canConfirm() || canCancel()) {
+      <div class="claim-resolution__actions">
+        @if (canConfirm()) {
+          <app-button
+            variant="primary"
+            [disabled]="acting()"
+            (clicked)="openConfirmDialog()"
+          >
+            {{ "claims.resolution.confirm_button" | translate }}
+          </app-button>
+        }
+        @if (canCancel()) {
+          <app-button
+            variant="outline"
+            [disabled]="acting()"
+            (clicked)="openCancelDialog()"
+          >
+            {{ "claims.resolution.cancel_button" | translate }}
+          </app-button>
+        }
+      </div>
+    }
+
+    @if (showConfirmDialog()) {
+      <app-confirm-dialog
+        titleId="confirm-resolution-title"
+        [title]="'claims.resolution.confirm_title' | translate"
+        [intro]="'claims.resolution.confirm_intro' | translate"
+        [cancelLabel]="'claims.resolution.cancel_dialog_cancel' | translate"
+        [confirmLabel]="'claims.resolution.confirm_submit' | translate"
+        [loading]="acting()"
+        [disabled]="acting()"
+        (cancelled)="closeDialogs()"
+        (confirmed)="confirmResolution()"
+      />
+    }
+
+    @if (showCancelDialog()) {
+      <app-confirm-dialog
+        titleId="cancel-claim-title"
+        [title]="'claims.resolution.cancel_title' | translate"
+        [intro]="'claims.resolution.cancel_intro' | translate"
+        [cancelLabel]="'claims.resolution.cancel_dialog_cancel' | translate"
+        [confirmLabel]="'claims.resolution.cancel_submit' | translate"
+        confirmVariant="outline"
+        [loading]="acting()"
+        [disabled]="acting()"
+        (cancelled)="closeDialogs()"
+        (confirmed)="cancelClaim()"
+      />
+    }
+  </section>
+}

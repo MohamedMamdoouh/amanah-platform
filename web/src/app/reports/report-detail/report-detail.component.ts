@@ -19,28 +19,37 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { CatalogService } from '../../catalog/catalog.service';
-import { Category, CategoryFieldDefinition } from '../../catalog/models/catalog.models';
-import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
+import { Category } from '../../catalog/models/catalog.models';
+import { ClaimResolutionActionsComponent } from '../../claims/claim-resolution-actions/claim-resolution-actions.component';
+import { ClaimService } from '../../claims/claim.service';
+import { ReportClaimsSectionComponent } from '../../claims/report-claims-section/report-claims-section.component';
+import {
+  loadReporterApprovedClaimId,
+  showResolutionActions,
+} from '../../claims/resolution/resolution.helpers';
+import { ApiErrorService } from '../../i18n/api-error.service';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
+import { DomainLabelService } from '../../i18n/domain-label.service';
 import { CardComponent } from '../../shared/ui/card/card.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
-import { ReportClaimsSectionComponent } from '../../claims/report-claims-section/report-claims-section.component';
+import {
+  DisplayPhoto,
+  initialDisplayPhotos,
+  loadDisplayPhotos,
+} from '../../uploads/photo-loader.util';
 import { ReportPhotoUploadService } from '../../uploads/report-photo-upload.service';
 import {
   ReportDetail,
-  UpdateReportRequest,
   WithdrawalReason,
 } from '../models/report.models';
 import { PhotoUploadComponent } from '../photo-upload/photo-upload.component';
 import { ReportService } from '../report.service';
-
-interface DisplayPhoto {
-  id: string;
-  url: string | null;
-  loading: boolean;
-}
+import {
+  buildCategoryFieldsGroup,
+  buildUpdateReportRequest,
+} from '../shared/report-form.helpers';
 
 @Component({
   selector: 'app-report-detail',
@@ -54,6 +63,7 @@ interface DisplayPhoto {
     SpinnerComponent,
     TranslateModule,
     PhotoUploadComponent,
+    ClaimResolutionActionsComponent,
     ReportClaimsSectionComponent,
   ],
   templateUrl: './report-detail.component.html',
@@ -64,10 +74,12 @@ export class ReportDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly reportService = inject(ReportService);
+  private readonly claimService = inject(ClaimService);
   private readonly catalogService = inject(CatalogService);
   private readonly uploadService = inject(ReportPhotoUploadService);
   private readonly catalogLabels = inject(CatalogLabelService);
   private readonly apiErrors = inject(ApiErrorService);
+  protected readonly domainLabels = inject(DomainLabelService);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -83,6 +95,7 @@ export class ReportDetailComponent implements OnInit {
   readonly resubmitting = signal(false);
   readonly resubmitError = signal<string | null>(null);
   readonly fieldErrors = signal<Record<string, string[]>>({});
+  readonly approvedClaimId = signal<string | null>(null);
 
   readonly categories = signal<Category[]>([]);
   readonly governorates = signal<{ code: string; sortOrder: number }[]>([]);
@@ -153,14 +166,6 @@ export class ReportDetailComponent implements OnInit {
     return this.catalogLabels.fieldHint(categoryCode, fieldKey);
   }
 
-  typeLabel(type: string): string {
-    return this.translate.instant(`reports.type.${type}`);
-  }
-
-  statusLabel(status: string): string {
-    return this.translate.instant(`reports.status.${status}`);
-  }
-
   rejectionReasonLabel(code: string | null | undefined): string {
     if (!code) {
       return '';
@@ -193,6 +198,18 @@ export class ReportDetailComponent implements OnInit {
     return status === 'published' || status === 'claim_in_progress';
   }
 
+  showResolutionActions(): boolean {
+    const report = this.report();
+    if (!report) {
+      return false;
+    }
+
+    return showResolutionActions({
+      reportStatus: report.status,
+      approvedClaimId: this.approvedClaimId(),
+    });
+  }
+
   canReviewClaims(): boolean {
     return this.report()?.status === 'published';
   }
@@ -206,11 +223,20 @@ export class ReportDetailComponent implements OnInit {
     await this.loadReport(report.id);
   }
 
+  async onResolutionChanged(): Promise<void> {
+    const report = this.report();
+    if (!report) {
+      return;
+    }
+
+    await this.loadReport(report.id);
+  }
+
   isFound(): boolean {
     return this.report()?.type === 'found';
   }
 
-  fieldDefinitions(): CategoryFieldDefinition[] {
+  fieldDefinitions() {
     return [...(this.selectedCategory()?.fieldDefinitions ?? [])].sort(
       (a, b) => a.sortOrder - b.sortOrder,
     );
@@ -279,7 +305,7 @@ export class ReportDetailComponent implements OnInit {
       this.withdrawForm.reset();
       await this.router.navigate(['/my/reports']);
     } catch (error) {
-      this.withdrawError.set(this.parseError(error));
+      this.withdrawError.set(this.apiErrors.messageFromHttpError(error));
     } finally {
       this.withdrawing.set(false);
     }
@@ -296,7 +322,7 @@ export class ReportDetailComponent implements OnInit {
     this.resubmitError.set(null);
     this.fieldErrors.set({});
 
-    const request = this.buildUpdateRequest();
+    const request = buildUpdateReportRequest(report.type, this.editForm.getRawValue());
 
     try {
       await firstValueFrom(
@@ -305,7 +331,8 @@ export class ReportDetailComponent implements OnInit {
       await firstValueFrom(this.reportService.resubmit(report.id));
       await this.router.navigate(['/my/reports']);
     } catch (error) {
-      this.handleSubmitError(error);
+      this.resubmitError.set(this.apiErrors.messageFromHttpError(error));
+      this.fieldErrors.set(this.apiErrors.formErrorsFromHttpError(error));
     } finally {
       this.resubmitting.set(false);
     }
@@ -328,6 +355,13 @@ export class ReportDetailComponent implements OnInit {
     try {
       const report = await firstValueFrom(this.reportService.getById(id));
       this.report.set(report);
+      this.approvedClaimId.set(
+        await loadReporterApprovedClaimId(
+          this.claimService,
+          id,
+          report.status,
+        ),
+      );
       this.loading.set(false);
 
       if (report.status === 'rejected') {
@@ -403,76 +437,10 @@ export class ReportDetailComponent implements OnInit {
   ): void {
     const category = this.categories().find((item) => item.code === code) ?? null;
     this.selectedCategory.set(category);
-    this.rebuildCategoryFields(category, existingValues);
-  }
-
-  private rebuildCategoryFields(
-    category: Category | null,
-    existingValues: Record<string, string>,
-  ): void {
-    const group = this.fb.group({});
-
-    for (const definition of category?.fieldDefinitions ?? []) {
-      const validators = this.buildFieldValidators(definition);
-      const existing = existingValues[definition.fieldKey] ?? '';
-      group.addControl(definition.fieldKey, this.fb.control(existing, validators));
-    }
-
-    this.editForm.setControl('categoryFields', group);
-  }
-
-  private buildFieldValidators(definition: CategoryFieldDefinition) {
-    const validators = [];
-
-    if (definition.required) {
-      validators.push(Validators.required);
-    }
-
-    if (definition.type === 'Text') {
-      if (definition.minLength != null) {
-        validators.push(Validators.minLength(definition.minLength));
-      }
-      if (definition.maxLength != null) {
-        validators.push(Validators.maxLength(definition.maxLength));
-      }
-    }
-
-    if (definition.type === 'Integer') {
-      validators.push(Validators.pattern(/^-?\d+$/));
-      if (definition.minInt != null) {
-        validators.push(Validators.min(definition.minInt));
-      }
-      if (definition.maxInt != null) {
-        validators.push(Validators.max(definition.maxInt));
-      }
-    }
-
-    return validators;
-  }
-
-  private buildUpdateRequest(): UpdateReportRequest {
-    const value = this.editForm.getRawValue();
-    const categoryFields: Record<string, string> = {};
-
-    for (const [key, fieldValue] of Object.entries(value.categoryFields)) {
-      if (typeof fieldValue === 'string' && fieldValue.trim().length > 0) {
-        categoryFields[key] = fieldValue.trim();
-      }
-    }
-
-    return {
-      categoryCode: value.categoryCode,
-      title: value.title.trim(),
-      description: value.description.trim(),
-      dateLostOrFound: value.dateLostOrFound,
-      governorateCode: value.governorateCode,
-      areaText: value.areaText.trim() || null,
-      heldLocation: this.isFound() ? value.heldLocation.trim() : null,
-      hasReward: value.hasReward,
-      rewardAmount: value.hasReward ? parseRewardAmount(value.rewardAmount) : null,
-      hiddenDetail: value.hiddenDetail.trim(),
-      categoryFields,
-    };
+    this.editForm.setControl(
+      'categoryFields',
+      buildCategoryFieldsGroup(this.fb, category, existingValues),
+    );
   }
 
   private updateRewardValidators(hasReward: boolean): void {
@@ -491,28 +459,10 @@ export class ReportDetailComponent implements OnInit {
   }
 
   private async loadPhotos(report: ReportDetail): Promise<void> {
-    const displayPhotos: DisplayPhoto[] = report.photos.map((photo) => ({
-      id: photo.id,
-      url: photo.thumbnailUrl ?? null,
-      loading: !photo.thumbnailUrl,
-    }));
+    const displayPhotos = initialDisplayPhotos(report.photos);
     this.photos.set(displayPhotos);
-
-    await Promise.all(
-      displayPhotos.map(async (photo) => {
-        if (photo.url) {
-          return;
-        }
-
-        try {
-          const presign = await firstValueFrom(
-            this.uploadService.getPresignedUrl(photo.id),
-          );
-          this.updatePhoto(photo.id, { url: presign.url, loading: false });
-        } catch {
-          this.updatePhoto(photo.id, { loading: false });
-        }
-      }),
+    await loadDisplayPhotos(displayPhotos, this.uploadService, (photoId, patch) =>
+      this.updatePhoto(photoId, patch),
     );
   }
 
@@ -526,44 +476,4 @@ export class ReportDetailComponent implements OnInit {
       ),
     );
   }
-
-  private handleSubmitError(error: unknown): void {
-    if (!(error instanceof HttpErrorResponse)) {
-      this.resubmitError.set(this.translate.instant('error.internal.error'));
-      return;
-    }
-
-    const apiError = error.error as ApiErrorBody | null;
-    if (!apiError?.code) {
-      this.resubmitError.set(this.translate.instant('error.internal.error'));
-      return;
-    }
-
-    this.resubmitError.set(this.apiErrors.summary(apiError));
-    this.fieldErrors.set(this.apiErrors.fieldErrors(apiError));
-  }
-
-  private parseError(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const apiError = error.error as ApiErrorBody | null;
-      if (apiError?.code) {
-        return this.apiErrors.summary(apiError);
-      }
-    }
-
-    return this.translate.instant('error.internal.error');
-  }
-}
-
-function parseRewardAmount(raw: unknown): number | null {
-  if (typeof raw === 'number' && Number.isFinite(raw)) {
-    return Math.trunc(raw);
-  }
-
-  if (typeof raw === 'string' && raw.trim().length > 0) {
-    const parsed = Number.parseInt(raw, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  return null;
 }

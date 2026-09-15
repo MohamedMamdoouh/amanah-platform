@@ -3,7 +3,11 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
+using Amanah.Api.Utilities.Chats;
+using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Notifications;
+using Amanah.Api.Utilities.Reports;
+using Amanah.Api.Utilities.Resolution;
 using Amanah.Contracts.Chats;
 using Amanah.Contracts.Requests.Chats;
 using Amanah.Contracts.Responses.Chats;
@@ -65,7 +69,7 @@ public sealed class ChatService(
         CancellationToken cancellationToken = default)
     {
         var thread = await LoadThreadAsync(threadId, cancellationToken);
-        if (thread is null || !IsParticipant(thread, userId))
+        if (thread is null || !ChatParticipantAuthorization.IsParticipant(thread, userId))
         {
             return ResultError.NotFound("Chat thread not found.");
         }
@@ -133,7 +137,7 @@ public sealed class ChatService(
         }
 
         var thread = await LoadThreadForWriteAsync(threadId, cancellationToken);
-        if (thread is null || !IsParticipant(thread, userId))
+        if (thread is null || !ChatParticipantAuthorization.IsParticipant(thread, userId))
         {
             return ResultError.NotFound("Chat thread not found.");
         }
@@ -143,7 +147,7 @@ public sealed class ChatService(
             return ResultError.Conflict("This chat is read-only.");
         }
 
-        var sender = thread.Claim.Report.ReporterId == userId
+        var sender = ClaimAccessAuthorization.IsReporter(thread.Claim, userId)
             ? thread.Claim.Report.Reporter
             : thread.Claim.Claimant;
 
@@ -165,13 +169,13 @@ public sealed class ChatService(
             attachment.MessageId = message.Id;
         }
 
-        var counterpartyId = thread.Claim.Report.ReporterId == userId
+        var counterpartyId = ClaimAccessAuthorization.IsReporter(thread.Claim, userId)
             ? thread.Claim.ClaimantId
             : thread.Claim.Report.ReporterId;
 
         if (!presenceTracker.IsViewing(counterpartyId, thread.Id))
         {
-            dbContext.Notifications.Add(CreateNotification(
+            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
                 counterpartyId,
                 NotificationTypes.NewChatMessage,
                 new NotificationPayload(
@@ -280,9 +284,6 @@ public sealed class ChatService(
             .ToDictionaryAsync(message => message.ChatThreadId, cancellationToken);
     }
 
-    private static bool IsParticipant(ChatThread thread, Guid userId) =>
-        thread.Claim.Report.ReporterId == userId || thread.Claim.ClaimantId == userId;
-
     private static int NormalizeMessageLimit(int? limit)
     {
         if (limit is null or < 1)
@@ -301,7 +302,7 @@ public sealed class ChatService(
         Guid userId,
         Message? lastMessage)
     {
-        var isReporter = thread.Claim.Report.ReporterId == userId;
+        var isReporter = ClaimAccessAuthorization.IsReporter(thread.Claim, userId);
         var counterparty = isReporter ? thread.Claim.Claimant : thread.Claim.Report.Reporter;
 
         return new ChatThreadSummaryResponse
@@ -310,7 +311,7 @@ public sealed class ChatService(
             ClaimId = thread.ClaimId,
             ReportId = thread.Claim.ReportId,
             ReportTitle = thread.Claim.Report.Title,
-            ReportType = MapReportType(thread.Claim.Report.Type),
+            ReportType = ReportApiStrings.ToType(thread.Claim.Report.Type),
             CounterpartyDisplayName = counterparty.DisplayName ?? string.Empty,
             CreatedAt = thread.CreatedAt,
             ReadOnlyAt = thread.ReadOnlyAt,
@@ -326,7 +327,7 @@ public sealed class ChatService(
         Guid userId,
         IReadOnlyList<Message> messages)
     {
-        var isReporter = thread.Claim.Report.ReporterId == userId;
+        var isReporter = ClaimAccessAuthorization.IsReporter(thread.Claim, userId);
         var counterparty = isReporter ? thread.Claim.Claimant : thread.Claim.Report.Reporter;
 
         return new ChatThreadDetailResponse
@@ -335,45 +336,19 @@ public sealed class ChatService(
             ClaimId = thread.ClaimId,
             ReportId = thread.Claim.ReportId,
             ReportTitle = thread.Claim.Report.Title,
-            ReportType = MapReportType(thread.Claim.Report.Type),
-            ReportStatus = MapReportStatus(thread.Claim.Report.Status),
-            ClaimStatus = MapClaimStatus(thread.Claim.Status),
+            ReportType = ReportApiStrings.ToType(thread.Claim.Report.Type),
+            ReportStatus = ReportApiStrings.ToStatus(thread.Claim.Report.Status),
+            ClaimStatus = ClaimApiStrings.ToStatus(thread.Claim.Status),
             CounterpartyDisplayName = counterparty.DisplayName ?? string.Empty,
             CreatedAt = thread.CreatedAt,
             ReadOnlyAt = thread.ReadOnlyAt,
-            Resolution = ToResolutionState(thread, userId, isReporter),
+            Resolution = ResolutionStateMapper.FromClaim(thread.Claim, isReporter),
             Messages = messages
                 .Select(message => ToMessageResponse(
                     message,
                     message.Sender.DisplayName ?? string.Empty,
                     message.Attachment?.Id))
                 .ToList(),
-        };
-    }
-
-    private static ResolutionStateResponse? ToResolutionState(
-        ChatThread thread,
-        Guid userId,
-        bool isReporter)
-    {
-        if (thread.Claim.Status is not (ClaimStatus.Approved or ClaimStatus.Cancelled))
-        {
-            return null;
-        }
-
-        var resolution = thread.Claim.Report.Resolution;
-        var reporterConfirmed = resolution?.ReporterConfirmedAt is not null;
-        var claimantConfirmed = resolution?.ClaimantConfirmedAt is not null;
-        var currentUserHasConfirmed = isReporter ? reporterConfirmed : claimantConfirmed;
-
-        return new ResolutionStateResponse
-        {
-            ReporterConfirmedAt = resolution?.ReporterConfirmedAt,
-            ClaimantConfirmedAt = resolution?.ClaimantConfirmedAt,
-            ResolvedAt = resolution?.ResolvedAt,
-            CurrentUserHasConfirmed = currentUserHasConfirmed,
-            CurrentUserCanCancel = thread.Claim.Status == ClaimStatus.Approved
-                && !currentUserHasConfirmed,
         };
     }
 
@@ -397,47 +372,4 @@ public sealed class ChatService(
             ? body
             : body[..PreviewLength];
 
-    private static Notification CreateNotification(
-        Guid userId,
-        string type,
-        NotificationPayload payload,
-        DateTimeOffset createdAt) =>
-        new()
-        {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            Type = type,
-            PayloadJson = payload.ToJson(),
-            IsRead = false,
-            CreatedAt = createdAt,
-        };
-
-    private static string MapReportType(ReportType type) => type switch
-    {
-        ReportType.Lost => "lost",
-        ReportType.Found => "found",
-        _ => type.ToString().ToLowerInvariant(),
-    };
-
-    private static string MapReportStatus(ReportStatus status) => status switch
-    {
-        ReportStatus.PendingReview => "pending_review",
-        ReportStatus.Rejected => "rejected",
-        ReportStatus.Published => "published",
-        ReportStatus.ClaimInProgress => "claim_in_progress",
-        ReportStatus.Resolved => "resolved",
-        ReportStatus.Withdrawn => "withdrawn",
-        ReportStatus.RemovedByAdmin => "removed_by_admin",
-        _ => status.ToString().ToLowerInvariant(),
-    };
-
-    private static string MapClaimStatus(ClaimStatus status) => status switch
-    {
-        ClaimStatus.Pending => "pending",
-        ClaimStatus.Approved => "approved",
-        ClaimStatus.Rejected => "rejected",
-        ClaimStatus.Withdrawn => "withdrawn",
-        ClaimStatus.Cancelled => "cancelled",
-        _ => status.ToString().ToLowerInvariant(),
-    };
 }
