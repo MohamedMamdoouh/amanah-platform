@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
+import { resolveNotificationDeepLink } from './notification-deep-link';
 import { NotificationItem, NotificationService } from './notification.service';
 import { LoadingIndicatorComponent } from '../shared/ui/loading-indicator/loading-indicator.component';
 import { AlertComponent } from '../shared/ui/alert/alert.component';
@@ -81,18 +82,10 @@ export class NotificationsComponent implements OnInit {
       }
     }
 
-    let deepLink = item.payload.deepLink;
-
-    if (deepLink.startsWith('/my/chats/')) {
-      deepLink = '/my/claims';
-    } else if (
-      (item.payload.type === 'ClaimWithdrawnByClaimant' ||
-        item.payload.type === 'NewClaimSubmitted') &&
-      deepLink.startsWith('/my/reports/') &&
-      !deepLink.includes('#')
-    ) {
-      deepLink = `${deepLink}#claims-section`;
-    }
+    const deepLink = resolveNotificationDeepLink(
+      item.payload.deepLink,
+      item.payload.type,
+    );
 
     await this.router.navigateByUrl(deepLink);
   }
