@@ -2,16 +2,18 @@ import { DatePipe } from '@angular/common';
 import {
   AfterViewChecked,
   Component,
+  DestroyRef,
   ElementRef,
   inject,
   OnInit,
   signal,
   ViewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { firstValueFrom } from 'rxjs';
+import { distinctUntilChanged, firstValueFrom, map } from 'rxjs';
 
 import { AuthService } from '../../auth/auth.service';
 import { ApiErrorService } from '../../i18n/api-error.service';
@@ -48,6 +50,7 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
   private readonly auth = inject(AuthService);
   private readonly apiErrors = inject(ApiErrorService);
   private readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('messagesEnd') private messagesEnd?: ElementRef<HTMLElement>;
 
@@ -62,11 +65,24 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
   readonly draft = signal('');
 
   private threadId = '';
+  private loadGeneration = 0;
   private shouldScrollToBottom = false;
 
   ngOnInit(): void {
-    this.threadId = this.route.snapshot.paramMap.get('threadId') ?? '';
-    void this.loadThread();
+    // Notifications (and list → thread) can navigate /my/chats/:a → /my/chats/:b
+    // while reusing this component; snapshot-only reads would keep the old thread.
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('threadId') ?? ''),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((threadId) => {
+        this.threadId = threadId;
+        this.draft.set('');
+        this.sendError.set(null);
+        void this.loadThread();
+      });
   }
 
   ngAfterViewChecked(): void {
@@ -147,7 +163,10 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
   }
 
   private async loadThread(): Promise<void> {
-    if (!this.threadId) {
+    const threadId = this.threadId;
+    const generation = ++this.loadGeneration;
+
+    if (!threadId) {
       this.error.set(this.translate.instant('error.internal.error'));
       this.loading.set(false);
       return;
@@ -158,22 +177,30 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
 
     try {
       const response = await firstValueFrom(
-        this.chatService.getThread(this.threadId, {
+        this.chatService.getThread(threadId, {
           limit: MESSAGE_PAGE_SIZE,
         }),
       );
+      if (generation !== this.loadGeneration) {
+        return;
+      }
       this.thread.set(response);
       this.messages.set(response.messages);
       this.hasOlderMessages.set(response.messages.length >= MESSAGE_PAGE_SIZE);
       this.shouldScrollToBottom = true;
     } catch (error) {
+      if (generation !== this.loadGeneration) {
+        return;
+      }
       if (this.apiErrors.extractBody(error)) {
         this.error.set(this.translate.instant('chats.thread.not_found'));
       } else {
         this.error.set(this.translate.instant('error.internal.error'));
       }
     } finally {
-      this.loading.set(false);
+      if (generation === this.loadGeneration) {
+        this.loading.set(false);
+      }
     }
   }
 }
