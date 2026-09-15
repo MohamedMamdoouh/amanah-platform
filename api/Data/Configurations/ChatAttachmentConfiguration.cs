@@ -39,7 +39,7 @@ public sealed class ChatAttachmentConfiguration : IEntityTypeConfiguration<ChatA
         builder.HasOne(attachment => attachment.Message)
             .WithOne(message => message.Attachment)
             .HasForeignKey<ChatAttachment>(attachment => attachment.MessageId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(attachment => attachment.MessageId)
             .IsUnique()
