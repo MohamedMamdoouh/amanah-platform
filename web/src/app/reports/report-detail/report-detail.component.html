@@ -310,7 +310,11 @@
         />
       }
 
-      @if (canWithdraw()) {
+      @if (withdrawBlockedByClaim()) {
+        <p class="report-detail__hint">
+          {{ "browse.detail.claim_in_progress_note" | translate }}
+        </p>
+      } @else if (canWithdraw()) {
         <div class="report-detail__actions">
           <button
             type="button"

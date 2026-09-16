@@ -186,7 +186,15 @@ export class ReportDetailComponent implements OnInit {
   }
 
   canWithdraw(): boolean {
-    return this.report()?.status === 'pending_review' && !this.withdrawn();
+    const status = this.report()?.status;
+    return (
+      (status === 'pending_review' || status === 'published') &&
+      !this.withdrawn()
+    );
+  }
+
+  withdrawBlockedByClaim(): boolean {
+    return this.report()?.status === 'claim_in_progress';
   }
 
   canEdit(): boolean {

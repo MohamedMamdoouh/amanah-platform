@@ -3,6 +3,7 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Observability;
+using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Utilities.Common;
 using Amanah.Api.Utilities.Reports;
@@ -18,6 +19,7 @@ public sealed class ReportService(
     IReportQuotaService quotaService,
     ReportPhotoAttachService photoAttachService,
     IBucketStorage bucketStorage,
+    IReportLifecycleService reportLifecycleService,
     AdminSubmissionAlertNotifier adminSubmissionAlertNotifier,
     TimeProvider timeProvider,
     AppMetrics metrics)
@@ -325,6 +327,7 @@ public sealed class ReportService(
         CancellationToken cancellationToken = default)
     {
         var report = await dbContext.Reports
+            .Include(report => report.Photos)
             .SingleOrDefaultAsync(
                 report => report.Id == reportId && report.ReporterId == reporterId,
                 cancellationToken);
@@ -334,17 +337,10 @@ public sealed class ReportService(
             return ResultError.NotFound("Report not found.");
         }
 
-        if (report.Status != ReportStatus.PendingReview)
-        {
-            return ResultError.Conflict("Only pending reports can be withdrawn.");
-        }
-
-        report.Status = ReportStatus.Withdrawn;
-        report.WithdrawalReason = request.Reason;
-        report.UpdatedAt = timeProvider.GetUtcNow();
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return Result.Ok();
+        return await reportLifecycleService.WithdrawAsync(
+            report,
+            request.Reason,
+            cancellationToken);
     }
 
     public async Task<Result> UpdateAsync(

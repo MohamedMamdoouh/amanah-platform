@@ -148,9 +148,10 @@ public class PublishedTimerTests(ApiWebApplicationFactory factory) : IClassFixtu
     }
 
     [Fact]
-    public void GetCumulativePublishedSeconds_includes_running_segment_when_timer_is_active()
+    public async Task GetCumulativePublishedSeconds_includes_running_segment_when_timer_is_active()
     {
-        var lifecycleService = new ReportLifecycleService();
+        await using var serviceScope = factory.Services.CreateAsyncScope();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
         var startedAt = new DateTimeOffset(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
         var now = startedAt.AddHours(2);
 
