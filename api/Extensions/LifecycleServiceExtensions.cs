@@ -1,5 +1,6 @@
 using Amanah.Api.Options;
 using Amanah.Api.Services.Jobs;
+using Amanah.Api.Services.Lifecycle;
 
 namespace Amanah.Api.Extensions;
 
@@ -10,6 +11,7 @@ public static class LifecycleServiceExtensions
         IConfiguration configuration)
     {
         services.Configure<LifecycleOptions>(configuration.GetSection(LifecycleOptions.SectionName));
+        services.AddScoped<IReportLifecycleService, ReportLifecycleService>();
         services.AddScoped<IJobRunner, JobRunner>();
         services.AddHostedService<LifecycleJobsHostedService>();
 

@@ -2,6 +2,7 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Services.Reports;
 using Amanah.Api.Utilities.Common;
@@ -17,6 +18,7 @@ namespace Amanah.Api.Services.Moderation;
 public sealed class ModerationService(
     AppDbContext dbContext,
     ReportService reportService,
+    IReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider)
 {
     public async Task<Result<ModerationQueueResponse>> GetQueueAsync(
@@ -91,7 +93,7 @@ public sealed class ModerationService(
 
         var now = timeProvider.GetUtcNow();
         report.Status = ReportStatus.Published;
-        report.PublishedAt = now;
+        reportLifecycleService.InitializePublishedTimer(report, now);
         report.UpdatedAt = now;
 
         dbContext.ModerationActions.Add(new ModerationAction

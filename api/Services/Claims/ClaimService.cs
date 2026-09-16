@@ -2,6 +2,7 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Common;
@@ -20,6 +21,7 @@ public sealed class ClaimService(
     AppDbContext dbContext,
     IClaimQuotaService quotaService,
     ClaimPhotoAttachService claimPhotoAttachService,
+    IReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider) : IClaimService
 {
     public const int MaxCountedFailures = 3;
@@ -175,6 +177,7 @@ public sealed class ClaimService(
         claim.ReviewerDecision = "approved";
 
         claim.Report.Status = ReportStatus.ClaimInProgress;
+        reportLifecycleService.PausePublishedTimer(claim.Report, now);
         claim.Report.UpdatedAt = now;
 
         // Drop any leftover Resolution from a prior cancelled claim (or a confirm/cancel

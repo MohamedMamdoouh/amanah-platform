@@ -3,6 +3,7 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Data.Extensions;
 using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Notifications;
@@ -16,6 +17,7 @@ namespace Amanah.Api.Services.Resolution;
 
 public sealed class ResolutionService(
     AppDbContext dbContext,
+    IReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider,
     IHubContext<ChatHub> hubContext)
 {
@@ -208,6 +210,7 @@ public sealed class ResolutionService(
         }
 
         claim.Report.Status = ReportStatus.Published;
+        reportLifecycleService.ResumePublishedTimer(claim.Report, now);
         claim.Report.UpdatedAt = now;
 
         // Always delete by report id so a concurrent confirm that committed after our
