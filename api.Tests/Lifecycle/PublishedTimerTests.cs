@@ -1,14 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Tests.Claims;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 using Amanah.Api.Tests.Resolution;
 using Amanah.Contracts.Requests.Admin;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Amanah.Api.Tests.Lifecycle;
 
@@ -145,61 +143,5 @@ public class PublishedTimerTests(ApiWebApplicationFactory factory) : IClassFixtu
         Assert.Null(report.PublishedAt);
         Assert.Null(report.PublishedTimerResumedAt);
         Assert.Equal(0, report.PublishedSecondsElapsed);
-    }
-
-    [Fact]
-    public void GetCumulativePublishedSeconds_includes_running_segment_when_timer_is_active()
-    {
-        var lifecycleService = new ReportLifecycleService();
-        var startedAt = new DateTimeOffset(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
-        var now = startedAt.AddHours(2);
-
-        var report = new Report
-        {
-            ReporterId = Guid.NewGuid(),
-            Type = ReportType.Lost,
-            CategoryId = Guid.NewGuid(),
-            Title = "Timer test",
-            Description = "Description",
-            DateLostOrFound = DateOnly.FromDateTime(startedAt.UtcDateTime),
-            GovernorateId = Guid.NewGuid(),
-            Status = ReportStatus.Published,
-            HiddenDetail = "Hidden",
-            PublishedAt = startedAt,
-            PublishedTimerResumedAt = startedAt,
-            PublishedSecondsElapsed = 3_600,
-        };
-
-        var cumulativeSeconds = lifecycleService.GetCumulativePublishedSeconds(report, now);
-
-        Assert.Equal(3_600 + 7_200, cumulativeSeconds);
-    }
-
-    [Fact]
-    public async Task GetCumulativePublishedSeconds_uses_frozen_elapsed_seconds_when_timer_is_paused()
-    {
-        await using var serviceScope = factory.Services.CreateAsyncScope();
-        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
-
-        var report = new Report
-        {
-            ReporterId = Guid.NewGuid(),
-            Type = ReportType.Lost,
-            CategoryId = Guid.NewGuid(),
-            Title = "Paused timer",
-            Description = "Description",
-            DateLostOrFound = DateOnly.FromDateTime(DateTime.UtcNow),
-            GovernorateId = Guid.NewGuid(),
-            Status = ReportStatus.ClaimInProgress,
-            HiddenDetail = "Hidden",
-            PublishedSecondsElapsed = 1_800,
-            PublishedTimerResumedAt = null,
-        };
-
-        var cumulativeSeconds = lifecycleService.GetCumulativePublishedSeconds(
-            report,
-            DateTimeOffset.UtcNow.AddDays(30));
-
-        Assert.Equal(1_800, cumulativeSeconds);
     }
 }

@@ -13,12 +13,17 @@ public sealed class ReportLifecycleService : IReportLifecycleService
 
     public void PausePublishedTimer(Report report, DateTimeOffset now)
     {
-        if (report.PublishedTimerResumedAt is null)
+        // Reports published before InitializePublishedTimer only have PublishedAt set.
+        // Falling back avoids silently dropping that wall-clock time on the first pause.
+        var segmentStartedAt = report.PublishedTimerResumedAt
+            ?? (report.PublishedSecondsElapsed == 0 ? report.PublishedAt : null);
+
+        if (segmentStartedAt is null)
         {
             return;
         }
 
-        var elapsedSinceResume = ElapsedSeconds(report.PublishedTimerResumedAt.Value, now);
+        var elapsedSinceResume = ElapsedSeconds(segmentStartedAt.Value, now);
         if (elapsedSinceResume > 0)
         {
             report.PublishedSecondsElapsed += elapsedSinceResume;
@@ -29,17 +34,29 @@ public sealed class ReportLifecycleService : IReportLifecycleService
 
     public void ResumePublishedTimer(Report report, DateTimeOffset now)
     {
+        // Already running — resetting ResumedAt would discard the current segment.
+        if (report.PublishedTimerResumedAt is not null)
+        {
+            return;
+        }
+
         report.PublishedTimerResumedAt = now;
     }
 
     public int GetCumulativePublishedSeconds(Report report, DateTimeOffset now)
     {
-        if (report.PublishedTimerResumedAt is null)
+        var segmentStartedAt = report.PublishedTimerResumedAt
+            ?? (report.Status == ReportStatus.Published
+                && report.PublishedSecondsElapsed == 0
+                    ? report.PublishedAt
+                    : null);
+
+        if (segmentStartedAt is null)
         {
             return report.PublishedSecondsElapsed;
         }
 
-        return report.PublishedSecondsElapsed + ElapsedSeconds(report.PublishedTimerResumedAt.Value, now);
+        return report.PublishedSecondsElapsed + ElapsedSeconds(segmentStartedAt.Value, now);
     }
 
     private static int ElapsedSeconds(DateTimeOffset startedAt, DateTimeOffset now)
