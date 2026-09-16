@@ -288,25 +288,31 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
     const threadId = this.threadId;
 
     try {
+      let message: ChatMessage;
       if (this.chatHub.isJoinedTo(threadId)) {
-        await this.chatHub.sendMessage(
+        // Prefer hub when joined, but always append from the invoke result so a
+        // reconnect gap (not yet back in the SignalR group) cannot clear the
+        // draft while leaving the sender without MessageReceived.
+        message = await this.chatHub.sendMessage(
           threadId,
           body || null,
           attachment?.id ?? null,
         );
       } else {
-        const message = await firstValueFrom(
+        message = await firstValueFrom(
           this.chatService.sendMessage(threadId, {
             body: body || null,
             attachmentId: attachment?.id ?? null,
           }),
         );
-        this.appendMessage(message);
-        this.shouldScrollToBottom = true;
       }
 
-      this.draft.set('');
-      this.clearPendingAttachment();
+      if (this.threadId === threadId) {
+        this.appendMessage(message);
+        this.shouldScrollToBottom = true;
+        this.draft.set('');
+        this.clearPendingAttachment();
+      }
     } catch (error) {
       this.sendError.set(this.apiErrors.messageFromHttpError(error));
     } finally {

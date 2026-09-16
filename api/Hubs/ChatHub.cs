@@ -3,6 +3,7 @@ using Amanah.Api.Services.Chats;
 using Amanah.Contracts.Chats;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Chats;
+using Amanah.Contracts.Responses.Chats;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
@@ -45,7 +46,10 @@ public sealed class ChatHub(ChatService chatService, ChatPresenceTracker presenc
     }
 
     [EnableRateLimiting("chat-message")]
-    public async Task SendMessage(string threadId, string? body, string? attachmentId)
+    public async Task<ChatMessageResponse> SendMessage(
+        string threadId,
+        string? body,
+        string? attachmentId)
     {
         if (!Guid.TryParse(threadId, out var parsedThreadId))
         {
@@ -83,7 +87,9 @@ public sealed class ChatHub(ChatService chatService, ChatPresenceTracker presenc
             throw new HubException(result.Error!.Code);
         }
 
-        // Message is already sent to the group & handled by the ChatService
+        // Return the persisted message so the sender UI does not depend on being
+        // in the SignalR group when MessageReceived is broadcast.
+        return result.Value!;
     }
 
     public override Task OnDisconnectedAsync(Exception? exception)

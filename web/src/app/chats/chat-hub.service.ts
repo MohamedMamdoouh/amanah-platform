@@ -65,9 +65,13 @@ export class ChatHubService {
     threadId: string,
     body?: string | null,
     attachmentId?: string | null,
-  ): Promise<void> {
+  ): Promise<ChatMessage> {
+    // Re-sync after reconnect gaps so this connection is in the group when
+    // possible; invoke still returns the persisted message for local echo.
+    await this.runMembership(() => this.syncMembership());
     await this.ensureConnected();
-    await this.connection!.invoke(
+
+    return await this.connection!.invoke<ChatMessage>(
       'SendMessage',
       threadId,
       body ?? null,
@@ -85,6 +89,12 @@ export class ChatHubService {
       const wanted = this.wantedThreadId;
 
       if (this.activeThreadId === wanted) {
+        // Stale active after a hard disconnect: groups are empty and the
+        // connection may be down — force a reconnect/rejoin pass.
+        if (wanted && !this.isConnected()) {
+          this.activeThreadId = null;
+          continue;
+        }
         return;
       }
 
@@ -160,12 +170,15 @@ export class ChatHubService {
 
   private waitForConnectionSettle(): Promise<void> {
     const connection = this.connection!;
+    const startedAt = Date.now();
+    const maxWaitMs = 60_000;
     return new Promise((resolve) => {
       const poll = () => {
         const state = connection.state;
         if (
           state === HubConnectionState.Connected ||
-          state === HubConnectionState.Disconnected
+          state === HubConnectionState.Disconnected ||
+          Date.now() - startedAt >= maxWaitMs
         ) {
           resolve();
           return;
@@ -218,6 +231,12 @@ export class ChatHubService {
           // REST fallback remains available; next joinThread will retry.
         }
       });
+    });
+
+    connection.onclose(() => {
+      // Permanent close (reconnect exhausted / stop). Drop stale membership so
+      // the next syncMembership does not early-return without rejoining.
+      this.activeThreadId = null;
     });
 
     return connection;

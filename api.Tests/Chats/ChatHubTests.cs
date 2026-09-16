@@ -33,13 +33,18 @@ public class ChatHubTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
             await reporterConnection.InvokeAsync(ChatHubMethods.JoinThread, threadId.ToString());
             await claimantConnection.InvokeAsync(ChatHubMethods.JoinThread, threadId.ToString());
 
-            await reporterConnection.InvokeAsync(
+            var sent = await reporterConnection.InvokeAsync<ChatMessageResponse>(
                 ChatHubMethods.SendMessage,
                 threadId.ToString(),
                 "Hello via hub",
                 null);
 
+            Assert.Equal(threadId, sent.ThreadId);
+            Assert.Equal(context.Session.User.Id, sent.SenderId);
+            Assert.Equal("Hello via hub", sent.Body);
+
             var message = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(sent.Id, message.Id);
             Assert.Equal(threadId, message.ThreadId);
             Assert.Equal(context.Session.User.Id, message.SenderId);
             Assert.Equal("Hello via hub", message.Body);
