@@ -129,16 +129,11 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((threadId) => {
-        const previousThreadId = this.threadId;
         this.threadId = threadId;
         this.draft.set('');
         this.sendError.set(null);
         this.clearPendingAttachment();
         this.attachmentStates.set({});
-
-        if (previousThreadId && previousThreadId !== threadId) {
-          void this.chatHub.leaveThread(previousThreadId);
-        }
 
         void this.loadThread();
       });

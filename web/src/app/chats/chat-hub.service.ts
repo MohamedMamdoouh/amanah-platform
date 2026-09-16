@@ -16,6 +16,7 @@ export class ChatHubService {
   private connection: HubConnection | null = null;
   private activeThreadId: string | null = null;
   private connecting: Promise<void> | null = null;
+  private membershipQueue: Promise<void> = Promise.resolve();
 
   private readonly messageReceivedSubject = new Subject<ChatMessage>();
   private readonly threadReadOnlySubject =
@@ -35,24 +36,20 @@ export class ChatHubService {
   }
 
   async joinThread(threadId: string): Promise<void> {
-    await this.ensureConnected();
+    return this.runMembership(async () => {
+      await this.ensureConnected();
 
-    if (this.activeThreadId && this.activeThreadId !== threadId) {
-      await this.leaveThread(this.activeThreadId);
-    }
+      if (this.activeThreadId && this.activeThreadId !== threadId) {
+        await this.leaveThreadIfActive(this.activeThreadId);
+      }
 
-    await this.connection!.invoke('JoinThread', threadId);
-    this.activeThreadId = threadId;
+      await this.connection!.invoke('JoinThread', threadId);
+      this.activeThreadId = threadId;
+    });
   }
 
   async leaveThread(threadId: string): Promise<void> {
-    if (
-      this.connection?.state === HubConnectionState.Connected &&
-      this.activeThreadId === threadId
-    ) {
-      await this.connection.invoke('LeaveThread', threadId);
-      this.activeThreadId = null;
-    }
+    return this.runMembership(() => this.leaveThreadIfActive(threadId));
   }
 
   async disconnect(): Promise<void> {
@@ -123,18 +120,44 @@ export class ChatHubService {
       this.threadReadOnlySubject.next(payload);
     });
 
-    connection.onreconnected(async () => {
-      if (!this.activeThreadId) {
-        return;
-      }
+    connection.onreconnected(() => {
+      void this.runMembership(async () => {
+        const threadId = this.activeThreadId;
+        if (!threadId) {
+          return;
+        }
 
-      try {
-        await connection.invoke('JoinThread', this.activeThreadId);
-      } catch {
-        this.activeThreadId = null;
-      }
+        try {
+          await connection.invoke('JoinThread', threadId);
+        } catch {
+          if (this.activeThreadId === threadId) {
+            this.activeThreadId = null;
+          }
+        }
+      });
     });
 
     return connection;
+  }
+
+  private runMembership<T>(operation: () => Promise<T>): Promise<T> {
+    const next = this.membershipQueue.then(operation);
+    this.membershipQueue = next.then(
+      () => undefined,
+      () => undefined,
+    );
+    return next;
+  }
+
+  private async leaveThreadIfActive(threadId: string): Promise<void> {
+    if (
+      this.connection?.state === HubConnectionState.Connected &&
+      this.activeThreadId === threadId
+    ) {
+      await this.connection.invoke('LeaveThread', threadId);
+      if (this.activeThreadId === threadId) {
+        this.activeThreadId = null;
+      }
+    }
   }
 }
