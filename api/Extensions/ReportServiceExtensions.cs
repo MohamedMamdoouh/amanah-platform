@@ -6,7 +6,6 @@ public static class ReportServiceExtensions
 {
     public static IServiceCollection AddReportServices(this IServiceCollection services)
     {
-        services.AddScoped<IReportQuotaService, ReportQuotaService>();
         services.AddScoped<ReportService>();
         services.AddScoped<ReportPhotoAttachService>();
         services.AddScoped<ReportCreateFormParser>();

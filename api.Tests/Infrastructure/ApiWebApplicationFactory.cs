@@ -1,7 +1,5 @@
-using Amanah.Api.Services.Catalog;
 using Amanah.Api.Services.External;
 using Amanah.Api.Tests.Auth.Fakes;
-using Amanah.Api.Tests.Catalog;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -72,16 +70,9 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
             services.RemoveAll<ISmsSender>();
             services.RemoveAll<ICaptchaVerifier>();
             services.RemoveAll<IAdminAlertEmailSender>();
-            services.RemoveAll<ICategoryLoader>();
-            services.RemoveAll<IGovernorateLoader>();
             services.AddSingleton<ISmsSender>(SmsSender);
             services.AddSingleton<ICaptchaVerifier>(CaptchaVerifier);
             services.AddSingleton<IAdminAlertEmailSender>(AdminAlertEmailSender);
-            services.AddScoped<CategoryLoader>();
-            services.AddScoped<CountingCategoryLoader>(sp =>
-                new CountingCategoryLoader(sp.GetRequiredService<CategoryLoader>()));
-            services.AddScoped<ICategoryLoader>(sp => sp.GetRequiredService<CountingCategoryLoader>());
-            services.AddScoped<IGovernorateLoader, GovernorateLoader>();
         });
     }
 

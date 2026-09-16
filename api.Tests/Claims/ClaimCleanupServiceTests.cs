@@ -1,5 +1,5 @@
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Services.Claims;
+using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 using Amanah.Api.Utilities.Notifications;
@@ -11,7 +11,7 @@ namespace Amanah.Api.Tests.Claims;
 public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
     [Fact]
-    public async Task ClosePendingClaimsAsync_closes_only_pending_claims_without_consuming_attempts()
+    public async Task WithdrawAsync_closes_only_pending_claims_without_consuming_attempts()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
@@ -36,18 +36,20 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
             attemptNumber: 1);
 
         await using var serviceScope = factory.Services.CreateAsyncScope();
-        var cleanupService = serviceScope.ServiceProvider.GetRequiredService<IClaimCleanupService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
+        var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
+        var report = await dbContext.Reports.SingleAsync(item => item.Id == reportId);
 
         const string reason = "Report withdrawn";
-        var closedCount = await cleanupService.ClosePendingClaimsAsync(reportId, reason);
+        var result = await lifecycleService.WithdrawAsync(report, reason);
 
-        Assert.Equal(1, closedCount);
+        Assert.True(result.IsSuccess);
 
         var pendingClaim = await context.DbContext.Claims
             .AsNoTracking()
             .SingleAsync(claim => claim.Id == pendingClaimId);
         Assert.Equal(ClaimStatus.Withdrawn, pendingClaim.Status);
-        Assert.Equal(ClaimCleanupService.ClosedReviewerDecision, pendingClaim.ReviewerDecision);
+        Assert.Equal(ReportLifecycleService.ClosedReviewerDecision, pendingClaim.ReviewerDecision);
         Assert.Equal(reason, pendingClaim.DecisionReason);
         Assert.False(pendingClaim.CountsAsFailure);
         Assert.NotNull(pendingClaim.ReviewedAt);
@@ -67,7 +69,7 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
     }
 
     [Fact]
-    public async Task ClosePendingClaimsAsync_notifies_each_affected_claimant()
+    public async Task WithdrawAsync_notifies_each_affected_claimant_with_pending_claims()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
@@ -79,12 +81,14 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
         await ClaimTestHelpers.SeedPendingClaimAsync(context, reportId, secondClaimant.User.Id, attemptNumber: 1);
 
         await using var serviceScope = factory.Services.CreateAsyncScope();
-        var cleanupService = serviceScope.ServiceProvider.GetRequiredService<IClaimCleanupService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
+        var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
+        var report = await dbContext.Reports.SingleAsync(item => item.Id == reportId);
 
         const string reason = "_expired_";
-        var closedCount = await cleanupService.ClosePendingClaimsAsync(reportId, reason);
+        var result = await lifecycleService.WithdrawAsync(report, reason);
 
-        Assert.Equal(2, closedCount);
+        Assert.True(result.IsSuccess);
 
         var notifications = await context.DbContext.Notifications
             .AsNoTracking()
@@ -104,7 +108,7 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
     }
 
     [Fact]
-    public async Task ClosePendingClaimsAsync_returns_zero_when_no_pending_claims()
+    public async Task WithdrawAsync_does_not_notify_when_no_pending_claims()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
@@ -113,11 +117,13 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
         await ClaimTestHelpers.SeedApprovedClaimAsync(context, reportId, claimant.User.Id);
 
         await using var serviceScope = factory.Services.CreateAsyncScope();
-        var cleanupService = serviceScope.ServiceProvider.GetRequiredService<IClaimCleanupService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
+        var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
+        var report = await dbContext.Reports.SingleAsync(item => item.Id == reportId);
 
-        var closedCount = await cleanupService.ClosePendingClaimsAsync(reportId, "Report withdrawn");
+        var result = await lifecycleService.WithdrawAsync(report, "Report withdrawn");
 
-        Assert.Equal(0, closedCount);
+        Assert.True(result.IsSuccess);
 
         var notificationCount = await context.DbContext.Notifications
             .AsNoTracking()
@@ -127,7 +133,7 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
     }
 
     [Fact]
-    public async Task ClosePendingClaimsAsync_does_not_affect_claims_on_other_reports()
+    public async Task WithdrawAsync_does_not_affect_claims_on_other_reports()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var targetReportId = await ClaimTestHelpers.PublishLostReportAsync(context);
@@ -145,11 +151,13 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
             attemptNumber: 2);
 
         await using var serviceScope = factory.Services.CreateAsyncScope();
-        var cleanupService = serviceScope.ServiceProvider.GetRequiredService<IClaimCleanupService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
+        var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
+        var report = await dbContext.Reports.SingleAsync(item => item.Id == targetReportId);
 
-        var closedCount = await cleanupService.ClosePendingClaimsAsync(targetReportId, "Report withdrawn");
+        var result = await lifecycleService.WithdrawAsync(report, "Report withdrawn");
 
-        Assert.Equal(1, closedCount);
+        Assert.True(result.IsSuccess);
 
         var targetClaim = await context.DbContext.Claims
             .AsNoTracking()

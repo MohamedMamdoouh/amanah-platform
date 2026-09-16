@@ -1,6 +1,5 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Data.Extensions;
 using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Lifecycle;
@@ -279,6 +278,8 @@ public sealed class ResolutionService(
 
     private Task<Claim?> LoadClaimAsync(Guid claimId, CancellationToken cancellationToken) =>
         dbContext.Claims
-            .WithResolutionDetailIncludes()
+            .Include(claim => claim.Report)
+            .ThenInclude(report => report.Resolution)
+            .Include(claim => claim.ChatThread)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 }

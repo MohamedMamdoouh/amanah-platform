@@ -1,8 +1,8 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Observability;
+using Amanah.Api.Options;
 using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Utilities.Common;
@@ -11,21 +11,41 @@ using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Reports;
 using Amanah.Contracts.Responses.Reports;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Amanah.Api.Services.Reports;
 
+public enum QuotaFailureKind
+{
+    None,
+    DailyQuota,
+    OpenCap,
+}
+
+public sealed record QuotaCheckResult(QuotaFailureKind Kind, int? RetryAfterSeconds = null);
+
 public sealed class ReportService(
     AppDbContext dbContext,
-    IReportQuotaService quotaService,
     ReportPhotoAttachService photoAttachService,
     IBucketStorage bucketStorage,
     IReportLifecycleService reportLifecycleService,
-    AdminSubmissionAlertNotifier adminSubmissionAlertNotifier,
+    IOptions<EmailOptions> emailOptions,
     TimeProvider timeProvider,
     AppMetrics metrics)
 {
+    private readonly EmailOptions _emailOptions = emailOptions.Value;
+
     private const int MaxPhotos = 5;
     private const int MaxResubmissions = 3;
+    private const int DailyQuotaLimit = 3;
+    private const int OpenReportCap = 5;
+
+    private static readonly ReportStatus[] OpenCapStatuses =
+    [
+        ReportStatus.PendingReview,
+        ReportStatus.Published,
+        ReportStatus.ClaimInProgress,
+    ];
 
     private static readonly ReportStatus[] Phase02ReadableStatuses =
     [
@@ -117,7 +137,7 @@ public sealed class ReportService(
                 errors: errors);
         }
 
-        var quotaResult = await quotaService.CheckNewSubmissionAsync(reporterId, cancellationToken: cancellationToken);
+        var quotaResult = await CheckNewSubmissionAsync(reporterId, cancellationToken: cancellationToken);
         if (quotaResult.Kind == QuotaFailureKind.DailyQuota)
         {
             return ResultError.TooManyRequests(
@@ -211,7 +231,7 @@ public sealed class ReportService(
         }
 
         dbContext.Reports.Add(report);
-        adminSubmissionAlertNotifier.EnqueuePendingReview(report, category);
+        EnqueuePendingReview(report, category);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         metrics.RecordReportSubmitted();
@@ -232,7 +252,8 @@ public sealed class ReportService(
         {
             var closedReports = await dbContext.Reports
                 .AsNoTracking()
-                .WithOwnerSummaryIncludes()
+                .Include(report => report.Category)
+                .Include(report => report.Governorate)
                 .Where(report => report.ReporterId == reporterId
                     && ClosedStatuses.Contains(report.Status))
                 .OrderByDescending(report => report.CreatedAt)
@@ -257,7 +278,8 @@ public sealed class ReportService(
 
         var query = dbContext.Reports
             .AsNoTracking()
-            .WithOwnerSummaryIncludes()
+            .Include(report => report.Category)
+            .Include(report => report.Governorate)
             .Where(report => report.ReporterId == reporterId);
 
         if (statusFilter is ReportStatus filter)
@@ -283,7 +305,10 @@ public sealed class ReportService(
     {
         var report = await dbContext.Reports
             .AsNoTracking()
-            .WithOwnerDetailIncludes()
+            .Include(existingReport => existingReport.Category)
+            .Include(existingReport => existingReport.Governorate)
+            .Include(existingReport => existingReport.CategoryFields)
+            .Include(existingReport => existingReport.Photos)
             .SingleOrDefaultAsync(report => report.Id == reportId, cancellationToken);
 
         if (report is null)
@@ -495,7 +520,7 @@ public sealed class ReportService(
             return validation.Error;
         }
 
-        var quotaResult = await quotaService.CheckNewSubmissionAsync(
+        var quotaResult = await CheckNewSubmissionAsync(
             reporterId,
             isResubmission: true,
             cancellationToken: cancellationToken);
@@ -510,7 +535,7 @@ public sealed class ReportService(
         report.ResubmissionCount += 1;
         report.UpdatedAt = now;
 
-        adminSubmissionAlertNotifier.EnqueuePendingReview(report, report.Category);
+        EnqueuePendingReview(report, report.Category);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
     }
@@ -792,6 +817,89 @@ public sealed class ReportService(
                 })
                 .ToList(),
         };
+
+    private void EnqueuePendingReview(Report report, Category category)
+    {
+        if (!_emailOptions.IsConfigured)
+        {
+            return;
+        }
+
+        var reportType = report.Type == ReportType.Found ? "found" : "lost";
+
+        dbContext.AdminAlertEmailOutboxMessages.Add(new AdminAlertEmailOutboxMessage
+        {
+            ReportId = report.Id,
+            ReportType = reportType,
+            CategoryCode = category.Code,
+            Status = AdminAlertEmailOutboxStatus.Pending,
+            CreatedAt = timeProvider.GetUtcNow(),
+        });
+    }
+
+    private async Task<QuotaCheckResult> CheckNewSubmissionAsync(
+        Guid userId,
+        bool isResubmission = false,
+        CancellationToken cancellationToken = default)
+    {
+        if (isResubmission)
+        {
+            return new QuotaCheckResult(QuotaFailureKind.None);
+        }
+
+        var dailyCount = await CountReportsCreatedTodayAsync(userId, cancellationToken);
+        if (dailyCount >= DailyQuotaLimit)
+        {
+            return new QuotaCheckResult(
+                QuotaFailureKind.DailyQuota,
+                SecondsUntilNextCairoMidnight());
+        }
+
+        var openCount = await CountOpenReportsAsync(userId, cancellationToken);
+        if (openCount >= OpenReportCap)
+        {
+            return new QuotaCheckResult(QuotaFailureKind.OpenCap);
+        }
+
+        return new QuotaCheckResult(QuotaFailureKind.None);
+    }
+
+    private async Task<int> CountReportsCreatedTodayAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        var dayStart = CairoTime.CairoDayStartUtc(now);
+        var nextDayStart = dayStart.AddDays(1);
+
+        return await dbContext.Reports
+            .AsNoTracking()
+            .CountAsync(
+                report => report.ReporterId == userId
+                    && report.CreatedAt >= dayStart
+                    && report.CreatedAt < nextDayStart,
+                cancellationToken);
+    }
+
+    private async Task<int> CountOpenReportsAsync(
+        Guid userId,
+        CancellationToken cancellationToken) =>
+        await dbContext.Reports
+            .AsNoTracking()
+            .CountAsync(
+                report => report.ReporterId == userId
+                    && OpenCapStatuses.Contains(report.Status),
+                cancellationToken);
+
+    private int SecondsUntilNextCairoMidnight()
+    {
+        var now = timeProvider.GetUtcNow();
+        var dayStart = CairoTime.CairoDayStartUtc(now);
+        var nextDayStart = dayStart.AddDays(1);
+        var seconds = (int)Math.Ceiling((nextDayStart - now).TotalSeconds);
+
+        return Math.Max(seconds, 1);
+    }
 
     private sealed class NormalizedCreateReportRequest
     {

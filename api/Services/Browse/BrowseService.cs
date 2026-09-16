@@ -1,6 +1,5 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Utilities.Common;
@@ -25,7 +24,10 @@ public sealed class BrowseService(
 
         IQueryable<Report> reportsQuery = dbContext.Reports
             .AsNoTracking()
-            .WithBrowseSummaryIncludes()
+            .Include(report => report.Category)
+            .Include(report => report.Governorate)
+            .Include(report => report.Reporter)
+            .Include(report => report.Photos)
             .Where(report =>
                 report.Status == ReportStatus.Published
                 || report.Status == ReportStatus.ClaimInProgress);
@@ -107,7 +109,11 @@ public sealed class BrowseService(
     {
         var report = await dbContext.Reports
             .AsNoTracking()
-            .WithPublicDetailIncludes()
+            .Include(existingReport => existingReport.Category)
+            .Include(existingReport => existingReport.Governorate)
+            .Include(existingReport => existingReport.Reporter)
+            .Include(existingReport => existingReport.Photos)
+            .Include(existingReport => existingReport.CategoryFields)
             .SingleOrDefaultAsync(report => report.Id == reportId, cancellationToken);
 
         if (report is null)

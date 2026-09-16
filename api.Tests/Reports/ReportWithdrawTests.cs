@@ -1,6 +1,6 @@
 using System.Net;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Services.Claims;
+using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Tests.Claims;
 using Amanah.Api.Tests.Infrastructure;
@@ -72,7 +72,7 @@ public class ReportWithdrawTests(ApiWebApplicationFactory factory) : IClassFixtu
             .AsNoTracking()
             .SingleAsync(claim => claim.Id == pendingClaimId);
         Assert.Equal(ClaimStatus.Withdrawn, pendingClaim.Status);
-        Assert.Equal(ClaimCleanupService.ClosedReviewerDecision, pendingClaim.ReviewerDecision);
+        Assert.Equal(ReportLifecycleService.ClosedReviewerDecision, pendingClaim.ReviewerDecision);
         Assert.Equal("no_longer_needed", pendingClaim.DecisionReason);
         Assert.False(pendingClaim.CountsAsFailure);
     }

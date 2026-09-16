@@ -257,7 +257,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
         await using var context = await CreateContextAsync(factory);
 
         var reportIds = new List<Guid>();
-        for (var i = 0; i <= ClaimQuotaService.DailyQuotaLimit; i++)
+        for (var i = 0; i <= ClaimService.DailyQuotaLimit; i++)
         {
             reportIds.Add(await BrowseTestHelpers.SeedReportAsync(
                 context,
@@ -271,7 +271,7 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
         var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
         ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
 
-        for (var i = 0; i < ClaimQuotaService.DailyQuotaLimit; i++)
+        for (var i = 0; i < ClaimService.DailyQuotaLimit; i++)
         {
             var (response, _) = await ClaimTestHelpers.SubmitClaimAsync(
                 context.Client,

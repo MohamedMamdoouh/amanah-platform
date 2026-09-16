@@ -12,7 +12,7 @@ namespace Amanah.Api.Tests.Lifecycle;
 public class TerminalPhotoCleanupTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
     [Fact]
-    public async Task RemoveReportPhotos_deletes_rows_and_storage_keys()
+    public async Task WithdrawAsync_deletes_attached_photos_and_storage_keys()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var reportId = Guid.NewGuid();
@@ -58,16 +58,15 @@ public class TerminalPhotoCleanupTests(ApiWebApplicationFactory factory) : IClas
         await storage.PutAsync(originalKey, new MemoryStream([1, 2, 3]), "image/jpeg");
         await storage.PutAsync(thumbnailKey, new MemoryStream([4, 5, 6]), "image/webp");
 
-        var retentionService = serviceScope.ServiceProvider.GetRequiredService<IRetentionService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
         var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
         var report = await dbContext.Reports
             .Include(item => item.Photos)
             .SingleAsync(item => item.Id == reportId);
 
-        var storageKeys = retentionService.RemoveReportPhotos(report);
-        await dbContext.SaveChangesAsync();
-        await retentionService.DeleteReportPhotoStorageAsync(storageKeys);
+        var result = await lifecycleService.WithdrawAsync(report, "Report withdrawn");
 
+        Assert.True(result.IsSuccess);
         Assert.Equal(0, await dbContext.ReportPhotos.CountAsync());
         Assert.False(storage.ContainsKey(originalKey));
         Assert.False(storage.ContainsKey(thumbnailKey));

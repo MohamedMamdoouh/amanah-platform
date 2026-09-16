@@ -11,7 +11,6 @@ public static class EmailServiceExtensions
         IConfiguration configuration)
     {
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
-        services.AddScoped<AdminSubmissionAlertNotifier>();
         services.AddScoped<AdminAlertEmailOutboxDispatcher>();
         services.AddHostedService<AdminAlertEmailOutboxProcessor>();
 

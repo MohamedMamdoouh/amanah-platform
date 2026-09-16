@@ -1,6 +1,5 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
@@ -26,7 +25,7 @@ public sealed class ModerationService(
     {
         var reports = await dbContext.Reports
             .AsNoTracking()
-            .WithCategoryInclude()
+            .Include(report => report.Category)
             .Where(report => report.Status == ReportStatus.PendingReview)
             .OrderBy(report => report.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -50,7 +49,7 @@ public sealed class ModerationService(
 
         IQueryable<Report> reportsQuery = dbContext.Reports
             .AsNoTracking()
-            .WithCategoryInclude()
+            .Include(report => report.Category)
             .Where(report =>
                 report.Status == ReportStatus.PendingReview
                 || report.Status == ReportStatus.Rejected);

@@ -1,6 +1,5 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
@@ -17,14 +16,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Services.Claims;
 
+public sealed record ClaimQuotaCheckResult(bool IsExceeded, int? RetryAfterSeconds = null);
+
 public sealed class ClaimService(
     AppDbContext dbContext,
-    IClaimQuotaService quotaService,
     ClaimPhotoAttachService claimPhotoAttachService,
     IReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider) : IClaimService
 {
     public const int MaxCountedFailures = 3;
+
+    public const int DailyQuotaLimit = 5;
 
     public const string AutoRejectReason = "Another claim approved";
 
@@ -88,7 +90,7 @@ public sealed class ClaimService(
                 ErrorCodes.ClaimAttemptLimit);
         }
 
-        var quotaResult = await quotaService.CheckDailySubmissionAsync(claimantId, cancellationToken);
+        var quotaResult = await CheckDailySubmissionAsync(claimantId, cancellationToken);
         if (quotaResult.IsExceeded)
         {
             return ResultError.TooManyRequests(
@@ -152,7 +154,7 @@ public sealed class ClaimService(
         CancellationToken cancellationToken = default)
     {
         var claim = await dbContext.Claims
-            .WithReportInclude()
+            .Include(existingClaim => existingClaim.Report)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
         if (claim is null || !ClaimAccessAuthorization.IsReporter(claim, reporterId))
@@ -248,7 +250,7 @@ public sealed class ClaimService(
         CancellationToken cancellationToken = default)
     {
         var claim = await dbContext.Claims
-            .WithReportInclude()
+            .Include(existingClaim => existingClaim.Report)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
         if (claim is null || !ClaimAccessAuthorization.IsReporter(claim, reporterId))
@@ -288,7 +290,7 @@ public sealed class ClaimService(
         CancellationToken cancellationToken = default)
     {
         var claim = await dbContext.Claims
-            .WithReportInclude()
+            .Include(existingClaim => existingClaim.Report)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
         if (claim is null || !ClaimAccessAuthorization.IsClaimant(claim, claimantId))
@@ -374,7 +376,12 @@ public sealed class ClaimService(
     {
         var claim = await dbContext.Claims
             .AsNoTracking()
-            .WithClaimDetailIncludes()
+            .Include(existingClaim => existingClaim.Report)
+            .ThenInclude(report => report.Reporter)
+            .Include(existingClaim => existingClaim.Report)
+            .ThenInclude(report => report.Resolution)
+            .Include(existingClaim => existingClaim.Claimant)
+            .Include(existingClaim => existingClaim.ChatThread)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
         if (claim is null)
@@ -453,6 +460,46 @@ public sealed class ClaimService(
             AttemptNumber = claim.AttemptNumber,
             ClaimantDisplayName = claim.Claimant.DisplayName ?? string.Empty,
         };
+
+    private async Task<ClaimQuotaCheckResult> CheckDailySubmissionAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var dailyCount = await CountClaimsSubmittedTodayAsync(userId, cancellationToken);
+        if (dailyCount < DailyQuotaLimit)
+        {
+            return new ClaimQuotaCheckResult(false);
+        }
+
+        return new ClaimQuotaCheckResult(true, SecondsUntilNextCairoMidnight());
+    }
+
+    private async Task<int> CountClaimsSubmittedTodayAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        var dayStart = CairoTime.CairoDayStartUtc(now);
+        var nextDayStart = dayStart.AddDays(1);
+
+        return await dbContext.Claims
+            .AsNoTracking()
+            .CountAsync(
+                claim => claim.ClaimantId == userId
+                    && claim.SubmittedAt >= dayStart
+                    && claim.SubmittedAt < nextDayStart,
+                cancellationToken);
+    }
+
+    private int SecondsUntilNextCairoMidnight()
+    {
+        var now = timeProvider.GetUtcNow();
+        var dayStart = CairoTime.CairoDayStartUtc(now);
+        var nextDayStart = dayStart.AddDays(1);
+        var seconds = (int)Math.Ceiling((nextDayStart - now).TotalSeconds);
+
+        return Math.Max(seconds, 1);
+    }
 
     private static MyClaimSummaryResponse ToMyClaimSummary(Claim claim) =>
         new()

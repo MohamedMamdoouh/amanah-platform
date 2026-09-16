@@ -1,6 +1,5 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
-using Amanah.Api.Data.Extensions;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Utilities.Claims;
@@ -22,7 +21,7 @@ public sealed class ClaimPhotoPresignService(
     {
         var claim = await dbContext.Claims
             .AsNoTracking()
-            .WithReportInclude()
+            .Include(existingClaim => existingClaim.Report)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
         if (claim is null || string.IsNullOrWhiteSpace(claim.PhotoStorageKey))

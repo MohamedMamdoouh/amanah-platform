@@ -34,7 +34,7 @@ Implement background scheduled jobs for listing expiry, pending-claim timeout, a
 - [x] Phase 00 - Platform foundation
 - [x] Phase 01 - Report Submission
 - [x] Phase 02 - Admin Moderation
-- [x] Phase 04 - Claims & Verification (`ClaimCleanupService` unit-tested; wire to report lifecycle in this phase)
+- [x] Phase 04 - Claims & Verification (claim cleanup logic in `ReportLifecycleService`; wired to report lifecycle in this phase)
 - [x] Phase 05 - Chat, Resolution & Notifications
 
 ### Deferred decisions (Section 14)

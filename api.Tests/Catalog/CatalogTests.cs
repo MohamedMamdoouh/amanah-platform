@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Amanah.Api.Data;
+using Amanah.Api.Data.Entities;
 using Amanah.Api.Data.Seeds;
 using Amanah.Api.Options;
 using Amanah.Api.Services.Catalog;
@@ -8,6 +9,7 @@ using Amanah.Api.Tests.Infrastructure;
 using Amanah.Contracts.Responses.Catalog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Amanah.Api.Tests.Catalog;
 
@@ -110,34 +112,6 @@ public class CatalogApiTests(ApiWebApplicationFactory factory) : IClassFixture<A
         });
     }
 
-    [Fact]
-    public async Task Get_categories_uses_cache_on_second_request()
-    {
-        await using var scope = await CreateSeededScopeAsync();
-        var countingLoader = scope.ServiceProvider.GetRequiredService<CountingCategoryLoader>();
-        var catalogService = scope.ServiceProvider.GetRequiredService<CatalogService>();
-
-        await catalogService.GetCategoriesAsync();
-        await catalogService.GetCategoriesAsync();
-
-        Assert.Equal(1, countingLoader.LoadCount);
-    }
-
-    [Fact]
-    public async Task Get_categories_reloads_after_cache_invalidation_via_integration_scope()
-    {
-        await using var scope = await CreateSeededScopeAsync();
-        var countingLoader = scope.ServiceProvider.GetRequiredService<CountingCategoryLoader>();
-        var catalogService = scope.ServiceProvider.GetRequiredService<CatalogService>();
-        var cacheService = scope.ServiceProvider.GetRequiredService<ICacheService>();
-
-        await catalogService.GetCategoriesAsync();
-        await cacheService.RemoveAsync(CacheKeys.Categories);
-        await catalogService.GetCategoriesAsync();
-
-        Assert.Equal(2, countingLoader.LoadCount);
-    }
-
     private async Task<AsyncServiceScope> CreateSeededScopeAsync()
     {
         var scope = factory.Services.CreateAsyncScope();
@@ -153,110 +127,127 @@ public class CatalogServiceCacheTests
     [Fact]
     public async Task GetCategoriesAsync_calls_loader_once_when_cached()
     {
-        var loader = new StubLoaders();
-        var service = CreateCatalogService(loader);
+        await using var context = CreateContext();
+        var observingCache = CreateObservingCacheService();
+        var service = CreateCatalogService(context, observingCache);
 
         await service.GetCategoriesAsync();
         await service.GetCategoriesAsync();
 
-        Assert.Equal(1, loader.CategoriesLoadCount);
+        Assert.Equal(1, observingCache.CategoriesFactoryCalls);
     }
 
     [Fact]
     public async Task GetGovernoratesAsync_calls_loader_once_when_cached()
     {
-        var loader = new StubLoaders();
-        var service = CreateCatalogService(loader);
+        await using var context = CreateContext();
+        var observingCache = CreateObservingCacheService();
+        var service = CreateCatalogService(context, observingCache);
 
         await service.GetGovernoratesAsync();
         await service.GetGovernoratesAsync();
 
-        Assert.Equal(1, loader.GovernoratesLoadCount);
+        Assert.Equal(1, observingCache.GovernoratesFactoryCalls);
     }
 
     [Fact]
     public async Task GetCategoriesAsync_reloads_after_cache_invalidation()
     {
-        var loader = new StubLoaders();
-        var cache = CreateCacheService();
-        var service = CreateCatalogService(loader, cache);
+        await using var context = CreateContext();
+        var observingCache = CreateObservingCacheService();
+        var service = CreateCatalogService(context, observingCache);
 
         await service.GetCategoriesAsync();
-        await cache.RemoveAsync(CacheKeys.Categories);
+        await observingCache.RemoveAsync(CacheKeys.Categories);
         await service.GetCategoriesAsync();
 
-        Assert.Equal(2, loader.CategoriesLoadCount);
+        Assert.Equal(2, observingCache.CategoriesFactoryCalls);
     }
 
-    private static CatalogService CreateCatalogService(StubLoaders loaders, ICacheService? cache = null)
+    private static CatalogService CreateCatalogService(AppDbContext context, ObservingCacheService cache)
     {
-        cache ??= CreateCacheService();
         var options = Microsoft.Extensions.Options.Options.Create(new CacheOptions
         {
             CategoriesTtlSeconds = 3600,
             GovernoratesTtlSeconds = 86400,
         });
 
-        return new CatalogService(loaders, loaders, cache, options);
+        return new CatalogService(context, cache, options);
     }
 
-    private static ICacheService CreateCacheService()
+    private static ObservingCacheService CreateObservingCacheService()
     {
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddDistributedMemoryCache();
         services.AddHybridCache();
         services.AddSingleton<ICacheService, CacheService>();
-        return services.BuildServiceProvider().GetRequiredService<ICacheService>();
+        var inner = services.BuildServiceProvider().GetRequiredService<ICacheService>();
+        return new ObservingCacheService(inner);
     }
 
-    private sealed class StubLoaders : ICategoryLoader, IGovernorateLoader
+    private static AppDbContext CreateContext()
     {
-        public int CategoriesLoadCount { get; private set; }
+        var databaseName = Guid.NewGuid().ToString();
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName)
+            .Options;
 
-        public int GovernoratesLoadCount { get; private set; }
+        var context = new AppDbContext(options);
+        var categoryId = Guid.NewGuid();
+        var governorateId = Guid.NewGuid();
 
-        public Task<CategoryListResponse> LoadCategoriesAsync(CancellationToken cancellationToken = default)
+        context.Categories.Add(new Category
         {
-            CategoriesLoadCount++;
-            return Task.FromResult(new CategoryListResponse
-            {
-                Items =
-                [
-                    new CategoryResponse
-                    {
-                        Code = "phones",
-                        SortOrder = 1,
-                    },
-                ],
-            });
-        }
+            Id = categoryId,
+            Code = "phones",
+            SortOrder = 1,
+            PhotosPrivate = false,
+            Active = true,
+        });
 
-        public Task<GovernorateListResponse> LoadGovernoratesAsync(CancellationToken cancellationToken = default)
+        context.Governorates.Add(new Governorate
         {
-            GovernoratesLoadCount++;
-            return Task.FromResult(new GovernorateListResponse
-            {
-                Items =
-                [
-                    new GovernorateResponse
-                    {
-                        Code = "cairo",
-                        SortOrder = 1,
-                    },
-                ],
-            });
-        }
+            Id = governorateId,
+            Code = "cairo",
+            SortOrder = 1,
+        });
+
+        context.SaveChanges();
+
+        return context;
     }
-}
 
-public sealed class CountingCategoryLoader(ICategoryLoader inner) : ICategoryLoader
-{
-    public int LoadCount { get; private set; }
-
-    public async Task<CategoryListResponse> LoadCategoriesAsync(CancellationToken cancellationToken = default)
+    private sealed class ObservingCacheService(ICacheService inner) : ICacheService
     {
-        LoadCount++;
-        return await inner.LoadCategoriesAsync(cancellationToken);
+        public int CategoriesFactoryCalls { get; private set; }
+
+        public int GovernoratesFactoryCalls { get; private set; }
+
+        public Task<T> GetOrSetAsync<T>(
+            string key,
+            Func<CancellationToken, Task<T>> factory,
+            TimeSpan expiration,
+            CancellationToken cancellationToken = default)
+        {
+            Func<CancellationToken, Task<T>> observedFactory = async ct =>
+            {
+                if (key == CacheKeys.Categories)
+                {
+                    CategoriesFactoryCalls++;
+                }
+                else if (key == CacheKeys.Governorates)
+                {
+                    GovernoratesFactoryCalls++;
+                }
+
+                return await factory(ct);
+            };
+
+            return inner.GetOrSetAsync(key, observedFactory, expiration, cancellationToken);
+        }
+
+        public Task RemoveAsync(string key, CancellationToken cancellationToken = default) =>
+            inner.RemoveAsync(key, cancellationToken);
     }
 }
