@@ -344,9 +344,19 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
       this.shouldScrollToBottom = true;
 
       try {
+        if (generation !== this.loadGeneration) {
+          return;
+        }
+
         await this.chatHub.joinThread(threadId);
         if (generation !== this.loadGeneration) {
-          await this.chatHub.leaveThread(threadId);
+          // Newer navigation may already want a different thread; restore that
+          // instead of clearing membership (which drops realtime for the open thread).
+          if (this.threadId) {
+            await this.chatHub.joinThread(this.threadId);
+          } else {
+            await this.chatHub.leaveThread(threadId);
+          }
         }
       } catch {
         // REST fallback remains available when the hub is unavailable.

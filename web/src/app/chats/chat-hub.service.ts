@@ -15,6 +15,8 @@ export class ChatHubService {
 
   private connection: HubConnection | null = null;
   private activeThreadId: string | null = null;
+  /** Thread the UI currently wants; drives serialized membership sync. */
+  private wantedThreadId: string | null = null;
   private connecting: Promise<void> | null = null;
   private membershipQueue: Promise<void> = Promise.resolve();
 
@@ -36,31 +38,27 @@ export class ChatHubService {
   }
 
   async joinThread(threadId: string): Promise<void> {
-    return this.runMembership(async () => {
-      await this.ensureConnected();
-
-      if (this.activeThreadId && this.activeThreadId !== threadId) {
-        await this.leaveThreadIfActive(this.activeThreadId);
-      }
-
-      await this.connection!.invoke('JoinThread', threadId);
-      this.activeThreadId = threadId;
-    });
+    this.wantedThreadId = threadId;
+    await this.runMembership(() => this.syncMembership());
   }
 
   async leaveThread(threadId: string): Promise<void> {
-    return this.runMembership(() => this.leaveThreadIfActive(threadId));
+    if (this.wantedThreadId === threadId) {
+      this.wantedThreadId = null;
+    }
+    await this.runMembership(() => this.syncMembership());
   }
 
   async disconnect(): Promise<void> {
-    if (this.activeThreadId) {
-      await this.leaveThread(this.activeThreadId);
-    }
+    this.wantedThreadId = null;
+    await this.runMembership(async () => {
+      await this.syncMembership();
 
-    if (this.connection) {
-      await this.connection.stop();
-      this.connection = null;
-    }
+      if (this.connection) {
+        await this.connection.stop();
+        this.connection = null;
+      }
+    });
   }
 
   async sendMessage(
@@ -77,9 +75,79 @@ export class ChatHubService {
     );
   }
 
+  /**
+   * Converge hub group membership to wantedThreadId. Re-read wanted after every
+   * await so overlapping navigations / reconnect cannot claim isJoinedTo while
+   * absent from the SignalR group (which makes hub sends vanish for the sender).
+   */
+  private async syncMembership(): Promise<void> {
+    for (;;) {
+      const wanted = this.wantedThreadId;
+
+      if (this.activeThreadId === wanted) {
+        return;
+      }
+
+      if (this.activeThreadId && this.activeThreadId !== wanted) {
+        const leaving = this.activeThreadId;
+        await this.leaveActive(leaving);
+        continue;
+      }
+
+      if (!wanted) {
+        return;
+      }
+
+      await this.ensureConnected();
+      if (this.wantedThreadId !== wanted) {
+        continue;
+      }
+
+      if (!this.isConnected()) {
+        return;
+      }
+
+      await this.connection!.invoke('JoinThread', wanted);
+      if (this.wantedThreadId !== wanted) {
+        try {
+          if (this.connection?.state === HubConnectionState.Connected) {
+            await this.connection.invoke('LeaveThread', wanted);
+          }
+        } catch {
+          // Newer sync iteration will repair membership.
+        }
+        continue;
+      }
+
+      this.activeThreadId = wanted;
+      return;
+    }
+  }
+
+  private async leaveActive(threadId: string): Promise<void> {
+    if (this.connection?.state === HubConnectionState.Connected) {
+      await this.connection.invoke('LeaveThread', threadId);
+    }
+
+    if (this.activeThreadId === threadId) {
+      this.activeThreadId = null;
+    }
+  }
+
   private async ensureConnected(): Promise<void> {
     if (this.isConnected()) {
       return;
+    }
+
+    if (
+      this.connection &&
+      (this.connection.state === HubConnectionState.Connecting ||
+        this.connection.state === HubConnectionState.Reconnecting)
+    ) {
+      await this.waitForConnectionSettle();
+      if (this.isConnected()) {
+        return;
+      }
     }
 
     this.connecting ??= this.startConnection();
@@ -88,6 +156,24 @@ export class ChatHubService {
     } finally {
       this.connecting = null;
     }
+  }
+
+  private waitForConnectionSettle(): Promise<void> {
+    const connection = this.connection!;
+    return new Promise((resolve) => {
+      const poll = () => {
+        const state = connection.state;
+        if (
+          state === HubConnectionState.Connected ||
+          state === HubConnectionState.Disconnected
+        ) {
+          resolve();
+          return;
+        }
+        setTimeout(poll, 50);
+      };
+      poll();
+    });
   }
 
   private async startConnection(): Promise<void> {
@@ -121,18 +207,15 @@ export class ChatHubService {
     });
 
     connection.onreconnected(() => {
+      // Groups are empty after reconnect. Clear active synchronously so
+      // isJoinedTo is false until sync finishes — otherwise hub SendMessage
+      // can succeed while the sender is not in the group (message vanishes).
+      this.activeThreadId = null;
       void this.runMembership(async () => {
-        const threadId = this.activeThreadId;
-        if (!threadId) {
-          return;
-        }
-
         try {
-          await connection.invoke('JoinThread', threadId);
+          await this.syncMembership();
         } catch {
-          if (this.activeThreadId === threadId) {
-            this.activeThreadId = null;
-          }
+          // REST fallback remains available; next joinThread will retry.
         }
       });
     });
@@ -147,17 +230,5 @@ export class ChatHubService {
       () => undefined,
     );
     return next;
-  }
-
-  private async leaveThreadIfActive(threadId: string): Promise<void> {
-    if (
-      this.connection?.state === HubConnectionState.Connected &&
-      this.activeThreadId === threadId
-    ) {
-      await this.connection.invoke('LeaveThread', threadId);
-      if (this.activeThreadId === threadId) {
-        this.activeThreadId = null;
-      }
-    }
   }
 }
