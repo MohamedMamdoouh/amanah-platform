@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import {
+  ChatAttachmentPresignResponse,
+  ChatAttachmentUploadResponse,
   ChatMessage,
   ChatThreadDetail,
   ChatThreadListResponse,
@@ -45,6 +47,28 @@ export class ChatService {
     return this.http.post<ChatMessage>(
       `${environment.apiBaseUrl}/chats/${threadId}/messages`,
       request,
+    );
+  }
+
+  uploadAttachment(
+    threadId: string,
+    file: File,
+  ): Observable<ChatAttachmentUploadResponse> {
+    const formData = new FormData();
+    formData.append('threadId', threadId);
+    formData.append('photo', file);
+
+    return this.http.post<ChatAttachmentUploadResponse>(
+      `${environment.apiBaseUrl}/uploads/chat-attachment`,
+      formData,
+    );
+  }
+
+  getAttachmentPresignedUrl(
+    attachmentId: string,
+  ): Observable<ChatAttachmentPresignResponse> {
+    return this.http.get<ChatAttachmentPresignResponse>(
+      `${environment.apiBaseUrl}/uploads/chat-attachment/${attachmentId}/url`,
     );
   }
 }

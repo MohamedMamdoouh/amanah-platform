@@ -44,6 +44,14 @@ export class NotificationsComponent implements OnInit {
     return this.translate.instant(`notifications.type.${type}`);
   }
 
+  linkLabel(item: NotificationItem): string {
+    if (item.payload.deepLink.startsWith('/my/chats/')) {
+      return this.translate.instant('notifications.open_chat');
+    }
+
+    return this.translate.instant('notifications.open_report');
+  }
+
   reasonLabel(code: string | null | undefined): string {
     if (!code) {
       return '';
@@ -83,9 +91,7 @@ export class NotificationsComponent implements OnInit {
 
     let deepLink = item.payload.deepLink;
 
-    if (deepLink.startsWith('/my/chats/')) {
-      deepLink = '/my/claims';
-    } else if (
+    if (
       (item.payload.type === 'ClaimWithdrawnByClaimant' ||
         item.payload.type === 'NewClaimSubmitted') &&
       deepLink.startsWith('/my/reports/') &&

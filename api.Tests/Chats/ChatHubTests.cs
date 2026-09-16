@@ -3,6 +3,7 @@ using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 using Amanah.Api.Tests.Resolution;
 using Amanah.Contracts.Chats;
+using Amanah.Contracts.Errors;
 using Amanah.Contracts.Responses.Chats;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.EntityFrameworkCore;
@@ -101,7 +102,7 @@ public class ChatHubTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
             var exception = await Assert.ThrowsAsync<Microsoft.AspNetCore.SignalR.HubException>(() =>
                 connection.InvokeAsync(ChatHubMethods.JoinThread, threadId.ToString()));
 
-            Assert.Equal("Chat thread not found.", exception.Message);
+            Assert.Contains(ErrorCodes.NotFound, exception.Message);
         }
         finally
         {
@@ -131,7 +132,7 @@ public class ChatHubTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
             await reporterConnection.InvokeAsync(ChatHubMethods.JoinThread, threadId.ToString());
             await claimantConnection.InvokeAsync(ChatHubMethods.JoinThread, threadId.ToString());
 
-            ResolutionTestHelpers.AuthenticateReporter(context.Client, context);
+            ClaimTestHelpers.AuthenticateReporter(context.Client, context);
             var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
             Assert.Equal(System.Net.HttpStatusCode.NoContent, cancelResponse.StatusCode);
 

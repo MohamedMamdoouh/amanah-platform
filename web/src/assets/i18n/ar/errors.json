@@ -49,5 +49,6 @@
   "error.upload.storage_failed": "رفع الصور غير متاح مؤقتاً. حاول لاحقاً.",
   "error.resource.not_found": "المورد غير موجود.",
   "error.resource.unavailable": "هذا البلاغ لم يعد متاحاً.",
-  "error.resource.conflict": "لا يمكن تنفيذ هذا الإجراء على البلاغ الحالي."
+  "error.resource.conflict": "لا يمكن تنفيذ هذا الإجراء على البلاغ الحالي.",
+  "error.chat.read_only": "هذه المحادثة للقراءة فقط."
 }

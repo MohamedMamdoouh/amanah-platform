@@ -46,3 +46,27 @@ export interface SendMessageRequest {
   body?: string | null;
   attachmentId?: string | null;
 }
+
+export interface ChatAttachmentUploadResponse {
+  id: string;
+}
+
+export interface ChatAttachmentPresignResponse {
+  url: string;
+}
+
+export interface ChatThreadReadOnlyEvent {
+  threadId: string;
+  readOnlyAt: string;
+}
+
+export interface MessageAttachmentState {
+  url: string | null;
+  loading: boolean;
+}
+
+export interface PendingAttachment {
+  id: string;
+  previewUrl: string;
+  fileName: string;
+}

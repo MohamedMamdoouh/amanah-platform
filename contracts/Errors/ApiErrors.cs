@@ -63,4 +63,6 @@ public static class ErrorCodes
     public const string UploadInvalidFormat = "upload.invalid_format";
     public const string UploadTooLarge = "upload.too_large";
     public const string UploadStorageFailed = "upload.storage_failed";
+
+    public const string ChatReadOnly = "chat.read_only";
 }

@@ -122,7 +122,7 @@ public class ClaimVisibilityTests(ApiWebApplicationFactory factory) : IClassFixt
 
         Assert.Equal(HttpStatusCode.BadRequest, tooLargeResponse.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, tooLargeError?.Code);
-        Assert.Contains("pageSize", tooLargeError?.Errors?.Keys ?? []);
+        Assert.True(tooLargeError?.Errors?.ContainsKey("pageSize") ?? false);
 
         var (maxResponse, maxBody) = await ClaimTestHelpers.GetMyClaimsAsync(
             context.Client,

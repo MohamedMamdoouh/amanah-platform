@@ -188,7 +188,7 @@ public sealed class ClaimService(
             dbContext.Resolutions.Remove(staleResolution);
         }
 
-        // Phase 05 activates messaging on this thread; until then it is a placeholder record only.
+        // ChatThread is created on claim approval; messaging is served via Phase 05 hub and REST endpoints.
         var chatThread = new ChatThread
         {
             Id = Guid.NewGuid(),

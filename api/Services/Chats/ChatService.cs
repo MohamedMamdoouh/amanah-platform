@@ -9,6 +9,7 @@ using Amanah.Api.Utilities.Notifications;
 using Amanah.Api.Utilities.Reports;
 using Amanah.Api.Utilities.Resolution;
 using Amanah.Contracts.Chats;
+using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Chats;
 using Amanah.Contracts.Responses.Chats;
 using Amanah.Contracts.Responses.Claims;
@@ -144,7 +145,9 @@ public sealed class ChatService(
 
         if (thread.ReadOnlyAt is not null)
         {
-            return ResultError.Conflict("This chat is read-only.");
+            return ResultError.Conflict(
+                "This chat is read-only.",
+                ErrorCodes.ChatReadOnly);
         }
 
         var sender = ClaimAccessAuthorization.IsReporter(thread.Claim, userId)

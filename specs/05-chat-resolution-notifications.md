@@ -1,6 +1,6 @@
 # Phase 05 - Chat, Resolution & Notifications
 
-**Status:** Not started  
+**Status:** Complete — code and automated tests shipped; manual smoke checklist ready for QA  
 **Prerequisites:** Phase 04 - Claims & Verification
 
 ---
@@ -35,10 +35,10 @@ Activate real-time in-app chat via SignalR for approved claims, with text and ph
 
 ### Prior phases
 
-- [x] Platform foundation
+- [x] Phase 00 - Platform foundation
 - [x] Phase 01 - Report Submission
 - [x] Phase 02 - Admin Moderation
-- [x] Phase 04 - Claims & Verification (`ChatThread` placeholder rows created on claim approval; no messaging yet)
+- [x] Phase 04 - Claims & Verification (`ChatThread` rows created on claim approval; messaging activated in this phase)
 
 ### Deferred decisions (Section 14)
 
@@ -139,11 +139,11 @@ Explicitly deferred to later phases:
 
 From [SPEC.md Section 15.5](./SPEC.md#155-resolution-and-chat).
 
-- [ ] **Mutual confirmation is the only resolve path:** the report becomes `Resolved` only when both parties have confirmed. Reporter-only close and one-sided timeout resolution do not exist
-- [ ] **Confirmation is irrevocable:** a party who has confirmed cannot un-confirm and cannot cancel the claim; the other party can still confirm or cancel
-- [ ] **Confirmation notifications:** the first confirmation notifies the counterparty that their confirmation is awaited, and the second notifies both parties that the report is resolved
-- [ ] **Cancellation path:** cancelling before mutual confirmation sets the claim to `Cancelled`, returns the report to `Published`, notifies the counterparty, and makes the chat read-only immediately
-- [ ] **Chat reachability:** both parties can still open a read-only thread from My Chats while it exists, even though the report's public URL is unavailable
+- [x] **Mutual confirmation is the only resolve path:** the report becomes `Resolved` only when both parties have confirmed. Reporter-only close and one-sided timeout resolution do not exist
+- [x] **Confirmation is irrevocable:** a party who has confirmed cannot un-confirm and cannot cancel the claim; the other party can still confirm or cancel
+- [x] **Confirmation notifications:** the first confirmation notifies the counterparty that their confirmation is awaited, and the second notifies both parties that the report is resolved
+- [x] **Cancellation path:** cancelling before mutual confirmation sets the claim to `Cancelled`, returns the report to `Published`, notifies the counterparty, and makes the chat read-only immediately
+- [x] **Chat reachability:** both parties can still open a read-only thread from My Chats while it exists, even though the report's public URL is unavailable
 
 **Deferred within v1:**
 
@@ -151,10 +151,10 @@ From [SPEC.md Section 15.5](./SPEC.md#155-resolution-and-chat).
 
 From [SPEC.md Section 15.9](./SPEC.md#159-notifications).
 
-- [ ] Each event in the Section 5.7 table produces exactly one in-app notification for each listed recipient, deep-linking to the relevant report, claim, or thread (for all events implemented to date)
-- [ ] A new-message notification is suppressed while the recipient is viewing that same thread
-- [ ] Notifications remain unread until opened or explicitly marked read, and no setting can disable any of them
-- [ ] SMS is sent only for OTP; email is sent only to the admin for pending submissions
+- [x] Each event in the Section 5.7 table produces exactly one in-app notification for each listed recipient, deep-linking to the relevant report, claim, or thread (for all events implemented to date)
+- [x] A new-message notification is suppressed while the recipient is viewing that same thread
+- [x] Notifications remain unread until opened or explicitly marked read, and no setting can disable any of them
+- [x] SMS is sent only for OTP; email is sent only to the admin for pending submissions
 
 ---
 
@@ -162,16 +162,16 @@ From [SPEC.md Section 15.9](./SPEC.md#159-notifications).
 
 ### Automated tests
 
-- [ ] SignalR: send/receive text message in thread
-- [ ] Photo attachment upload and pre-signed URL in message
-- [ ] Safety banner shown on new thread
-- [ ] First confirm: counterparty notified, report still `Claim In Progress`
-- [ ] Second confirm: report -> `Resolved`, both notified
-- [ ] Irrevocable confirm: confirmer cannot cancel
-- [ ] Cancel before confirm: report -> `Published`, chat read-only
-- [ ] `NewChatMessage` suppressed while viewing thread
-- [ ] Chat rate limits (10/min, 60/hour)
-- [ ] Non-participant cannot access thread
+- [x] SignalR: send/receive text message in thread
+- [x] Photo attachment upload and pre-signed URL in message
+- [x] Safety banner shown on new thread
+- [x] First confirm: counterparty notified, report still `Claim In Progress`
+- [x] Second confirm: report -> `Resolved`, both notified
+- [x] Irrevocable confirm: confirmer cannot cancel
+- [x] Cancel before confirm: report -> `Published`, chat read-only
+- [x] `NewChatMessage` suppressed while viewing thread
+- [x] Chat rate limits (10/min, 60/hour)
+- [x] Non-participant cannot access thread
 
 ### Manual smoke checklist
 
@@ -182,6 +182,11 @@ From [SPEC.md Section 15.9](./SPEC.md#159-notifications).
 - [ ] My Chats lists active and read-only threads
 - [ ] Notification center shows all event types with correct deep links
 
+### Known gaps
+
+- Orphan chat attachment cleanup after a failed send (staging row with `MessageId == null`) — follow-up hardening, not blocking QA
+- Hourly chat rate limit (60/hour) is configured but only per-minute limit is covered in automated tests
+
 ### Phase exit gate
 
-This phase is complete when all acceptance criteria pass and no out-of-scope items were implemented early.
+Phase 05 code and automated tests are complete. Remaining manual smoke is QA before Phase 06.

@@ -84,7 +84,7 @@ public class ChatMessagingTests(ApiWebApplicationFactory factory) : IClassFixtur
 
         var error = await HttpTestHelpers.ReadErrorAsync(response);
         Assert.NotNull(error);
-        Assert.Equal(ErrorCodes.Conflict, error.Code);
+        Assert.Equal(ErrorCodes.ChatReadOnly, error.Code);
     }
 
     [Fact]

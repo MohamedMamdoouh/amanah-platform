@@ -31,7 +31,7 @@ Enable anyone - including logged-out visitors - to browse, search, filter, and v
 
 ### Prior phases
 
-- [x] Platform foundation
+- [x] Phase 00 - Platform foundation
 - [x] Phase 01 - Report Submission (search column populated on write)
 - [x] Phase 02 - Admin Moderation (`Published` reports exist)
 
@@ -117,7 +117,7 @@ URL access by status (Section 4.4):
 
 Explicitly deferred to later phases:
 
-- Chat and messaging -> Phase 05
+- Chat and messaging -> Phase 05 (shipped)
 - Abuse flagging UI -> Phase 07
 - Social link previews -> out of scope v1 (Section 10)
 - Map/GPS location -> out of scope v1 (Section 10)
@@ -140,7 +140,7 @@ From [SPEC.md Section 15.3](./SPEC.md#153-browse-search-visibility-and-urls).
 - [x] Pagination: 20 per page, numbered pages
 - [x] Logged-out visitors see same content as logged-in on public reports
 - [x] Claim action prompts login when logged out; claim form on `Published` reports when logged in (Phase 04)
-- [x] Message action stub prompts login when logged out (full chat in Phase 05)
+- [x] Message action prompts login when logged out; chat opens for approved-claim participants (Phase 05)
 
 ---
 

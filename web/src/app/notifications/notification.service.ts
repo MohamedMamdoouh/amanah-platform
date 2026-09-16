@@ -10,6 +10,8 @@ export interface NotificationPayload {
   createdAt: string;
   deepLink: string;
   reportId?: string | null;
+  claimId?: string | null;
+  chatThreadId?: string | null;
   reasonCode?: string | null;
   note?: string | null;
 }

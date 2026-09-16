@@ -3,7 +3,7 @@
 **Status:** v9 (spec document version)  
 **Owner:** Mohamed Mamdouh
 
-**Implementation:** Phases 01–04 complete (manual smoke pending on 02 and 04); phases 05–07 not started. See [specs/README.md](./README.md) for per-phase delivery status.
+**Implementation:** Phases 00–05 complete (manual smoke pending on 02, 04, and 05); phases 06–07 not started. See [specs/README.md](./README.md) for per-phase delivery status.
 
 - **Part I (1-15)** - product behavior.
 - **Part II (16-21)** - technical specification.

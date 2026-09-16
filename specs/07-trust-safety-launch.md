@@ -31,7 +31,7 @@ Complete v1 with abuse reporting, admin enforcement (takedown, ban, unban), admi
 
 ### Prior phases
 
-- [ ] Platform foundation and Phases 01-06 complete
+- [ ] Phases 00-06 complete
 
 ### Deferred decisions (Section 14)
 

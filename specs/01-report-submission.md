@@ -1,7 +1,7 @@
 # Phase 01 - Report Submission
 
 **Status:** Complete (API + Angular UI)  
-**Prerequisites:** Platform foundation
+**Prerequisites:** Phase 00 - Platform foundation
 
 ---
 
@@ -37,11 +37,11 @@ Enable logged-in users to submit lost and found item reports with full field val
 
 ### Prior phases
 
-- [x] Platform foundation (auth, DB schema, seeds, buckets)
+- [x] Phase 00 - Platform foundation (auth, DB schema, seeds, buckets)
 
 ### Deferred decisions (Section 14)
 
-None additional - Platform foundation prerequisites must be complete.
+None additional - Phase 00 prerequisites must be complete.
 
 ---
 

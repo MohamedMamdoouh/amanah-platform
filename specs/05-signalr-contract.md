@@ -70,10 +70,10 @@ Subscribe to real-time events for a thread the user participates in.
 
 **Errors** (hub invocation failure; connection stays open):
 
-| Condition | Hub error message (English) |
-| --------- | --------------------------- |
-| Thread not found or user not a participant | `Chat thread not found.` |
-| Invalid `threadId` format | `Invalid thread id.` |
+| Condition | Hub error code |
+| --------- | -------------- |
+| Thread not found or user not a participant | `resource.not_found` |
+| Invalid `threadId` format | `validation.failed` |
 
 Non-participants receive the same not-found response as REST (no existence leak).
 
@@ -114,14 +114,18 @@ Primary path for sending a chat message. Persists to `messages`, broadcasts to t
 
 **Errors** (hub invocation failure):
 
-| Condition | Hub error message (English) |
-| --------- | --------------------------- |
-| Thread not found / not participant | `Chat thread not found.` |
-| Thread read-only | `This chat is read-only.` |
-| Empty body and no attachment | `Message cannot be empty.` |
-| Body too long | `Message is too long.` |
-| Invalid or unauthorized attachment | `Attachment not found.` |
-| Rate limit exceeded | `Too many messages. Please try again later.` |
+Hub failures surface the same stable `code` values as REST ([00-api-conventions.md](./00-api-conventions.md)). The client localizes via `error.{code}`.
+
+| Condition | Hub error code |
+| --------- | -------------- |
+| Thread not found / not participant | `resource.not_found` |
+| Thread read-only | `chat.read_only` |
+| Empty body and no attachment | `validation.failed` |
+| Body too long | `validation.failed` |
+| Invalid or unauthorized attachment | `resource.not_found` |
+| Rate limit exceeded | `rate_limit.exceeded` |
+| Invalid `threadId` / attachment id format | `validation.failed` |
+| Unauthenticated caller | `auth.unauthorized` |
 
 ---
 
@@ -168,7 +172,7 @@ Maps to [SPEC 5.7](./SPEC.md#57-notifications): *"suppressed while the recipient
 | Suppression | On message send, if the **recipient** is viewing that thread, **no** `NewChatMessage` notification is created. |
 | Sender | The sender never receives `NewChatMessage` for their own message. |
 | Multi-tab | Each tab is a separate connection; presence is per connection but aggregated per `userId` + `threadId`. |
-| REST-only viewers | Users who open the thread but only use REST (no hub) do **not** register presence; they may still receive `NewChatMessage` until SignalR connects and `JoinThread` runs. Phase 05 chat UI connects the hub when the thread view opens. |
+| REST-only viewers | Users who open the thread but only use REST (no hub) do **not** register presence; they may still receive `NewChatMessage` until SignalR connects and `JoinThread` runs. The chat UI connects the hub when `/my/chats/{threadId}` opens. |
 | Storage | In-memory per API instance (v1 single instance on Render). Not cached in Redis. |
 
 ---
@@ -202,16 +206,7 @@ REST send does **not** require `JoinThread`. Notification suppression still uses
 
 ### Hub invocation failures
 
-SignalR surfaces validation and business-rule failures as hub exceptions with the English messages in the tables above. The client should show a localized toast using a stable code where mapped:
-
-| Hub message | Suggested client code |
-| ----------- | --------------------- |
-| `Chat thread not found.` | `resource.not_found` |
-| `This chat is read-only.` | `resource.conflict` |
-| `Message cannot be empty.` | `validation.failed` |
-| `Message is too long.` | `validation.failed` |
-| `Attachment not found.` | `resource.not_found` |
-| `Too many messages. Please try again later.` | `rate_limit.exceeded` |
+SignalR surfaces validation and business-rule failures as `HubException` with the **error code** string (same identifiers as REST `ApiError.code`). The Angular client extracts the code from the SignalR client error message (which may wrap the hub code) and localizes via `ApiErrorService.messageFromHttpError()` → `error.{code}`.
 
 ### REST errors
 

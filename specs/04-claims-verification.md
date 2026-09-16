@@ -1,13 +1,13 @@
 # Phase 04 - Claims & Verification
 
-**Status:** Complete — code and automated tests shipped; manual smoke checklist ready for QA (Phase 05/06 deferrals documented below)  
+**Status:** Complete — code and automated tests shipped; manual smoke checklist ready for QA (Phase 06 deferrals documented below)  
 **Prerequisites:** Phase 03 - Browse & Discovery
 
 ---
 
 ## 1. Summary
 
-Logged-in users submit claims on `Published` reports; reporters manually approve or reject; attempt limits and daily quota apply; approving moves the report to `Claim In Progress` and creates an inert `ChatThread` placeholder for Phase 05. Claim photos upload in the same multipart submit as the claim text. Frontend covers claim submission, My Claims, and reporter review on report detail.
+Logged-in users submit claims on `Published` reports; reporters manually approve or reject; attempt limits and daily quota apply; approving moves the report to `Claim In Progress` and creates a `ChatThread` row (messaging activated in Phase 05). Claim photos upload in the same multipart submit as the claim text. Frontend covers claim submission, My Claims, and reporter review on report detail.
 
 ---
 
@@ -32,7 +32,7 @@ Logged-in users submit claims on `Published` reports; reporters manually approve
 
 ### Prior phases
 
-- [x] Platform foundation
+- [x] Phase 00 - Platform foundation
 - [x] Phase 01 - Report Submission
 - [x] Phase 02 - Admin Moderation
 - [x] Phase 03 - Browse & Discovery
@@ -77,7 +77,7 @@ None additional.
 ### Database
 
 - `Claim` records with status, attempt tracking, `CountsAsFailure` flag
-- `ChatThread` record created on claim approval (messaging inert until Phase 05)
+- `ChatThread` record created on claim approval (messaging activated in Phase 05)
 - `Report.status` → `Claim In Progress` on approval
 - Auto-reject other `Pending` claims with reason `Another claim approved`
 
@@ -98,7 +98,7 @@ None additional.
 
 ### Phase 03 / Phase 04 boundary
 
-> On claim approval, a `ChatThread` row is created but no SignalR hub, message endpoints, or chat UI are wired. Phase 05 activates messaging.
+> At Phase 04 ship, messaging was deferred. Phase 05 shipped SignalR hub, REST endpoints, and My Chats UI — see [05-chat-resolution-notifications.md](./05-chat-resolution-notifications.md).
 
 ---
 
@@ -109,7 +109,7 @@ None additional.
 | Claim text and claim photo | own | yes (for review) | yes (flagged-listing investigation only — stub 403 until Phase 07) |
 | Display name of claimant | own | yes | yes |
 | Display name of reporter | yes | own | yes |
-| Chat thread | — | — | — (Phase 05) |
+| Chat thread | yes (Phase 05) | yes (Phase 05) | investigation only (Phase 07 stub) |
 
 ---
 
@@ -119,21 +119,19 @@ None additional.
 | ----- | --------- | ------ |
 | New claim submitted | Reporter | Shipped (`NewClaimSubmitted` → `/my/reports/{id}#claims-section`) |
 | Claim withdrawn by claimant | Reporter | Shipped |
-| Claim approved | Claimant | Shipped (deep link `/my/chats/{id}` — UI redirects to `/my/claims` until Phase 05) |
+| Claim approved | Claimant | Shipped (deep link `/my/chats/{threadId}` opens chat thread) |
 | Claim rejected | Claimant | Shipped |
 | Claim closed - report unavailable | Claimant | Shipped (`ClaimCleanupService` unit-tested; E2E on `Published` withdraw → Phase 06) |
-| Claim cancelled by counterparty | Other party | Phase 05 |
+| Claim cancelled by counterparty | Other party | Shipped (Phase 05) |
 | Claim auto-withdrawn | Reporter and claimant | Phase 06 |
 
 ---
 
 ## 7. Out of scope
 
-- Real-time chat messaging → Phase 05
-- Mutual resolution / Confirm Resolved → Phase 05
-- Cancel approved claim → Phase 05
+- Real-time chat messaging, mutual resolution, cancel approved claim → shipped in [Phase 05](./05-chat-resolution-notifications.md)
 - 10-day pending-claim auto-withdraw job → Phase 06
-- Pending-claim closure on expiry/takedown/ban (E2E) → Phase 05/07
+- Pending-claim closure on expiry/takedown/ban (E2E) → Phase 06/07
 - Abuse report-from-chat → Phase 07
 - Backend direction-specific answer validation (lost vs found wording) — deferred; frontend prompts shipped
 
@@ -192,8 +190,8 @@ None additional.
 - [ ] Reporter sees claims in report detail; approves one
 - [ ] Other pending claims auto-rejected with notification
 - [ ] Report shows "claim in progress" in browse
-- [ ] Chat thread exists in DB; no chat UI (claimant sees `/my/claims` from approval notification)
+- [ ] Chat thread row created on approval; `ClaimApproved` notification deep-links to `/my/chats/{threadId}`
 
 ### Phase exit gate
 
-Phase 04 code and automated tests are complete. Remaining manual smoke is QA before Phase 05.
+Phase 04 code and automated tests are complete. Remaining manual smoke is QA (Phase 05 code complete; see Phase 05 §9 for chat/resolution smoke).

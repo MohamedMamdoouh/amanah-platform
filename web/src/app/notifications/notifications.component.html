@@ -44,7 +44,7 @@
               {{ item.payload.createdAt | date: 'medium' }}
             </span>
             <span class="notifications__item-link">
-              {{ 'notifications.open_report' | translate }}
+              {{ linkLabel(item) }}
             </span>
           </button>
         </li>

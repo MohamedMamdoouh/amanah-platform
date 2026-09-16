@@ -8,20 +8,17 @@ Lost-and-found platform for Egypt — moderated listings, ownership verification
 
 | Phase | Topic                                                       | Status       |
 | ----- | ----------------------------------------------------------- | ------------ |
-| —     | Platform foundation (auth, sessions, deploy, seeds)         | **Complete** |
+| 00    | Platform foundation (auth, sessions, deploy, seeds)         | **Complete** |
 | 01    | Report submission                                           | **Complete** |
-| 02    | Admin moderation (queue, resubmit, categories, email)       | **Complete**² |
+| 02    | Admin moderation (queue, resubmit, categories, email)       | **Complete** |
 | 03    | Browse & discovery (search, filters, public detail)         | **Complete** |
-| 04    | Claims & verification (submit, review, photos, My Claims)   | **Complete**¹ |
-| 05–07 | Chat, lifecycle, trust & safety                             | Not started  |
+| 04    | Claims & verification (submit, review, photos, My Claims)   | **Complete** |
+| 05    | Chat, resolution & notifications                            | **Complete** |
+| 06–07 | Lifecycle, trust & safety                                     | Not started  |
 
-**Next up:** Phase 05 — chat and resolution.
+**Next up:** Phase 06 — lifecycle, retention, and account management.
 
-¹ Phase 04 — automated tests complete; manual smoke pending — [specs/04-claims-verification.md](specs/04-claims-verification.md) §9.
-
-² Phase 02 — automated tests complete; manual smoke (especially Resend in staging) pending — [specs/02-admin-moderation.md](specs/02-admin-moderation.md) §9.
-
-### Shipped (platform foundation)
+### Shipped (Phase 00)
 
 Auth (phone OTP signup, password sign-in, JWT + httpOnly refresh cookie rotation, password reset, logout-everywhere), admin bootstrap, catalog seeds (8 categories, 27 governorates), Arabic RTL SPA with legal/support pages, full DB schema, structured logging + health probes, production Docker deploy on Render.
 
@@ -53,15 +50,23 @@ Details: [specs/03-browse-discovery.md](specs/03-browse-discovery.md)
 
 ### Shipped (Phase 04)
 
-Claim submission on published reports (multipart text + optional photo), daily quota and attempt limits, reporter approve/reject with auto-reject of competing claims, claimant withdraw, My Claims list, reporter claims section on report detail with presigned photos, in-app notifications for claim events. `ChatThread` rows created on approval but messaging UI deferred to Phase 05.
+Claim submission on published reports (multipart text + optional photo), daily quota and attempt limits, reporter approve/reject with auto-reject of competing claims, claimant withdraw, My Claims list, reporter claims section on report detail with presigned photos, in-app notifications for claim events. `ChatThread` rows created on approval; messaging, resolution, and My Chats UI shipped in Phase 05.
 
 **Routes:** `/my/claims` (+ claim form on `/lost/{id}`, `/found/{id}`; claims review on `/my/reports/{id}`; `claim_in_progress` tab on `/my/reports`)
 
 Details: [specs/04-claims-verification.md](specs/04-claims-verification.md)
 
+### Shipped (Phase 05)
+
+SignalR live chat with REST fallback, photo attachments, safety banner, confirm resolved / cancel claim flows, My Chats list and thread view, resolution and chat notification labels with deep links.
+
+**Routes:** `/my/chats`, `/my/chats/{threadId}` (+ confirm/cancel on `/lost/{id}`, `/found/{id}`, `/my/reports/{id}`)
+
+Details: [specs/05-chat-resolution-notifications.md](specs/05-chat-resolution-notifications.md)
+
 ### Not built yet
 
-Chat, resolution, lifecycle jobs, abuse enforcement — see [phase specs](specs/README.md).
+Lifecycle jobs, abuse enforcement — see [phase specs](specs/README.md).
 
 ## Stack
 
@@ -104,7 +109,7 @@ On first startup, migrations and catalog seed run automatically (8 categories, 2
 | Account | Phone (login) | Password | Unlocks |
 | ------- | ------------- | -------- | ------- |
 | Admin | `01011111111` | `AdminPass123` | `/admin/moderation`, `/admin/categories` |
-| User | `01022222222` | `UserPass123` | `/report/lost`, `/report/found`, `/my/reports`, `/my/claims`, `/browse` |
+| User | `01022222222` | `UserPass123` | `/report/lost`, `/report/found`, `/my/reports`, `/my/claims`, `/my/chats`, `/browse` |
 
 ## Tests
 

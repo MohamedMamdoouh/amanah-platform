@@ -73,7 +73,35 @@
                   {{ message.sentAt | date: "short" }}
                 </time>
               </header>
-              <p class="chat-thread__body">{{ message.body }}</p>
+
+              @if (message.attachmentId) {
+                <div class="chat-thread__attachment">
+                  @if (attachmentState(message.attachmentId)?.loading) {
+                    <span class="chat-thread__attachment-loading">
+                      {{ "chats.thread.attachment_loading" | translate }}
+                    </span>
+                  } @else if (attachmentState(message.attachmentId)?.url) {
+                    <a
+                      class="chat-thread__attachment-link"
+                      [href]="attachmentState(message.attachmentId)!.url!"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        class="chat-thread__attachment-image"
+                        [src]="attachmentState(message.attachmentId)!.url!"
+                        [alt]="'chats.thread.attachment_alt' | translate"
+                        loading="lazy"
+                        (error)="onAttachmentImageError(message.attachmentId!)"
+                      />
+                    </a>
+                  }
+                </div>
+              }
+
+              @if (message.body) {
+                <p class="chat-thread__body">{{ message.body }}</p>
+              }
             </article>
           }
         }
@@ -85,6 +113,29 @@
         (ngSubmit)="sendMessage()"
         [attr.aria-disabled]="isReadOnly()"
       >
+        @if (pendingAttachment()) {
+          <div class="chat-thread__pending-attachment">
+            <img
+              class="chat-thread__pending-image"
+              [src]="pendingAttachment()!.previewUrl"
+              [alt]="pendingAttachment()!.fileName"
+            />
+            <div class="chat-thread__pending-meta">
+              <span class="chat-thread__pending-name">{{
+                pendingAttachment()!.fileName
+              }}</span>
+              <button
+                type="button"
+                class="chat-thread__pending-remove"
+                [disabled]="sending()"
+                (click)="clearPendingAttachment()"
+              >
+                {{ "chats.thread.remove_attachment" | translate }}
+              </button>
+            </div>
+          </div>
+        }
+
         <label class="sr-only" for="chat-message-input">
           {{ "chats.thread.input_label" | translate }}
         </label>
@@ -93,17 +144,45 @@
           class="form-textarea chat-thread__input"
           rows="3"
           [placeholder]="'chats.thread.input_placeholder' | translate"
-          [disabled]="isReadOnly() || sending()"
+          [disabled]="isReadOnly() || sending() || uploadingAttachment()"
           [ngModel]="draft()"
           (ngModelChange)="draft.set($event)"
           name="messageBody"
         ></textarea>
         <div class="chat-thread__composer-actions">
+          <input
+            #photoInput
+            type="file"
+            class="chat-thread__photo-input"
+            accept="image/jpeg,image/png,image/webp"
+            [disabled]="
+              isReadOnly() ||
+              sending() ||
+              uploadingAttachment() ||
+              pendingAttachment() != null
+            "
+            (change)="onPhotoSelected($event)"
+          />
+          <app-button
+            variant="ghost"
+            type="button"
+            [loading]="uploadingAttachment()"
+            [disabled]="
+              isReadOnly() ||
+              sending() ||
+              uploadingAttachment() ||
+              pendingAttachment() != null
+            "
+            (clicked)="photoInput.click()"
+          >
+            <app-icon name="camera" size="sm" />
+            <span>{{ "chats.thread.attach_photo" | translate }}</span>
+          </app-button>
           <app-button
             variant="primary"
             type="submit"
             [loading]="sending()"
-            [disabled]="isReadOnly() || sending() || !draft().trim()"
+            [disabled]="!canSend()"
           >
             {{ "chats.thread.send" | translate }}
           </app-button>

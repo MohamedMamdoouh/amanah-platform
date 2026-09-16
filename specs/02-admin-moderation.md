@@ -33,7 +33,7 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 
 ### Prior phases
 
-- [x] Platform foundation
+- [x] Phase 00 - Platform foundation
 - [x] Phase 01 - Report Submission
 
 ### Deferred decisions (Section 14)

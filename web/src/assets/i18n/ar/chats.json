@@ -25,5 +25,10 @@
   "chats.thread.load_older": "تحميل رسائل أقدم",
   "chats.thread.input_label": "نص الرسالة",
   "chats.thread.input_placeholder": "اكتب رسالتك…",
-  "chats.thread.send": "إرسال"
+  "chats.thread.send": "إرسال",
+  "chats.thread.attach_photo": "إرفاق صورة",
+  "chats.thread.remove_attachment": "إزالة الصورة",
+  "chats.thread.attachment_loading": "جارٍ تحميل الصورة…",
+  "chats.thread.attachment_alt": "صورة مرفقة في المحادثة",
+  "chats.thread.attachment_upload_error": "تعذّر رفع الصورة. حاول مرة أخرى."
 }

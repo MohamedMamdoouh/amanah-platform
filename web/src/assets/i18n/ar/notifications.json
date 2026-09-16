@@ -12,5 +12,10 @@
   "notifications.type.ClaimApproved": "تم قبول مطالبتك",
   "notifications.type.ClaimRejected": "تم رفض مطالبتك",
   "notifications.type.ClaimWithdrawnByClaimant": "سُحبت مطالبة على بلاغك",
-  "notifications.open_report": "عرض البلاغ"
+  "notifications.type.ClaimCancelledByCounterparty": "ألغى الطرف الآخر المطالبة",
+  "notifications.type.CounterpartyConfirmedResolution": "أكّد الطرف الآخر الإرجاع",
+  "notifications.type.ReportResolved": "تم حل البلاغ — تأكيد متبادل على الإرجاع",
+  "notifications.type.NewChatMessage": "رسالة جديدة في المحادثة",
+  "notifications.open_report": "عرض البلاغ",
+  "notifications.open_chat": "فتح المحادثة"
 }

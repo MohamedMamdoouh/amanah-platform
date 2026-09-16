@@ -1,6 +1,7 @@
 using Amanah.Api.Auth;
 using Amanah.Api.Services.Chats;
 using Amanah.Contracts.Chats;
+using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Chats;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
@@ -15,17 +16,17 @@ public sealed class ChatHub(ChatService chatService, ChatPresenceTracker presenc
     {
         if (!Guid.TryParse(threadId, out var parsedThreadId))
         {
-            throw new HubException("Invalid thread id.");
+            throw new HubException(ErrorCodes.ValidationFailed);
         }
 
         if (!Context.User!.TryGetUserId(out var userId))
         {
-            throw new HubException("Unauthorized.");
+            throw new HubException(ErrorCodes.Unauthorized);
         }
 
         if (!await chatService.IsParticipantAsync(parsedThreadId, userId, Context.ConnectionAborted))
         {
-            throw new HubException("Chat thread not found.");
+            throw new HubException(ErrorCodes.NotFound);
         }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, ChatHubGroups.ForThread(parsedThreadId));
@@ -48,12 +49,12 @@ public sealed class ChatHub(ChatService chatService, ChatPresenceTracker presenc
     {
         if (!Guid.TryParse(threadId, out var parsedThreadId))
         {
-            throw new HubException("Invalid thread id.");
+            throw new HubException(ErrorCodes.ValidationFailed);
         }
 
         if (!Context.User!.TryGetUserId(out var userId))
         {
-            throw new HubException("Unauthorized.");
+            throw new HubException(ErrorCodes.Unauthorized);
         }
 
         Guid? parsedAttachmentId = null;
@@ -61,7 +62,7 @@ public sealed class ChatHub(ChatService chatService, ChatPresenceTracker presenc
         {
             if (!Guid.TryParse(attachmentId, out var attachmentGuid))
             {
-                throw new HubException("Attachment not found.");
+                throw new HubException(ErrorCodes.NotFound);
             }
 
             parsedAttachmentId = attachmentGuid;
@@ -79,7 +80,7 @@ public sealed class ChatHub(ChatService chatService, ChatPresenceTracker presenc
 
         if (!result.IsSuccess)
         {
-            throw new HubException(result.Error!.Message);
+            throw new HubException(result.Error!.Code);
         }
 
         // Message is already sent to the group & handled by the ChatService

@@ -43,6 +43,13 @@ export class ApiErrorService {
       return this.summary(body);
     }
 
+    const hubCode = this.extractHubErrorCode(
+      error instanceof Error ? error.message : String(error ?? ''),
+    );
+    if (hubCode) {
+      return this.summary({ code: hubCode, message: hubCode });
+    }
+
     const fallbackKey = options.fallbackKey ?? 'error.internal.error';
 
     if (
@@ -59,6 +66,22 @@ export class ApiErrorService {
   formErrorsFromHttpError(error: unknown): Record<string, string[]> {
     const body = this.extractBody(error);
     return body ? this.fieldErrors(body) : {};
+  }
+
+  private extractHubErrorCode(message: string): string | null {
+    const candidates = [
+      message.trim(),
+      ...message.split(':').map((part) => part.trim()),
+    ].reverse();
+
+    for (const candidate of candidates) {
+      const code = candidate.replace(/\.$/, '');
+      if (/^[a-z][\w.]+$/i.test(code)) {
+        return code.toLowerCase();
+      }
+    }
+
+    return null;
   }
 
   private translateCode(code: string, fallback?: string): string {
