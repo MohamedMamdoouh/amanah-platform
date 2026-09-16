@@ -23,11 +23,15 @@ export class ChatHubService {
   private readonly messageReceivedSubject = new Subject<ChatMessage>();
   private readonly threadReadOnlySubject =
     new Subject<ChatThreadReadOnlyEvent>();
+  private readonly reconnectedSubject = new Subject<void>();
 
   readonly messageReceived$: Observable<ChatMessage> =
     this.messageReceivedSubject.asObservable();
   readonly threadReadOnly$: Observable<ChatThreadReadOnlyEvent> =
     this.threadReadOnlySubject.asObservable();
+  /** Fires after automatic reconnect and membership re-sync for the wanted thread. */
+  readonly reconnected$: Observable<void> =
+    this.reconnectedSubject.asObservable();
 
   isConnected(): boolean {
     return this.connection?.state === HubConnectionState.Connected;
@@ -227,6 +231,7 @@ export class ChatHubService {
       void this.runMembership(async () => {
         try {
           await this.syncMembership();
+          this.reconnectedSubject.next();
         } catch {
           // REST fallback remains available; next joinThread will retry.
         }

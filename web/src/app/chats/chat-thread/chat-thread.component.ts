@@ -112,6 +112,16 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
         );
       });
 
+    // Messages sent while the socket was down never get MessageReceived.
+    // After hub reconnect + JoinThread, pull recent history so the open thread
+    // does not stay stale (and presence-suppressed notifications are not the
+    // only recovery path).
+    this.chatHub.reconnected$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.resyncAfterReconnect();
+      });
+
     this.destroyRef.onDestroy(() => {
       if (this.pendingAttachment()) {
         this.clearPendingAttachment();
@@ -381,6 +391,62 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
       if (generation === this.loadGeneration) {
         this.loading.set(false);
       }
+    }
+  }
+
+  /**
+   * Merge recent server history after SignalR reconnect. Does not reset scroll
+   * position unless new messages were appended at the end.
+   */
+  private async resyncAfterReconnect(): Promise<void> {
+    const threadId = this.threadId;
+    const generation = this.loadGeneration;
+    if (!threadId || this.loading()) {
+      return;
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.chatService.getThread(threadId, {
+          limit: MESSAGE_PAGE_SIZE,
+        }),
+      );
+      if (generation !== this.loadGeneration || this.threadId !== threadId) {
+        return;
+      }
+
+      this.thread.update((current) =>
+        current
+          ? {
+              ...current,
+              readOnlyAt: response.readOnlyAt,
+              reportStatus: response.reportStatus,
+              claimStatus: response.claimStatus,
+              resolution: response.resolution,
+            }
+          : response,
+      );
+
+      const knownIds = new Set(this.messages().map((message) => message.id));
+      const missing = response.messages.filter(
+        (message) => !knownIds.has(message.id),
+      );
+      if (missing.length === 0) {
+        return;
+      }
+
+      this.messages.update((current) => {
+        const merged = [...current, ...missing];
+        merged.sort(
+          (left, right) =>
+            new Date(left.sentAt).getTime() - new Date(right.sentAt).getTime(),
+        );
+        return merged;
+      });
+      this.loadAttachmentsForMessages(missing);
+      this.shouldScrollToBottom = true;
+    } catch {
+      // Keep the in-memory transcript; the next navigation reload will repair.
     }
   }
 
