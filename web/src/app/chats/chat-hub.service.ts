@@ -15,7 +15,11 @@ export class ChatHubService {
 
   private connection: HubConnection | null = null;
   private activeThreadId: string | null = null;
+  /** Thread the UI currently wants to view; drives membership sync. */
+  private wantedThreadId: string | null = null;
   private connecting: Promise<void> | null = null;
+  /** Serializes join/leave/reconnect so overlapping navigations cannot clobber membership. */
+  private hubOps: Promise<void> = Promise.resolve();
 
   private readonly messageReceivedSubject = new Subject<ChatMessage>();
   private readonly threadReadOnlySubject =
@@ -35,35 +39,27 @@ export class ChatHubService {
   }
 
   async joinThread(threadId: string): Promise<void> {
-    await this.ensureConnected();
-
-    if (this.activeThreadId && this.activeThreadId !== threadId) {
-      await this.leaveThread(this.activeThreadId);
-    }
-
-    await this.connection!.invoke('JoinThread', threadId);
-    this.activeThreadId = threadId;
+    this.wantedThreadId = threadId;
+    await this.enqueue(() => this.syncMembership());
   }
 
   async leaveThread(threadId: string): Promise<void> {
-    if (
-      this.connection?.state === HubConnectionState.Connected &&
-      this.activeThreadId === threadId
-    ) {
-      await this.connection.invoke('LeaveThread', threadId);
-      this.activeThreadId = null;
+    if (this.wantedThreadId === threadId) {
+      this.wantedThreadId = null;
     }
+    await this.enqueue(() => this.syncMembership());
   }
 
   async disconnect(): Promise<void> {
-    if (this.activeThreadId) {
-      await this.leaveThread(this.activeThreadId);
-    }
+    this.wantedThreadId = null;
+    await this.enqueue(async () => {
+      await this.syncMembership();
 
-    if (this.connection) {
-      await this.connection.stop();
-      this.connection = null;
-    }
+      if (this.connection) {
+        await this.connection.stop();
+        this.connection = null;
+      }
+    });
   }
 
   async sendMessage(
@@ -78,6 +74,68 @@ export class ChatHubService {
       body ?? null,
       attachmentId ?? null,
     );
+  }
+
+  private enqueue(op: () => Promise<void>): Promise<void> {
+    const run = this.hubOps.then(op, op);
+    this.hubOps = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }
+
+  private async syncMembership(): Promise<void> {
+    // Converge active membership to wantedThreadId. Re-read wanted after every
+    // await so a newer join/leave during an invoke cannot leave us joined to a
+    // stale thread (or claiming isJoinedTo while absent from the hub group).
+    for (;;) {
+      const wanted = this.wantedThreadId;
+
+      if (this.activeThreadId === wanted) {
+        return;
+      }
+
+      if (this.activeThreadId && this.activeThreadId !== wanted) {
+        const leaving = this.activeThreadId;
+        await this.leaveActive(leaving);
+        continue;
+      }
+
+      if (!wanted) {
+        return;
+      }
+
+      await this.ensureConnected();
+      if (this.wantedThreadId !== wanted) {
+        continue;
+      }
+
+      await this.connection!.invoke('JoinThread', wanted);
+      if (this.wantedThreadId !== wanted) {
+        try {
+          if (this.connection?.state === HubConnectionState.Connected) {
+            await this.connection.invoke('LeaveThread', wanted);
+          }
+        } catch {
+          // Newer sync iteration will repair membership.
+        }
+        continue;
+      }
+
+      this.activeThreadId = wanted;
+      return;
+    }
+  }
+
+  private async leaveActive(threadId: string): Promise<void> {
+    if (this.connection?.state === HubConnectionState.Connected) {
+      await this.connection.invoke('LeaveThread', threadId);
+    }
+
+    if (this.activeThreadId === threadId) {
+      this.activeThreadId = null;
+    }
   }
 
   private async ensureConnected(): Promise<void> {
@@ -123,16 +181,16 @@ export class ChatHubService {
       this.threadReadOnlySubject.next(payload);
     });
 
-    connection.onreconnected(async () => {
-      if (!this.activeThreadId) {
-        return;
-      }
-
-      try {
-        await connection.invoke('JoinThread', this.activeThreadId);
-      } catch {
+    connection.onreconnected(() => {
+      // Groups are empty after reconnect; drop local active and re-join wanted.
+      void this.enqueue(async () => {
         this.activeThreadId = null;
-      }
+        try {
+          await this.syncMembership();
+        } catch {
+          // REST fallback remains available; next joinThread will retry.
+        }
+      });
     });
 
     return connection;

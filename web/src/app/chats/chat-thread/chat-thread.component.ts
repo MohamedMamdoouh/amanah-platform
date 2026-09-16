@@ -129,17 +129,14 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((threadId) => {
-        const previousThreadId = this.threadId;
         this.threadId = threadId;
         this.draft.set('');
         this.sendError.set(null);
         this.clearPendingAttachment();
         this.attachmentStates.set({});
-
-        if (previousThreadId && previousThreadId !== threadId) {
-          void this.chatHub.leaveThread(previousThreadId);
-        }
-
+        // Membership switches inside ChatHubService (serialized); do not
+        // fire-and-forget leaveThread here — that raced with joinThread and
+        // could clear the new thread's hub group / presence.
         void this.loadThread();
       });
   }
@@ -349,9 +346,19 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
       this.shouldScrollToBottom = true;
 
       try {
+        if (generation !== this.loadGeneration) {
+          return;
+        }
+
         await this.chatHub.joinThread(threadId);
         if (generation !== this.loadGeneration) {
-          await this.chatHub.leaveThread(threadId);
+          // A newer navigation may already have a different wanted thread;
+          // restore that instead of clearing membership entirely.
+          if (this.threadId) {
+            await this.chatHub.joinThread(this.threadId);
+          } else {
+            await this.chatHub.leaveThread(threadId);
+          }
         }
       } catch {
         // REST fallback remains available when the hub is unavailable.
