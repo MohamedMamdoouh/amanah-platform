@@ -202,6 +202,39 @@ public class ResolutionFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
     }
 
     [Fact]
+    public async Task Cancel_after_mutual_resolve_is_rejected()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var firstConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
+        Assert.Equal(HttpStatusCode.NoContent, firstConfirm.StatusCode);
+
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
+        var secondConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(context.Client, scenario.ClaimId);
+        Assert.Equal(HttpStatusCode.NoContent, secondConfirm.StatusCode);
+
+        var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
+        Assert.Equal(HttpStatusCode.Conflict, cancelResponse.StatusCode);
+
+        var report = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(existingReport => existingReport.Id == scenario.ReportId);
+        Assert.Equal(ReportStatus.Resolved, report.Status);
+
+        var claim = await context.DbContext.Claims
+            .AsNoTracking()
+            .SingleAsync(existingClaim => existingClaim.Id == scenario.ClaimId);
+        Assert.Equal(ClaimStatus.Approved, claim.Status);
+
+        Assert.True(await context.DbContext.Resolutions
+            .AnyAsync(existingResolution =>
+                existingResolution.ReportId == scenario.ReportId
+                && existingResolution.ResolvedAt != null));
+    }
+
+    [Fact]
     public async Task Confirm_resolution_returns_not_found_for_non_participant()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
