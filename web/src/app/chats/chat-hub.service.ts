@@ -30,6 +30,10 @@ export class ChatHubService {
     return this.connection?.state === HubConnectionState.Connected;
   }
 
+  isJoinedTo(threadId: string): boolean {
+    return this.isConnected() && this.activeThreadId === threadId;
+  }
+
   async joinThread(threadId: string): Promise<void> {
     await this.ensureConnected();
 
@@ -120,8 +124,14 @@ export class ChatHubService {
     });
 
     connection.onreconnected(async () => {
-      if (this.activeThreadId) {
+      if (!this.activeThreadId) {
+        return;
+      }
+
+      try {
         await connection.invoke('JoinThread', this.activeThreadId);
+      } catch {
+        this.activeThreadId = null;
       }
     });
 

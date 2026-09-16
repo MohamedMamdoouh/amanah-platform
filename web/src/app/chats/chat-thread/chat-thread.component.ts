@@ -13,7 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { firstValueFrom } from 'rxjs';
+import { distinctUntilChanged, firstValueFrom, map } from 'rxjs';
 
 import { AuthService } from '../../auth/auth.service';
 import { ApiErrorService } from '../../i18n/api-error.service';
@@ -85,6 +85,7 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
   );
 
   private threadId = '';
+  private loadGeneration = 0;
   private shouldScrollToBottom = false;
 
   constructor() {
@@ -121,8 +122,26 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
   }
 
   ngOnInit(): void {
-    this.threadId = this.route.snapshot.paramMap.get('threadId') ?? '';
-    void this.loadThread();
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('threadId') ?? ''),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((threadId) => {
+        const previousThreadId = this.threadId;
+        this.threadId = threadId;
+        this.draft.set('');
+        this.sendError.set(null);
+        this.clearPendingAttachment();
+        this.attachmentStates.set({});
+
+        if (previousThreadId && previousThreadId !== threadId) {
+          void this.chatHub.leaveThread(previousThreadId);
+        }
+
+        void this.loadThread();
+      });
   }
 
   ngAfterViewChecked(): void {
@@ -169,23 +188,35 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
       return;
     }
 
+    const threadId = this.threadId;
+    const generation = this.loadGeneration;
     this.loadingOlder.set(true);
     this.sendError.set(null);
 
     try {
       const response = await firstValueFrom(
-        this.chatService.getThread(this.threadId, {
+        this.chatService.getThread(threadId, {
           before: firstMessage.id,
           limit: MESSAGE_PAGE_SIZE,
         }),
       );
+      if (generation !== this.loadGeneration || this.threadId !== threadId) {
+        return;
+      }
+
       this.messages.update((current) => [...response.messages, ...current]);
       this.hasOlderMessages.set(response.messages.length >= MESSAGE_PAGE_SIZE);
       this.loadAttachmentsForMessages(response.messages);
     } catch {
+      if (generation !== this.loadGeneration || this.threadId !== threadId) {
+        return;
+      }
+
       this.sendError.set(this.translate.instant('error.internal.error'));
     } finally {
-      this.loadingOlder.set(false);
+      if (generation === this.loadGeneration) {
+        this.loadingOlder.set(false);
+      }
     }
   }
 
@@ -259,16 +290,18 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
     this.sending.set(true);
     this.sendError.set(null);
 
+    const threadId = this.threadId;
+
     try {
-      if (this.chatHub.isConnected()) {
+      if (this.chatHub.isJoinedTo(threadId)) {
         await this.chatHub.sendMessage(
-          this.threadId,
+          threadId,
           body || null,
           attachment?.id ?? null,
         );
       } else {
         const message = await firstValueFrom(
-          this.chatService.sendMessage(this.threadId, {
+          this.chatService.sendMessage(threadId, {
             body: body || null,
             attachmentId: attachment?.id ?? null,
           }),
@@ -287,7 +320,10 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
   }
 
   private async loadThread(): Promise<void> {
-    if (!this.threadId) {
+    const threadId = this.threadId;
+    const generation = ++this.loadGeneration;
+
+    if (!threadId) {
       this.error.set(this.translate.instant('error.internal.error'));
       this.loading.set(false);
       return;
@@ -298,10 +334,14 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
 
     try {
       const response = await firstValueFrom(
-        this.chatService.getThread(this.threadId, {
+        this.chatService.getThread(threadId, {
           limit: MESSAGE_PAGE_SIZE,
         }),
       );
+      if (generation !== this.loadGeneration) {
+        return;
+      }
+
       this.thread.set(response);
       this.messages.set(response.messages);
       this.hasOlderMessages.set(response.messages.length >= MESSAGE_PAGE_SIZE);
@@ -309,18 +349,27 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
       this.shouldScrollToBottom = true;
 
       try {
-        await this.chatHub.joinThread(this.threadId);
+        await this.chatHub.joinThread(threadId);
+        if (generation !== this.loadGeneration) {
+          await this.chatHub.leaveThread(threadId);
+        }
       } catch {
         // REST fallback remains available when the hub is unavailable.
       }
     } catch (error) {
+      if (generation !== this.loadGeneration) {
+        return;
+      }
+
       if (this.apiErrors.extractBody(error)) {
         this.error.set(this.translate.instant('chats.thread.not_found'));
       } else {
         this.error.set(this.translate.instant('error.internal.error'));
       }
     } finally {
-      this.loading.set(false);
+      if (generation === this.loadGeneration) {
+        this.loading.set(false);
+      }
     }
   }
 
@@ -388,5 +437,4 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
 
     return null;
   }
-
 }
