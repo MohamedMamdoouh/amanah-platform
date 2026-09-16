@@ -30,6 +30,11 @@ export class ChatHubService {
     return this.connection?.state === HubConnectionState.Connected;
   }
 
+  /** True when the hub is connected and joined to the given thread group. */
+  isJoinedTo(threadId: string): boolean {
+    return this.isConnected() && this.activeThreadId === threadId;
+  }
+
   async joinThread(threadId: string): Promise<void> {
     await this.ensureConnected();
 
