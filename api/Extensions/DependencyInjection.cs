@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddResolutionServices();
         services.AddChatServices();
         services.AddChatSignalR();
+        services.AddLifecycleServices(configuration);
         services.AddModerationServices();
         services.AddBrowseServices();
         services.AddBucketStorage();

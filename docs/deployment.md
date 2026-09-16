@@ -75,6 +75,22 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 
 ---
 
+## Lifecycle jobs (Phase 06)
+
+Background lifecycle and retention jobs run inside the API process via `LifecycleJobsHostedService` (`BackgroundService`, same poll loop as OTP/email outbox processors). Admins can trigger a registered job manually in non-production via `POST /api/v1/admin/test/run-job/{jobName}`.
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `Lifecycle__ListingExpiryDays` | `90` | Cumulative published days before auto-expiry |
+| `Lifecycle__ListingExpiryWarningDaysBefore` | `7` | Warning fires at `ListingExpiryDays -` this value |
+| `Lifecycle__ClaimTimeoutMinutes` | `14400` (10 days) | Pending-claim auto-withdraw timeout |
+| `Lifecycle__RetentionDays` | `30` | Retention for rejected reports, chat, sessions, account PII purge |
+| `Lifecycle__JobsPollIntervalSeconds` | `3600` | Seconds between lifecycle job poll cycles |
+
+Same keys under `"Lifecycle"` in `appsettings.json`. Tests set values via `Lifecycle:ListingExpiryDays`, etc.
+
+---
+
 ## Cloudflare R2 (report and claim photos)
 
 | Variable | Purpose |

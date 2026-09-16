@@ -110,10 +110,10 @@ Implement both where practical: immediate cleanup limits orphan volume; the job 
 
 | Config | Purpose |
 | ------ | ------- |
-| `LISTING_EXPIRY_DAYS` | Override 90-day expiry (e.g. `1` for tests) |
-| `LISTING_EXPIRY_WARNING_DAYS_BEFORE` | Override 7-day warning offset (default `7`; warning fires at `LISTING_EXPIRY_DAYS -` this value) |
-| `CLAIM_TIMEOUT_MINUTES` | Override 10-day claim timeout (env documented in Phase 04; job ships in this phase) |
-| `RETENTION_DAYS_OVERRIDE` | Override all 30-day retention windows (rejected reports, chat, sessions, account PII purge) |
+| `Lifecycle__ListingExpiryDays` | Listing auto-expiry threshold (default `90`; lower in tests) |
+| `Lifecycle__ListingExpiryWarningDaysBefore` | Days before expiry to warn (default `7`) |
+| `Lifecycle__ClaimTimeoutMinutes` | Pending-claim auto-withdraw timeout (default `14400` = 10 days) |
+| `Lifecycle__RetentionDays` | 30-day retention windows (rejected reports, chat, sessions, account PII purge) |
 | `POST /api/v1/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI (supersedes Phase 04 `trigger-claim-timeout` stub) |
 
 ---
@@ -191,10 +191,10 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 
 ### Automated tests
 
-- [ ] Listing expiry warning at 83 days (using override)
+- [ ] Listing expiry warning at 83 days
 - [ ] Auto-expiry at 90 days; pending claims closed
 - [ ] Timer pause during `Claim In Progress`; resume on cancel
-- [ ] 10-day claim auto-withdraw (using override)
+- [ ] 10-day claim auto-withdraw
 - [ ] Rejected report deleted after 30 days; `ModerationAction` survives
 - [ ] Chat deleted 30 days after read-only
 - [ ] Account deletion blockers enforced
@@ -209,7 +209,7 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [ ] Trigger expiry job via admin test endpoint; verify notifications
 - [ ] Trigger claim timeout job; verify auto-withdraw
 - [ ] Delete account; verify blockers when claim in progress
-- [ ] Verify read-only chat deleted after retention window (with override)
+- [ ] Verify read-only chat deleted after retention window
 
 ### Phase exit gate
 
