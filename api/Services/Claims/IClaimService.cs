@@ -43,4 +43,6 @@ public interface IClaimService
         Guid reportId,
         Guid reporterId,
         CancellationToken cancellationToken = default);
+
+    Task<int> ProcessPendingClaimTimeoutsAsync(CancellationToken cancellationToken = default);
 }

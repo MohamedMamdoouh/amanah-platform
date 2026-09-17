@@ -12,10 +12,6 @@ public sealed class ListingExpiryWarningJob(
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var cairoDate = CairoTime.TodayInCairo();
-        logger.LogInformation(
-            "Running listing expiry warning job for Cairo date {CairoDate}.",
-            cairoDate);
-
         var warningsSent = await reportLifecycleService.ProcessListingExpiryWarningsAsync(cancellationToken);
 
         logger.LogInformation(
@@ -34,10 +30,6 @@ public sealed class ListingAutoExpiryJob(
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var cairoDate = CairoTime.TodayInCairo();
-        logger.LogInformation(
-            "Running listing auto-expiry job for Cairo date {CairoDate}.",
-            cairoDate);
-
         var expiredCount = await reportLifecycleService.ProcessListingAutoExpiryAsync(cancellationToken);
 
         logger.LogInformation(

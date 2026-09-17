@@ -89,6 +89,8 @@ Background lifecycle and retention jobs run inside the API process via `Lifecycl
 
 Same keys under `"Lifecycle"` in `appsettings.json`. Tests set values via `Lifecycle:ListingExpiryDays`, etc.
 
+Each job emits one **Information** completion log with its outcome (for example `WithdrawnCount`, `WarningsSent`, `ExpiredCount`). `JobRunner` also logs `Lifecycle job {JobName} completed.` Failures are logged at **Error** by `JobRunner` / `LifecycleJobsHostedService`. See [observability.md](observability.md).
+
 ---
 
 ## Cloudflare R2 (report and claim photos)

@@ -14,6 +14,8 @@ public static class NotificationTypes
 
     public const string ClaimWithdrawnByClaimant = "ClaimWithdrawnByClaimant";
 
+    public const string ClaimAutoWithdrawn = "ClaimAutoWithdrawn";
+
     public const string ClaimClosedReportUnavailable = "ClaimClosedReportUnavailable";
 
     public const string ClaimCancelledByCounterparty = "ClaimCancelledByCounterparty";

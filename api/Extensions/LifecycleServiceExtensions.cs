@@ -16,6 +16,7 @@ public static class LifecycleServiceExtensions
         services.AddHostedService<LifecycleJobsHostedService>();
         services.AddLifecycleJob<ListingExpiryWarningJob>();
         services.AddLifecycleJob<ListingAutoExpiryJob>();
+        services.AddLifecycleJob<PendingClaimTimeoutJob>();
 
         return services;
     }

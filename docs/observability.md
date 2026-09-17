@@ -43,6 +43,7 @@ Examples (exact syntax may vary in Render UI):
 - **Rate limits:** `event` = `metric` and `name` = `rate_limit.rejected`
 - **Trace a request:** `requestId` = `<value from X-Request-Id>`
 - **Report submissions:** `event` = `metric` and `name` = `report.submitted`
+- **Lifecycle jobs:** level `Information` and message contains `Lifecycle job` or a job outcome field such as `WithdrawnCount`, `WarningsSent`, or `ExpiredCount`
 
 Pair with Render service metrics (CPU, memory, HTTP latency) on the web service dashboard.
 

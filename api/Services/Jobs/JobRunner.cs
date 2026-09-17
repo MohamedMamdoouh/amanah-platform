@@ -44,7 +44,6 @@ public sealed class JobRunner(
 
     private async Task ExecuteJobAsync(ILifecycleJob job, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Running lifecycle job {JobName}.", job.Name);
         await job.ExecuteAsync(cancellationToken);
         logger.LogInformation("Lifecycle job {JobName} completed.", job.Name);
     }

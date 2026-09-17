@@ -1,6 +1,7 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Options;
 using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Claims;
@@ -13,6 +14,7 @@ using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Browse;
 using Amanah.Contracts.Responses.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Amanah.Api.Services.Claims;
 
@@ -22,7 +24,8 @@ public sealed class ClaimService(
     AppDbContext dbContext,
     ClaimPhotoAttachService claimPhotoAttachService,
     IReportLifecycleService reportLifecycleService,
-    TimeProvider timeProvider) : IClaimService
+    TimeProvider timeProvider,
+    IOptions<LifecycleOptions> lifecycleOptions) : IClaimService
 {
     public const int MaxCountedFailures = 3;
 
@@ -321,6 +324,54 @@ public sealed class ClaimService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
+    }
+
+    public async Task<int> ProcessPendingClaimTimeoutsAsync(CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var timeoutThreshold = now.AddMinutes(-lifecycleOptions.Value.ClaimTimeoutMinutes);
+        var timedOutClaims = await dbContext.Claims
+            .Include(claim => claim.Report)
+            .Where(claim =>
+                claim.Status == ClaimStatus.Pending
+                && claim.SubmittedAt <= timeoutThreshold
+                && claim.Report.Status == ReportStatus.Published)
+            .ToListAsync(cancellationToken);
+
+        if (timedOutClaims.Count == 0)
+        {
+            return 0;
+        }
+
+        foreach (var claim in timedOutClaims)
+        {
+            claim.Status = ClaimStatus.Withdrawn;
+            claim.ReviewedAt = now;
+            claim.CountsAsFailure = false;
+
+            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
+                claim.Report.ReporterId,
+                NotificationTypes.ClaimAutoWithdrawn,
+                new NotificationPayload(
+                    NotificationTypes.ClaimAutoWithdrawn,
+                    now,
+                    DeepLink: $"{ReportDeepLinkBuilder.ForMyReport(claim.ReportId)}#claims-section",
+                    ReportId: claim.ReportId),
+                now));
+
+            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
+                claim.ClaimantId,
+                NotificationTypes.ClaimAutoWithdrawn,
+                new NotificationPayload(
+                    NotificationTypes.ClaimAutoWithdrawn,
+                    now,
+                    DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
+                    ReportId: claim.ReportId),
+                now));
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return timedOutClaims.Count;
     }
 
     public async Task<Result<PaginatedResponse<MyClaimSummaryResponse>>> GetMineAsync(
