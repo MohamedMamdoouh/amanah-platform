@@ -3,7 +3,6 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
-using Amanah.Api.Utilities.Chats;
 using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Notifications;
 using Amanah.Api.Utilities.Reports;
@@ -70,7 +69,8 @@ public sealed class ChatService(
         CancellationToken cancellationToken = default)
     {
         var thread = await LoadThreadAsync(threadId, cancellationToken);
-        if (thread is null || !ChatParticipantAuthorization.IsParticipant(thread, userId))
+        if (thread is null
+            || (thread.Claim.Report.ReporterId != userId && thread.Claim.ClaimantId != userId))
         {
             return ResultError.NotFound("Chat thread not found.");
         }
@@ -138,7 +138,8 @@ public sealed class ChatService(
         }
 
         var thread = await LoadThreadForWriteAsync(threadId, cancellationToken);
-        if (thread is null || !ChatParticipantAuthorization.IsParticipant(thread, userId))
+        if (thread is null
+            || (thread.Claim.Report.ReporterId != userId && thread.Claim.ClaimantId != userId))
         {
             return ResultError.NotFound("Chat thread not found.");
         }
@@ -150,7 +151,7 @@ public sealed class ChatService(
                 ErrorCodes.ChatReadOnly);
         }
 
-        var sender = ClaimAccessAuthorization.IsReporter(thread.Claim, userId)
+        var sender = thread.Claim.Report.ReporterId == userId
             ? thread.Claim.Report.Reporter
             : thread.Claim.Claimant;
 
@@ -172,23 +173,27 @@ public sealed class ChatService(
             attachment.MessageId = message.Id;
         }
 
-        var counterpartyId = ClaimAccessAuthorization.IsReporter(thread.Claim, userId)
+        var counterpartyId = thread.Claim.Report.ReporterId == userId
             ? thread.Claim.ClaimantId
             : thread.Claim.Report.ReporterId;
 
         if (!presenceTracker.IsViewing(counterpartyId, thread.Id))
         {
-            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-                counterpartyId,
-                NotificationTypes.NewChatMessage,
-                new NotificationPayload(
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = counterpartyId,
+                Type = NotificationTypes.NewChatMessage,
+                PayloadJson = new NotificationPayload(
                     NotificationTypes.NewChatMessage,
                     now,
                     DeepLink: $"/my/chats/{thread.Id}",
                     ReportId: thread.Claim.ReportId,
                     ClaimId: thread.ClaimId,
-                    ChatThreadId: thread.Id),
-                now));
+                    ChatThreadId: thread.Id).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -305,7 +310,7 @@ public sealed class ChatService(
         Guid userId,
         Message? lastMessage)
     {
-        var isReporter = ClaimAccessAuthorization.IsReporter(thread.Claim, userId);
+        var isReporter = thread.Claim.Report.ReporterId == userId;
         var counterparty = isReporter ? thread.Claim.Claimant : thread.Claim.Report.Reporter;
 
         return new ChatThreadSummaryResponse
@@ -330,7 +335,7 @@ public sealed class ChatService(
         Guid userId,
         IReadOnlyList<Message> messages)
     {
-        var isReporter = ClaimAccessAuthorization.IsReporter(thread.Claim, userId);
+        var isReporter = thread.Claim.Report.ReporterId == userId;
         var counterparty = isReporter ? thread.Claim.Claimant : thread.Claim.Report.Reporter;
 
         return new ChatThreadDetailResponse

@@ -14,7 +14,7 @@ public static class DisplayNameValidator
             return false;
         }
 
-        var normalized = Normalize(displayName);
+        var normalized = TextNormalizer.Normalize(displayName);
         if (normalized.Length is < MinLength or > MaxLength)
         {
             return false;
@@ -32,8 +32,6 @@ public static class DisplayNameValidator
 
         return true;
     }
-
-    public static string Normalize(string displayName) => TextNormalizer.Normalize(displayName);
 
     private static bool IsAllowedCharacter(char character) =>
         char.IsLetter(character)

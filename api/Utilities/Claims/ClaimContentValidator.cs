@@ -11,11 +11,9 @@ public static class ClaimContentValidator
 
     public const int MaxLength = 500;
 
-    public static string NormalizeAnswer(string? rawAnswer) => TextNormalizer.Normalize(rawAnswer);
-
     public static Dictionary<string, string[]>? Validate(string? rawAnswer)
     {
-        var normalized = NormalizeAnswer(rawAnswer);
+        var normalized = TextNormalizer.Normalize(rawAnswer);
         var messages = new List<string>();
 
         if (normalized.Length < MinLength)

@@ -1,7 +1,6 @@
 using Amanah.Api.Data;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
-using Amanah.Api.Utilities.Chats;
 using Amanah.Api.Utilities.Uploads;
 using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +23,9 @@ public sealed class ChatAttachmentPresignService(
             .ThenInclude(claim => claim.Report)
             .SingleOrDefaultAsync(existingAttachment => existingAttachment.Id == attachmentId, cancellationToken);
 
-        if (attachment is null || !ChatParticipantAuthorization.IsParticipant(attachment, userId))
+        if (attachment is null
+            || (attachment.ChatThread.Claim.Report.ReporterId != userId
+                && attachment.ChatThread.Claim.ClaimantId != userId))
         {
             return ResultError.NotFound("Attachment not found.");
         }

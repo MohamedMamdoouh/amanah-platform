@@ -4,7 +4,6 @@ using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
-using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Notifications;
 using Amanah.Contracts.Chats;
 using Amanah.Contracts.Errors;
@@ -31,8 +30,8 @@ public sealed class ResolutionService(
             return ResultError.NotFound("Claim not found.");
         }
 
-        var isReporter = ClaimAccessAuthorization.IsReporter(claim, userId);
-        var isClaimant = ClaimAccessAuthorization.IsClaimant(claim, userId);
+        var isReporter = claim.Report.ReporterId == userId;
+        var isClaimant = claim.ClaimantId == userId;
         if (!isReporter && !isClaimant)
         {
             return ResultError.NotFound("Claim not found.");
@@ -107,53 +106,84 @@ public sealed class ResolutionService(
                 readOnlyThread = claim.ChatThread;
             }
 
-            var deepLink = ReportDeepLinkBuilder.ForPublicReport(claim.Report);
+            var deepLink = claim.Report.Type switch
+            {
+                ReportType.Lost => $"/lost/{claim.Report.Id}",
+                ReportType.Found => $"/found/{claim.Report.Id}",
+                _ => $"/reports/{claim.Report.Id}",
+            };
 
-            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-                claim.Report.ReporterId,
-                NotificationTypes.ReportResolved,
-                new NotificationPayload(
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = claim.Report.ReporterId,
+                Type = NotificationTypes.ReportResolved,
+                PayloadJson = new NotificationPayload(
                     NotificationTypes.ReportResolved,
                     now,
                     DeepLink: deepLink,
                     ReportId: claim.ReportId,
                     ClaimId: claim.Id,
-                    ChatThreadId: claim.ChatThread?.Id),
-                now));
+                    ChatThreadId: claim.ChatThread?.Id).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
 
-            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-                claim.ClaimantId,
-                NotificationTypes.ReportResolved,
-                new NotificationPayload(
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = claim.ClaimantId,
+                Type = NotificationTypes.ReportResolved,
+                PayloadJson = new NotificationPayload(
                     NotificationTypes.ReportResolved,
                     now,
                     DeepLink: deepLink,
                     ReportId: claim.ReportId,
                     ClaimId: claim.Id,
-                    ChatThreadId: claim.ChatThread?.Id),
-                now));
+                    ChatThreadId: claim.ChatThread?.Id).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
         }
         else
         {
             var counterpartyId = isReporter ? claim.ClaimantId : claim.Report.ReporterId;
-            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-                counterpartyId,
-                NotificationTypes.CounterpartyConfirmedResolution,
-                new NotificationPayload(
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = counterpartyId,
+                Type = NotificationTypes.CounterpartyConfirmedResolution,
+                PayloadJson = new NotificationPayload(
                     NotificationTypes.CounterpartyConfirmedResolution,
                     now,
-                    DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
+                    DeepLink: claim.Report.Type switch
+                    {
+                        ReportType.Lost => $"/lost/{claim.Report.Id}",
+                        ReportType.Found => $"/found/{claim.Report.Id}",
+                        _ => $"/reports/{claim.Report.Id}",
+                    },
                     ReportId: claim.ReportId,
                     ClaimId: claim.Id,
-                    ChatThreadId: claim.ChatThread?.Id),
-                now));
+                    ChatThreadId: claim.ChatThread?.Id).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
         if (readOnlyThread is not null)
         {
-            await BroadcastThreadReadOnlyAsync(readOnlyThread, cancellationToken);
+            await hubContext.Clients
+                .Group(ChatHubGroups.ForThread(readOnlyThread.Id))
+                .SendAsync(
+                    ChatHubEvents.ThreadReadOnly,
+                    new ChatThreadReadOnlyResponse
+                    {
+                        ThreadId = readOnlyThread.Id,
+                        ReadOnlyAt = readOnlyThread.ReadOnlyAt!.Value,
+                    },
+                    cancellationToken);
         }
 
         return Result.Ok();
@@ -170,8 +200,8 @@ public sealed class ResolutionService(
             return ResultError.NotFound("Claim not found.");
         }
 
-        var isReporter = ClaimAccessAuthorization.IsReporter(claim, userId);
-        var isClaimant = ClaimAccessAuthorization.IsClaimant(claim, userId);
+        var isReporter = claim.Report.ReporterId == userId;
+        var isClaimant = claim.ClaimantId == userId;
         if (!isReporter && !isClaimant)
         {
             return ResultError.NotFound("Claim not found.");
@@ -234,46 +264,44 @@ public sealed class ResolutionService(
         }
 
         var counterpartyId = isReporter ? claim.ClaimantId : claim.Report.ReporterId;
-        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-            counterpartyId,
-            NotificationTypes.ClaimCancelledByCounterparty,
-            new NotificationPayload(
+        dbContext.Notifications.Add(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = counterpartyId,
+            Type = NotificationTypes.ClaimCancelledByCounterparty,
+            PayloadJson = new NotificationPayload(
                 NotificationTypes.ClaimCancelledByCounterparty,
                 now,
-                DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
+                DeepLink: claim.Report.Type switch
+                {
+                    ReportType.Lost => $"/lost/{claim.Report.Id}",
+                    ReportType.Found => $"/found/{claim.Report.Id}",
+                    _ => $"/reports/{claim.Report.Id}",
+                },
                 ReportId: claim.ReportId,
                 ClaimId: claim.Id,
-                ChatThreadId: claim.ChatThread?.Id),
-            now));
+                ChatThreadId: claim.ChatThread?.Id).ToJson(),
+            IsRead = false,
+            CreatedAt = now,
+        });
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
         if (readOnlyThread is not null)
         {
-            await BroadcastThreadReadOnlyAsync(readOnlyThread, cancellationToken);
+            await hubContext.Clients
+                .Group(ChatHubGroups.ForThread(readOnlyThread.Id))
+                .SendAsync(
+                    ChatHubEvents.ThreadReadOnly,
+                    new ChatThreadReadOnlyResponse
+                    {
+                        ThreadId = readOnlyThread.Id,
+                        ReadOnlyAt = readOnlyThread.ReadOnlyAt!.Value,
+                    },
+                    cancellationToken);
         }
 
         return Result.Ok();
-    }
-
-    private async Task BroadcastThreadReadOnlyAsync(
-        ChatThread thread,
-        CancellationToken cancellationToken)
-    {
-        if (thread.ReadOnlyAt is null)
-        {
-            return;
-        }
-
-        var payload = new ChatThreadReadOnlyResponse
-        {
-            ThreadId = thread.Id,
-            ReadOnlyAt = thread.ReadOnlyAt.Value,
-        };
-
-        await hubContext.Clients
-            .Group(ChatHubGroups.ForThread(thread.Id))
-            .SendAsync(ChatHubEvents.ThreadReadOnly, payload, cancellationToken);
     }
 
     private Task<Claim?> LoadClaimAsync(Guid claimId, CancellationToken cancellationToken) =>

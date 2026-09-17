@@ -809,10 +809,9 @@ public sealed class ReportService(
                 .Select(photo => new ReportPhotoResponse
                 {
                     Id = photo.Id,
-                    ThumbnailUrl = ReportPhotoUrlMapper.ToThumbnailUrl(
-                        bucketStorage,
-                        report.Category.PhotosPrivate,
-                        photo.ThumbnailStorageKey),
+                    ThumbnailUrl = report.Category.PhotosPrivate || photo.ThumbnailStorageKey is null
+                        ? null
+                        : bucketStorage.GetPublicUrl(photo.ThumbnailStorageKey),
                     SortOrder = photo.SortOrder,
                 })
                 .ToList(),

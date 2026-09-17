@@ -159,10 +159,9 @@ public sealed class BrowseService(
                 .Select(photo => new ReportPhotoResponse
                 {
                     Id = photo.Id,
-                    ThumbnailUrl = ReportPhotoUrlMapper.ToThumbnailUrl(
-                        bucketStorage,
-                        report.Category.PhotosPrivate,
-                        photo.ThumbnailStorageKey),
+                    ThumbnailUrl = report.Category.PhotosPrivate || photo.ThumbnailStorageKey is null
+                        ? null
+                        : bucketStorage.GetPublicUrl(photo.ThumbnailStorageKey),
                     SortOrder = photo.SortOrder,
                 })
                 .ToList(),
@@ -202,10 +201,9 @@ public sealed class BrowseService(
             HasReward = report.HasReward,
             RewardAmount = report.RewardAmount,
             ReporterDisplayName = report.Reporter.DisplayName ?? string.Empty,
-            ThumbnailUrl = ReportPhotoUrlMapper.ToThumbnailUrl(
-                bucketStorage,
-                report.Category.PhotosPrivate,
-                firstPhoto?.ThumbnailStorageKey),
+            ThumbnailUrl = report.Category.PhotosPrivate || firstPhoto?.ThumbnailStorageKey is null
+                ? null
+                : bucketStorage.GetPublicUrl(firstPhoto.ThumbnailStorageKey),
             AreaText = report.AreaText,
         };
     }

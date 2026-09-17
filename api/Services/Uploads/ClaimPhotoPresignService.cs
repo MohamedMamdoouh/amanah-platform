@@ -2,7 +2,6 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
-using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Uploads;
 using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +34,7 @@ public sealed class ClaimPhotoPresignService(
             return ResultError.Forbidden("Admin claim photo access is not available yet.");
         }
 
-        if (!ClaimAccessAuthorization.IsReporterOrClaimant(claim, userId))
+        if (claim.Report.ReporterId != userId && claim.ClaimantId != userId)
         {
             return ResultError.NotFound("Photo not found.");
         }

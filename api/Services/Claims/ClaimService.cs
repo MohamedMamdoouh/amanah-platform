@@ -48,7 +48,7 @@ public sealed class ClaimService(
                 errors: validationErrors);
         }
 
-        var normalizedAnswer = ClaimContentValidator.NormalizeAnswer(request.SubmittedAnswer);
+        var normalizedAnswer = TextNormalizer.Normalize(request.SubmittedAnswer);
 
         var report = await dbContext.Reports
             .AsNoTracking()
@@ -132,15 +132,19 @@ public sealed class ClaimService(
 
         dbContext.Claims.Add(claim);
 
-        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-            report.ReporterId,
-            NotificationTypes.NewClaimSubmitted,
-            new NotificationPayload(
+        dbContext.Notifications.Add(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = report.ReporterId,
+            Type = NotificationTypes.NewClaimSubmitted,
+            PayloadJson = new NotificationPayload(
                 NotificationTypes.NewClaimSubmitted,
                 now,
-                DeepLink: $"{ReportDeepLinkBuilder.ForMyReport(reportId)}#claims-section",
-                ReportId: reportId),
-            now));
+                DeepLink: $"/my/reports/{reportId}#claims-section",
+                ReportId: reportId).ToJson(),
+            IsRead = false,
+            CreatedAt = now,
+        });
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -160,7 +164,7 @@ public sealed class ClaimService(
             .Include(existingClaim => existingClaim.Report)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
-        if (claim is null || !ClaimAccessAuthorization.IsReporter(claim, reporterId))
+        if (claim is null || claim.Report.ReporterId != reporterId)
         {
             return ResultError.NotFound("Claim not found.");
         }
@@ -221,27 +225,40 @@ public sealed class ClaimService(
             otherClaim.DecisionReason = AutoRejectReason;
             otherClaim.CountsAsFailure = false;
 
-            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-                otherClaim.ClaimantId,
-                NotificationTypes.ClaimRejected,
-                new NotificationPayload(
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = otherClaim.ClaimantId,
+                Type = NotificationTypes.ClaimRejected,
+                PayloadJson = new NotificationPayload(
                     NotificationTypes.ClaimRejected,
                     now,
-                    DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
+                    DeepLink: claim.Report.Type switch
+                    {
+                        ReportType.Lost => $"/lost/{claim.Report.Id}",
+                        ReportType.Found => $"/found/{claim.Report.Id}",
+                        _ => $"/reports/{claim.Report.Id}",
+                    },
                     ReportId: claim.Report.Id,
-                    Note: AutoRejectReason),
-                now));
+                    Note: AutoRejectReason).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
         }
 
-        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-            claim.ClaimantId,
-            NotificationTypes.ClaimApproved,
-            new NotificationPayload(
+        dbContext.Notifications.Add(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = claim.ClaimantId,
+            Type = NotificationTypes.ClaimApproved,
+            PayloadJson = new NotificationPayload(
                 NotificationTypes.ClaimApproved,
                 now,
                 DeepLink: $"/my/chats/{chatThread.Id}",
-                ReportId: claim.Report.Id),
-            now));
+                ReportId: claim.Report.Id).ToJson(),
+            IsRead = false,
+            CreatedAt = now,
+        });
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
@@ -256,7 +273,7 @@ public sealed class ClaimService(
             .Include(existingClaim => existingClaim.Report)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
-        if (claim is null || !ClaimAccessAuthorization.IsReporter(claim, reporterId))
+        if (claim is null || claim.Report.ReporterId != reporterId)
         {
             return ResultError.NotFound("Claim not found.");
         }
@@ -273,15 +290,24 @@ public sealed class ClaimService(
         claim.ReviewerDecision = "rejected";
         claim.CountsAsFailure = true;
 
-        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-            claim.ClaimantId,
-            NotificationTypes.ClaimRejected,
-            new NotificationPayload(
+        dbContext.Notifications.Add(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = claim.ClaimantId,
+            Type = NotificationTypes.ClaimRejected,
+            PayloadJson = new NotificationPayload(
                 NotificationTypes.ClaimRejected,
                 now,
-                DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
-                ReportId: claim.Report.Id),
-            now));
+                DeepLink: claim.Report.Type switch
+                {
+                    ReportType.Lost => $"/lost/{claim.Report.Id}",
+                    ReportType.Found => $"/found/{claim.Report.Id}",
+                    _ => $"/reports/{claim.Report.Id}",
+                },
+                ReportId: claim.Report.Id).ToJson(),
+            IsRead = false,
+            CreatedAt = now,
+        });
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
@@ -296,7 +322,7 @@ public sealed class ClaimService(
             .Include(existingClaim => existingClaim.Report)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
-        if (claim is null || !ClaimAccessAuthorization.IsClaimant(claim, claimantId))
+        if (claim is null || claim.ClaimantId != claimantId)
         {
             return ResultError.NotFound("Claim not found.");
         }
@@ -312,15 +338,19 @@ public sealed class ClaimService(
         claim.ReviewedAt = now;
         claim.CountsAsFailure = false;
 
-        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-            claim.Report.ReporterId,
-            NotificationTypes.ClaimWithdrawnByClaimant,
-            new NotificationPayload(
+        dbContext.Notifications.Add(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = claim.Report.ReporterId,
+            Type = NotificationTypes.ClaimWithdrawnByClaimant,
+            PayloadJson = new NotificationPayload(
                 NotificationTypes.ClaimWithdrawnByClaimant,
                 now,
-                DeepLink: ReportDeepLinkBuilder.ForMyReport(claim.ReportId),
-                ReportId: claim.ReportId),
-            now));
+                DeepLink: $"/my/reports/{claim.ReportId}",
+                ReportId: claim.ReportId).ToJson(),
+            IsRead = false,
+            CreatedAt = now,
+        });
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
@@ -373,25 +403,38 @@ public sealed class ClaimService(
                 .Include(existingClaim => existingClaim.Report)
                 .SingleAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
-            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-                claim.Report.ReporterId,
-                NotificationTypes.ClaimAutoWithdrawn,
-                new NotificationPayload(
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = claim.Report.ReporterId,
+                Type = NotificationTypes.ClaimAutoWithdrawn,
+                PayloadJson = new NotificationPayload(
                     NotificationTypes.ClaimAutoWithdrawn,
                     now,
-                    DeepLink: $"{ReportDeepLinkBuilder.ForMyReport(claim.ReportId)}#claims-section",
-                    ReportId: claim.ReportId),
-                now));
+                    DeepLink: $"/my/reports/{claim.ReportId}#claims-section",
+                    ReportId: claim.ReportId).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
 
-            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-                claim.ClaimantId,
-                NotificationTypes.ClaimAutoWithdrawn,
-                new NotificationPayload(
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = claim.ClaimantId,
+                Type = NotificationTypes.ClaimAutoWithdrawn,
+                PayloadJson = new NotificationPayload(
                     NotificationTypes.ClaimAutoWithdrawn,
                     now,
-                    DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
-                    ReportId: claim.ReportId),
-                now));
+                    DeepLink: claim.Report.Type switch
+                    {
+                        ReportType.Lost => $"/lost/{claim.Report.Id}",
+                        ReportType.Found => $"/found/{claim.Report.Id}",
+                        _ => $"/reports/{claim.Report.Id}",
+                    },
+                    ReportId: claim.ReportId).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
 
             withdrawnCount++;
         }
@@ -470,7 +513,7 @@ public sealed class ClaimService(
             return ResultError.NotFound("Claim not found.");
         }
 
-        if (!ClaimAccessAuthorization.IsReporterOrClaimant(claim, userId))
+        if (claim.Report.ReporterId != userId && claim.ClaimantId != userId)
         {
             return ResultError.NotFound("Claim not found.");
         }
@@ -504,7 +547,7 @@ public sealed class ClaimService(
 
     private static ClaimDetailResponse ToClaimDetail(Claim claim, Guid userId)
     {
-        var isReporter = ClaimAccessAuthorization.IsReporter(claim, userId);
+        var isReporter = claim.Report.ReporterId == userId;
 
         return new()
         {

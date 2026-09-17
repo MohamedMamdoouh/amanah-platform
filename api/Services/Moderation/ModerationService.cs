@@ -103,15 +103,19 @@ public sealed class ModerationService(
             CreatedAt = now,
         });
 
-        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-            report.ReporterId,
-            NotificationTypes.ReportApproved,
-            new NotificationPayload(
+        dbContext.Notifications.Add(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = report.ReporterId,
+            Type = NotificationTypes.ReportApproved,
+            PayloadJson = new NotificationPayload(
                 NotificationTypes.ReportApproved,
                 now,
-                DeepLink: ReportDeepLinkBuilder.ForMyReport(report.Id),
-                ReportId: report.Id),
-            now));
+                DeepLink: $"/my/reports/{report.Id}",
+                ReportId: report.Id).ToJson(),
+            IsRead = false,
+            CreatedAt = now,
+        });
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
@@ -150,17 +154,21 @@ public sealed class ModerationService(
             CreatedAt = now,
         });
 
-        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-            report.ReporterId,
-            NotificationTypes.ReportRejected,
-            new NotificationPayload(
+        dbContext.Notifications.Add(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = report.ReporterId,
+            Type = NotificationTypes.ReportRejected,
+            PayloadJson = new NotificationPayload(
                 NotificationTypes.ReportRejected,
                 now,
-                DeepLink: ReportDeepLinkBuilder.ForMyReport(report.Id),
+                DeepLink: $"/my/reports/{report.Id}",
                 ReportId: report.Id,
                 ReasonCode: request.ReasonCode,
-                Note: request.Note),
-            now));
+                Note: request.Note).ToJson(),
+            IsRead = false,
+            CreatedAt = now,
+        });
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();

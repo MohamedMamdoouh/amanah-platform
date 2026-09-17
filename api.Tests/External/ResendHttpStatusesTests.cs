@@ -13,7 +13,8 @@ public class ResendHttpStatusesTests
     [InlineData(504)]
     public void Transient_status_codes_are_retried(int statusCode)
     {
-        Assert.True(ResendHttpStatuses.IsTransient(statusCode));
+        var exception = new ResendApiException(statusCode, "test");
+        Assert.True(exception.IsTransient);
     }
 
     [Theory]
@@ -24,6 +25,7 @@ public class ResendHttpStatusesTests
     [InlineData(422)]
     public void Permanent_client_errors_are_not_retried(int statusCode)
     {
-        Assert.False(ResendHttpStatuses.IsTransient(statusCode));
+        var exception = new ResendApiException(statusCode, "test");
+        Assert.False(exception.IsTransient);
     }
 }

@@ -47,9 +47,7 @@ public sealed class ReportPhotoPresignService(
             return ResultError.NotFound("Photo not found.");
         }
 
-        var storageKey = StorageKeyResolver.ResolvePreferThumbnail(
-            photo.StorageKey,
-            photo.ThumbnailStorageKey);
+        var storageKey = photo.ThumbnailStorageKey ?? photo.StorageKey;
         var url = bucketStorage.GetPreSignedUrl(storageKey, PresignConstants.Lifetime);
 
         return new ReportPhotoPresignResponse

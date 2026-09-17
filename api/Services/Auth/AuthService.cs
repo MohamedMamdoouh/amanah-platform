@@ -5,6 +5,7 @@ using Amanah.Contracts.Responses.Auth;
 using Amanah.Contracts.Errors;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Utilities.Auth;
+using Amanah.Api.Utilities.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Services.Auth;
@@ -40,7 +41,7 @@ public sealed class AuthService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var displayName = DisplayNameValidator.Normalize(request.DisplayName);
+        var displayName = TextNormalizer.Normalize(request.DisplayName);
 
         var user = new User
         {

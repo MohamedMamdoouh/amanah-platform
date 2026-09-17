@@ -116,15 +116,19 @@ public sealed class ReportLifecycleService(
                 continue;
             }
 
-            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-                report.ReporterId,
-                NotificationTypes.ReportExpiringSoon,
-                new NotificationPayload(
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = report.ReporterId,
+                Type = NotificationTypes.ReportExpiringSoon,
+                PayloadJson = new NotificationPayload(
                     NotificationTypes.ReportExpiringSoon,
                     now,
-                    DeepLink: ReportDeepLinkBuilder.ForMyReport(report.Id),
-                    ReportId: report.Id),
-                now));
+                    DeepLink: $"/my/reports/{report.Id}",
+                    ReportId: report.Id).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
 
             report.ExpiryWarningSent = true;
             report.UpdatedAt = now;
@@ -177,16 +181,20 @@ public sealed class ReportLifecycleService(
         report.WithdrawalReason = ExpiredWithdrawReason;
         report.UpdatedAt = now;
 
-        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-            report.ReporterId,
-            NotificationTypes.ReportExpired,
-            new NotificationPayload(
+        dbContext.Notifications.Add(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = report.ReporterId,
+            Type = NotificationTypes.ReportExpired,
+            PayloadJson = new NotificationPayload(
                 NotificationTypes.ReportExpired,
                 now,
-                DeepLink: ReportDeepLinkBuilder.ForMyReport(report.Id),
+                DeepLink: $"/my/reports/{report.Id}",
                 ReportId: report.Id,
-                ReasonCode: ExpiredWithdrawReason),
-            now));
+                ReasonCode: ExpiredWithdrawReason).ToJson(),
+            IsRead = false,
+            CreatedAt = now,
+        });
 
         var storageKeys = RemoveReportPhotos(report);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -227,16 +235,25 @@ public sealed class ReportLifecycleService(
             claim.DecisionReason = reason;
             claim.CountsAsFailure = false;
 
-            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
-                claim.ClaimantId,
-                notificationType,
-                new NotificationPayload(
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = claim.ClaimantId,
+                Type = notificationType,
+                PayloadJson = new NotificationPayload(
                     notificationType,
                     now,
-                    DeepLink: ReportDeepLinkBuilder.ForPublicReport(report),
+                    DeepLink: report.Type switch
+                    {
+                        ReportType.Lost => $"/lost/{report.Id}",
+                        ReportType.Found => $"/found/{report.Id}",
+                        _ => $"/reports/{report.Id}",
+                    },
                     ReportId: report.Id,
-                    ReasonCode: reason),
-                now));
+                    ReasonCode: reason).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
