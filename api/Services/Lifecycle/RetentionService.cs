@@ -72,6 +72,34 @@ public sealed class RetentionService(
         return reports.Count;
     }
 
+    public async Task<int> ProcessChatRetentionAsync(CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var threshold = now.AddDays(-lifecycleOptions.Value.RetentionDays);
+
+        var threads = await dbContext.ChatThreads
+            .Where(thread => thread.ReadOnlyAt != null && thread.ReadOnlyAt <= threshold)
+            .ToListAsync(cancellationToken);
+
+        if (threads.Count == 0)
+        {
+            return 0;
+        }
+
+        var threadIds = threads.Select(thread => thread.Id).ToList();
+        var attachments = await dbContext.ChatAttachments
+            .Where(attachment => threadIds.Contains(attachment.ChatThreadId))
+            .ToListAsync(cancellationToken);
+
+        var storageKeys = CollectChatAttachmentKeys(attachments);
+
+        dbContext.ChatThreads.RemoveRange(threads);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await bucketStorage.DeleteManyAsync(storageKeys, cancellationToken);
+
+        return threads.Count;
+    }
+
     private static IReadOnlyList<string> CollectReportPhotoKeys(IEnumerable<ReportPhoto> photos) =>
         photos
             .SelectMany(photo => new[] { photo.StorageKey, photo.ThumbnailStorageKey })
@@ -87,5 +115,12 @@ public sealed class RetentionService(
                 claim.PhotoStorageKey!,
                 ClaimPhotoStorageKeys.ThumbnailForOriginal(claim.PhotoStorageKey!),
             })
+            .ToList();
+
+    private static IReadOnlyList<string> CollectChatAttachmentKeys(IEnumerable<ChatAttachment> attachments) =>
+        attachments
+            .SelectMany(attachment => new[] { attachment.StorageKey, attachment.ThumbnailStorageKey })
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Select(key => key!)
             .ToList();
 }

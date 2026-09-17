@@ -19,6 +19,7 @@ public static class LifecycleServiceExtensions
         services.AddLifecycleJob<ListingAutoExpiryJob>();
         services.AddLifecycleJob<PendingClaimTimeoutJob>();
         services.AddLifecycleJob<RejectedReportCleanupJob>();
+        services.AddLifecycleJob<ChatRetentionJob>();
 
         return services;
     }
