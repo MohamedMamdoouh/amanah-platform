@@ -12,11 +12,13 @@ public static class LifecycleServiceExtensions
     {
         services.Configure<LifecycleOptions>(configuration.GetSection(LifecycleOptions.SectionName));
         services.AddScoped<ReportLifecycleService>();
+        services.AddScoped<RetentionService>();
         services.AddScoped<JobRunner>();
         services.AddHostedService<LifecycleJobsHostedService>();
         services.AddLifecycleJob<ListingExpiryWarningJob>();
         services.AddLifecycleJob<ListingAutoExpiryJob>();
         services.AddLifecycleJob<PendingClaimTimeoutJob>();
+        services.AddLifecycleJob<RejectedReportCleanupJob>();
 
         return services;
     }

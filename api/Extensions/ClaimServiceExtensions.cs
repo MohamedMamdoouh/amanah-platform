@@ -6,6 +6,7 @@ public static class ClaimServiceExtensions
 {
     public static IServiceCollection AddClaimServices(this IServiceCollection services)
     {
+        services.AddScoped<ClaimCleanupService>();
         services.AddScoped<ClaimPhotoAttachService>();
         services.AddScoped<ClaimSubmitFormParser>();
         services.AddScoped<ClaimService>();
