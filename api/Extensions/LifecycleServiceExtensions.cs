@@ -12,6 +12,7 @@ public static class LifecycleServiceExtensions
     {
         services.Configure<LifecycleOptions>(configuration.GetSection(LifecycleOptions.SectionName));
         services.AddScoped<ReportLifecycleService>();
+        services.AddScoped<AccountDeletionService>();
         services.AddScoped<RetentionService>();
         services.AddScoped<JobRunner>();
         services.AddHostedService<LifecycleJobsHostedService>();

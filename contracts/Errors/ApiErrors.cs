@@ -65,4 +65,8 @@ public static class ErrorCodes
     public const string UploadStorageFailed = "upload.storage_failed";
 
     public const string ChatReadOnly = "chat.read_only";
+
+    public const string AccountDeleted = "account.deleted";
+    public const string AccountDeletionBlocked = "account.deletion_blocked";
+    public const string AccountDeletionAlreadyRequested = "account.deletion_already_requested";
 }

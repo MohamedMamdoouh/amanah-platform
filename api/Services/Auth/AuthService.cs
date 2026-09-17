@@ -81,10 +81,10 @@ public sealed class AuthService(
                 ErrorCodes.InvalidCredentials);
         }
 
-        var banResult = CheckBan(user);
-        if (banResult is not null)
+        var authBlock = CheckAuthBlock(user);
+        if (authBlock is not null)
         {
-            return banResult;
+            return authBlock;
         }
 
         return await IssueSessionAsync(user, cancellationToken);
@@ -114,10 +114,10 @@ public sealed class AuthService(
                 ErrorCodes.HandoffTokenInvalid);
         }
 
-        var banResult = CheckBan(user);
-        if (banResult is not null)
+        var authBlock = CheckAuthBlock(user);
+        if (authBlock is not null)
         {
-            return banResult;
+            return authBlock;
         }
 
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
@@ -142,10 +142,10 @@ public sealed class AuthService(
                 ErrorCodes.RefreshInvalid);
         }
 
-        var banResult = CheckBan(refreshToken.User);
-        if (banResult is not null)
+        var authBlock = CheckAuthBlock(refreshToken.User);
+        if (authBlock is not null)
         {
-            return banResult;
+            return authBlock;
         }
 
         await tokenService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
@@ -196,6 +196,12 @@ public sealed class AuthService(
                 ErrorCodes.Unauthorized);
         }
 
+        var authBlock = CheckAuthBlock(user);
+        if (authBlock is not null)
+        {
+            return authBlock;
+        }
+
         return MapProfile(user);
     }
 
@@ -224,8 +230,15 @@ public sealed class AuthService(
             Phone = user.NormalizedPhone,
         };
 
-    private static ResultError? CheckBan(User user)
+    private static ResultError? CheckAuthBlock(User user)
     {
+        if (user.DeletionRequestedAt is not null)
+        {
+            return ResultError.Forbidden(
+                "This account has been deleted.",
+                ErrorCodes.AccountDeleted);
+        }
+
         if (!user.IsBanned)
         {
             return null;
