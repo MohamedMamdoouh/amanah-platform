@@ -2,6 +2,7 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Services.Claims;
 using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Notifications;
@@ -16,6 +17,7 @@ namespace Amanah.Api.Services.Resolution;
 public sealed class ResolutionService(
     AppDbContext dbContext,
     ReportLifecycleService reportLifecycleService,
+    ClaimCleanupService claimCleanupService,
     TimeProvider timeProvider,
     IHubContext<ChatHub> hubContext)
 {
@@ -106,6 +108,8 @@ public sealed class ResolutionService(
                 readOnlyThread = claim.ChatThread;
             }
 
+            var photoKeys = claimCleanupService.ClearClaimPhoto(claim);
+
             var deepLink = claim.Report.Type switch
             {
                 ReportType.Lost => $"/lost/{claim.Report.Id}",
@@ -144,6 +148,9 @@ public sealed class ResolutionService(
                 IsRead = false,
                 CreatedAt = now,
             });
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
         }
         else
         {
@@ -168,9 +175,9 @@ public sealed class ResolutionService(
                 IsRead = false,
                 CreatedAt = now,
             });
-        }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         if (readOnlyThread is not null)
         {
@@ -263,6 +270,8 @@ public sealed class ResolutionService(
             readOnlyThread = claim.ChatThread;
         }
 
+        var photoKeys = claimCleanupService.ClearClaimPhoto(claim);
+
         var counterpartyId = isReporter ? claim.ClaimantId : claim.Report.ReporterId;
         dbContext.Notifications.Add(new Notification
         {
@@ -286,6 +295,7 @@ public sealed class ResolutionService(
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
 
         if (readOnlyThread is not null)
         {

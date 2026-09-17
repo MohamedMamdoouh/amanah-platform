@@ -2,6 +2,7 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Options;
+using Amanah.Api.Services.Claims;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Utilities.Notifications;
@@ -13,6 +14,7 @@ namespace Amanah.Api.Services.Lifecycle;
 public sealed class ReportLifecycleService(
     AppDbContext dbContext,
     IBucketStorage bucketStorage,
+    ClaimCleanupService claimCleanupService,
     TimeProvider timeProvider,
     IOptions<LifecycleOptions> lifecycleOptions)
 {
@@ -227,6 +229,7 @@ public sealed class ReportLifecycleService(
 
         var now = timeProvider.GetUtcNow();
         var report = pendingClaims[0].Report;
+        var photoKeys = new List<string>();
         foreach (var claim in pendingClaims)
         {
             claim.Status = ClaimStatus.Withdrawn;
@@ -234,6 +237,7 @@ public sealed class ReportLifecycleService(
             claim.ReviewerDecision = ClosedReviewerDecision;
             claim.DecisionReason = reason;
             claim.CountsAsFailure = false;
+            photoKeys.AddRange(claimCleanupService.ClearClaimPhoto(claim));
 
             dbContext.Notifications.Add(new Notification
             {
@@ -257,6 +261,7 @@ public sealed class ReportLifecycleService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
         return pendingClaims.Count;
     }
 

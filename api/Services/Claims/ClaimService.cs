@@ -23,6 +23,7 @@ public sealed record ClaimQuotaCheckResult(bool IsExceeded, int? RetryAfterSecon
 public sealed class ClaimService(
     AppDbContext dbContext,
     ClaimPhotoAttachService claimPhotoAttachService,
+    ClaimCleanupService claimCleanupService,
     ReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider,
     IOptions<LifecycleOptions> lifecycleOptions)
@@ -217,6 +218,7 @@ public sealed class ClaimService(
                 && existingClaim.Id != claim.Id)
             .ToListAsync(cancellationToken);
 
+        var rejectedPhotoKeys = new List<string>();
         foreach (var otherClaim in otherPendingClaims)
         {
             otherClaim.Status = ClaimStatus.Rejected;
@@ -224,6 +226,7 @@ public sealed class ClaimService(
             otherClaim.ReviewerDecision = "rejected";
             otherClaim.DecisionReason = AutoRejectReason;
             otherClaim.CountsAsFailure = false;
+            rejectedPhotoKeys.AddRange(claimCleanupService.ClearClaimPhoto(otherClaim));
 
             dbContext.Notifications.Add(new Notification
             {
@@ -261,6 +264,7 @@ public sealed class ClaimService(
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await claimCleanupService.DeleteClaimPhotoStorageAsync(rejectedPhotoKeys, cancellationToken);
         return Result.Ok();
     }
 
@@ -289,6 +293,7 @@ public sealed class ClaimService(
         claim.ReviewedAt = now;
         claim.ReviewerDecision = "rejected";
         claim.CountsAsFailure = true;
+        var photoKeys = claimCleanupService.ClearClaimPhoto(claim);
 
         dbContext.Notifications.Add(new Notification
         {
@@ -310,6 +315,7 @@ public sealed class ClaimService(
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
         return Result.Ok();
     }
 
@@ -337,6 +343,7 @@ public sealed class ClaimService(
         claim.Status = ClaimStatus.Withdrawn;
         claim.ReviewedAt = now;
         claim.CountsAsFailure = false;
+        var photoKeys = claimCleanupService.ClearClaimPhoto(claim);
 
         dbContext.Notifications.Add(new Notification
         {
@@ -353,6 +360,7 @@ public sealed class ClaimService(
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
         return Result.Ok();
     }
 
@@ -379,6 +387,7 @@ public sealed class ClaimService(
         }
 
         var withdrawnCount = 0;
+        var withdrawnPhotoKeys = new List<string>();
         foreach (var claimId in timedOutClaimIds)
         {
             var updatedRows = await dbContext.Claims
@@ -399,9 +408,9 @@ public sealed class ClaimService(
             }
 
             var claim = await dbContext.Claims
-                .AsNoTracking()
                 .Include(existingClaim => existingClaim.Report)
                 .SingleAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
+            withdrawnPhotoKeys.AddRange(claimCleanupService.ClearClaimPhoto(claim));
 
             dbContext.Notifications.Add(new Notification
             {
@@ -442,6 +451,7 @@ public sealed class ClaimService(
         if (withdrawnCount > 0)
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+            await claimCleanupService.DeleteClaimPhotoStorageAsync(withdrawnPhotoKeys, cancellationToken);
         }
 
         return withdrawnCount;
