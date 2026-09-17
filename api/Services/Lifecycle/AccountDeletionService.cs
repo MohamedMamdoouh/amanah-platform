@@ -2,6 +2,7 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Auth;
+using Amanah.Api.Services.Claims;
 using Amanah.Api.Utilities.Auth;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Responses.Account;
@@ -12,6 +13,7 @@ namespace Amanah.Api.Services.Lifecycle;
 public sealed class AccountDeletionService(
     AppDbContext dbContext,
     ReportLifecycleService reportLifecycleService,
+    ClaimCleanupService claimCleanupService,
     TokenService tokenService,
     TimeProvider timeProvider)
 {
@@ -165,16 +167,22 @@ public sealed class AccountDeletionService(
             .Where(claim => claim.ClaimantId == userId && claim.Status == ClaimStatus.Pending)
             .ToListAsync(cancellationToken);
 
+        if (pendingClaims.Count == 0)
+        {
+            return;
+        }
+
+        var photoKeys = new List<string>();
         foreach (var claim in pendingClaims)
         {
             claim.Status = ClaimStatus.Withdrawn;
             claim.ReviewedAt = now;
             claim.CountsAsFailure = false;
+            // SPEC §12: claim photos are deleted when the claim reaches Withdrawn.
+            photoKeys.AddRange(claimCleanupService.ClearClaimPhoto(claim));
         }
 
-        if (pendingClaims.Count > 0)
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
     }
 }
