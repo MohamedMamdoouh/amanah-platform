@@ -18,7 +18,7 @@ namespace Amanah.Api.Controllers;
 [Authorize]
 public sealed class ReportsController(
     ReportService reportService,
-    IClaimService claimService,
+    ClaimService claimService,
     ReportCreateFormParser createFormParser,
     ReportUpdateFormParser updateFormParser,
     ClaimSubmitFormParser claimSubmitFormParser) : ControllerBase

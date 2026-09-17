@@ -16,7 +16,7 @@ namespace Amanah.Api.Services.Resolution;
 
 public sealed class ResolutionService(
     AppDbContext dbContext,
-    IReportLifecycleService reportLifecycleService,
+    ReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider,
     IHubContext<ChatHub> hubContext)
 {

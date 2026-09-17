@@ -11,8 +11,8 @@ public static class LifecycleServiceExtensions
         IConfiguration configuration)
     {
         services.Configure<LifecycleOptions>(configuration.GetSection(LifecycleOptions.SectionName));
-        services.AddScoped<IReportLifecycleService, ReportLifecycleService>();
-        services.AddScoped<IJobRunner, JobRunner>();
+        services.AddScoped<ReportLifecycleService>();
+        services.AddScoped<JobRunner>();
         services.AddHostedService<LifecycleJobsHostedService>();
         services.AddLifecycleJob<ListingExpiryWarningJob>();
         services.AddLifecycleJob<ListingAutoExpiryJob>();

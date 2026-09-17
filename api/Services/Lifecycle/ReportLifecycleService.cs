@@ -14,7 +14,7 @@ public sealed class ReportLifecycleService(
     AppDbContext dbContext,
     IBucketStorage bucketStorage,
     TimeProvider timeProvider,
-    IOptions<LifecycleOptions> lifecycleOptions) : IReportLifecycleService
+    IOptions<LifecycleOptions> lifecycleOptions)
 {
     private const int SecondsPerDay = 86_400;
 
@@ -219,7 +219,6 @@ public sealed class ReportLifecycleService(
 
         var now = timeProvider.GetUtcNow();
         var report = pendingClaims[0].Report;
-
         foreach (var claim in pendingClaims)
         {
             claim.Status = ClaimStatus.Withdrawn;

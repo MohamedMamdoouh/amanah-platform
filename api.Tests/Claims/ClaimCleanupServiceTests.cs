@@ -36,7 +36,7 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
             attemptNumber: 1);
 
         await using var serviceScope = factory.Services.CreateAsyncScope();
-        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<ReportLifecycleService>();
         var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
         var report = await dbContext.Reports.SingleAsync(item => item.Id == reportId);
 
@@ -81,7 +81,7 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
         await ClaimTestHelpers.SeedPendingClaimAsync(context, reportId, secondClaimant.User.Id, attemptNumber: 1);
 
         await using var serviceScope = factory.Services.CreateAsyncScope();
-        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<ReportLifecycleService>();
         var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
         var report = await dbContext.Reports.SingleAsync(item => item.Id == reportId);
 
@@ -117,7 +117,7 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
         await ClaimTestHelpers.SeedApprovedClaimAsync(context, reportId, claimant.User.Id);
 
         await using var serviceScope = factory.Services.CreateAsyncScope();
-        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<ReportLifecycleService>();
         var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
         var report = await dbContext.Reports.SingleAsync(item => item.Id == reportId);
 
@@ -151,7 +151,7 @@ public class ClaimCleanupServiceTests(ApiWebApplicationFactory factory) : IClass
             attemptNumber: 2);
 
         await using var serviceScope = factory.Services.CreateAsyncScope();
-        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<ReportLifecycleService>();
         var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
         var report = await dbContext.Reports.SingleAsync(item => item.Id == targetReportId);
 

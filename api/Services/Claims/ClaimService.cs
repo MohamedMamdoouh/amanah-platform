@@ -23,9 +23,9 @@ public sealed record ClaimQuotaCheckResult(bool IsExceeded, int? RetryAfterSecon
 public sealed class ClaimService(
     AppDbContext dbContext,
     ClaimPhotoAttachService claimPhotoAttachService,
-    IReportLifecycleService reportLifecycleService,
+    ReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider,
-    IOptions<LifecycleOptions> lifecycleOptions) : IClaimService
+    IOptions<LifecycleOptions> lifecycleOptions)
 {
     public const int MaxCountedFailures = 3;
 

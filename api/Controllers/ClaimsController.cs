@@ -16,7 +16,7 @@ namespace Amanah.Api.Controllers;
 [Route("api/v{version:apiVersion}/claims")]
 [Authorize]
 public sealed class ClaimsController(
-    IClaimService claimService,
+    ClaimService claimService,
     ResolutionService resolutionService) : ControllerBase
 {
     [HttpGet("mine")]

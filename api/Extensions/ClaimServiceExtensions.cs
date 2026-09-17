@@ -8,7 +8,7 @@ public static class ClaimServiceExtensions
     {
         services.AddScoped<ClaimPhotoAttachService>();
         services.AddScoped<ClaimSubmitFormParser>();
-        services.AddScoped<IClaimService, ClaimService>();
+        services.AddScoped<ClaimService>();
 
         return services;
     }

@@ -3,7 +3,7 @@ using Amanah.Api.Services.Claims;
 namespace Amanah.Api.Services.Jobs;
 
 public sealed class PendingClaimTimeoutJob(
-    IClaimService claimService,
+    ClaimService claimService,
     ILogger<PendingClaimTimeoutJob> logger) : ILifecycleJob
 {
     public string Name => "PendingClaimTimeout";

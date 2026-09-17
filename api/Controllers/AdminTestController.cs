@@ -13,7 +13,7 @@ namespace Amanah.Api.Controllers;
 [Route("api/v{version:apiVersion}/admin/test")]
 [Authorize(AuthPolicies.Admin)]
 public sealed class AdminTestController(
-    IJobRunner jobRunner,
+    JobRunner jobRunner,
     IHostEnvironment environment) : ControllerBase
 {
     [HttpPost("run-job/{jobName}")]

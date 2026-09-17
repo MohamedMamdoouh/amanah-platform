@@ -17,7 +17,7 @@ namespace Amanah.Api.Services.Moderation;
 public sealed class ModerationService(
     AppDbContext dbContext,
     ReportService reportService,
-    IReportLifecycleService reportLifecycleService,
+    ReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider)
 {
     public async Task<Result<ModerationQueueResponse>> GetQueueAsync(

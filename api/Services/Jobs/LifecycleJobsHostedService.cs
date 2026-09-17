@@ -22,7 +22,7 @@ public sealed class LifecycleJobsHostedService(
                     CairoTime.TodayInCairo());
 
                 await using var scope = scopeFactory.CreateAsyncScope();
-                var jobRunner = scope.ServiceProvider.GetRequiredService<IJobRunner>();
+                var jobRunner = scope.ServiceProvider.GetRequiredService<JobRunner>();
                 await jobRunner.RunAllAsync(stoppingToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)

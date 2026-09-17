@@ -58,7 +58,7 @@ public class TerminalPhotoCleanupTests(ApiWebApplicationFactory factory) : IClas
         await storage.PutAsync(originalKey, new MemoryStream([1, 2, 3]), "image/jpeg");
         await storage.PutAsync(thumbnailKey, new MemoryStream([4, 5, 6]), "image/webp");
 
-        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<IReportLifecycleService>();
+        var lifecycleService = serviceScope.ServiceProvider.GetRequiredService<ReportLifecycleService>();
         var dbContext = serviceScope.ServiceProvider.GetRequiredService<Amanah.Api.Data.AppDbContext>();
         var report = await dbContext.Reports
             .Include(item => item.Photos)

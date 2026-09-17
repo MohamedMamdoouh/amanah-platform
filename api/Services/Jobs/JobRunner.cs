@@ -4,7 +4,7 @@ namespace Amanah.Api.Services.Jobs;
 
 public sealed class JobRunner(
     IEnumerable<ILifecycleJob> jobs,
-    ILogger<JobRunner> logger) : IJobRunner
+    ILogger<JobRunner> logger)
 {
     private readonly IReadOnlyList<ILifecycleJob> _jobs = jobs.ToList();
 

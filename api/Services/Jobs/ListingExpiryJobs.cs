@@ -4,7 +4,7 @@ using Amanah.Api.Utilities.Common;
 namespace Amanah.Api.Services.Jobs;
 
 public sealed class ListingExpiryWarningJob(
-    IReportLifecycleService reportLifecycleService,
+    ReportLifecycleService reportLifecycleService,
     ILogger<ListingExpiryWarningJob> logger) : ILifecycleJob
 {
     public string Name => "ListingExpiryWarning";
@@ -22,7 +22,7 @@ public sealed class ListingExpiryWarningJob(
 }
 
 public sealed class ListingAutoExpiryJob(
-    IReportLifecycleService reportLifecycleService,
+    ReportLifecycleService reportLifecycleService,
     ILogger<ListingAutoExpiryJob> logger) : ILifecycleJob
 {
     public string Name => "ListingAutoExpiry";

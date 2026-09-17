@@ -28,7 +28,7 @@ public sealed class ReportService(
     AppDbContext dbContext,
     ReportPhotoAttachService photoAttachService,
     IBucketStorage bucketStorage,
-    IReportLifecycleService reportLifecycleService,
+    ReportLifecycleService reportLifecycleService,
     IOptions<EmailOptions> emailOptions,
     TimeProvider timeProvider,
     AppMetrics metrics)
