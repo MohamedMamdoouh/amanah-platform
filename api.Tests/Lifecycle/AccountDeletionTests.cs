@@ -87,6 +87,64 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task DeleteAccount_does_not_clobber_claim_approved_after_pending_snapshot()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimant = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        var claimId = await ClaimTestHelpers.SeedPendingClaimAsync(context, reportId, claimant.User.Id);
+
+        // Stale candidate set as if DeleteAccount had already queried Pending rows.
+        var stalePendingIds = await context.DbContext.Claims
+            .AsNoTracking()
+            .Where(claim =>
+                claim.ClaimantId == claimant.User.Id
+                && claim.Status == ClaimStatus.Pending)
+            .Select(claim => claim.Id)
+            .ToListAsync();
+        Assert.Contains(claimId, stalePendingIds);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var approveResponse = await ClaimTestHelpers.ApproveClaimAsync(context.Client, claimId);
+        Assert.Equal(HttpStatusCode.NoContent, approveResponse.StatusCode);
+
+        context.DbContext.ChangeTracker.Clear();
+
+        // Conditional UPDATE must no-op once Approve has committed; a tracked-entity
+        // SaveChanges overwrite would leave ClaimInProgress + Withdrawn.
+        var updatedRows = await context.DbContext.Claims
+            .Where(claim =>
+                stalePendingIds.Contains(claim.Id)
+                && claim.Status == ClaimStatus.Pending)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(claim => claim.Status, ClaimStatus.Withdrawn)
+                .SetProperty(claim => claim.ReviewedAt, DateTimeOffset.UtcNow)
+                .SetProperty(claim => claim.CountsAsFailure, false));
+        Assert.Equal(0, updatedRows);
+
+        ClaimTestHelpers.Authenticate(context.Client, claimant.AccessToken);
+        var deleteResponse = await DeleteAccountAsync(context);
+        Assert.Equal(HttpStatusCode.Conflict, deleteResponse.StatusCode);
+
+        var error = await HttpTestHelpers.ReadErrorAsync(deleteResponse);
+        Assert.Equal(ErrorCodes.AccountDeletionBlocked, error?.Code);
+
+        var claim = await context.DbContext.Claims
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == claimId);
+        var report = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == reportId);
+        var user = await context.DbContext.Users
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == claimant.User.Id);
+
+        Assert.Equal(ClaimStatus.Approved, claim.Status);
+        Assert.Equal(ReportStatus.ClaimInProgress, report.Status);
+        Assert.Null(user.DeletionRequestedAt);
+    }
+
+    [Fact]
     public async Task DeleteAccount_withdraws_reports_and_pending_claims_anonymizes_messages_and_signs_out()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
