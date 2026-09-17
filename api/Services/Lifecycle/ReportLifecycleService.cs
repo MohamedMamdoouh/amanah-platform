@@ -1,19 +1,26 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Options;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Utilities.Notifications;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Amanah.Api.Services.Lifecycle;
 
 public sealed class ReportLifecycleService(
     AppDbContext dbContext,
     IBucketStorage bucketStorage,
-    TimeProvider timeProvider) : IReportLifecycleService
+    TimeProvider timeProvider,
+    IOptions<LifecycleOptions> lifecycleOptions) : IReportLifecycleService
 {
+    private const int SecondsPerDay = 86_400;
+
     private const string DefaultWithdrawReason = "Report withdrawn";
+
+    public const string ExpiredWithdrawReason = "_expired_";
 
     public const string ClosedReviewerDecision = "closed";
 
@@ -76,6 +83,7 @@ public sealed class ReportLifecycleService(
             await ClosePendingClaimsAsync(
                 report.Id,
                 reason ?? DefaultWithdrawReason,
+                NotificationTypes.ClaimClosedReportUnavailable,
                 cancellationToken);
         }
 
@@ -90,9 +98,111 @@ public sealed class ReportLifecycleService(
         return Result.Ok();
     }
 
+    public async Task<int> ProcessListingExpiryWarningsAsync(CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var options = lifecycleOptions.Value;
+        var reports = await dbContext.Reports
+            .Where(report =>
+                report.Status == ReportStatus.Published
+                && !report.ExpiryWarningSent)
+            .ToListAsync(cancellationToken);
+
+        var warningsSent = 0;
+        foreach (var report in reports)
+        {
+            if (!HasReachedPublishedDayThreshold(report, options.ListingExpiryWarningDays, now))
+            {
+                continue;
+            }
+
+            dbContext.Notifications.Add(NotificationEntityBuilder.Create(
+                report.ReporterId,
+                NotificationTypes.ReportExpiringSoon,
+                new NotificationPayload(
+                    NotificationTypes.ReportExpiringSoon,
+                    now,
+                    DeepLink: ReportDeepLinkBuilder.ForMyReport(report.Id),
+                    ReportId: report.Id),
+                now));
+
+            report.ExpiryWarningSent = true;
+            report.UpdatedAt = now;
+            warningsSent++;
+        }
+
+        if (warningsSent > 0)
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return warningsSent;
+    }
+
+    public async Task<int> ProcessListingAutoExpiryAsync(CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var options = lifecycleOptions.Value;
+        var reports = await dbContext.Reports
+            .Where(report => report.Status == ReportStatus.Published)
+            .ToListAsync(cancellationToken);
+
+        var expiredCount = 0;
+        foreach (var report in reports)
+        {
+            if (!HasReachedPublishedDayThreshold(report, options.ListingExpiryDays, now))
+            {
+                continue;
+            }
+
+            await ExpireReportAsync(report, now, cancellationToken);
+            expiredCount++;
+        }
+
+        return expiredCount;
+    }
+
+    private async Task ExpireReportAsync(
+        Report report,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await ClosePendingClaimsAsync(
+            report.Id,
+            ExpiredWithdrawReason,
+            NotificationTypes.ReportExpired,
+            cancellationToken);
+
+        report.Status = ReportStatus.Withdrawn;
+        report.WithdrawalReason = ExpiredWithdrawReason;
+        report.UpdatedAt = now;
+
+        dbContext.Notifications.Add(NotificationEntityBuilder.Create(
+            report.ReporterId,
+            NotificationTypes.ReportExpired,
+            new NotificationPayload(
+                NotificationTypes.ReportExpired,
+                now,
+                DeepLink: ReportDeepLinkBuilder.ForMyReport(report.Id),
+                ReportId: report.Id,
+                ReasonCode: ExpiredWithdrawReason),
+            now));
+
+        var storageKeys = RemoveReportPhotos(report);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await DeleteReportPhotoStorageAsync(storageKeys, cancellationToken);
+    }
+
+    private bool HasReachedPublishedDayThreshold(
+        Report report,
+        int thresholdDays,
+        DateTimeOffset now) =>
+        GetCumulativePublishedSeconds(report, now) >= thresholdDays * SecondsPerDay;
+
     private async Task<int> ClosePendingClaimsAsync(
         Guid reportId,
         string reason,
+        string notificationType,
         CancellationToken cancellationToken = default)
     {
         var pendingClaims = await dbContext.Claims
@@ -120,9 +230,9 @@ public sealed class ReportLifecycleService(
 
             dbContext.Notifications.Add(NotificationEntityBuilder.Create(
                 claim.ClaimantId,
-                NotificationTypes.ClaimClosedReportUnavailable,
+                notificationType,
                 new NotificationPayload(
-                    NotificationTypes.ClaimClosedReportUnavailable,
+                    notificationType,
                     now,
                     DeepLink: ReportDeepLinkBuilder.ForPublicReport(report),
                     ReportId: report.Id,

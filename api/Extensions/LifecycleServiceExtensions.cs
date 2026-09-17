@@ -14,6 +14,8 @@ public static class LifecycleServiceExtensions
         services.AddScoped<IReportLifecycleService, ReportLifecycleService>();
         services.AddScoped<IJobRunner, JobRunner>();
         services.AddHostedService<LifecycleJobsHostedService>();
+        services.AddLifecycleJob<ListingExpiryWarningJob>();
+        services.AddLifecycleJob<ListingAutoExpiryJob>();
 
         return services;
     }

@@ -17,4 +17,8 @@ public interface IReportLifecycleService
         Report report,
         string? reason,
         CancellationToken cancellationToken = default);
+
+    Task<int> ProcessListingExpiryWarningsAsync(CancellationToken cancellationToken = default);
+
+    Task<int> ProcessListingAutoExpiryAsync(CancellationToken cancellationToken = default);
 }

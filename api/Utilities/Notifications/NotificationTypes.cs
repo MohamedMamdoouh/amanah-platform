@@ -23,4 +23,8 @@ public static class NotificationTypes
     public const string ReportResolved = "ReportResolved";
 
     public const string NewChatMessage = "NewChatMessage";
+
+    public const string ReportExpiringSoon = "ReportExpiringSoon";
+
+    public const string ReportExpired = "ReportExpired";
 }

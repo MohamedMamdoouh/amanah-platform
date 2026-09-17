@@ -38,7 +38,7 @@ public class AdminTestControllerTests(ApiWebApplicationFactory factory) : IClass
         await HttpTestHelpers.LoginAsAdminAsync(context);
 
         var response = await context.Client.PostAsync(
-            "/api/v1/admin/test/run-job/ListingAutoExpiry",
+            "/api/v1/admin/test/run-job/UnknownJob",
             null);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);

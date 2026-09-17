@@ -1,4 +1,5 @@
 using Amanah.Api.Options;
+using Amanah.Api.Utilities.Common;
 using Microsoft.Extensions.Options;
 
 namespace Amanah.Api.Services.Jobs;
@@ -16,6 +17,10 @@ public sealed class LifecycleJobsHostedService(
         {
             try
             {
+                logger.LogDebug(
+                    "Lifecycle jobs poll starting for Cairo date {CairoDate}.",
+                    CairoTime.TodayInCairo());
+
                 await using var scope = scopeFactory.CreateAsyncScope();
                 var jobRunner = scope.ServiceProvider.GetRequiredService<IJobRunner>();
                 await jobRunner.RunAllAsync(stoppingToken);
