@@ -46,6 +46,8 @@ public sealed class RetentionService(
         }
 
         var storageKeys = new List<string>();
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
         foreach (var report in reports)
         {
             storageKeys.AddRange(CollectReportPhotoKeys(report.Photos));
@@ -55,24 +57,16 @@ public sealed class RetentionService(
                 .Where(abuseReport => abuseReport.ReportId == report.Id)
                 .ExecuteDeleteAsync(cancellationToken);
 
-            var resolution = await dbContext.Resolutions
-                .SingleOrDefaultAsync(
-                    existingResolution => existingResolution.ReportId == report.Id,
-                    cancellationToken);
-            if (resolution is not null)
-            {
-                dbContext.Resolutions.Remove(resolution);
-            }
+            await dbContext.Resolutions
+                .Where(resolution => resolution.ReportId == report.Id)
+                .ExecuteDeleteAsync(cancellationToken);
 
-            if (report.Claims.Count > 0)
-            {
-                dbContext.Claims.RemoveRange(report.Claims);
-            }
-
+            dbContext.Claims.RemoveRange(report.Claims);
             dbContext.Reports.Remove(report);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         await bucketStorage.DeleteManyAsync(storageKeys, cancellationToken);
 
         return reports.Count;
