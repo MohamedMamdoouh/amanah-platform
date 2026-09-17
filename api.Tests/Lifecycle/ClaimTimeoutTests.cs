@@ -114,6 +114,63 @@ public class ClaimTimeoutTests(ClaimTimeoutWebApplicationFactory factory)
         Assert.Equal(0, countedFailures);
     }
 
+    [Fact]
+    public async Task PendingClaimTimeout_does_not_clobber_claim_approved_after_candidate_snapshot()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimant = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        var claimId = await ClaimTestHelpers.SeedPendingClaimAsync(context, reportId, claimant.User.Id);
+        await BackdateSubmittedAtAsync(context, claimId, minutesAgo: 11);
+
+        // Stale candidate set as if the job had already queried Pending+Published rows.
+        var staleCandidateIds = await context.DbContext.Claims
+            .AsNoTracking()
+            .Where(claim =>
+                claim.Status == ClaimStatus.Pending
+                && claim.Report.Status == ReportStatus.Published)
+            .Select(claim => claim.Id)
+            .ToListAsync();
+        Assert.Contains(claimId, staleCandidateIds);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var approveResponse = await ClaimTestHelpers.ApproveClaimAsync(context.Client, claimId);
+        Assert.Equal(HttpStatusCode.NoContent, approveResponse.StatusCode);
+
+        // Drop tracked Pending snapshot from seeding so later reads see Approve's commit.
+        context.DbContext.ChangeTracker.Clear();
+
+        // Conditional UPDATE must no-op for ids that are no longer Pending+Published,
+        // otherwise Approve is overwritten and the report stays stuck in ClaimInProgress.
+        var updatedRows = await context.DbContext.Claims
+            .Where(claim =>
+                staleCandidateIds.Contains(claim.Id)
+                && claim.Status == ClaimStatus.Pending
+                && claim.Report.Status == ReportStatus.Published)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(claim => claim.Status, ClaimStatus.Withdrawn)
+                .SetProperty(claim => claim.ReviewedAt, DateTimeOffset.UtcNow)
+                .SetProperty(claim => claim.CountsAsFailure, false));
+        Assert.Equal(0, updatedRows);
+
+        var response = await RunJobAsync(context, "PendingClaimTimeout");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var claim = await context.DbContext.Claims
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == claimId);
+        var report = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == reportId);
+
+        Assert.Equal(ClaimStatus.Approved, claim.Status);
+        Assert.Equal(ReportStatus.ClaimInProgress, report.Status);
+        Assert.Equal(
+            0,
+            await context.DbContext.Notifications.CountAsync(
+                item => item.Type == NotificationTypes.ClaimAutoWithdrawn));
+    }
+
     private static async Task BackdateSubmittedAtAsync(
         ReportTestContext context,
         Guid claimId,

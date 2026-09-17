@@ -330,24 +330,48 @@ public sealed class ClaimService(
     {
         var now = timeProvider.GetUtcNow();
         var timeoutThreshold = now.AddMinutes(-lifecycleOptions.Value.ClaimTimeoutMinutes);
-        var timedOutClaims = await dbContext.Claims
-            .Include(claim => claim.Report)
+        // Snapshot ids only — a concurrent Approve can move a claim to Approved /
+        // ClaimInProgress after this query. Blindly mutating tracked entities and
+        // SaveChanges would overwrite that approval and leave the report stuck
+        // (ClaimInProgress + Withdrawn claim: cancel and withdraw both blocked).
+        var timedOutClaimIds = await dbContext.Claims
+            .AsNoTracking()
             .Where(claim =>
                 claim.Status == ClaimStatus.Pending
                 && claim.SubmittedAt <= timeoutThreshold
                 && claim.Report.Status == ReportStatus.Published)
+            .Select(claim => claim.Id)
             .ToListAsync(cancellationToken);
 
-        if (timedOutClaims.Count == 0)
+        if (timedOutClaimIds.Count == 0)
         {
             return 0;
         }
 
-        foreach (var claim in timedOutClaims)
+        var withdrawnCount = 0;
+        foreach (var claimId in timedOutClaimIds)
         {
-            claim.Status = ClaimStatus.Withdrawn;
-            claim.ReviewedAt = now;
-            claim.CountsAsFailure = false;
+            var updatedRows = await dbContext.Claims
+                .Where(claim =>
+                    claim.Id == claimId
+                    && claim.Status == ClaimStatus.Pending
+                    && claim.Report.Status == ReportStatus.Published)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(claim => claim.Status, ClaimStatus.Withdrawn)
+                        .SetProperty(claim => claim.ReviewedAt, now)
+                        .SetProperty(claim => claim.CountsAsFailure, false),
+                    cancellationToken);
+
+            if (updatedRows == 0)
+            {
+                continue;
+            }
+
+            var claim = await dbContext.Claims
+                .AsNoTracking()
+                .Include(existingClaim => existingClaim.Report)
+                .SingleAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
             dbContext.Notifications.Add(NotificationEntityBuilder.Create(
                 claim.Report.ReporterId,
@@ -368,10 +392,16 @@ public sealed class ClaimService(
                     DeepLink: ReportDeepLinkBuilder.ForPublicReport(claim.Report),
                     ReportId: claim.ReportId),
                 now));
+
+            withdrawnCount++;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return timedOutClaims.Count;
+        if (withdrawnCount > 0)
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return withdrawnCount;
     }
 
     public async Task<Result<PaginatedResponse<MyClaimSummaryResponse>>> GetMineAsync(
