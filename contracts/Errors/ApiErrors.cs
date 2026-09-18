@@ -66,9 +66,10 @@ public static class ErrorCodes
 
     public const string ChatReadOnly = "chat.read_only";
 
-    public const string AccountDeleted = "account.deleted";
-    public const string AccountDeletionBlocked = "account.deletion_blocked";
-    public const string AccountDeletionAlreadyRequested = "account.deletion_already_requested";
+    public const string AccountDeactivated = "account.deactivated";
+    public const string AccountDeactivationBlocked = "account.deactivation_blocked";
+    public const string AccountDeactivationAlreadyRequested = "account.deactivation_already_requested";
+    public const string AccountReactivationRequired = "account.reactivation_required";
     public const string AccountBlockerClaimInProgress = "claim_in_progress";
     public const string AccountBlockerApprovedClaim = "approved_claim";
 }

@@ -50,15 +50,17 @@ None additional.
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
 | POST | `/api/v1/reports/{id}/withdraw` | Reporter withdraws `Published` report (extend Phase 01 endpoint) |
-| DELETE | `/api/v1/account` | Self-serve account deletion |
-| GET | `/api/v1/account/deletion-status` | Check blockers (active approved claims) |
+| POST | `/api/v1/account/deactivate` | Self-serve account deactivation |
+| POST | `/api/v1/account/reactivate` | Reactivate a deactivated account after login |
+| GET | `/api/v1/account/deactivation-status` | Check blockers (active approved claims) |
 
 ### UI routes
 
 | Route | Access | Purpose |
 | ----- | ------ | ------- |
 | `/my/reports/{id}` | Logged-in (reporter) | Withdraw button on `Published` reports |
-| `/settings/account` | Logged-in | Account deletion with blocker messaging |
+| `/settings/account` | Logged-in | Account deactivation with blocker messaging |
+| `/account/reactivate` | Logged-in (deactivated) | Confirm reactivation after login |
 
 ### Database
 
@@ -84,7 +86,6 @@ All jobs use Africa/Cairo day boundaries where applicable. Run on a configurable
 | `OtpSmsOutboxCleanup` | 30 days after `ProcessedAt` | Delete `Sent` and `Failed` rows from `otp_sms_outbox` (limit queries only need recent history) |
 | `AdminAlertEmailOutboxCleanup` | 30 days after `ProcessedAt` | Delete `Sent` and `Failed` rows from `admin_alert_email_outbox` |
 | `SessionCleanup` | 30 days after expiry/revoke | Delete `RefreshToken` rows |
-| `AccountDeletionPurge` | 30 days after deletion request | Purge direct PII; anonymize sender in messages |
 | `OrphanedStorageCleanup` | Daily (configurable) | Delete R2 objects under report photo prefixes with no matching `ReportPhoto` row (see below) |
 
 ### Orphaned storage cleanup
@@ -103,7 +104,7 @@ Implement both where practical: immediate cleanup limits orphan volume; the job 
 - `ReportLifecycleService` - withdraw, expiry, timer pause/resume
 - `ClaimCleanupService` - close pending claims on report withdrawal/expiry/takedown
 - `RetentionService` - entity-level deletion per Section 12
-- `AccountDeletionService` - blockers, cleanup side effects
+- `AccountDeactivationService` - blockers, deactivation side effects, reactivation
 - `OrphanedStorageCleanup` - R2 keys with no `ReportPhoto` reference (backstop for failed report submits; see §4)
 
 ### Test harness (non-production)
@@ -113,7 +114,7 @@ Implement both where practical: immediate cleanup limits orphan volume; the job 
 | `Lifecycle__ListingExpiryDays` | Listing auto-expiry threshold (default `90`; lower in tests) |
 | `Lifecycle__ListingExpiryWarningDaysBefore` | Days before expiry to warn (default `7`) |
 | `Lifecycle__ClaimTimeoutMinutes` | Pending-claim auto-withdraw timeout (default `14400` = 10 days) |
-| `Lifecycle__RetentionDays` | 30-day retention windows (rejected reports, chat, sessions, account PII purge) |
+| `Lifecycle__RetentionDays` | 30-day retention windows (rejected reports, chat, sessions) |
 | `POST /api/v1/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI (supersedes Phase 04 `trigger-claim-timeout` stub) |
 
 ---
@@ -122,11 +123,11 @@ Implement both where practical: immediate cleanup limits orphan volume; the job 
 
 Server-enforce these matrix rows before marking this phase done:
 
-| Data | Access on deletion |
-| ---- | ------------------ |
-| Chat message bodies | Remain until retention deadline; sender anonymized immediately |
-| Direct PII (phone, display name) | Purged within 30 days |
-| ModerationAction audit | Survives all deletions |
+| Data | Access on deactivation |
+| ---- | -------------------- |
+| Chat message bodies | Remain until retention deadline; sender unchanged |
+| Direct PII (phone, display name) | Retained in DB; account reactivatable on login |
+| ModerationAction audit | Survives all deactivations |
 
 Withdrawal reason: reporter and admin only - enforced in Phase 01; regression in Phase 06 withdraw UI/API tests.
 
@@ -169,10 +170,10 @@ From [SPEC.md Section 15.5](./SPEC.md#155-resolution-and-chat).
 
 - [ ] **Chat retention:** after cancellation or resolution the thread is read-only and is deleted 30 days later
 
-From [SPEC.md Section 5.1](./SPEC.md#51-authentication) (account deletion).
+From [SPEC.md Section 5.1](./SPEC.md#51-authentication) (account deactivation).
 
-- [ ] Account deletion blocked while user has report in `Claim In Progress` or holds approved claim on another's report
-- [ ] On deletion: `Pending Review`/`Published` reports withdrawn; pending claims withdrawn; signed out immediately; message bodies remain with anonymized sender; PII purged within 30 days
+- [ ] Account deactivation blocked while user has report in `Claim In Progress` or holds approved claim on another's report
+- [ ] On deactivation: `Pending Review`/`Published` reports withdrawn; pending claims withdrawn; signed out immediately; PII retained; reactivation available via login + confirm
 
 From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission).
 
@@ -197,8 +198,8 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [ ] 10-day claim auto-withdraw
 - [ ] Rejected report deleted after 30 days; `ModerationAction` survives
 - [ ] Chat deleted 30 days after read-only
-- [ ] Account deletion blockers enforced
-- [ ] Account deletion cleanup side effects
+- [ ] Account deactivation blockers enforced
+- [ ] Account deactivation cleanup and reactivation flow
 - [ ] OTP and session cleanup jobs
 - [ ] Orphaned R2 cleanup after simulated failed report submit (immediate + sweeper job)
 - [ ] `Pending Review`/`Rejected` never expire

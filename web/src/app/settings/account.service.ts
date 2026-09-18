@@ -4,10 +4,10 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 
-export interface AccountDeletionStatus {
-  canDelete: boolean;
+export interface AccountDeactivationStatus {
+  canDeactivate: boolean;
   blockers: string[];
-  deletionRequestedAt: string | null;
+  deactivatedAt: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -18,11 +18,17 @@ export class AccountService {
     return `${environment.apiBaseUrl}/account`;
   }
 
-  getDeletionStatus(): Observable<AccountDeletionStatus> {
-    return this.http.get<AccountDeletionStatus>(`${this.baseUrl}/deletion-status`);
+  getDeactivationStatus(): Observable<AccountDeactivationStatus> {
+    return this.http.get<AccountDeactivationStatus>(
+      `${this.baseUrl}/deactivation-status`,
+    );
   }
 
-  deleteAccount(): Observable<void> {
-    return this.http.delete<void>(this.baseUrl);
+  deactivateAccount(): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/deactivate`, null);
+  }
+
+  reactivateAccount(): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/reactivate`, null);
   }
 }

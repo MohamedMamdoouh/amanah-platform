@@ -51,7 +51,8 @@
   "error.resource.unavailable": "هذا البلاغ لم يعد متاحاً.",
   "error.resource.conflict": "لا يمكن تنفيذ هذا الإجراء على البلاغ الحالي.",
   "error.chat.read_only": "هذه المحادثة للقراءة فقط.",
-  "error.account.deleted": "تم حذف هذا الحساب.",
-  "error.account.deletion_blocked": "لا يمكن حذف الحساب حالياً.",
-  "error.account.deletion_already_requested": "تم طلب حذف الحساب مسبقاً."
+  "error.account.deactivated": "تم إيقاف هذا الحساب.",
+  "error.account.deactivation_blocked": "لا يمكن إيقاف الحساب حالياً.",
+  "error.account.deactivation_already_requested": "تم إيقاف هذا الحساب مسبقاً.",
+  "error.account.reactivation_required": "يلزم إعادة تفعيل الحساب للمتابعة."
 }

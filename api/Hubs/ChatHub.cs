@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Amanah.Api.Hubs;
 
-[Authorize]
+[Authorize(Policy = AuthPolicies.ActiveAccount)]
 public sealed class ChatHub(ChatService chatService, ChatPresenceTracker presenceTracker) : Hub
 {
     public async Task JoinThread(string threadId)

@@ -39,8 +39,6 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.CreatedAt)
             .IsRequired();
 
-        builder.Property(user => user.DeletionRequestedAt);
-
-        builder.Property(user => user.SenderAnonymizedAt);
+        builder.Property(user => user.DeactivatedAt);
     }
 }

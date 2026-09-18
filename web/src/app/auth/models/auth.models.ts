@@ -3,6 +3,7 @@ export interface UserProfile {
   displayName: string;
   role: string;
   phone: string;
+  requiresAccountReactivation?: boolean;
 }
 
 export interface AuthSession {

@@ -14,7 +14,7 @@ namespace Amanah.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/claims")]
-[Authorize]
+[Authorize(Policy = AuthPolicies.ActiveAccount)]
 public sealed class ClaimsController(
     ClaimService claimService,
     ResolutionService resolutionService) : ControllerBase

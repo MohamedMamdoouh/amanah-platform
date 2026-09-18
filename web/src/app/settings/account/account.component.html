@@ -9,14 +9,14 @@
   } @else if (loadError()) {
     <app-alert variant="error">{{ loadError() }}</app-alert>
   } @else {
-    @if (status(); as deletionStatus) {
+    @if (status(); as deactivationStatus) {
     <div class="account-settings__panel">
-      @if (deletionStatus.deletionRequestedAt) {
+      @if (deactivationStatus.deactivatedAt) {
         <app-alert variant="info">
           {{
-            'account.deletion_requested'
+            'account.deactivated'
               | translate
-                : { date: (deletionStatus.deletionRequestedAt | date: 'medium') }
+                : { date: (deactivationStatus.deactivatedAt | date: 'medium') }
           }}
         </app-alert>
       } @else {
@@ -40,10 +40,10 @@
         <div class="account-settings__actions">
           <app-button
             variant="danger"
-            [disabled]="!deletionStatus.canDelete || deleting()"
+            [disabled]="!deactivationStatus.canDeactivate || deactivating()"
             (clicked)="openConfirmDialog()"
           >
-            {{ 'account.delete_button' | translate }}
+            {{ 'account.deactivate_button' | translate }}
           </app-button>
         </div>
       }
@@ -51,21 +51,21 @@
 
     @if (showConfirmDialog()) {
       <app-confirm-dialog
-        titleId="delete-account-title"
+        titleId="deactivate-account-title"
         [title]="'account.confirm_title' | translate"
         [intro]="'account.confirm_intro' | translate"
         [cancelLabel]="'account.confirm_cancel' | translate"
         [confirmLabel]="'account.confirm_submit' | translate"
         confirmVariant="danger"
-        [loading]="deleting()"
-        [disabled]="deleting()"
+        [loading]="deactivating()"
+        [disabled]="deactivating()"
         (cancelled)="closeConfirmDialog()"
-        (confirmed)="confirmDelete()"
+        (confirmed)="confirmDeactivate()"
       />
 
-      @if (deleteError()) {
-        <app-alert variant="error" class="account-settings__delete-error">
-          {{ deleteError() }}
+      @if (deactivateError()) {
+        <app-alert variant="error" class="account-settings__deactivate-error">
+          {{ deactivateError() }}
         </app-alert>
       }
     }

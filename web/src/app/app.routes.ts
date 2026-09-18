@@ -4,7 +4,13 @@ import { AdminShellComponent } from './admin/admin-shell/admin-shell.component';
 import { ModerationQueueComponent } from './admin/moderation/moderation-queue.component';
 import { ModerationReviewComponent } from './admin/moderation/moderation-review.component';
 import { CategoriesAdminComponent } from './admin/categories/categories-admin.component';
-import { authGuard, guestGuard, adminGuard } from './auth/auth.guards';
+import {
+  authGuard,
+  guestGuard,
+  adminGuard,
+  reactivationGuard,
+} from './auth/auth.guards';
+import { ReactivateAccountComponent } from './auth/reactivate-account/reactivate-account.component';
 import { LoginComponent } from './auth/login/login.component';
 import { BrowseComponent } from './browse/browse.component';
 import { PublicReportDetailComponent } from './browse/public-report-detail.component';
@@ -45,6 +51,11 @@ export const routes: Routes = [
       { path: 'not-found', component: NotFoundComponent },
       { path: 'unavailable', component: UnavailableComponent },
       { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
+      {
+        path: 'account/reactivate',
+        component: ReactivateAccountComponent,
+        canActivate: [reactivationGuard],
+      },
       {
         path: 'report/lost',
         component: ReportFormComponent,

@@ -11,7 +11,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
-import { AccountDeletionStatus, AccountService } from '../account.service';
+import { AccountDeactivationStatus, AccountService } from '../account.service';
 
 @Component({
   selector: 'app-account-settings',
@@ -37,10 +37,10 @@ export class AccountComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
-  readonly status = signal<AccountDeletionStatus | null>(null);
+  readonly status = signal<AccountDeactivationStatus | null>(null);
   readonly showConfirmDialog = signal(false);
-  readonly deleting = signal(false);
-  readonly deleteError = signal<string | null>(null);
+  readonly deactivating = signal(false);
+  readonly deactivateError = signal<string | null>(null);
 
   readonly translatedBlockers = computed(() => {
     const blockers = this.status()?.blockers ?? [];
@@ -52,43 +52,43 @@ export class AccountComponent implements OnInit {
   }
 
   openConfirmDialog(): void {
-    if (!this.status()?.canDelete || this.deleting()) {
+    if (!this.status()?.canDeactivate || this.deactivating()) {
       return;
     }
 
-    this.deleteError.set(null);
+    this.deactivateError.set(null);
     this.showConfirmDialog.set(true);
   }
 
   closeConfirmDialog(): void {
     this.showConfirmDialog.set(false);
-    this.deleteError.set(null);
+    this.deactivateError.set(null);
   }
 
-  async confirmDelete(): Promise<void> {
-    if (!this.status()?.canDelete || this.deleting()) {
+  async confirmDeactivate(): Promise<void> {
+    if (!this.status()?.canDeactivate || this.deactivating()) {
       return;
     }
 
-    this.deleting.set(true);
-    this.deleteError.set(null);
+    this.deactivating.set(true);
+    this.deactivateError.set(null);
 
     try {
-      await firstValueFrom(this.accountService.deleteAccount());
+      await firstValueFrom(this.accountService.deactivateAccount());
       this.auth.clearSession();
       this.showConfirmDialog.set(false);
       await this.router.navigate(['/']);
     } catch (error) {
-      this.deleteError.set(this.apiErrors.messageFromHttpError(error));
+      this.deactivateError.set(this.apiErrors.messageFromHttpError(error));
     } finally {
-      this.deleting.set(false);
+      this.deactivating.set(false);
     }
   }
 
   private async loadStatus(): Promise<void> {
     try {
       const response = await firstValueFrom(
-        this.accountService.getDeletionStatus(),
+        this.accountService.getDeactivationStatus(),
       );
       this.status.set(response);
     } catch {

@@ -1,0 +1,29 @@
+<section class="reactivate-account page-container" aria-labelledby="reactivate-account-title">
+  <app-page-header
+    [title]="'account.reactivate.title' | translate"
+    [intro]="'account.reactivate.intro' | translate"
+  />
+
+  @if (error()) {
+    <app-alert variant="error">{{ error() }}</app-alert>
+  }
+
+  <div class="reactivate-account__actions">
+    <app-button
+      variant="primary"
+      [loading]="reactivating()"
+      [disabled]="reactivating()"
+      (clicked)="reactivate()"
+    >
+      {{ 'account.reactivate.confirm' | translate }}
+    </app-button>
+
+    <app-button
+      variant="secondary"
+      [disabled]="reactivating()"
+      (clicked)="cancel()"
+    >
+      {{ 'account.reactivate.cancel' | translate }}
+    </app-button>
+  </div>
+</section>

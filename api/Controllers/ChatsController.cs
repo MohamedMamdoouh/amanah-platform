@@ -13,7 +13,7 @@ namespace Amanah.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/chats")]
-[Authorize]
+[Authorize(Policy = AuthPolicies.ActiveAccount)]
 public sealed class ChatsController(ChatService chatService) : ControllerBase
 {
     [HttpGet]

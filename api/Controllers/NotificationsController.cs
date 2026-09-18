@@ -11,7 +11,7 @@ namespace Amanah.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/notifications")]
-[Authorize]
+[Authorize(Policy = AuthPolicies.ActiveAccount)]
 public sealed class NotificationsController(NotificationService notificationService) : ControllerBase
 {
     [HttpGet]

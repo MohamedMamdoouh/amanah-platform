@@ -50,6 +50,10 @@ export class AuthService {
     return this.currentUser()?.role === 'Admin';
   }
 
+  requiresAccountReactivation(): boolean {
+    return this.currentUser()?.requiresAccountReactivation === true;
+  }
+
   sendOtp(request: SendOtpRequest): Observable<void> {
     return this.http.post<void>(
       `${this.authBaseUrl}/otp/send`,

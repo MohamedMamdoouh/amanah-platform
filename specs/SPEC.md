@@ -204,7 +204,7 @@ See section 6.
 - **Sessions:** users stay signed in across multiple devices. "Log out everywhere" ends all sessions immediately. Sessions expire after a period without use and then require re-authentication.
 - **Terms changes:** there is no re-acceptance flow in v1.
 - **Phone change:** out of scope in v1 - neither self-serve nor admin-assisted.
-- **Account deletion:** self-serve, but **blocked** while the user has a report in `Claim In Progress` or holds an approved claim on someone else's report - the claim must be cancelled first (6.7). Once eligible: their reports in `Pending Review` or `Published` are withdrawn (closing any pending claims on them), their own `Pending` claims are withdrawn, and they are signed out immediately. Chat message bodies remain until the normal chat retention deadline while sender identity is anonymized immediately. Direct personal data is purged within **30 days** per section 12.
+- **Account deactivation:** self-serve, but **blocked** while the user has a report in `Claim In Progress` or holds an approved claim on someone else's report - the claim must be cancelled first (6.7). Once eligible: their reports in `Pending Review` or `Published` are withdrawn (closing any pending claims on them), their own `Pending` claims are withdrawn, and they are signed out immediately. Direct personal data is retained in the database. The user can **reactivate** by signing in again with the same phone number and confirming reactivation.
 - **Roles:** `User`, `Admin`.
 - **Admin bootstrap:** the initial admin account is provisioned at launch from `ADMIN_PHONE` + `ADMIN_PASSWORD` environment variables; no in-app admin promotion in v1.
 
@@ -331,7 +331,7 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 
 - Basic Terms of Service and Privacy Policy - reasonable diligence for v1 under Egypt's Personal Data Protection Law context.
 - **PDPL cross-border transfer:** infrastructure may be hosted outside Egypt. Accepted as a known legal gap for v1; hosting location disclosed in the Privacy Policy. Full legal review deferred.
-- **PDPL data rights:** self-serve deletion is implemented (5.1). Correction and access rights are not: display names cannot be changed, phone numbers cannot be changed, and there is no data export in v1. This gap is accepted and disclosed in the Privacy Policy alongside the hosting disclosure.
+- **PDPL data rights:** self-serve deactivation is implemented (5.1). Correction and access rights are not: display names cannot be changed, phone numbers cannot be changed, and there is no data export in v1. This gap is accepted and disclosed in the Privacy Policy alongside the hosting disclosure.
 - Minimal PII retention (section 12). Private photos and hidden verification details are access-controlled as defined in sections 5.2 and 9.
 
 ---
@@ -555,7 +555,7 @@ No formal performance targets for v1. Optimized image thumbnails are used to kee
 - **Rejected reports:** deleted **30 days** after rejection if never resubmitted. Resubmission restarts the report's life; a later rejection starts a new 30-day window.
 - **Claim photos:** deleted when the claim reaches `Rejected`, `Withdrawn`, or `Cancelled`, or when the report reaches a terminal status.
 - **Chat threads and messages:** read-only immediately on claim cancellation or report resolution; permanently deleted **30 days** later.
-- **On account deletion:** user signed out immediately; message bodies remain until the normal chat deadline while sender identity is anonymized immediately; direct personal data purged within **30 days**; anonymized aggregates retained only where required for audit.
+- **On account deactivation:** user signed out immediately; message bodies remain until the normal chat deadline; direct personal data retained; account reactivatable on login; anonymized aggregates retained only where required for audit.
 - **Retained internally:** moderation decisions and audit metadata. Moderation records survive deletion of the report they refer to.
 
 Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `ReportPhoto`, `Claim`, chat records, and `ModerationAction` follow the rules above; scheduled jobs enforce retention windows, **listing expiry** (4.7), and **pending-claim timeout** (6.3).

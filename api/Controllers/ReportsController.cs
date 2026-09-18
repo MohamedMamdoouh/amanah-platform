@@ -15,7 +15,7 @@ namespace Amanah.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/reports")]
-[Authorize]
+[Authorize(Policy = AuthPolicies.ActiveAccount)]
 public sealed class ReportsController(
     ReportService reportService,
     ClaimService claimService,

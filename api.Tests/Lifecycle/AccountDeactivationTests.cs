@@ -11,7 +11,6 @@ using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 using Amanah.Api.Tests.Resolution;
 using Amanah.Api.Tests.Uploads;
-using Amanah.Api.Utilities.Auth;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Account;
@@ -21,72 +20,72 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Amanah.Api.Tests.Lifecycle;
 
-public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
+public class AccountDeactivationTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
     [Fact]
-    public async Task DeletionStatus_lists_blocker_when_reporter_has_claim_in_progress()
+    public async Task DeactivationStatus_lists_blocker_when_reporter_has_claim_in_progress()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        var (response, status) = await GetDeletionStatusAsync(context);
+        var (response, status) = await GetDeactivationStatusAsync(context);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(status);
-        Assert.False(status.CanDelete);
+        Assert.False(status.CanDeactivate);
         Assert.Equal(ErrorCodes.AccountBlockerClaimInProgress, status.Blockers.Single());
     }
 
     [Fact]
-    public async Task DeleteAccount_returns_conflict_when_reporter_has_claim_in_progress()
+    public async Task DeactivateAccount_returns_conflict_when_reporter_has_claim_in_progress()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
-        var response = await DeleteAccountAsync(context);
+        var response = await DeactivateAccountAsync(context);
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
         var error = await HttpTestHelpers.ReadErrorAsync(response);
-        Assert.Equal(ErrorCodes.AccountDeletionBlocked, error?.Code);
+        Assert.Equal(ErrorCodes.AccountDeactivationBlocked, error?.Code);
         Assert.Contains(
             ErrorCodes.AccountBlockerClaimInProgress,
             error?.Errors?["blockers"] ?? []);
     }
 
     [Fact]
-    public async Task DeletionStatus_lists_blocker_when_claimant_has_approved_claim()
+    public async Task DeactivationStatus_lists_blocker_when_claimant_has_approved_claim()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
         ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
 
-        var (response, status) = await GetDeletionStatusAsync(context);
+        var (response, status) = await GetDeactivationStatusAsync(context);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(status);
-        Assert.False(status.CanDelete);
+        Assert.False(status.CanDeactivate);
         Assert.Equal(ErrorCodes.AccountBlockerApprovedClaim, status.Blockers.Single());
     }
 
     [Fact]
-    public async Task DeleteAccount_returns_conflict_when_claimant_has_approved_claim()
+    public async Task DeactivateAccount_returns_conflict_when_claimant_has_approved_claim()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
 
         ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
 
-        var response = await DeleteAccountAsync(context);
+        var response = await DeactivateAccountAsync(context);
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
         var error = await HttpTestHelpers.ReadErrorAsync(response);
-        Assert.Equal(ErrorCodes.AccountDeletionBlocked, error?.Code);
+        Assert.Equal(ErrorCodes.AccountDeactivationBlocked, error?.Code);
         Assert.Contains(
             ErrorCodes.AccountBlockerApprovedClaim,
             error?.Errors?["blockers"] ?? []);
     }
 
     [Fact]
-    public async Task DeleteAccount_withdraws_reports_and_pending_claims_anonymizes_messages_and_signs_out()
+    public async Task DeactivateAccount_withdraws_reports_and_pending_claims_keeps_messages_and_pii()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var reporterId = context.Session.User.Id;
@@ -115,14 +114,14 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
         var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(context.Client, scenario.ClaimId);
         Assert.Equal(HttpStatusCode.NoContent, cancelResponse.StatusCode);
 
-        var deleteResponse = await DeleteAccountAsync(context);
-        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        var deactivateResponse = await DeactivateAccountAsync(context);
+        Assert.Equal(HttpStatusCode.NoContent, deactivateResponse.StatusCode);
 
         var publishedReport = await context.DbContext.Reports
             .AsNoTracking()
             .SingleAsync(report => report.Id == publishedReportId);
         Assert.Equal(ReportStatus.Withdrawn, publishedReport.Status);
-        Assert.Equal(AccountDeletionService.WithdrawReason, publishedReport.WithdrawalReason);
+        Assert.Equal(AccountDeactivationService.WithdrawReason, publishedReport.WithdrawalReason);
 
         var pendingReviewReport = await context.DbContext.Reports
             .AsNoTracking()
@@ -134,31 +133,21 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
             .SingleAsync(claim => claim.Id == pendingClaimId);
         Assert.Equal(ClaimStatus.Withdrawn, pendingClaim.Status);
 
-        var deletedUser = await context.DbContext.Users
+        var deactivatedUser = await context.DbContext.Users
             .AsNoTracking()
             .SingleAsync(user => user.Id == reporterId);
-        Assert.NotNull(deletedUser.DeletionRequestedAt);
-        Assert.NotNull(deletedUser.SenderAnonymizedAt);
-        Assert.False(string.IsNullOrWhiteSpace(deletedUser.NormalizedPhone));
-        Assert.False(string.IsNullOrWhiteSpace(deletedUser.DisplayName));
+        Assert.NotNull(deactivatedUser.DeactivatedAt);
+        Assert.False(string.IsNullOrWhiteSpace(deactivatedUser.NormalizedPhone));
+        Assert.False(string.IsNullOrWhiteSpace(deactivatedUser.DisplayName));
 
         var message = await context.DbContext.Messages
             .AsNoTracking()
             .SingleAsync(item => item.Id == sentMessage.Id);
-        Assert.Equal(AnonymizedUser.Id, message.SenderId);
-
-        var meResponse = await context.Client.GetAsync("/api/v1/auth/me");
-        Assert.Equal(HttpStatusCode.Forbidden, meResponse.StatusCode);
-
-        var meError = await HttpTestHelpers.ReadErrorAsync(meResponse);
-        Assert.Equal(ErrorCodes.AccountDeleted, meError?.Code);
-
-        var refreshResponse = await context.Client.PostAsync("/api/v1/auth/refresh", null);
-        Assert.Equal(HttpStatusCode.Unauthorized, refreshResponse.StatusCode);
+        Assert.Equal(reporterId, message.SenderId);
     }
 
     [Fact]
-    public async Task DeleteAccount_deletes_pending_claim_photos_from_storage_and_database()
+    public async Task DeactivateAccount_deletes_pending_claim_photos_from_storage_and_database()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var (otherReportId, _) = await CreateOtherReporterPublishedReportAsync(context);
@@ -185,8 +174,8 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
             factory.Services.GetRequiredService<IBucketStorage>());
         Assert.True(storage.ContainsKey(claim.PhotoStorageKey!));
 
-        var deleteResponse = await DeleteAccountAsync(context);
-        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        var deactivateResponse = await DeactivateAccountAsync(context);
+        Assert.Equal(HttpStatusCode.NoContent, deactivateResponse.StatusCode);
 
         var updatedClaim = await context.DbContext.Claims
             .AsNoTracking()
@@ -200,23 +189,111 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
             ClaimPhotoStorageKeys.ThumbnailForOriginal(claim.PhotoStorageKey!)));
     }
 
-    private static Task<(HttpResponseMessage Response, AccountDeletionStatusResponse? Body)> GetDeletionStatusAsync(
-        ReportTestContext context) =>
-        GetDeletionStatusAsync(context.Client);
-
-    private static async Task<(HttpResponseMessage Response, AccountDeletionStatusResponse? Body)>
-        GetDeletionStatusAsync(HttpClient client)
+    [Fact]
+    public async Task Deactivated_user_login_returns_session_with_reactivation_flag()
     {
-        var response = await client.GetAsync("/api/v1/account/deletion-status");
-        AccountDeletionStatusResponse? body = response.IsSuccessStatusCode
-            ? await response.Content.ReadFromJsonAsync<AccountDeletionStatusResponse>()
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        await DeactivateAccountAsync(context);
+
+        var (_, session) = await context.Auth.LoginAsync("01012345678", TestAuthHelpers.DefaultPassword);
+        Assert.NotNull(session);
+        Assert.True(session.User.RequiresAccountReactivation);
+    }
+
+    [Fact]
+    public async Task Deactivated_user_can_refresh_and_fetch_profile_with_reactivation_flag()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+
+        await DeactivateAccountAsync(context);
+
+        var (_, session) = await context.Auth.LoginAsync("01012345678", TestAuthHelpers.DefaultPassword);
+        Assert.NotNull(session);
+
+        ClaimTestHelpers.Authenticate(context.Client, session.AccessToken);
+
+        var meResponse = await context.Client.GetAsync("/api/v1/auth/me");
+        Assert.Equal(HttpStatusCode.OK, meResponse.StatusCode);
+        var profile = await meResponse.Content.ReadFromJsonAsync<UserProfileResponse>();
+        Assert.NotNull(profile);
+        Assert.True(profile.RequiresAccountReactivation);
+
+        var refreshResponse = await context.Client.PostAsync("/api/v1/auth/refresh", null);
+        Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
+        var refreshed = await refreshResponse.Content.ReadFromJsonAsync<AuthSessionResponse>();
+        Assert.NotNull(refreshed);
+        Assert.True(refreshed.User.RequiresAccountReactivation);
+    }
+
+    [Fact]
+    public async Task Deactivated_user_is_blocked_from_protected_endpoints_until_reactivation()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        await DeactivateAccountAsync(context);
+
+        var (_, session) = await context.Auth.LoginAsync("01012345678", TestAuthHelpers.DefaultPassword);
+        Assert.NotNull(session);
+        ClaimTestHelpers.Authenticate(context.Client, session.AccessToken);
+
+        var response = await context.Client.GetAsync("/api/v1/notifications");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+        var error = await HttpTestHelpers.ReadErrorAsync(response);
+        Assert.Equal(ErrorCodes.AccountReactivationRequired, error?.Code);
+    }
+
+    [Fact]
+    public async Task ReactivateAccount_clears_flag_and_keeps_withdrawn_reports()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var reporterId = context.Session.User.Id;
+        var publishedReportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        await DeactivateAccountAsync(context);
+
+        var (_, session) = await context.Auth.LoginAsync("01012345678", TestAuthHelpers.DefaultPassword);
+        Assert.NotNull(session);
+        ClaimTestHelpers.Authenticate(context.Client, session.AccessToken);
+
+        var reactivateResponse = await ReactivateAccountAsync(context);
+        Assert.Equal(HttpStatusCode.NoContent, reactivateResponse.StatusCode);
+
+        var user = await context.DbContext.Users
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == reporterId);
+        Assert.Null(user.DeactivatedAt);
+
+        var meResponse = await context.Client.GetAsync("/api/v1/auth/me");
+        Assert.Equal(HttpStatusCode.OK, meResponse.StatusCode);
+        var profile = await meResponse.Content.ReadFromJsonAsync<UserProfileResponse>();
+        Assert.NotNull(profile);
+        Assert.False(profile.RequiresAccountReactivation);
+
+        var report = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == publishedReportId);
+        Assert.Equal(ReportStatus.Withdrawn, report.Status);
+    }
+
+    private static Task<(HttpResponseMessage Response, AccountDeactivationStatusResponse? Body)> GetDeactivationStatusAsync(
+        ReportTestContext context) =>
+        GetDeactivationStatusAsync(context.Client);
+
+    private static async Task<(HttpResponseMessage Response, AccountDeactivationStatusResponse? Body)>
+        GetDeactivationStatusAsync(HttpClient client)
+    {
+        var response = await client.GetAsync("/api/v1/account/deactivation-status");
+        AccountDeactivationStatusResponse? body = response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<AccountDeactivationStatusResponse>()
             : null;
 
         return (response, body);
     }
 
-    private static Task<HttpResponseMessage> DeleteAccountAsync(ReportTestContext context) =>
-        context.Client.DeleteAsync("/api/v1/account");
+    private static Task<HttpResponseMessage> DeactivateAccountAsync(ReportTestContext context) =>
+        context.Client.PostAsync("/api/v1/account/deactivate", null);
+
+    private static Task<HttpResponseMessage> ReactivateAccountAsync(ReportTestContext context) =>
+        context.Client.PostAsync("/api/v1/account/reactivate", null);
 
     private static async Task<(Guid ReportId, Guid ReporterId)> CreateOtherReporterPublishedReportAsync(
         ReportTestContext context)

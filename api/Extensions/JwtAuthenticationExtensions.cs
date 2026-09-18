@@ -2,6 +2,7 @@ using Amanah.Api.Auth;
 using Amanah.Api.Options;
 using Amanah.Contracts.Chats;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Amanah.Api.Extensions;
@@ -53,9 +54,15 @@ public static class JwtAuthenticationExtensions
                 };
             });
 
+        services.AddScoped<IAuthorizationHandler, ActiveAccountAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationMiddlewareResultHandler, ApiAuthorizationMiddlewareResultHandler>();
+
         services.AddAuthorizationBuilder()
             .AddPolicy(AuthPolicies.Admin, policy =>
-                policy.RequireRole(AuthPolicies.Admin));
+                policy.RequireRole(AuthPolicies.Admin))
+            .AddPolicy(AuthPolicies.ActiveAccount, policy =>
+                policy.RequireAuthenticatedUser()
+                    .AddRequirements(new ActiveAccountRequirement()));
 
         return services;
     }

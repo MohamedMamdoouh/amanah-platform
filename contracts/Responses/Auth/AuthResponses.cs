@@ -25,4 +25,6 @@ public sealed class UserProfileResponse
     public required string Role { get; init; }
 
     public required string Phone { get; init; }
+
+    public bool RequiresAccountReactivation { get; init; }
 }

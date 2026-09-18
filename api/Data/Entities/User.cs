@@ -18,9 +18,7 @@ public class User : IEntity
 
     public DateTimeOffset CreatedAt { get; set; }
 
-    public DateTimeOffset? DeletionRequestedAt { get; set; }
-
-    public DateTimeOffset? SenderAnonymizedAt { get; set; }
+    public DateTimeOffset? DeactivatedAt { get; set; }
 
     public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
 }

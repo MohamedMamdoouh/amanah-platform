@@ -3,6 +3,7 @@ using System;
 using Amanah.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amanah.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AmanahDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260918213453_RenameDeletionRequestedAtToDeactivatedAt")]
+    partial class RenameDeletionRequestedAtToDeactivatedAt
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -833,6 +836,9 @@ namespace Amanah.Api.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<DateTimeOffset?>("SenderAnonymizedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 

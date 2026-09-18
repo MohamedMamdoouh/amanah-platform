@@ -405,6 +405,11 @@ export class LoginComponent implements OnDestroy {
   }
 
   private async navigateAfterAuth(): Promise<void> {
+    if (this.auth.requiresAccountReactivation()) {
+      await this.router.navigate(['/account/reactivate']);
+      return;
+    }
+
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
     if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
       await this.router.navigateByUrl(returnUrl);

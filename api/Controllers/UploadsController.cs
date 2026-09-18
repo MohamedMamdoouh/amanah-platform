@@ -12,7 +12,7 @@ namespace Amanah.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/uploads")]
-[Authorize]
+[Authorize(Policy = AuthPolicies.ActiveAccount)]
 public sealed class UploadsController(
     ReportPhotoPresignService reportPhotoPresignService,
     ClaimPhotoPresignService claimPhotoPresignService,

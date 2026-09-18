@@ -3,23 +3,22 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Services.Claims;
-using Amanah.Api.Utilities.Auth;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Responses.Account;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Services.Lifecycle;
 
-public sealed class AccountDeletionService(
+public sealed class AccountDeactivationService(
     AppDbContext dbContext,
     ReportLifecycleService reportLifecycleService,
     ClaimCleanupService claimCleanupService,
     TokenService tokenService,
     TimeProvider timeProvider)
 {
-    public const string WithdrawReason = "_account_deletion_";
+    public const string WithdrawReason = "_account_deactivation_";
 
-    public async Task<Result<AccountDeletionStatusResponse>> GetDeletionStatusAsync(
+    public async Task<Result<AccountDeactivationStatusResponse>> GetDeactivationStatusAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
@@ -34,15 +33,15 @@ public sealed class AccountDeletionService(
 
         var blockers = await GetBlockersAsync(userId, cancellationToken);
 
-        return new AccountDeletionStatusResponse
+        return new AccountDeactivationStatusResponse
         {
-            CanDelete = user.DeletionRequestedAt is null && blockers.Count == 0,
+            CanDeactivate = user.DeactivatedAt is null && blockers.Count == 0,
             Blockers = blockers,
-            DeletionRequestedAt = user.DeletionRequestedAt,
+            DeactivatedAt = user.DeactivatedAt,
         };
     }
 
-    public async Task<Result> DeleteAccountAsync(
+    public async Task<Result> DeactivateAccountAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
@@ -54,19 +53,19 @@ public sealed class AccountDeletionService(
             return ResultError.NotFound("User not found.");
         }
 
-        if (user.DeletionRequestedAt is not null)
+        if (user.DeactivatedAt is not null)
         {
             return ResultError.Conflict(
-                "Account deletion has already been requested.",
-                ErrorCodes.AccountDeletionAlreadyRequested);
+                "This account is already deactivated.",
+                ErrorCodes.AccountDeactivationAlreadyRequested);
         }
 
         var blockers = await GetBlockersAsync(userId, cancellationToken);
         if (blockers.Count > 0)
         {
             return new ResultError(
-                ErrorCodes.AccountDeletionBlocked,
-                "Account deletion is blocked.",
+                ErrorCodes.AccountDeactivationBlocked,
+                "Account deactivation is blocked.",
                 StatusCodes.Status409Conflict,
                 new Dictionary<string, string[]>
                 {
@@ -101,18 +100,36 @@ public sealed class AccountDeletionService(
 
         await WithdrawPendingClaimsAsync(userId, now, cancellationToken);
 
-        await dbContext.Messages
-            .Where(message => message.SenderId == userId)
-            .ExecuteUpdateAsync(
-                setters => setters.SetProperty(message => message.SenderId, AnonymizedUser.Id),
-                cancellationToken);
-
-        user.DeletionRequestedAt = now;
-        user.SenderAnonymizedAt = now;
+        user.DeactivatedAt = now;
 
         await tokenService.RevokeAllRefreshTokensAsync(userId, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        return Result.Ok();
+    }
+
+    public async Task<Result> ReactivateAccountAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await dbContext.Users
+            .SingleOrDefaultAsync(existingUser => existingUser.Id == userId, cancellationToken);
+
+        if (user is null)
+        {
+            return ResultError.NotFound("User not found.");
+        }
+
+        if (user.DeactivatedAt is null)
+        {
+            return ResultError.Conflict(
+                "This account is not deactivated.",
+                ErrorCodes.Conflict);
+        }
+
+        user.DeactivatedAt = null;
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }
@@ -172,12 +189,9 @@ public sealed class AccountDeletionService(
             claim.Status = ClaimStatus.Withdrawn;
             claim.ReviewedAt = now;
             claim.CountsAsFailure = false;
-            // SPEC §12: claim photos are deleted when the claim reaches Withdrawn.
             photoKeys.AddRange(claimCleanupService.ClearClaimPhoto(claim));
         }
 
-        // Enqueue before SaveChanges so outbox rows commit with PhotoStorageKey clears
-        // (same pattern as ClaimService reject/withdraw after the storage outbox refactor).
         await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
     }

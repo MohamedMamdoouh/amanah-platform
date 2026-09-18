@@ -1,4 +1,5 @@
 using Amanah.Api.Auth;
+using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Lifecycle;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Responses.Account;
@@ -13,38 +14,54 @@ namespace Amanah.Api.Controllers;
 [Route("api/v{version:apiVersion}/account")]
 [Authorize]
 public sealed class AccountController(
-    AccountDeletionService accountDeletionService,
+    AccountDeactivationService accountDeactivationService,
     RefreshTokenCookieManager refreshTokenCookies) : ControllerBase
 {
-    [HttpGet("deletion-status")]
-    [EndpointName(nameof(GetAccountDeletionStatus))]
-    [EndpointSummary("Check whether account deletion is allowed and list blockers.")]
-    [ProducesResponseType(typeof(AccountDeletionStatusResponse), StatusCodes.Status200OK)]
+    [HttpGet("deactivation-status")]
+    [Authorize(Policy = AuthPolicies.ActiveAccount)]
+    [EndpointName(nameof(GetAccountDeactivationStatus))]
+    [EndpointSummary("Check whether account deactivation is allowed and list blockers.")]
+    [ProducesResponseType(typeof(AccountDeactivationStatusResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetAccountDeletionStatus(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAccountDeactivationStatus(CancellationToken cancellationToken)
     {
         User.TryGetUserId(out var userId);
 
-        var result = await accountDeletionService.GetDeletionStatusAsync(userId, cancellationToken);
+        var result = await accountDeactivationService.GetDeactivationStatusAsync(userId, cancellationToken);
         return result.ToActionResult();
     }
 
-    [HttpDelete]
-    [EndpointName(nameof(DeleteAccount))]
-    [EndpointSummary("Request self-serve account deletion.")]
+    [HttpPost("deactivate")]
+    [Authorize(Policy = AuthPolicies.ActiveAccount)]
+    [EndpointName(nameof(DeactivateAccount))]
+    [EndpointSummary("Deactivate the current user's account.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> DeleteAccount(CancellationToken cancellationToken)
+    public async Task<IActionResult> DeactivateAccount(CancellationToken cancellationToken)
     {
         User.TryGetUserId(out var userId);
 
-        var result = await accountDeletionService.DeleteAccountAsync(userId, cancellationToken);
+        var result = await accountDeactivationService.DeactivateAccountAsync(userId, cancellationToken);
         if (result.IsSuccess)
         {
             refreshTokenCookies.Clear(Response);
         }
 
+        return result.ToActionResult();
+    }
+
+    [HttpPost("reactivate")]
+    [EndpointName(nameof(ReactivateAccount))]
+    [EndpointSummary("Reactivate a deactivated account.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ReactivateAccount(CancellationToken cancellationToken)
+    {
+        User.TryGetUserId(out var userId);
+
+        var result = await accountDeactivationService.ReactivateAccountAsync(userId, cancellationToken);
         return result.ToActionResult();
     }
 }

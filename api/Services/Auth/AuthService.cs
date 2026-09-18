@@ -81,10 +81,10 @@ public sealed class AuthService(
                 ErrorCodes.InvalidCredentials);
         }
 
-        var authBlock = CheckAuthBlock(user);
-        if (authBlock is not null)
+        var bannedBlock = CheckBannedBlock(user);
+        if (bannedBlock is not null)
         {
-            return authBlock;
+            return bannedBlock;
         }
 
         return await IssueSessionAsync(user, cancellationToken);
@@ -114,10 +114,10 @@ public sealed class AuthService(
                 ErrorCodes.HandoffTokenInvalid);
         }
 
-        var authBlock = CheckAuthBlock(user);
-        if (authBlock is not null)
+        var bannedBlock = CheckBannedBlock(user);
+        if (bannedBlock is not null)
         {
-            return authBlock;
+            return bannedBlock;
         }
 
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
@@ -142,10 +142,10 @@ public sealed class AuthService(
                 ErrorCodes.RefreshInvalid);
         }
 
-        var authBlock = CheckAuthBlock(refreshToken.User);
-        if (authBlock is not null)
+        var bannedBlock = CheckBannedBlock(refreshToken.User);
+        if (bannedBlock is not null)
         {
-            return authBlock;
+            return bannedBlock;
         }
 
         await tokenService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
@@ -196,10 +196,10 @@ public sealed class AuthService(
                 ErrorCodes.Unauthorized);
         }
 
-        var authBlock = CheckAuthBlock(user);
-        if (authBlock is not null)
+        var bannedBlock = CheckBannedBlock(user);
+        if (bannedBlock is not null)
         {
-            return authBlock;
+            return bannedBlock;
         }
 
         return MapProfile(user);
@@ -228,17 +228,11 @@ public sealed class AuthService(
             DisplayName = user.DisplayName ?? string.Empty,
             Role = user.Role.ToString(),
             Phone = user.NormalizedPhone,
+            RequiresAccountReactivation = user.DeactivatedAt is not null,
         };
 
-    private static ResultError? CheckAuthBlock(User user)
+    private static ResultError? CheckBannedBlock(User user)
     {
-        if (user.DeletionRequestedAt is not null)
-        {
-            return ResultError.Forbidden(
-                "This account has been deleted.",
-                ErrorCodes.AccountDeleted);
-        }
-
         if (!user.IsBanned)
         {
             return null;

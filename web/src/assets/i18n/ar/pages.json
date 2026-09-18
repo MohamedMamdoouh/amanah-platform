@@ -21,7 +21,7 @@
   "pages.privacy.rights.item_correction": "تصحيح اسم العرض أو رقم الهاتف بعد التسجيل.",
   "pages.privacy.rights.item_access": "طلب نسخة من بياناتك الشخصية عبر التطبيق.",
   "pages.privacy.rights.item_export": "تصدير بياناتك بتنسيق قابل للقراءة.",
-  "pages.privacy.rights.item_deletion": "حذف الحساب ذاتيًا (سيُتاح في مرحلة لاحقة).",
+  "pages.privacy.rights.item_deletion": "إيقاف الحساب ذاتيًا من إعدادات الحساب، مع إمكانية إعادة التفعيل بتسجيل الدخول.",
   "pages.privacy.retention.title": "الاحتفاظ بالبيانات",
   "pages.privacy.retention.body": "نحتفظ بالبيانات وفق قواعد الاحتفاظ المحددة في المنصة. الصور الخاصة وتفاصيل التحقق المخفية محمية بضوابط وصول صارمة.",
 
