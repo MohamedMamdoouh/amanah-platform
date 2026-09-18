@@ -59,7 +59,8 @@ public static class JwtAuthenticationExtensions
 
         services.AddAuthorizationBuilder()
             .AddPolicy(AuthPolicies.Admin, policy =>
-                policy.RequireRole(AuthPolicies.Admin))
+                policy.RequireRole(AuthPolicies.Admin)
+                    .AddRequirements(new ActiveAccountRequirement()))
             .AddPolicy(AuthPolicies.ActiveAccount, policy =>
                 policy.RequireAuthenticatedUser()
                     .AddRequirements(new ActiveAccountRequirement()));

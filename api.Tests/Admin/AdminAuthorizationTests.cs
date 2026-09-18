@@ -47,6 +47,30 @@ public class AdminAuthorizationTests(ApiWebApplicationFactory factory) : IClassF
     }
 
     [Fact]
+    public async Task Deactivated_admin_is_blocked_from_moderation_until_reactivation()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        await HttpTestHelpers.LoginAsAdminAsync(context);
+
+        var deactivateResponse = await context.Client.PostAsync("/api/v1/account/deactivate", null);
+        Assert.Equal(HttpStatusCode.NoContent, deactivateResponse.StatusCode);
+
+        await HttpTestHelpers.LoginAsAdminAsync(context);
+
+        var blockedResponse = await context.Client.GetAsync("/api/v1/admin/moderation/queue");
+        Assert.Equal(HttpStatusCode.Forbidden, blockedResponse.StatusCode);
+
+        var blockedError = await HttpTestHelpers.ReadErrorAsync(blockedResponse);
+        Assert.Equal(ErrorCodes.AccountReactivationRequired, blockedError?.Code);
+
+        var reactivateResponse = await context.Client.PostAsync("/api/v1/account/reactivate", null);
+        Assert.Equal(HttpStatusCode.NoContent, reactivateResponse.StatusCode);
+
+        var allowedResponse = await context.Client.GetAsync("/api/v1/admin/moderation/queue");
+        Assert.Equal(HttpStatusCode.OK, allowedResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task Get_admin_categories_as_admin_returns_category_list()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);

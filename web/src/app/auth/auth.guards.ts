@@ -22,6 +22,10 @@ export const adminGuard: CanActivateFn = () => {
     return router.createUrlTree(['/login']);
   }
 
+  if (auth.requiresAccountReactivation()) {
+    return router.createUrlTree(['/account/reactivate']);
+  }
+
   if (!auth.isAdmin()) {
     return router.createUrlTree(['/']);
   }
