@@ -14,6 +14,7 @@ public sealed class RetentionService(
     TimeProvider timeProvider,
     IOptions<LifecycleOptions> lifecycleOptions)
 {
+    private const int OtpCleanupHoursAfterExpiry = 24;
     public async Task<int> ProcessRejectedReportCleanupAsync(CancellationToken cancellationToken = default)
     {
         var now = timeProvider.GetUtcNow();
@@ -115,6 +116,50 @@ public sealed class RetentionService(
             .Where(message =>
                 (message.Status == StorageDeletionOutboxStatus.Sent
                     || message.Status == StorageDeletionOutboxStatus.Failed)
+                && message.ProcessedAt != null
+                && message.ProcessedAt <= threshold)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<int> ProcessOtpCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var threshold = timeProvider.GetUtcNow().AddHours(-OtpCleanupHoursAfterExpiry);
+
+        return await dbContext.OtpCodes
+            .Where(otpCode => otpCode.ExpiresAt <= threshold)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<int> ProcessSessionCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var threshold = timeProvider.GetUtcNow().AddDays(-lifecycleOptions.Value.RetentionDays);
+
+        return await dbContext.RefreshTokens
+            .Where(token => token.ExpiresAt <= threshold)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<int> ProcessOtpSmsOutboxCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var threshold = timeProvider.GetUtcNow().AddDays(-lifecycleOptions.Value.RetentionDays);
+
+        return await dbContext.OtpSmsOutboxMessages
+            .Where(message =>
+                (message.Status == OtpSmsOutboxStatus.Sent
+                    || message.Status == OtpSmsOutboxStatus.Failed)
+                && message.ProcessedAt != null
+                && message.ProcessedAt <= threshold)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<int> ProcessAdminAlertEmailOutboxCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var threshold = timeProvider.GetUtcNow().AddDays(-lifecycleOptions.Value.RetentionDays);
+
+        return await dbContext.AdminAlertEmailOutboxMessages
+            .Where(message =>
+                (message.Status == AdminAlertEmailOutboxStatus.Sent
+                    || message.Status == AdminAlertEmailOutboxStatus.Failed)
                 && message.ProcessedAt != null
                 && message.ProcessedAt <= threshold)
             .ExecuteDeleteAsync(cancellationToken);

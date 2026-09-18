@@ -23,6 +23,10 @@ public static class LifecycleServiceExtensions
         services.AddLifecycleJob<ChatRetentionJob>();
         services.AddLifecycleJob<StorageDeletionOutboxProcessJob>();
         services.AddLifecycleJob<StorageDeletionOutboxCleanupJob>();
+        services.AddLifecycleJob<OtpCleanupJob>();
+        services.AddLifecycleJob<SessionCleanupJob>();
+        services.AddLifecycleJob<OtpSmsOutboxCleanupJob>();
+        services.AddLifecycleJob<AdminAlertEmailOutboxCleanupJob>();
 
         return services;
     }
