@@ -193,6 +193,8 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
             .SingleAsync(item => item.Id == submitted.Id);
         Assert.Equal(ClaimStatus.Withdrawn, updatedClaim.Status);
         Assert.Null(updatedClaim.PhotoStorageKey);
+        Assert.True(storage.ContainsKey(claim.PhotoStorageKey!));
+        await StorageDeletionOutboxTestHelpers.ProcessPendingOutboxAsync(factory);
         Assert.False(storage.ContainsKey(claim.PhotoStorageKey!));
         Assert.False(storage.ContainsKey(
             ClaimPhotoStorageKeys.ThumbnailForOriginal(claim.PhotoStorageKey!)));

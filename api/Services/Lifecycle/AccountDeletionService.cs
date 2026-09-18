@@ -176,7 +176,9 @@ public sealed class AccountDeletionService(
             photoKeys.AddRange(claimCleanupService.ClearClaimPhoto(claim));
         }
 
+        // Enqueue before SaveChanges so outbox rows commit with PhotoStorageKey clears
+        // (same pattern as ClaimService reject/withdraw after the storage outbox refactor).
+        await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
     }
 }
