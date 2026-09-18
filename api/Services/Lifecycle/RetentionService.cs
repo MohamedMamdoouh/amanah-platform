@@ -10,7 +10,7 @@ namespace Amanah.Api.Services.Lifecycle;
 
 public sealed class RetentionService(
     AppDbContext dbContext,
-    IBucketStorage bucketStorage,
+    StorageDeletionEnqueueService storageDeletionEnqueueService,
     TimeProvider timeProvider,
     IOptions<LifecycleOptions> lifecycleOptions)
 {
@@ -65,9 +65,12 @@ public sealed class RetentionService(
             dbContext.Reports.Remove(report);
         }
 
+        await storageDeletionEnqueueService.EnqueueAsync(
+            storageKeys,
+            StorageDeletionSource.ReportRetention,
+            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bucketStorage.DeleteManyAsync(storageKeys, cancellationToken);
 
         return reports.Count;
     }
@@ -93,11 +96,28 @@ public sealed class RetentionService(
 
         var storageKeys = CollectChatAttachmentKeys(attachments);
 
+        await storageDeletionEnqueueService.EnqueueAsync(
+            storageKeys,
+            StorageDeletionSource.ChatRetention,
+            cancellationToken);
         dbContext.ChatThreads.RemoveRange(threads);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await bucketStorage.DeleteManyAsync(storageKeys, cancellationToken);
 
         return threads.Count;
+    }
+
+    public async Task<int> ProcessStorageDeletionOutboxCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var threshold = now.AddDays(-lifecycleOptions.Value.RetentionDays);
+
+        return await dbContext.StorageDeletionOutboxMessages
+            .Where(message =>
+                (message.Status == StorageDeletionOutboxStatus.Sent
+                    || message.Status == StorageDeletionOutboxStatus.Failed)
+                && message.ProcessedAt != null
+                && message.ProcessedAt <= threshold)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
     private static IReadOnlyList<string> CollectReportPhotoKeys(IEnumerable<ReportPhoto> photos) =>

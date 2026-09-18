@@ -4,6 +4,7 @@ using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Tests.Claims;
 using Amanah.Api.Tests.Infrastructure;
+using Amanah.Api.Tests.Lifecycle;
 using Amanah.Api.Tests.Uploads;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Reports;
@@ -163,6 +164,8 @@ public class ReportWithdrawTests(ApiWebApplicationFactory factory) : IClassFixtu
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         Assert.Equal(0, await context.DbContext.ReportPhotos.CountAsync());
+        Assert.True(storage.ContainsKey(photo.StorageKey));
+        await StorageDeletionOutboxTestHelpers.ProcessPendingOutboxAsync(factory);
         Assert.False(storage.ContainsKey(photo.StorageKey));
         Assert.False(storage.ContainsKey(photo.ThumbnailStorageKey!));
     }

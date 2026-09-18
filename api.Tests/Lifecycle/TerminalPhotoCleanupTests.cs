@@ -68,6 +68,8 @@ public class TerminalPhotoCleanupTests(ApiWebApplicationFactory factory) : IClas
 
         Assert.True(result.IsSuccess);
         Assert.Equal(0, await dbContext.ReportPhotos.CountAsync());
+        Assert.True(storage.ContainsKey(originalKey));
+        await StorageDeletionOutboxTestHelpers.ProcessPendingOutboxAsync(factory);
         Assert.False(storage.ContainsKey(originalKey));
         Assert.False(storage.ContainsKey(thumbnailKey));
     }
@@ -96,6 +98,8 @@ public class TerminalPhotoCleanupTests(ApiWebApplicationFactory factory) : IClas
         Assert.Equal(ReportStatus.Withdrawn, (
             await context.DbContext.Reports.AsNoTracking().SingleAsync(item => item.Id == created.Id)).Status);
         Assert.Equal(0, await context.DbContext.ReportPhotos.CountAsync());
+        Assert.True(storage.ContainsKey(photo.StorageKey));
+        await StorageDeletionOutboxTestHelpers.ProcessPendingOutboxAsync(factory);
         Assert.False(storage.ContainsKey(photo.StorageKey));
         Assert.False(storage.ContainsKey(photo.ThumbnailStorageKey!));
     }

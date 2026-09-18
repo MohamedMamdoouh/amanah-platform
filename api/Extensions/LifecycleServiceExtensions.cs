@@ -21,6 +21,8 @@ public static class LifecycleServiceExtensions
         services.AddLifecycleJob<PendingClaimTimeoutJob>();
         services.AddLifecycleJob<RejectedReportCleanupJob>();
         services.AddLifecycleJob<ChatRetentionJob>();
+        services.AddLifecycleJob<StorageDeletionOutboxProcessJob>();
+        services.AddLifecycleJob<StorageDeletionOutboxCleanupJob>();
 
         return services;
     }

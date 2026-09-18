@@ -66,6 +66,8 @@ public class RejectedReportRetentionTests(RejectedReportRetentionWebApplicationF
 
         Assert.False(await context.DbContext.Reports.AnyAsync(item => item.Id == created.Id));
         Assert.Equal(0, await context.DbContext.ReportPhotos.CountAsync());
+        Assert.True(storage.ContainsKey(photo.StorageKey));
+        await StorageDeletionOutboxTestHelpers.ProcessPendingOutboxAsync(factory);
         Assert.False(storage.ContainsKey(photo.StorageKey));
         Assert.False(storage.ContainsKey(photo.ThumbnailStorageKey!));
 
@@ -140,6 +142,8 @@ public class RejectedReportRetentionTests(RejectedReportRetentionWebApplicationF
             .AsNoTracking()
             .SingleAsync(item => item.Id == submitted.Id);
         Assert.Null(updatedClaim.PhotoStorageKey);
+        Assert.True(storage.ContainsKey(claim.PhotoStorageKey!));
+        await StorageDeletionOutboxTestHelpers.ProcessPendingOutboxAsync(factory);
         Assert.False(storage.ContainsKey(claim.PhotoStorageKey!));
         Assert.False(storage.ContainsKey(
             ClaimPhotoStorageKeys.ThumbnailForOriginal(claim.PhotoStorageKey!)));
@@ -179,6 +183,8 @@ public class RejectedReportRetentionTests(RejectedReportRetentionWebApplicationF
             .AsNoTracking()
             .SingleAsync(item => item.Id == submitted.Id);
         Assert.Null(updatedClaim.PhotoStorageKey);
+        Assert.True(storage.ContainsKey(claim.PhotoStorageKey!));
+        await StorageDeletionOutboxTestHelpers.ProcessPendingOutboxAsync(factory);
         Assert.False(storage.ContainsKey(claim.PhotoStorageKey!));
     }
 

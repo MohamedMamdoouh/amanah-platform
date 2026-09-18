@@ -72,6 +72,8 @@ public class ChatRetentionTests(ChatRetentionWebApplicationFactory factory)
         Assert.False(await context.DbContext.ChatThreads.AnyAsync(item => item.Id == threadId));
         Assert.Equal(0, await context.DbContext.Messages.CountAsync(message => message.ChatThreadId == threadId));
         Assert.Equal(0, await context.DbContext.ChatAttachments.CountAsync(item => item.ChatThreadId == threadId));
+        Assert.True(storage.ContainsKey(attachment.StorageKey));
+        await StorageDeletionOutboxTestHelpers.ProcessPendingOutboxAsync(factory);
         Assert.False(storage.ContainsKey(attachment.StorageKey));
         Assert.False(storage.ContainsKey(attachment.ThumbnailStorageKey!));
 

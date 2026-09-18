@@ -27,7 +27,7 @@ public static class DependencyInjection
         services.AddLifecycleServices(configuration);
         services.AddModerationServices();
         services.AddBrowseServices();
-        services.AddBucketStorage();
+        services.AddBucketStorage(configuration);
         services.AddUploadServices();
         services.AddOptions<BucketOptions>()
             .Bind(configuration.GetSection(BucketOptions.SectionName));

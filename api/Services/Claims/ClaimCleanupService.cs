@@ -4,7 +4,7 @@ using Amanah.Api.Services.Uploads;
 
 namespace Amanah.Api.Services.Claims;
 
-public sealed class ClaimCleanupService(IBucketStorage bucketStorage)
+public sealed class ClaimCleanupService(StorageDeletionEnqueueService enqueueService)
 {
     public IReadOnlyList<string> ClearClaimPhoto(Claim claim)
     {
@@ -23,10 +23,13 @@ public sealed class ClaimCleanupService(IBucketStorage bucketStorage)
         return storageKeys;
     }
 
-    public Task DeleteClaimPhotoStorageAsync(
+    public Task EnqueueClaimPhotoStorageAsync(
         IReadOnlyList<string> storageKeys,
         CancellationToken cancellationToken = default) =>
         storageKeys.Count == 0
             ? Task.CompletedTask
-            : bucketStorage.DeleteManyAsync(storageKeys, cancellationToken);
+            : enqueueService.EnqueueAsync(
+                storageKeys,
+                StorageDeletionSource.ClaimTerminal,
+                cancellationToken);
 }

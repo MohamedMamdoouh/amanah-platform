@@ -86,6 +86,9 @@ Background lifecycle and retention jobs run inside the API process via `Lifecycl
 | `Lifecycle__ClaimTimeoutMinutes` | `14400` (10 days) | Pending-claim auto-withdraw timeout |
 | `Lifecycle__RetentionDays` | `30` | Retention for rejected reports, chat, sessions, account PII purge |
 | `Lifecycle__JobsPollIntervalSeconds` | `3600` | Seconds between lifecycle job poll cycles |
+| `StorageDeletion__PollIntervalSeconds` | `10` | Seconds between storage deletion outbox processor poll cycles |
+| `StorageDeletion__BatchSize` | `50` | Max outbox rows processed per processor batch |
+| `StorageDeletion__MaxAttempts` | `5` | Max R2 delete attempts before an outbox row is marked failed |
 
 Same keys under `"Lifecycle"` in `appsettings.json`. Tests set values via `Lifecycle:ListingExpiryDays`, etc.
 

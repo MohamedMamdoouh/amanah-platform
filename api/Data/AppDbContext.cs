@@ -43,6 +43,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<ModerationAction> ModerationActions => Set<ModerationAction>();
 
+    public DbSet<StorageDeletionOutboxMessage> StorageDeletionOutboxMessages => Set<StorageDeletionOutboxMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("pg_trgm");

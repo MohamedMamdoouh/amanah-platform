@@ -149,8 +149,8 @@ public sealed class ResolutionService(
                 CreatedAt = now,
             });
 
+            await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
-            await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
         }
         else
         {
@@ -294,8 +294,8 @@ public sealed class ResolutionService(
             CreatedAt = now,
         });
 
+        await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
 
         if (readOnlyThread is not null)
         {

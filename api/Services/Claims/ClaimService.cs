@@ -263,8 +263,8 @@ public sealed class ClaimService(
             CreatedAt = now,
         });
 
+        await claimCleanupService.EnqueueClaimPhotoStorageAsync(rejectedPhotoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await claimCleanupService.DeleteClaimPhotoStorageAsync(rejectedPhotoKeys, cancellationToken);
         return Result.Ok();
     }
 
@@ -314,8 +314,8 @@ public sealed class ClaimService(
             CreatedAt = now,
         });
 
+        await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
         return Result.Ok();
     }
 
@@ -359,8 +359,8 @@ public sealed class ClaimService(
             CreatedAt = now,
         });
 
+        await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
         return Result.Ok();
     }
 
@@ -450,8 +450,8 @@ public sealed class ClaimService(
 
         if (withdrawnCount > 0)
         {
+            await claimCleanupService.EnqueueClaimPhotoStorageAsync(withdrawnPhotoKeys, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
-            await claimCleanupService.DeleteClaimPhotoStorageAsync(withdrawnPhotoKeys, cancellationToken);
         }
 
         return withdrawnCount;

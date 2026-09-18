@@ -13,7 +13,7 @@ namespace Amanah.Api.Services.Lifecycle;
 
 public sealed class ReportLifecycleService(
     AppDbContext dbContext,
-    IBucketStorage bucketStorage,
+    StorageDeletionEnqueueService storageDeletionEnqueueService,
     ClaimCleanupService claimCleanupService,
     TimeProvider timeProvider,
     IOptions<LifecycleOptions> lifecycleOptions)
@@ -94,8 +94,11 @@ public sealed class ReportLifecycleService(
         report.UpdatedAt = timeProvider.GetUtcNow();
 
         var storageKeys = RemoveReportPhotos(report);
+        await storageDeletionEnqueueService.EnqueueAsync(
+            storageKeys,
+            StorageDeletionSource.ReportWithdraw,
+            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await DeleteReportPhotoStorageAsync(storageKeys, cancellationToken);
 
         return Result.Ok();
     }
@@ -199,8 +202,11 @@ public sealed class ReportLifecycleService(
         });
 
         var storageKeys = RemoveReportPhotos(report);
+        await storageDeletionEnqueueService.EnqueueAsync(
+            storageKeys,
+            StorageDeletionSource.ReportWithdraw,
+            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await DeleteReportPhotoStorageAsync(storageKeys, cancellationToken);
     }
 
     private bool HasReachedPublishedDayThreshold(
@@ -260,8 +266,8 @@ public sealed class ReportLifecycleService(
             });
         }
 
+        await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await claimCleanupService.DeleteClaimPhotoStorageAsync(photoKeys, cancellationToken);
         return pendingClaims.Count;
     }
 
@@ -283,15 +289,6 @@ public sealed class ReportLifecycleService(
         report.Photos.Clear();
 
         return storageKeys;
-    }
-
-    private Task DeleteReportPhotoStorageAsync(
-        IReadOnlyList<string> storageKeys,
-        CancellationToken cancellationToken = default)
-    {
-        return storageKeys.Count == 0
-            ? Task.CompletedTask
-            : bucketStorage.DeleteManyAsync(storageKeys, cancellationToken);
     }
 
     private static IReadOnlyList<string> CollectStorageKeys(IEnumerable<ReportPhoto> photos)
