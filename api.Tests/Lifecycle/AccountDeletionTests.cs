@@ -2,17 +2,22 @@ using System.Net;
 using System.Net.Http.Json;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Services.Lifecycle;
+using Amanah.Api.Services.Storage;
+using Amanah.Api.Services.Uploads;
 using Amanah.Api.Tests.Auth;
 using Amanah.Api.Tests.Chats;
 using Amanah.Api.Tests.Claims;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 using Amanah.Api.Tests.Resolution;
+using Amanah.Api.Tests.Uploads;
 using Amanah.Api.Utilities.Auth;
 using Amanah.Contracts.Errors;
+using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Account;
 using Amanah.Contracts.Responses.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Amanah.Api.Tests.Lifecycle;
 
@@ -150,6 +155,47 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
 
         var refreshResponse = await context.Client.PostAsync("/api/v1/auth/refresh", null);
         Assert.Equal(HttpStatusCode.Unauthorized, refreshResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteAccount_deletes_pending_claim_photos_from_storage_and_database()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var (otherReportId, _) = await CreateOtherReporterPublishedReportAsync(context);
+
+        var claimant = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        ClaimTestHelpers.Authenticate(context.Client, claimant.AccessToken);
+
+        var (_, submitted) = await ClaimTestHelpers.SubmitClaimAsync(
+            context.Client,
+            otherReportId,
+            new SubmitClaimRequest
+            {
+                SubmittedAnswer = ClaimTestHelpers.ValidAnswer,
+            },
+            [TestImageFactory.CreateMinimalJpeg()]);
+        Assert.NotNull(submitted);
+
+        var claim = await context.DbContext.Claims
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == submitted.Id);
+        Assert.False(string.IsNullOrWhiteSpace(claim.PhotoStorageKey));
+
+        var storage = Assert.IsType<FakeBucketStorage>(
+            factory.Services.GetRequiredService<IBucketStorage>());
+        Assert.True(storage.ContainsKey(claim.PhotoStorageKey!));
+
+        var deleteResponse = await DeleteAccountAsync(context);
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var updatedClaim = await context.DbContext.Claims
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == submitted.Id);
+        Assert.Equal(ClaimStatus.Withdrawn, updatedClaim.Status);
+        Assert.Null(updatedClaim.PhotoStorageKey);
+        Assert.False(storage.ContainsKey(claim.PhotoStorageKey!));
+        Assert.False(storage.ContainsKey(
+            ClaimPhotoStorageKeys.ThumbnailForOriginal(claim.PhotoStorageKey!)));
     }
 
     private static Task<(HttpResponseMessage Response, AccountDeletionStatusResponse? Body)> GetDeletionStatusAsync(
