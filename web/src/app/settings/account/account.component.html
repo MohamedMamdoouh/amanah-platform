@@ -1,0 +1,74 @@
+<section class="account-settings page-container" aria-labelledby="account-settings-title">
+  <app-page-header
+    [title]="'account.title' | translate"
+    [intro]="'account.intro' | translate"
+  />
+
+  @if (loading()) {
+    <app-loading-indicator [label]="'account.loading' | translate" />
+  } @else if (loadError()) {
+    <app-alert variant="error">{{ loadError() }}</app-alert>
+  } @else {
+    @if (status(); as deletionStatus) {
+    <div class="account-settings__panel">
+      @if (deletionStatus.deletionRequestedAt) {
+        <app-alert variant="info">
+          {{
+            'account.deletion_requested'
+              | translate
+                : { date: (deletionStatus.deletionRequestedAt | date: 'medium') }
+          }}
+        </app-alert>
+      } @else {
+        <p class="account-settings__warning">
+          {{ 'account.warning' | translate }}
+        </p>
+
+        @if (translatedBlockers().length > 0) {
+          <div class="account-settings__blockers" role="status">
+            <h2 class="account-settings__blockers-title">
+              {{ 'account.blockers_title' | translate }}
+            </h2>
+            <ul class="account-settings__blockers-list">
+              @for (blocker of translatedBlockers(); track blocker) {
+                <li>{{ blocker }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div class="account-settings__actions">
+          <app-button
+            variant="danger"
+            [disabled]="!deletionStatus.canDelete || deleting()"
+            (clicked)="openConfirmDialog()"
+          >
+            {{ 'account.delete_button' | translate }}
+          </app-button>
+        </div>
+      }
+    </div>
+
+    @if (showConfirmDialog()) {
+      <app-confirm-dialog
+        titleId="delete-account-title"
+        [title]="'account.confirm_title' | translate"
+        [intro]="'account.confirm_intro' | translate"
+        [cancelLabel]="'account.confirm_cancel' | translate"
+        [confirmLabel]="'account.confirm_submit' | translate"
+        confirmVariant="danger"
+        [loading]="deleting()"
+        [disabled]="deleting()"
+        (cancelled)="closeConfirmDialog()"
+        (confirmed)="confirmDelete()"
+      />
+
+      @if (deleteError()) {
+        <app-alert variant="error" class="account-settings__delete-error">
+          {{ deleteError() }}
+        </app-alert>
+      }
+    }
+    }
+  }
+</section>

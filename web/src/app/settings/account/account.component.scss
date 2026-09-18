@@ -1,0 +1,44 @@
+.account-settings__panel {
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.account-settings__warning {
+  margin: 0 0 var(--space-lg);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.account-settings__blockers {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--color-error-bg);
+  border: 1px solid #f5c2c2;
+  border-radius: var(--radius-md);
+}
+
+.account-settings__blockers-title {
+  margin: 0 0 var(--space-sm);
+  font-size: var(--font-size-base);
+}
+
+.account-settings__blockers-list {
+  margin: 0;
+  padding-inline-start: var(--space-lg);
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.account-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.account-settings__delete-error {
+  margin-top: var(--space-md);
+}

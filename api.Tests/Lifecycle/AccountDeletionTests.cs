@@ -28,10 +28,7 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(status);
         Assert.False(status.CanDelete);
-        Assert.Contains(
-            "You have a report with a claim in progress.",
-            status.Blockers.Single(),
-            StringComparison.Ordinal);
+        Assert.Equal(ErrorCodes.AccountBlockerClaimInProgress, status.Blockers.Single());
     }
 
     [Fact]
@@ -46,8 +43,8 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
         var error = await HttpTestHelpers.ReadErrorAsync(response);
         Assert.Equal(ErrorCodes.AccountDeletionBlocked, error?.Code);
         Assert.Contains(
-            error?.Errors?["blockers"] ?? [],
-            blocker => blocker.Contains("You have a report with a claim in progress.", StringComparison.Ordinal));
+            ErrorCodes.AccountBlockerClaimInProgress,
+            error?.Errors?["blockers"] ?? []);
     }
 
     [Fact]
@@ -62,10 +59,7 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(status);
         Assert.False(status.CanDelete);
-        Assert.Contains(
-            "You have an approved claim in progress.",
-            status.Blockers.Single(),
-            StringComparison.Ordinal);
+        Assert.Equal(ErrorCodes.AccountBlockerApprovedClaim, status.Blockers.Single());
     }
 
     [Fact]
@@ -82,8 +76,8 @@ public class AccountDeletionTests(ApiWebApplicationFactory factory) : IClassFixt
         var error = await HttpTestHelpers.ReadErrorAsync(response);
         Assert.Equal(ErrorCodes.AccountDeletionBlocked, error?.Code);
         Assert.Contains(
-            error?.Errors?["blockers"] ?? [],
-            blocker => blocker.Contains("You have an approved claim in progress.", StringComparison.Ordinal));
+            ErrorCodes.AccountBlockerApprovedClaim,
+            error?.Errors?["blockers"] ?? []);
     }
 
     [Fact]

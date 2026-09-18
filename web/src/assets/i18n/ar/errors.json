@@ -50,5 +50,8 @@
   "error.resource.not_found": "المورد غير موجود.",
   "error.resource.unavailable": "هذا البلاغ لم يعد متاحاً.",
   "error.resource.conflict": "لا يمكن تنفيذ هذا الإجراء على البلاغ الحالي.",
-  "error.chat.read_only": "هذه المحادثة للقراءة فقط."
+  "error.chat.read_only": "هذه المحادثة للقراءة فقط.",
+  "error.account.deleted": "تم حذف هذا الحساب.",
+  "error.account.deletion_blocked": "لا يمكن حذف الحساب حالياً.",
+  "error.account.deletion_already_requested": "تم طلب حذف الحساب مسبقاً."
 }

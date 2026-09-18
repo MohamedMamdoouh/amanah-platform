@@ -17,12 +17,6 @@ public sealed class AccountDeletionService(
 {
     public const string WithdrawReason = "_account_deletion_";
 
-    private const string ClaimInProgressBlocker =
-        "You have a report with a claim in progress. Cancel the claim before deleting your account.";
-
-    private const string ApprovedClaimBlocker =
-        "You have an approved claim in progress. Cancel the claim before deleting your account.";
-
     public async Task<Result<AccountDeletionStatusResponse>> GetDeletionStatusAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
@@ -137,7 +131,7 @@ public sealed class AccountDeletionService(
 
         if (hasClaimInProgressReport)
         {
-            blockers.Add(ClaimInProgressBlocker);
+            blockers.Add(ErrorCodes.AccountBlockerClaimInProgress);
         }
 
         var hasApprovedClaim = await dbContext.Claims
@@ -150,7 +144,7 @@ public sealed class AccountDeletionService(
 
         if (hasApprovedClaim)
         {
-            blockers.Add(ApprovedClaimBlocker);
+            blockers.Add(ErrorCodes.AccountBlockerApprovedClaim);
         }
 
         return blockers;

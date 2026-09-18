@@ -23,6 +23,7 @@ import { MyClaimsComponent } from './claims/my-claims/my-claims.component';
 import { MyReportsComponent } from './reports/my-reports/my-reports.component';
 import { ReportDetailComponent } from './reports/report-detail/report-detail.component';
 import { ReportFormComponent } from './reports/report-form/report-form.component';
+import { AccountComponent } from './settings/account/account.component';
 
 export const routes: Routes = [
   {
@@ -84,6 +85,11 @@ export const routes: Routes = [
       {
         path: 'notifications',
         component: NotificationsComponent,
+        canActivate: [authGuard],
+      },
+      {
+        path: 'settings/account',
+        component: AccountComponent,
         canActivate: [authGuard],
       },
       {

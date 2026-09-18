@@ -69,4 +69,6 @@ public static class ErrorCodes
     public const string AccountDeleted = "account.deleted";
     public const string AccountDeletionBlocked = "account.deletion_blocked";
     public const string AccountDeletionAlreadyRequested = "account.deletion_already_requested";
+    public const string AccountBlockerClaimInProgress = "claim_in_progress";
+    public const string AccountBlockerApprovedClaim = "approved_claim";
 }
