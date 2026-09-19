@@ -6,5 +6,4 @@ public enum StorageDeletionSource
     ReportRetention,
     ChatRetention,
     ClaimTerminal,
-    AccountDeletion,
 }

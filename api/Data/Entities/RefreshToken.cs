@@ -14,5 +14,7 @@ public class RefreshToken : IEntity
 
     public bool IsRevoked { get; set; }
 
+    public DateTimeOffset? RevokedAt { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 }

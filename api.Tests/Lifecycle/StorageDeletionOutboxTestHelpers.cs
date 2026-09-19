@@ -20,12 +20,6 @@ public static class StorageDeletionOutboxTestHelpers
     public static Task ProcessPendingOutboxAsync(ApiWebApplicationFactory factory) =>
         ProcessPendingOutboxAsync(factory.Services);
 
-    public static async Task<HttpResponseMessage> RunProcessJobAsync(ReportTestContext context)
-    {
-        await HttpTestHelpers.LoginAsAdminAsync(context);
-        return await context.Client.PostAsync("/api/v1/admin/test/run-job/StorageDeletionOutboxProcess", null);
-    }
-
     public static async Task<HttpResponseMessage> RunCleanupJobAsync(ReportTestContext context)
     {
         await HttpTestHelpers.LoginAsAdminAsync(context);

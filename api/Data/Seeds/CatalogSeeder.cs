@@ -1,6 +1,5 @@
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Services.Auth;
-using Amanah.Api.Utilities.Auth;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Data.Seeds;
@@ -29,7 +28,6 @@ public sealed class CatalogSeeder(
             "User",
             promoteExistingUser: false,
             cancellationToken);
-        await SeedAnonymizedSenderUserAsync(cancellationToken);
     }
 
     private async Task SeedCategoriesAsync(CancellationToken cancellationToken)
@@ -180,27 +178,5 @@ public sealed class CatalogSeeder(
 
         await context.SaveChangesAsync(cancellationToken);
         logger.LogInformation("{Role} user bootstrapped for phone {Phone}.", role, normalizedPhone);
-    }
-
-    private async Task SeedAnonymizedSenderUserAsync(CancellationToken cancellationToken)
-    {
-        if (await context.Users.AnyAsync(user => user.Id == AnonymizedUser.Id, cancellationToken))
-        {
-            return;
-        }
-
-        context.Users.Add(new User
-        {
-            Id = AnonymizedUser.Id,
-            NormalizedPhone = AnonymizedUser.NormalizedPhone,
-            DisplayName = AnonymizedUser.DisplayName,
-            Role = UserRole.User,
-            IsBanned = true,
-            BanReason = "System account for anonymized chat senders.",
-            CreatedAt = DateTimeOffset.UnixEpoch,
-            PasswordHash = "!",
-        });
-
-        await context.SaveChangesAsync(cancellationToken);
     }
 }

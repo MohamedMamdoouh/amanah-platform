@@ -11,42 +11,32 @@
   } @else {
     @if (status(); as deactivationStatus) {
     <div class="account-settings__panel">
-      @if (deactivationStatus.deactivatedAt) {
-        <app-alert variant="info">
-          {{
-            'account.deactivated'
-              | translate
-                : { date: (deactivationStatus.deactivatedAt | date: 'medium') }
-          }}
-        </app-alert>
-      } @else {
-        <p class="account-settings__warning">
-          {{ 'account.warning' | translate }}
-        </p>
+      <p class="account-settings__warning">
+        {{ 'account.warning' | translate }}
+      </p>
 
-        @if (translatedBlockers().length > 0) {
-          <div class="account-settings__blockers" role="status">
-            <h2 class="account-settings__blockers-title">
-              {{ 'account.blockers_title' | translate }}
-            </h2>
-            <ul class="account-settings__blockers-list">
-              @for (blocker of translatedBlockers(); track blocker) {
-                <li>{{ blocker }}</li>
-              }
-            </ul>
-          </div>
-        }
-
-        <div class="account-settings__actions">
-          <app-button
-            variant="danger"
-            [disabled]="!deactivationStatus.canDeactivate || deactivating()"
-            (clicked)="openConfirmDialog()"
-          >
-            {{ 'account.deactivate_button' | translate }}
-          </app-button>
+      @if (translatedBlockers().length > 0) {
+        <div class="account-settings__blockers" role="status">
+          <h2 class="account-settings__blockers-title">
+            {{ 'account.blockers_title' | translate }}
+          </h2>
+          <ul class="account-settings__blockers-list">
+            @for (blocker of translatedBlockers(); track blocker) {
+              <li>{{ blocker }}</li>
+            }
+          </ul>
         </div>
       }
+
+      <div class="account-settings__actions">
+        <app-button
+          variant="danger"
+          [disabled]="!deactivationStatus.canDeactivate || deactivating()"
+          (clicked)="openConfirmDialog()"
+        >
+          {{ 'account.deactivate_button' | translate }}
+        </app-button>
+      </div>
     </div>
 
     @if (showConfirmDialog()) {

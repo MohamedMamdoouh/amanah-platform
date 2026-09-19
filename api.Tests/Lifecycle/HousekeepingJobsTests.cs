@@ -61,7 +61,9 @@ public class HousekeepingJobsTests(HousekeepingJobsWebApplicationFactory factory
         var userId = context.Session.User.Id;
         var staleExpiredId = Guid.NewGuid();
         var staleRevokedId = Guid.NewGuid();
+        var staleRevokedFutureExpiryId = Guid.NewGuid();
         var freshExpiredId = Guid.NewGuid();
+        var freshRevokedId = Guid.NewGuid();
         var activeId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
@@ -82,6 +84,17 @@ public class HousekeepingJobsTests(HousekeepingJobsWebApplicationFactory factory
                 TokenHash = RefreshTokenHasher.Hash("stale-revoked"),
                 ExpiresAt = now.AddDays(-31),
                 IsRevoked = true,
+                RevokedAt = now.AddDays(-31),
+                CreatedAt = now.AddDays(-60),
+            },
+            new RefreshToken
+            {
+                Id = staleRevokedFutureExpiryId,
+                UserId = userId,
+                TokenHash = RefreshTokenHasher.Hash("stale-revoked-future-expiry"),
+                ExpiresAt = now.AddDays(7),
+                IsRevoked = true,
+                RevokedAt = now.AddDays(-31),
                 CreatedAt = now.AddDays(-60),
             },
             new RefreshToken
@@ -91,6 +104,16 @@ public class HousekeepingJobsTests(HousekeepingJobsWebApplicationFactory factory
                 TokenHash = RefreshTokenHasher.Hash("fresh-expired"),
                 ExpiresAt = now.AddDays(-29),
                 IsRevoked = false,
+                CreatedAt = now.AddDays(-60),
+            },
+            new RefreshToken
+            {
+                Id = freshRevokedId,
+                UserId = userId,
+                TokenHash = RefreshTokenHasher.Hash("fresh-revoked"),
+                ExpiresAt = now.AddDays(7),
+                IsRevoked = true,
+                RevokedAt = now.AddDays(-5),
                 CreatedAt = now.AddDays(-60),
             },
             new RefreshToken
@@ -109,7 +132,9 @@ public class HousekeepingJobsTests(HousekeepingJobsWebApplicationFactory factory
 
         Assert.False(await context.DbContext.RefreshTokens.AnyAsync(item => item.Id == staleExpiredId));
         Assert.False(await context.DbContext.RefreshTokens.AnyAsync(item => item.Id == staleRevokedId));
+        Assert.False(await context.DbContext.RefreshTokens.AnyAsync(item => item.Id == staleRevokedFutureExpiryId));
         Assert.True(await context.DbContext.RefreshTokens.AnyAsync(item => item.Id == freshExpiredId));
+        Assert.True(await context.DbContext.RefreshTokens.AnyAsync(item => item.Id == freshRevokedId));
         Assert.True(await context.DbContext.RefreshTokens.AnyAsync(item => item.Id == activeId));
     }
 

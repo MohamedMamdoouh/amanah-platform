@@ -4,6 +4,8 @@ using Amanah.Api.Models.Errors;
 using Amanah.Api.Options;
 using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
+using Amanah.Api.Services.Storage;
+using Amanah.Api.Services.Uploads;
 using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Common;
 using Amanah.Api.Utilities.Notifications;
@@ -22,6 +24,7 @@ public sealed record ClaimQuotaCheckResult(bool IsExceeded, int? RetryAfterSecon
 
 public sealed class ClaimService(
     AppDbContext dbContext,
+    IBucketStorage bucketStorage,
     ClaimPhotoAttachService claimPhotoAttachService,
     ClaimCleanupService claimCleanupService,
     ReportLifecycleService reportLifecycleService,
@@ -147,7 +150,29 @@ public sealed class ClaimService(
             CreatedAt = now,
         });
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        IReadOnlyList<string>? promotedPhotoKeys = claim.PhotoStorageKey is null
+            ? null
+            :
+            [
+                claim.PhotoStorageKey,
+                ClaimPhotoStorageKeys.ThumbnailForOriginal(claim.PhotoStorageKey),
+            ];
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception)
+        {
+            if (promotedPhotoKeys is { Count: > 0 })
+            {
+                await bucketStorage.DeleteManyAsync(promotedPhotoKeys, cancellationToken);
+            }
+
+            return ResultError.ServiceUnavailable(
+                "Claim submission is temporarily unavailable. Please try again later.",
+                ErrorCodes.UploadStorageFailed);
+        }
 
         return new SubmitClaimResponse
         {

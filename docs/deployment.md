@@ -84,7 +84,7 @@ Background lifecycle and retention jobs run inside the API process via `Lifecycl
 | `Lifecycle__ListingExpiryDays` | `90` | Cumulative published days before auto-expiry |
 | `Lifecycle__ListingExpiryWarningDaysBefore` | `7` | Warning fires at `ListingExpiryDays -` this value |
 | `Lifecycle__ClaimTimeoutMinutes` | `14400` (10 days) | Pending-claim auto-withdraw timeout |
-| `Lifecycle__RetentionDays` | `30` | Retention for rejected reports, chat, sessions, account PII purge |
+| `Lifecycle__RetentionDays` | `30` | Retention for rejected reports, chat, sessions, and refresh tokens |
 | `Lifecycle__JobsPollIntervalSeconds` | `3600` | Seconds between lifecycle job poll cycles |
 | `StorageDeletion__PollIntervalSeconds` | `10` | Seconds between storage deletion outbox processor poll cycles |
 | `StorageDeletion__BatchSize` | `50` | Max outbox rows processed per processor batch |

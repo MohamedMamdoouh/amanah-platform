@@ -64,6 +64,13 @@
         >
           {{ "nav.my_chats" | translate }}
         </a>
+        <a
+          routerLink="/settings/account"
+          class="header__link"
+          routerLinkActive="header__link--active"
+        >
+          {{ "nav.account_settings" | translate }}
+        </a>
       }
     </nav>
 
@@ -182,6 +189,14 @@
         (click)="closeMobileNav()"
       >
         {{ "nav.my_chats" | translate }}
+      </a>
+      <a
+        routerLink="/settings/account"
+        class="header__drawer-link"
+        routerLinkActive="header__drawer-link--active"
+        (click)="closeMobileNav()"
+      >
+        {{ "nav.account_settings" | translate }}
       </a>
       <a
         routerLink="/notifications"

@@ -27,6 +27,8 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
         builder.Property(refreshToken => refreshToken.IsRevoked)
             .HasDefaultValue(false);
 
+        builder.Property(refreshToken => refreshToken.RevokedAt);
+
         builder.Property(refreshToken => refreshToken.CreatedAt)
             .IsRequired();
 

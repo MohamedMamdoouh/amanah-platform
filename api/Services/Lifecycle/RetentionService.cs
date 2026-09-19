@@ -135,7 +135,9 @@ public sealed class RetentionService(
         var threshold = timeProvider.GetUtcNow().AddDays(-lifecycleOptions.Value.RetentionDays);
 
         return await dbContext.RefreshTokens
-            .Where(token => token.ExpiresAt <= threshold)
+            .Where(token =>
+                (token.IsRevoked && token.RevokedAt <= threshold)
+                || (!token.IsRevoked && token.ExpiresAt <= threshold))
             .ExecuteDeleteAsync(cancellationToken);
     }
 

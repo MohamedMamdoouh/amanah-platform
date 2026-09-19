@@ -80,7 +80,9 @@ public sealed class TokenService(
         RefreshToken refreshToken,
         CancellationToken cancellationToken = default)
     {
+        var now = timeProvider.GetUtcNow();
         refreshToken.IsRevoked = true;
+        refreshToken.RevokedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -88,10 +90,14 @@ public sealed class TokenService(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        var now = timeProvider.GetUtcNow();
+
         await dbContext.RefreshTokens
             .Where(token => token.UserId == userId && !token.IsRevoked)
             .ExecuteUpdateAsync(
-                setters => setters.SetProperty(token => token.IsRevoked, true),
+                setters => setters
+                    .SetProperty(token => token.IsRevoked, true)
+                    .SetProperty(token => token.RevokedAt, now),
                 cancellationToken);
     }
 }

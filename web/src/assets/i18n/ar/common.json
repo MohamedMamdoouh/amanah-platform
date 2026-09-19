@@ -29,6 +29,8 @@
   "nav.admin": "لوحة الإدارة",
   "nav.my_reports": "بلاغاتي",
   "nav.my_claims": "مطالباتي",
+  "nav.my_chats": "محادثاتي",
+  "nav.account_settings": "إعدادات الحساب",
   "auth.login.title": "تسجيل الدخول",
   "auth.login.title_signin": "تسجيل الدخول",
   "auth.login.title_signup": "إنشاء حساب",

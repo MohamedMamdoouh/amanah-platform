@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -20,7 +19,6 @@ import { AccountDeactivationStatus, AccountService } from '../account.service';
     AlertComponent,
     ButtonComponent,
     ConfirmDialogComponent,
-    DatePipe,
     LoadingIndicatorComponent,
     PageHeaderComponent,
     TranslateModule,
