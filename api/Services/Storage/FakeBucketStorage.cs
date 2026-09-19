@@ -14,7 +14,10 @@ public sealed class FakeBucketStorage : IBucketStorage
     {
         using var memory = new MemoryStream();
         content.CopyTo(memory);
-        _objects[key] = new StoredObject(memory.ToArray(), contentType);
+        _objects[key] = new StoredObject(
+            memory.ToArray(),
+            contentType,
+            DateTimeOffset.UtcNow);
         return Task.CompletedTask;
     }
 
@@ -25,7 +28,11 @@ public sealed class FakeBucketStorage : IBucketStorage
             throw new KeyNotFoundException($"Object '{sourceKey}' was not found.");
         }
 
-        _objects[destKey] = source with { Data = source.Data.ToArray() };
+        _objects[destKey] = source with
+        {
+            Data = source.Data.ToArray(),
+            LastModified = DateTimeOffset.UtcNow,
+        };
         return Task.CompletedTask;
     }
 
@@ -59,7 +66,30 @@ public sealed class FakeBucketStorage : IBucketStorage
     public Task<bool> PingAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(true);
 
+    public Task<IReadOnlyList<BucketObject>> ListAsync(
+        string prefix,
+        CancellationToken cancellationToken = default)
+    {
+        var results = _objects
+            .Where(entry => entry.Key.StartsWith(prefix, StringComparison.Ordinal))
+            .Select(entry => new BucketObject(entry.Key, entry.Value.LastModified))
+            .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<BucketObject>>(results);
+    }
+
     public bool ContainsKey(string key) => _objects.ContainsKey(key);
 
-    private sealed record StoredObject(byte[] Data, string ContentType);
+    public void SetLastModifiedForTesting(string key, DateTimeOffset lastModified)
+    {
+        if (!_objects.TryGetValue(key, out var storedObject))
+        {
+            throw new KeyNotFoundException($"Object '{key}' was not found.");
+        }
+
+        _objects[key] = storedObject with { LastModified = lastModified };
+    }
+
+    private sealed record StoredObject(byte[] Data, string ContentType, DateTimeOffset LastModified);
 }

@@ -17,4 +17,6 @@ public interface IBucketStorage
     Uri GetPreSignedUrl(string key, TimeSpan expiry);
 
     Task<bool> PingAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<BucketObject>> ListAsync(string prefix, CancellationToken cancellationToken = default);
 }

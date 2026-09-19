@@ -230,9 +230,26 @@ public sealed class ReportService(
             return photoError;
         }
 
+        var promotedKeys = CollectReportPhotoStorageKeys(report);
+
         dbContext.Reports.Add(report);
         EnqueuePendingReview(report, category);
-        await dbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception)
+        {
+            if (promotedKeys.Count > 0)
+            {
+                await bucketStorage.DeleteManyAsync(promotedKeys, cancellationToken);
+            }
+
+            return ResultError.ServiceUnavailable(
+                "Report submission is temporarily unavailable. Please try again later.",
+                ErrorCodes.UploadStorageFailed);
+        }
 
         metrics.RecordReportSubmitted();
 
@@ -696,6 +713,13 @@ public sealed class ReportService(
             CategoryFields = categoryFields,
         };
     }
+
+    private static IReadOnlyList<string> CollectReportPhotoStorageKeys(Report report) =>
+        report.Photos
+            .SelectMany(photo => new[] { photo.StorageKey, photo.ThumbnailStorageKey })
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Select(key => key!)
+            .ToList();
 
     private static readonly ReportStatus[] ClosedStatuses =
     [

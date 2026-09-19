@@ -14,6 +14,7 @@ public static class LifecycleServiceExtensions
         services.AddScoped<ReportLifecycleService>();
         services.AddScoped<AccountDeactivationService>();
         services.AddScoped<RetentionService>();
+        services.AddScoped<OrphanedStorageCleanupService>();
         services.AddScoped<JobRunner>();
         services.AddHostedService<LifecycleJobsHostedService>();
         services.AddLifecycleJob<ListingExpiryWarningJob>();
@@ -26,6 +27,7 @@ public static class LifecycleServiceExtensions
         services.AddLifecycleJob<SessionCleanupJob>();
         services.AddLifecycleJob<OtpSmsOutboxCleanupJob>();
         services.AddLifecycleJob<AdminAlertEmailOutboxCleanupJob>();
+        services.AddLifecycleJob<OrphanedStorageCleanupJob>();
 
         return services;
     }

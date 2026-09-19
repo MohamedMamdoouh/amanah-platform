@@ -88,6 +88,38 @@ public sealed class R2BucketStorage(
         return new Uri(_client.GetPreSignedURL(request));
     }
 
+    public async Task<IReadOnlyList<BucketObject>> ListAsync(
+        string prefix,
+        CancellationToken cancellationToken = default)
+    {
+        var results = new List<BucketObject>();
+        string? continuationToken = null;
+
+        do
+        {
+            var response = await _client.ListObjectsV2Async(
+                new ListObjectsV2Request
+                {
+                    BucketName = _options.Name,
+                    Prefix = prefix,
+                    ContinuationToken = continuationToken,
+                },
+                cancellationToken);
+
+            foreach (var entry in response.S3Objects)
+            {
+                results.Add(new BucketObject(
+                    entry.Key,
+                    new DateTimeOffset(DateTime.SpecifyKind(entry.LastModified, DateTimeKind.Utc))));
+            }
+
+            continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
+        }
+        while (continuationToken is not null);
+
+        return results;
+    }
+
     public async Task<bool> PingAsync(CancellationToken cancellationToken = default)
     {
         try
