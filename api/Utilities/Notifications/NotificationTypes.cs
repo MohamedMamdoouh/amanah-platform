@@ -29,4 +29,10 @@ public static class NotificationTypes
     public const string ReportExpiringSoon = "ReportExpiringSoon";
 
     public const string ReportExpired = "ReportExpired";
+
+    public const string AdminTakedownAffectingYou = "AdminTakedownAffectingYou";
+
+    public const string ClaimEndedByEnforcement = "ClaimEndedByEnforcement";
+
+    public const string AbuseReportResolvedForFlagger = "AbuseReportResolvedForFlagger";
 }

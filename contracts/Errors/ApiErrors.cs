@@ -72,4 +72,17 @@ public static class ErrorCodes
     public const string AccountReactivationRequired = "account.reactivation_required";
     public const string AccountBlockerClaimInProgress = "claim_in_progress";
     public const string AccountBlockerApprovedClaim = "approved_claim";
+
+    public const string AbuseDuplicateFlag = "abuse.duplicate_flag";
+    public const string AbuseInvalidReason = "abuse.invalid_reason";
+    public const string AbuseCannotFlagOwnListing = "abuse.cannot_flag_own_listing";
+    public const string AbuseListingNotFlaggable = "abuse.listing_not_flaggable";
+    public const string AbuseAlreadyResolved = "abuse.already_resolved";
+    public const string AbuseNotOpen = "abuse.not_open";
+    public const string AbuseInvalidOutcome = "abuse.invalid_outcome";
+    public const string AbuseInvestigationUnavailable = "abuse.investigation_unavailable";
+
+    public const string EnforcementUserAlreadyBanned = "enforcement.user_already_banned";
+    public const string EnforcementUserNotBanned = "enforcement.user_not_banned";
+    public const string EnforcementReportNotTakedownable = "enforcement.report_not_takedownable";
 }
