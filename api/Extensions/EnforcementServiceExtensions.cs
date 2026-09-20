@@ -8,6 +8,7 @@ public static class EnforcementServiceExtensions
     {
         services.AddScoped<ApprovedClaimCancellation>();
         services.AddScoped<AdminTakedownService>();
+        services.AddScoped<UserEnforcementService>();
 
         return services;
     }

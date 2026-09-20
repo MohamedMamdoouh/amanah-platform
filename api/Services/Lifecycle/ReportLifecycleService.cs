@@ -26,6 +26,8 @@ public sealed class ReportLifecycleService(
 
     public const string AdminTakedownReason = "_admin_takedown_";
 
+    public const string BanCleanupWithdrawReason = "_ban_cleanup_";
+
     public const string ClosedReviewerDecision = "closed";
 
     public void InitializePublishedTimer(Report report, DateTimeOffset now)
@@ -93,6 +95,40 @@ public sealed class ReportLifecycleService(
 
         report.Status = ReportStatus.Withdrawn;
         report.WithdrawalReason = reason;
+        report.UpdatedAt = timeProvider.GetUtcNow();
+
+        var storageKeys = RemoveReportPhotos(report);
+        await storageDeletionEnqueueService.EnqueueAsync(
+            storageKeys,
+            StorageDeletionSource.ReportWithdraw,
+            cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Result.Ok();
+    }
+
+    public async Task<Result> WithdrawForBanCleanupAsync(
+        Report report,
+        CancellationToken cancellationToken = default)
+    {
+        if (report.Status is not ReportStatus.PendingReview
+            and not ReportStatus.Published
+            and not ReportStatus.ClaimInProgress)
+        {
+            return ResultError.Conflict("Only active reports can be withdrawn during ban cleanup.");
+        }
+
+        if (report.Status == ReportStatus.Published)
+        {
+            await ClosePendingClaimsAsync(
+                report.Id,
+                BanCleanupWithdrawReason,
+                NotificationTypes.ClaimClosedReportUnavailable,
+                cancellationToken);
+        }
+
+        report.Status = ReportStatus.Withdrawn;
+        report.WithdrawalReason = BanCleanupWithdrawReason;
         report.UpdatedAt = timeProvider.GetUtcNow();
 
         var storageKeys = RemoveReportPhotos(report);
