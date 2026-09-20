@@ -54,7 +54,7 @@ public sealed class ModerationService(
                 report.Status == ReportStatus.PendingReview
                 || report.Status == ReportStatus.Rejected);
 
-        reportsQuery = reportsQuery.WhereMatchesAllSearchTerms(terms);
+        reportsQuery = SearchTextBuilder.FilterBySearchTerms(reportsQuery, terms);
 
         var reports = await reportsQuery
             .OrderByDescending(report => report.CreatedAt)
@@ -178,10 +178,29 @@ public sealed class ModerationService(
         new()
         {
             Id = report.Id,
-            Type = ReportApiStrings.ToType(report.Type),
+            Type = ToReportType(report.Type),
             Title = report.Title,
             CategoryCode = report.Category.Code,
-            Status = ReportApiStrings.ToStatus(report.Status),
+            Status = ToReportStatus(report.Status),
             CreatedAt = report.CreatedAt,
         };
+
+    private static string ToReportType(ReportType type) => type switch
+    {
+        ReportType.Lost => "lost",
+        ReportType.Found => "found",
+        _ => type.ToString().ToLowerInvariant(),
+    };
+
+    private static string ToReportStatus(ReportStatus status) => status switch
+    {
+        ReportStatus.PendingReview => "pending_review",
+        ReportStatus.Rejected => "rejected",
+        ReportStatus.Published => "published",
+        ReportStatus.ClaimInProgress => "claim_in_progress",
+        ReportStatus.Resolved => "resolved",
+        ReportStatus.Withdrawn => "withdrawn",
+        ReportStatus.RemovedByAdmin => "removed_by_admin",
+        _ => status.ToString().ToLowerInvariant(),
+    };
 }

@@ -60,7 +60,7 @@ public sealed class ReportService(
         CancellationToken cancellationToken = default)
     {
         var normalized = NormalizeRequest(request);
-        if (!ReportApiStrings.TryParseType(normalized.Type, out var reportType))
+        if (!TryParseType(normalized.Type, out var reportType))
         {
             return ResultError.BadRequest(
                 "Please correct the errors in the form.",
@@ -256,7 +256,7 @@ public sealed class ReportService(
         return new CreateReportResponse
         {
             Id = report.Id,
-            Status = ReportApiStrings.ToStatus(report.Status),
+            Status = ToStatus(report.Status),
         };
     }
 
@@ -282,7 +282,7 @@ public sealed class ReportService(
             };
         }
 
-        var statusFilter = ReportApiStrings.ParseStatusFilter(status);
+        var statusFilter = ParseStatusFilter(status);
         if (!string.IsNullOrWhiteSpace(status) && statusFilter is null)
         {
             return ResultError.BadRequest(
@@ -642,7 +642,7 @@ public sealed class ReportService(
 
         return new NormalizedCreateReportRequest
         {
-            Type = ReportApiStrings.ToType(report.Type),
+            Type = ToType(report.Type),
             CategoryCode = report.Category.Code,
             Title = report.Title,
             Description = report.Description,
@@ -784,8 +784,8 @@ public sealed class ReportService(
         new()
         {
             Id = report.Id,
-            Type = ReportApiStrings.ToType(report.Type),
-            Status = ReportApiStrings.ToStatus(report.Status),
+            Type = ToType(report.Type),
+            Status = ToStatus(report.Status),
             Title = report.Title,
             CategoryCode = report.Category.Code,
             GovernorateCode = report.Governorate.Code,
@@ -807,8 +807,8 @@ public sealed class ReportService(
         new()
         {
             Id = report.Id,
-            Type = ReportApiStrings.ToType(report.Type),
-            Status = ReportApiStrings.ToStatus(report.Status),
+            Type = ToType(report.Type),
+            Status = ToStatus(report.Status),
             Title = report.Title,
             CategoryCode = report.Category.Code,
             GovernorateCode = report.Governorate.Code,
@@ -923,6 +923,53 @@ public sealed class ReportService(
 
         return Math.Max(seconds, 1);
     }
+
+    private static string ToType(ReportType type) => type switch
+    {
+        ReportType.Lost => "lost",
+        ReportType.Found => "found",
+        _ => type.ToString().ToLowerInvariant(),
+    };
+
+    private static string ToStatus(ReportStatus status) => status switch
+    {
+        ReportStatus.PendingReview => "pending_review",
+        ReportStatus.Rejected => "rejected",
+        ReportStatus.Published => "published",
+        ReportStatus.ClaimInProgress => "claim_in_progress",
+        ReportStatus.Resolved => "resolved",
+        ReportStatus.Withdrawn => "withdrawn",
+        ReportStatus.RemovedByAdmin => "removed_by_admin",
+        _ => status.ToString().ToLowerInvariant(),
+    };
+
+    private static bool TryParseType(string type, out ReportType reportType)
+    {
+        switch (type.Trim().ToLowerInvariant())
+        {
+            case "lost":
+                reportType = ReportType.Lost;
+                return true;
+            case "found":
+                reportType = ReportType.Found;
+                return true;
+            default:
+                reportType = default;
+                return false;
+        }
+    }
+
+    private static ReportStatus? ParseStatusFilter(string? status) => status switch
+    {
+        null or "" or "pending_review" => ReportStatus.PendingReview,
+        "rejected" => ReportStatus.Rejected,
+        "published" => ReportStatus.Published,
+        "claim_in_progress" => ReportStatus.ClaimInProgress,
+        "resolved" => ReportStatus.Resolved,
+        "withdrawn" => ReportStatus.Withdrawn,
+        "removed_by_admin" => ReportStatus.RemovedByAdmin,
+        _ => null,
+    };
 
     private sealed class NormalizedCreateReportRequest
     {

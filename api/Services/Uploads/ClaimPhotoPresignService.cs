@@ -2,7 +2,6 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
-using Amanah.Api.Utilities.Uploads;
 using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,13 +39,12 @@ public sealed class ClaimPhotoPresignService(
         }
 
         var thumbnailKey = ClaimPhotoStorageKeys.ThumbnailForOriginal(claim.PhotoStorageKey);
-        var storageKey = await StorageKeyResolver.ResolvePreferExistingThumbnailAsync(
-            bucketStorage,
-            claim.PhotoStorageKey,
-            thumbnailKey,
-            cancellationToken);
+        var storageKey = thumbnailKey is not null
+            && await bucketStorage.ExistsAsync(thumbnailKey, cancellationToken)
+            ? thumbnailKey
+            : claim.PhotoStorageKey;
 
-        var url = bucketStorage.GetPreSignedUrl(storageKey, PresignConstants.Lifetime);
+        var url = bucketStorage.GetPreSignedUrl(storageKey, TimeSpan.FromMinutes(5));
 
         return new ClaimPhotoPresignResponse
         {

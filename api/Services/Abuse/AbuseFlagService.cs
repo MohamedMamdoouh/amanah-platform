@@ -81,17 +81,7 @@ public sealed class AbuseFlagService(AppDbContext dbContext, TimeProvider timePr
         };
 
         dbContext.AbuseReports.Add(abuseReport);
-
-        try
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException)
-        {
-            return ResultError.Conflict(
-                "You already have an open flag on this listing.",
-                ErrorCodes.AbuseDuplicateFlag);
-        }
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         return Map(abuseReport);
     }

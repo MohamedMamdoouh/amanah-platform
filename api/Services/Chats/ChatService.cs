@@ -3,10 +3,7 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Notifications;
-using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Notifications;
-using Amanah.Api.Utilities.Reports;
-using Amanah.Api.Utilities.Resolution;
 using Amanah.Contracts.Chats;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Chats;
@@ -319,7 +316,7 @@ public sealed class ChatService(
             ClaimId = thread.ClaimId,
             ReportId = thread.Claim.ReportId,
             ReportTitle = thread.Claim.Report.Title,
-            ReportType = ReportApiStrings.ToType(thread.Claim.Report.Type),
+            ReportType = ToReportType(thread.Claim.Report.Type),
             CounterpartyDisplayName = counterparty.DisplayName ?? string.Empty,
             CreatedAt = thread.CreatedAt,
             ReadOnlyAt = thread.ReadOnlyAt,
@@ -335,22 +332,42 @@ public sealed class ChatService(
         Guid userId,
         IReadOnlyList<Message> messages)
     {
-        var isReporter = thread.Claim.Report.ReporterId == userId;
-        var counterparty = isReporter ? thread.Claim.Claimant : thread.Claim.Report.Reporter;
+        var claim = thread.Claim;
+        var isReporter = claim.Report.ReporterId == userId;
+        var counterparty = isReporter ? claim.Claimant : claim.Report.Reporter;
+        ResolutionStateResponse? resolution = null;
+
+        if (claim.Status is ClaimStatus.Approved or ClaimStatus.Cancelled)
+        {
+            var reportResolution = claim.Report.Resolution;
+            var reporterConfirmed = reportResolution?.ReporterConfirmedAt is not null;
+            var claimantConfirmed = reportResolution?.ClaimantConfirmedAt is not null;
+            var currentUserHasConfirmed = isReporter ? reporterConfirmed : claimantConfirmed;
+
+            resolution = new ResolutionStateResponse
+            {
+                ReporterConfirmedAt = reportResolution?.ReporterConfirmedAt,
+                ClaimantConfirmedAt = reportResolution?.ClaimantConfirmedAt,
+                ResolvedAt = reportResolution?.ResolvedAt,
+                CurrentUserHasConfirmed = currentUserHasConfirmed,
+                CurrentUserCanCancel = claim.Status == ClaimStatus.Approved
+                    && !currentUserHasConfirmed,
+            };
+        }
 
         return new ChatThreadDetailResponse
         {
             Id = thread.Id,
             ClaimId = thread.ClaimId,
-            ReportId = thread.Claim.ReportId,
-            ReportTitle = thread.Claim.Report.Title,
-            ReportType = ReportApiStrings.ToType(thread.Claim.Report.Type),
-            ReportStatus = ReportApiStrings.ToStatus(thread.Claim.Report.Status),
-            ClaimStatus = ClaimApiStrings.ToStatus(thread.Claim.Status),
+            ReportId = claim.ReportId,
+            ReportTitle = claim.Report.Title,
+            ReportType = ToReportType(claim.Report.Type),
+            ReportStatus = ToReportStatus(claim.Report.Status),
+            ClaimStatus = ToClaimStatus(claim.Status),
             CounterpartyDisplayName = counterparty.DisplayName ?? string.Empty,
             CreatedAt = thread.CreatedAt,
             ReadOnlyAt = thread.ReadOnlyAt,
-            Resolution = ResolutionStateMapper.FromClaim(thread.Claim, isReporter),
+            Resolution = resolution,
             Messages = messages
                 .Select(message => ToMessageResponse(
                     message,
@@ -380,4 +397,32 @@ public sealed class ChatService(
             ? body
             : body[..PreviewLength];
 
+    private static string ToReportType(ReportType type) => type switch
+    {
+        ReportType.Lost => "lost",
+        ReportType.Found => "found",
+        _ => type.ToString().ToLowerInvariant(),
+    };
+
+    private static string ToReportStatus(ReportStatus status) => status switch
+    {
+        ReportStatus.PendingReview => "pending_review",
+        ReportStatus.Rejected => "rejected",
+        ReportStatus.Published => "published",
+        ReportStatus.ClaimInProgress => "claim_in_progress",
+        ReportStatus.Resolved => "resolved",
+        ReportStatus.Withdrawn => "withdrawn",
+        ReportStatus.RemovedByAdmin => "removed_by_admin",
+        _ => status.ToString().ToLowerInvariant(),
+    };
+
+    private static string ToClaimStatus(ClaimStatus status) => status switch
+    {
+        ClaimStatus.Pending => "pending",
+        ClaimStatus.Approved => "approved",
+        ClaimStatus.Rejected => "rejected",
+        ClaimStatus.Withdrawn => "withdrawn",
+        ClaimStatus.Cancelled => "cancelled",
+        _ => status.ToString().ToLowerInvariant(),
+    };
 }

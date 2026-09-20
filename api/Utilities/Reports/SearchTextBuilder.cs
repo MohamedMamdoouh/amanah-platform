@@ -1,9 +1,33 @@
+using Amanah.Api.Data.Entities;
 using Amanah.Api.Utilities.Common;
+using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Utilities.Reports;
 
 public static class SearchTextBuilder
 {
+    private const int MaxSearchTerms = 24;
+
+    public static IQueryable<Report> FilterBySearchQuery(
+        IQueryable<Report> query,
+        string? rawQuery) =>
+        FilterBySearchTerms(query, ArabicNormalizer.BuildSearchTerms(rawQuery ?? string.Empty));
+
+    public static IQueryable<Report> FilterBySearchTerms(
+        IQueryable<Report> query,
+        string[] terms)
+    {
+        foreach (var term in terms.Take(MaxSearchTerms))
+        {
+            var pattern = $"%{term}%";
+            query = query.Where(report =>
+                report.NormalizedSearchText != null
+                && EF.Functions.ILike(report.NormalizedSearchText, pattern));
+        }
+
+        return query;
+    }
+
     public static string Build(
         string title,
         string description,

@@ -2,7 +2,6 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
-using Amanah.Api.Utilities.Common;
 using Amanah.Api.Utilities.Reports;
 using Amanah.Contracts.Requests.Browse;
 using Amanah.Contracts.Responses.Browse;
@@ -32,8 +31,7 @@ public sealed class BrowseService(
                 report.Status == ReportStatus.Published
                 || report.Status == ReportStatus.ClaimInProgress);
 
-        var terms = ArabicNormalizer.BuildSearchTerms(query.Q ?? string.Empty);
-        reportsQuery = reportsQuery.WhereMatchesAllSearchTerms(terms);
+        reportsQuery = SearchTextBuilder.FilterBySearchQuery(reportsQuery, query.Q);
 
         if (!string.IsNullOrWhiteSpace(query.Category))
         {
@@ -49,7 +47,7 @@ public sealed class BrowseService(
 
         if (!string.IsNullOrWhiteSpace(query.Type))
         {
-            if (!ReportApiStrings.TryParseType(query.Type, out var reportType))
+            if (!TryParseReportType(query.Type, out var reportType))
             {
                 return ResultError.BadRequest(
                     "Please correct the errors in the form.",
@@ -80,11 +78,16 @@ public sealed class BrowseService(
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        return Pagination.Create(
-            [.. reports.Select(ToPublicSummary)],
-            page,
-            pageSize,
-            totalCount);
+        return new PaginatedResponse<PublicReportSummaryResponse>
+        {
+            Items = [.. reports.Select(ToPublicSummary)],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalCount == 0
+                ? 0
+                : (int)Math.Ceiling(totalCount / (double)pageSize),
+        };
     }
 
     public Task<Result<PublicReportDetailResponse>> GetPublicDetailAsync(
@@ -138,8 +141,8 @@ public sealed class BrowseService(
         new()
         {
             Id = report.Id,
-            Type = ReportApiStrings.ToType(report.Type),
-            Status = ReportApiStrings.ToStatus(report.Status),
+            Type = ToReportType(report.Type),
+            Status = ToReportStatus(report.Status),
             Title = report.Title,
             CategoryCode = report.Category.Code,
             GovernorateCode = report.Governorate.Code,
@@ -192,8 +195,8 @@ public sealed class BrowseService(
         return new PublicReportSummaryResponse
         {
             Id = report.Id,
-            Type = ReportApiStrings.ToType(report.Type),
-            Status = ReportApiStrings.ToStatus(report.Status),
+            Type = ToReportType(report.Type),
+            Status = ToReportStatus(report.Status),
             Title = report.Title,
             CategoryCode = report.Category.Code,
             GovernorateCode = report.Governorate.Code,
@@ -206,5 +209,40 @@ public sealed class BrowseService(
                 : bucketStorage.GetPublicUrl(firstPhoto.ThumbnailStorageKey),
             AreaText = report.AreaText,
         };
+    }
+
+    private static string ToReportType(ReportType type) => type switch
+    {
+        ReportType.Lost => "lost",
+        ReportType.Found => "found",
+        _ => type.ToString().ToLowerInvariant(),
+    };
+
+    private static string ToReportStatus(ReportStatus status) => status switch
+    {
+        ReportStatus.PendingReview => "pending_review",
+        ReportStatus.Rejected => "rejected",
+        ReportStatus.Published => "published",
+        ReportStatus.ClaimInProgress => "claim_in_progress",
+        ReportStatus.Resolved => "resolved",
+        ReportStatus.Withdrawn => "withdrawn",
+        ReportStatus.RemovedByAdmin => "removed_by_admin",
+        _ => status.ToString().ToLowerInvariant(),
+    };
+
+    private static bool TryParseReportType(string type, out ReportType reportType)
+    {
+        switch (type.Trim().ToLowerInvariant())
+        {
+            case "lost":
+                reportType = ReportType.Lost;
+                return true;
+            case "found":
+                reportType = ReportType.Found;
+                return true;
+            default:
+                reportType = default;
+                return false;
+        }
     }
 }

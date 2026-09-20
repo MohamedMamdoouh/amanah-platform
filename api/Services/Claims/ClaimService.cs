@@ -9,8 +9,6 @@ using Amanah.Api.Services.Uploads;
 using Amanah.Api.Utilities.Claims;
 using Amanah.Api.Utilities.Common;
 using Amanah.Api.Utilities.Notifications;
-using Amanah.Api.Utilities.Reports;
-using Amanah.Api.Utilities.Resolution;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
 using Amanah.Contracts.Responses.Browse;
@@ -177,7 +175,7 @@ public sealed class ClaimService(
         return new SubmitClaimResponse
         {
             Id = claim.Id,
-            Status = ClaimApiStrings.ToStatus(claim.Status),
+            Status = ToClaimStatus(claim.Status),
         };
     }
 
@@ -521,11 +519,16 @@ public sealed class ClaimService(
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
 
-        return Pagination.Create(
-            claims.Select(ToMyClaimSummary).ToList(),
-            query.Page,
-            query.PageSize,
-            totalCount);
+        return new PaginatedResponse<MyClaimSummaryResponse>
+        {
+            Items = claims.Select(ToMyClaimSummary).ToList(),
+            Page = query.Page,
+            PageSize = query.PageSize,
+            TotalCount = totalCount,
+            TotalPages = totalCount == 0
+                ? 0
+                : (int)Math.Ceiling(totalCount / (double)query.PageSize),
+        };
     }
 
     public async Task<Result<ClaimDetailResponse>> GetByIdAsync(
@@ -583,11 +586,30 @@ public sealed class ClaimService(
     private static ClaimDetailResponse ToClaimDetail(Claim claim, Guid userId)
     {
         var isReporter = claim.Report.ReporterId == userId;
+        ResolutionStateResponse? resolution = null;
+
+        if (claim.Status is ClaimStatus.Approved or ClaimStatus.Cancelled)
+        {
+            var reportResolution = claim.Report.Resolution;
+            var reporterConfirmed = reportResolution?.ReporterConfirmedAt is not null;
+            var claimantConfirmed = reportResolution?.ClaimantConfirmedAt is not null;
+            var currentUserHasConfirmed = isReporter ? reporterConfirmed : claimantConfirmed;
+
+            resolution = new ResolutionStateResponse
+            {
+                ReporterConfirmedAt = reportResolution?.ReporterConfirmedAt,
+                ClaimantConfirmedAt = reportResolution?.ClaimantConfirmedAt,
+                ResolvedAt = reportResolution?.ResolvedAt,
+                CurrentUserHasConfirmed = currentUserHasConfirmed,
+                CurrentUserCanCancel = claim.Status == ClaimStatus.Approved
+                    && !currentUserHasConfirmed,
+            };
+        }
 
         return new()
         {
             Id = claim.Id,
-            Status = ClaimApiStrings.ToStatus(claim.Status),
+            Status = ToClaimStatus(claim.Status),
             SubmittedAnswer = claim.SubmittedAnswer,
             HasPhoto = !string.IsNullOrWhiteSpace(claim.PhotoStorageKey),
             SubmittedAt = claim.SubmittedAt,
@@ -597,12 +619,12 @@ public sealed class ClaimService(
             AttemptNumber = claim.AttemptNumber,
             ChatThreadId = claim.ChatThread?.Id,
             ReportId = claim.ReportId,
-            ReportType = ReportApiStrings.ToType(claim.Report.Type),
-            ReportStatus = ReportApiStrings.ToStatus(claim.Report.Status),
+            ReportType = ToReportType(claim.Report.Type),
+            ReportStatus = ToReportStatus(claim.Report.Status),
             ReportTitle = claim.Report.Title,
             ClaimantDisplayName = claim.Claimant.DisplayName ?? string.Empty,
             ReporterDisplayName = claim.Report.Reporter.DisplayName ?? string.Empty,
-            Resolution = ResolutionStateMapper.FromClaim(claim, isReporter),
+            Resolution = resolution,
         };
     }
 
@@ -610,7 +632,7 @@ public sealed class ClaimService(
         new()
         {
             Id = claim.Id,
-            Status = ClaimApiStrings.ToStatus(claim.Status),
+            Status = ToClaimStatus(claim.Status),
             SubmittedAnswer = claim.SubmittedAnswer,
             HasPhoto = !string.IsNullOrWhiteSpace(claim.PhotoStorageKey),
             SubmittedAt = claim.SubmittedAt,
@@ -664,13 +686,42 @@ public sealed class ClaimService(
         new()
         {
             Id = claim.Id,
-            Status = ClaimApiStrings.ToStatus(claim.Status),
+            Status = ToClaimStatus(claim.Status),
             SubmittedAt = claim.SubmittedAt,
             ReviewedAt = claim.ReviewedAt,
             DecisionReason = claim.DecisionReason,
             ReportId = claim.ReportId,
-            ReportType = ReportApiStrings.ToType(claim.Report.Type),
+            ReportType = ToReportType(claim.Report.Type),
             ReportTitle = claim.Report.Title,
             ReporterDisplayName = claim.Report.Reporter.DisplayName ?? string.Empty,
         };
+
+    private static string ToReportType(ReportType type) => type switch
+    {
+        ReportType.Lost => "lost",
+        ReportType.Found => "found",
+        _ => type.ToString().ToLowerInvariant(),
+    };
+
+    private static string ToReportStatus(ReportStatus status) => status switch
+    {
+        ReportStatus.PendingReview => "pending_review",
+        ReportStatus.Rejected => "rejected",
+        ReportStatus.Published => "published",
+        ReportStatus.ClaimInProgress => "claim_in_progress",
+        ReportStatus.Resolved => "resolved",
+        ReportStatus.Withdrawn => "withdrawn",
+        ReportStatus.RemovedByAdmin => "removed_by_admin",
+        _ => status.ToString().ToLowerInvariant(),
+    };
+
+    private static string ToClaimStatus(ClaimStatus status) => status switch
+    {
+        ClaimStatus.Pending => "pending",
+        ClaimStatus.Approved => "approved",
+        ClaimStatus.Rejected => "rejected",
+        ClaimStatus.Withdrawn => "withdrawn",
+        ClaimStatus.Cancelled => "cancelled",
+        _ => status.ToString().ToLowerInvariant(),
+    };
 }

@@ -1,7 +1,6 @@
 using Amanah.Api.Data;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Storage;
-using Amanah.Api.Utilities.Uploads;
 using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,13 +29,12 @@ public sealed class ChatAttachmentPresignService(
             return ResultError.NotFound("Attachment not found.");
         }
 
-        var storageKey = await StorageKeyResolver.ResolvePreferExistingThumbnailAsync(
-            bucketStorage,
-            attachment.StorageKey,
-            attachment.ThumbnailStorageKey,
-            cancellationToken);
+        var storageKey = attachment.ThumbnailStorageKey is not null
+            && await bucketStorage.ExistsAsync(attachment.ThumbnailStorageKey, cancellationToken)
+            ? attachment.ThumbnailStorageKey
+            : attachment.StorageKey;
 
-        var url = bucketStorage.GetPreSignedUrl(storageKey, PresignConstants.Lifetime);
+        var url = bucketStorage.GetPreSignedUrl(storageKey, TimeSpan.FromMinutes(5));
 
         return new ChatAttachmentPresignResponse
         {
