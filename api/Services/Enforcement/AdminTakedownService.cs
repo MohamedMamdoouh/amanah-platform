@@ -44,6 +44,14 @@ public sealed class AdminTakedownService(
                 ErrorCodes.EnforcementReportNotTakedownable);
         }
 
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        // Decision basis for the atomic status gate below. A concurrent Approve can move
+        // Published → ClaimInProgress after this snapshot; blindly SaveChanges would then
+        // overwrite ClaimInProgress with RemovedByAdmin while leaving the Approved claim
+        // and an open chat (cancel/confirm stuck or cancel resurrecting the listing).
+        var statusAtStart = report.Status;
+
         Guid? approvedClaimantId = null;
         ApprovedClaimCancellation.CancellationOutcome? cancellation = null;
 
@@ -80,7 +88,32 @@ public sealed class AdminTakedownService(
             EnqueueTakedownNotification(report, claimantId, now, cancellation!.ClaimId, cancellation.ReadOnlyThread?.Id);
         }
 
+        // Atomic gate: only commit if the report is still in the status we decided against.
+        var statusUpdated = await dbContext.Reports
+            .Where(existingReport =>
+                existingReport.Id == report.Id
+                && existingReport.Status == statusAtStart)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingReport => existingReport.Status, ReportStatus.RemovedByAdmin)
+                    .SetProperty(existingReport => existingReport.UpdatedAt, now),
+                cancellationToken);
+
+        if (statusUpdated == 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            dbContext.ChangeTracker.Clear();
+            return ResultError.Conflict(
+                "Only published reports or reports with an approved claim can be taken down.",
+                ErrorCodes.EnforcementReportNotTakedownable);
+        }
+
+        // Status/UpdatedAt already written by ExecuteUpdate — avoid a second write from the tracker.
+        dbContext.Entry(report).Property(existingReport => existingReport.Status).IsModified = false;
+        dbContext.Entry(report).Property(existingReport => existingReport.UpdatedAt).IsModified = false;
+
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         if (cancellation?.ReadOnlyThread is { } readOnlyThread)
         {

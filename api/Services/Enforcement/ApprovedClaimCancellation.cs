@@ -51,9 +51,16 @@ public sealed class ApprovedClaimCancellation(
         claim.CancelledByUserId = null;
         claim.CountsAsFailure = false;
 
-        if (claim.Report.Resolution is not null)
+        // Delete by report id so a concurrent confirm that committed after Include
+        // cannot leave a stale Resolution on the taken-down report.
+        var resolutionToRemove = claim.Report.Resolution
+            ?? await dbContext.Resolutions
+                .SingleOrDefaultAsync(
+                    existingResolution => existingResolution.ReportId == report.Id,
+                    cancellationToken);
+        if (resolutionToRemove is not null)
         {
-            dbContext.Resolutions.Remove(claim.Report.Resolution);
+            dbContext.Resolutions.Remove(resolutionToRemove);
         }
 
         claim.Report.Resolution = null;
