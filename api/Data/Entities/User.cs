@@ -16,6 +16,8 @@ public class User : IEntity
 
     public string? BanReason { get; set; }
 
+    public DateTimeOffset? BannedAt { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset? DeactivatedAt { get; set; }

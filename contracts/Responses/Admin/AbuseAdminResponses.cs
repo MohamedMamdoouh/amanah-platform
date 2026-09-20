@@ -21,7 +21,9 @@ public sealed class AbuseQueueItemResponse
 
     public required string Reason { get; init; }
 
-    public required string ReporterDisplayName { get; init; }
+    public required Guid AbuseReporterUserId { get; init; }
+
+    public required string AbuseReporterDisplayName { get; init; }
 
     public required string Status { get; init; }
 
@@ -44,7 +46,9 @@ public sealed class AbuseReportDetailResponse
 
     public DateTimeOffset? ResolvedAt { get; init; }
 
-    public required string ReporterDisplayName { get; init; }
+    public required Guid AbuseReporterUserId { get; init; }
+
+    public required string AbuseReporterDisplayName { get; init; }
 
     public required FlaggedListingSummaryResponse Listing { get; init; }
 }
@@ -63,9 +67,9 @@ public sealed class FlaggedListingSummaryResponse
 
     public required string GovernorateCode { get; init; }
 
-    public required Guid ReporterUserId { get; init; }
+    public required Guid ListingOwnerUserId { get; init; }
 
-    public required string ReporterDisplayName { get; init; }
+    public required string ListingOwnerDisplayName { get; init; }
 
     public DateTimeOffset CreatedAt { get; init; }
 

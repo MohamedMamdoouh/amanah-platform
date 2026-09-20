@@ -4,9 +4,9 @@ public class AbuseReport : IEntity
 {
     public Guid Id { get; set; }
 
-    public Guid ReporterId { get; set; }
+    public Guid AbuseReporterId { get; set; }
 
-    public User Reporter { get; set; } = null!;
+    public User AbuseReporter { get; set; } = null!;
 
     public Guid ReportId { get; set; }
 

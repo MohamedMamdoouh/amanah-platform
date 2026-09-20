@@ -76,7 +76,7 @@ Resolve **before starting** this phase:
 
 ### Database
 
-- `AbuseReport` with status `Open` -> `Resolved`, resolution outcome
+- `AbuseReport` with status `Open` -> `Resolved`, resolution outcome; **`AbuseReporterId`** = user who submitted the flag (not `Report.ReporterId`, which is the listing owner)
 - Reuse platform foundation `User.IsBanned`, `User.BanReason`; add `User.BannedAt` if not present
 - Enforcement calls `ReportLifecycleService`, `ClaimCleanupService` from Phase 06
 

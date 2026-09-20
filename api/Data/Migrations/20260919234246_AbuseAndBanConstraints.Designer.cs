@@ -3,6 +3,7 @@ using System;
 using Amanah.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amanah.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AmanahDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260919234246_AbuseAndBanConstraints")]
+    partial class AbuseAndBanConstraints
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,9 +29,6 @@ namespace Amanah.Api.Data.Migrations
             modelBuilder.Entity("Amanah.Api.Data.Entities.AbuseReport", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AbuseReporterId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -44,6 +44,9 @@ namespace Amanah.Api.Data.Migrations
                         .HasColumnType("character varying(40)");
 
                     b.Property<Guid>("ReportId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReporterId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ResolutionOutcome")
@@ -67,7 +70,7 @@ namespace Amanah.Api.Data.Migrations
 
                     b.HasIndex("ResolvedByUserId");
 
-                    b.HasIndex("AbuseReporterId", "ReportId")
+                    b.HasIndex("ReporterId", "ReportId")
                         .IsUnique()
                         .HasFilter("\"Status\" = 'Open'");
 
@@ -854,15 +857,15 @@ namespace Amanah.Api.Data.Migrations
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.AbuseReport", b =>
                 {
-                    b.HasOne("Amanah.Api.Data.Entities.User", "AbuseReporter")
-                        .WithMany()
-                        .HasForeignKey("AbuseReporterId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Amanah.Api.Data.Entities.Report", "Report")
                         .WithMany("AbuseReports")
                         .HasForeignKey("ReportId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Amanah.Api.Data.Entities.User", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -871,9 +874,9 @@ namespace Amanah.Api.Data.Migrations
                         .HasForeignKey("ResolvedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("AbuseReporter");
-
                     b.Navigation("Report");
+
+                    b.Navigation("Reporter");
 
                     b.Navigation("ResolvedByUser");
                 });

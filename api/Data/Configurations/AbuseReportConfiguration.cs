@@ -30,9 +30,9 @@ public sealed class AbuseReportConfiguration : IEntityTypeConfiguration<AbuseRep
         builder.Property(report => report.CreatedAt)
             .IsRequired();
 
-        builder.HasOne(report => report.Reporter)
+        builder.HasOne(report => report.AbuseReporter)
             .WithMany()
-            .HasForeignKey(report => report.ReporterId)
+            .HasForeignKey(report => report.AbuseReporterId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(report => report.Report)
@@ -44,5 +44,11 @@ public sealed class AbuseReportConfiguration : IEntityTypeConfiguration<AbuseRep
             .WithMany()
             .HasForeignKey(report => report.ResolvedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(report => new { report.Status, report.CreatedAt });
+
+        builder.HasIndex(report => new { report.AbuseReporterId, report.ReportId })
+            .IsUnique()
+            .HasFilter("\"Status\" = 'Open'");
     }
 }

@@ -36,6 +36,8 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(user => user.BanReason);
 
+        builder.Property(user => user.BannedAt);
+
         builder.Property(user => user.CreatedAt)
             .IsRequired();
 
