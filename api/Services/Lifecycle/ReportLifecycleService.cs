@@ -24,6 +24,8 @@ public sealed class ReportLifecycleService(
 
     public const string ExpiredWithdrawReason = "_expired_";
 
+    public const string AdminTakedownReason = "_admin_takedown_";
+
     public const string ClosedReviewerDecision = "closed";
 
     public void InitializePublishedTimer(Report report, DateTimeOffset now)
@@ -101,6 +103,30 @@ public sealed class ReportLifecycleService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
+    }
+
+    public async Task ApplyAdminTakedownAsync(
+        Report report,
+        CancellationToken cancellationToken = default)
+    {
+        if (report.Status == ReportStatus.Published)
+        {
+            await ClosePendingClaimsAsync(
+                report.Id,
+                AdminTakedownReason,
+                NotificationTypes.ClaimClosedReportUnavailable,
+                cancellationToken);
+        }
+
+        var now = timeProvider.GetUtcNow();
+        report.Status = ReportStatus.RemovedByAdmin;
+        report.UpdatedAt = now;
+
+        var storageKeys = RemoveReportPhotos(report);
+        await storageDeletionEnqueueService.EnqueueAsync(
+            storageKeys,
+            StorageDeletionSource.ReportWithdraw,
+            cancellationToken);
     }
 
     public async Task<int> ProcessListingExpiryWarningsAsync(CancellationToken cancellationToken = default)

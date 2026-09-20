@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddLifecycleServices(configuration);
         services.AddModerationServices();
         services.AddAbuseServices();
+        services.AddEnforcementServices();
         services.AddBrowseServices();
         services.AddBucketStorage(configuration);
         services.AddUploadServices();

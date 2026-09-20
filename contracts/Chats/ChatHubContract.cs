@@ -23,7 +23,5 @@ public static class ChatHubEvents
 
 public static class ChatHubGroups
 {
-    public const string ThreadPrefix = "thread:";
-
-    public static string ForThread(Guid threadId) => $"{ThreadPrefix}{threadId}";
+    public static string ForThread(Guid threadId) => $"thread:{threadId}";
 }
