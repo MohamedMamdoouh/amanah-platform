@@ -1,8 +1,11 @@
 using Amanah.Api.Auth;
+using Amanah.Api.Services.Abuse;
 using Amanah.Api.Services.Claims;
 using Amanah.Api.Services.Reports;
 using Amanah.Contracts.Errors;
+using Amanah.Contracts.Requests.Abuse;
 using Amanah.Contracts.Requests.Reports;
+using Amanah.Contracts.Responses.Abuse;
 using Amanah.Contracts.Responses.Claims;
 using Amanah.Contracts.Responses.Reports;
 using Asp.Versioning;
@@ -19,6 +22,7 @@ namespace Amanah.Api.Controllers;
 public sealed class ReportsController(
     ReportService reportService,
     ClaimService claimService,
+    AbuseFlagService abuseFlagService,
     ReportCreateFormParser createFormParser,
     ReportUpdateFormParser updateFormParser,
     ClaimSubmitFormParser claimSubmitFormParser) : ControllerBase
@@ -196,6 +200,41 @@ public sealed class ReportsController(
         User.TryGetUserId(out var userId);
 
         var result = await reportService.WithdrawAsync(id, userId, request, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [HttpPost("{id:guid}/flag")]
+    [EndpointName(nameof(FlagListing))]
+    [EndpointSummary("Flag a published or in-progress listing for abuse review.")]
+    [ProducesResponseType(typeof(FlagListingResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> FlagListing(
+        Guid id,
+        [FromBody] FlagListingRequest request,
+        CancellationToken cancellationToken)
+    {
+        User.TryGetUserId(out var userId);
+
+        var result = await abuseFlagService.CreateAsync(id, userId, request, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [HttpGet("{id:guid}/flag")]
+    [EndpointName(nameof(GetListingFlag))]
+    [EndpointSummary("Get the authenticated user's open flag on a listing, if any.")]
+    [ProducesResponseType(typeof(FlagListingResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetListingFlag(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        User.TryGetUserId(out var userId);
+
+        var result = await abuseFlagService.GetOpenAsync(id, userId, cancellationToken);
         return result.ToActionResult();
     }
 }
