@@ -20,7 +20,7 @@ Lost-and-found platform for Egypt — moderated listings, ownership verification
 
 ### Shipped (Phase 00)
 
-Auth (phone OTP signup, password sign-in, JWT + httpOnly refresh cookie rotation, password reset, logout-everywhere), admin bootstrap, catalog seeds (8 categories, 27 governorates), Arabic RTL SPA with legal/support pages, full DB schema, structured logging + health probes, production Docker deploy on Render.
+Auth (phone OTP signup, password sign-in, JWT + httpOnly refresh cookie rotation, password reset, logout-everywhere), admin bootstrap, catalog seeds (7 categories, 27 governorates), Arabic RTL SPA with legal/support pages, full DB schema, structured logging + health probes, production Docker deploy on Render.
 
 **Routes:** `/`, `/browse`, `/login`, `/notifications`, `/terms`, `/privacy`, `/safety`, `/support`, `/admin` (redirects to moderation)
 
@@ -104,7 +104,7 @@ cd web && npm install && npm start
 
 Connection string: `api/appsettings.Development.json`. Production env var names: `.env.example`. SMS uses `ConsoleSmsSender` in Development (OTP printed to the API console). Object storage falls back to in-memory when `Bucket__Endpoint` is unset.
 
-On first startup, migrations and catalog seed run automatically (8 categories, 27 governorates). Dev accounts are bootstrapped from `appsettings.Development.json`:
+On first startup, migrations and catalog seed run automatically (7 categories, 27 governorates). Dev accounts are bootstrapped from `appsettings.Development.json`:
 
 | Account | Phone (login) | Password | Unlocks |
 | ------- | ------------- | -------- | ------- |

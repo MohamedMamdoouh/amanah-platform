@@ -122,26 +122,25 @@ public class CategoryFieldValidatorTests
     }
 
     [Fact]
-    public void Validate_returns_error_for_integer_out_of_range()
+    public void Validate_returns_error_for_text_exceeding_max_length()
     {
         var definitions = new List<CategoryFieldDefinition>
         {
             new()
             {
-                FieldKey = "key_count",
-                Type = CategoryFieldType.Integer,
+                FieldKey = "brand_model",
+                Type = CategoryFieldType.Text,
                 Required = true,
-                MinInt = 1,
-                MaxInt = 20,
+                MaxLength = 80,
             },
         };
 
         var errors = CategoryFieldValidator.Validate(definitions, new Dictionary<string, string>
         {
-            ["key_count"] = "25",
+            ["brand_model"] = new string('x', 81),
         });
 
-        Assert.Contains("key_count", errors.Keys);
+        Assert.Contains("brand_model", errors.Keys);
     }
 
     [Fact]

@@ -5,8 +5,6 @@ export interface CategoryFieldDefinition {
   sortOrder: number;
   minLength?: number | null;
   maxLength?: number | null;
-  minInt?: number | null;
-  maxInt?: number | null;
   textFormat?: string | null;
 }
 

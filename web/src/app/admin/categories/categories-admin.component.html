@@ -222,16 +222,6 @@
                         ) {
                           · max {{ field.maxLength }}
                         }
-                        @if (
-                          field.minInt !== null && field.minInt !== undefined
-                        ) {
-                          · min {{ field.minInt }}
-                        }
-                        @if (
-                          field.maxInt !== null && field.maxInt !== undefined
-                        ) {
-                          · max {{ field.maxInt }}
-                        }
                         @if (field.textFormat) {
                           · {{ textFormatLabel(field.textFormat) }}
                         }

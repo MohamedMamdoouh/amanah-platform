@@ -36,10 +36,6 @@ public sealed class CreateCategoryFieldRequest
 
     public int? MaxLength { get; init; }
 
-    public int? MinInt { get; init; }
-
-    public int? MaxInt { get; init; }
-
     public string? TextFormat { get; init; }
 }
 
@@ -56,10 +52,6 @@ public sealed class UpdateCategoryFieldRequest
     public int? MinLength { get; init; }
 
     public int? MaxLength { get; init; }
-
-    public int? MinInt { get; init; }
-
-    public int? MaxInt { get; init; }
 
     public string? TextFormat { get; init; }
 }

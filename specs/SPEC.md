@@ -210,7 +210,7 @@ See section 6.
 
 ### 5.2 Report categories & fields
 
-Categories and their field definitions are **admin-managed** (5.5). Eight categories are seeded at deploy with the field definitions below. All category text fields are normalized (trim + collapse repeated spaces) before validation and storage, and are covered by the contact-info block (4.1.3).
+Categories and their field definitions are **admin-managed** (5.5). Seven categories are seeded at deploy with the field definitions below. All category fields are text; values are normalized (trim + collapse repeated spaces) before validation and storage, and are covered by the contact-info block (4.1.3).
 
 **Default seed categories and fields:**
 
@@ -219,7 +219,6 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 | Phones        | Brand/model, colour                   | No             |
 | Documents/IDs | Document type, first name on document | Yes            |
 | Wallets       | Wallet type, colour                   | No             |
-| Keys          | Key type, key count                   | No             |
 | Bags          | Bag type, colour                      | No             |
 | Electronics   | Device type, brand/model              | No             |
 | Accessories   | Accessory type                        | No             |
@@ -229,7 +228,6 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 
 - Text fields: **2-80** characters.
 - `First name on document` (seed): **2-40** characters, letters and spaces only. First name only - helper copy states that surnames must not be entered.
-- `Key count` (seed): integer **1-20**.
 
 **Private-photo categories (`photosPrivate` = true):**
 
@@ -276,7 +274,7 @@ Categories and their field definitions are **admin-managed** (5.5). Eight catego
 - An optional free-text note is shown to the reporter alongside the reason.
 - Admin cannot edit report content - only approve, reject, and take enforcement actions (7.2).
 - **Admin surfaces in v1:** moderation queue, abuse-report queue, user lookup (with ban and unban), and category & field management at `/admin/categories`. There is no admin tool for changing a user's phone number.
-- **Category management:** admins may add categories (English `code`, sort order, `photosPrivate` flag, active flag), edit sort order, deactivate categories, and define per-category fields (`fieldKey`, type `text` or `integer`, validation ranges, required flag). Arabic labels for categories and fields are added in frontend translation files (`categories.json`) and deployed. Deactivated categories are hidden from new submissions; existing reports keep their category. Field-definition changes do not retroactively re-validate old reports. Categories referenced by reports cannot be deleted - only deactivated.
+- **Category management:** admins may add categories (English `code`, sort order, `photosPrivate` flag, active flag), edit sort order, deactivate categories, and define per-category **text** fields (`fieldKey`, min/max length, optional `textFormat` preset such as letters-and-spaces, required flag). Arabic labels for categories and fields are added in frontend translation files (`categories.json`) and deployed. Deactivated categories are hidden from new submissions; existing reports keep their category. Field-definition changes do not retroactively re-validate old reports. Categories referenced by reports cannot be deleted - only deactivated.
 - **Admin access to private data:**
   - Private photos: during report review and enforcement investigations only.
   - Claim text and claim photos: during flagged-listing abuse or enforcement investigations only.
@@ -609,7 +607,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 - **Date bounds:** a date lost/found in the future, or more than 12 months before today in Africa/Cairo time, is rejected with field-level validation. Today's local date is always accepted.
 - **Hidden-detail format:** the hidden verification detail is private text of 10-500 characters, and is required.
 - **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held-location detail, public category fields, and claim text - and is accepted in the hidden verification detail and in chat messages.
-- **Category fields:** required category fields are validated per the active category's field definitions (5.2), including seed defaults (text 2-80 chars, `first name on document` 2-40 letters/spaces, `key count` integer 1-20).
+- **Category fields:** required category fields are validated per the active category's field definitions (5.2), including seed defaults (text 2-80 chars; `first name on document` 2-40 letters/spaces).
 - **Submission quota:** at 3 new reports in the current Africa/Cairo day, the next submission is rejected with clear quota messaging.
 - **Open-report cap:** at 5 reports in `Pending Review`, `Published`, or `Claim In Progress`, the next new submission is rejected with clear cap messaging; resubmitting a `Rejected` report still succeeds.
 
@@ -734,7 +732,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `User`                    | normalized phone (`+20...`), display name, role, banned flag + reason, created-at                                                                                                                                                                                                                                                         |
 | `Category`                | code (English key), sort order, `photosPrivate` flag, active flag                                                                                                                                                                                                                                                                         |
-| `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`/`integer`), validation rules (min/max length or int, optional `textFormat` preset such as `letters_and_spaces`), required flag, sort order                                                                                                                                             |
+| `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`), min/max length, optional `textFormat` preset (e.g. `letters_and_spaces`), required flag, sort order                                                                                                                                                                                   |
 | `Governorate`             | code (English key), sort order                                                                                                                                                                                                                                                                                                            |
 | `Report`                  | type (Lost/Found), category, title, description, date lost/found, governorate, area text, item-held location (found), status, reward flag/amount, hidden-detail text, withdrawal reason, resubmission count, normalized search text, published-at, published-seconds-elapsed, published-timer-resumed-at, expiry-warning-sent, timestamps |
 | `CategoryField`           | report ref, field key, value                                                                                                                                                                                                                                                                                                              |

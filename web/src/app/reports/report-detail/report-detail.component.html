@@ -58,19 +58,11 @@
               @for (definition of fieldDefinitions(); track definition.fieldKey) {
                 <label class="report-detail__field">
                   <span class="report-detail__label">{{ fieldLabel(definition.fieldKey) }}</span>
-                  @if (definition.type === "Integer") {
-                    <input
-                      type="number"
-                      class="report-detail__input"
-                      [formControlName]="definition.fieldKey"
-                    />
-                  } @else {
-                    <input
-                      type="text"
-                      class="report-detail__input"
-                      [formControlName]="definition.fieldKey"
-                    />
-                  }
+                  <input
+                    type="text"
+                    class="report-detail__input"
+                    [formControlName]="definition.fieldKey"
+                  />
                   @if (fieldHint(definition.fieldKey); as hint) {
                     <span class="report-detail__hint">{{ hint }}</span>
                   }

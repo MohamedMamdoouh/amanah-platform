@@ -112,7 +112,7 @@ public sealed class CategoryAdminService(AppDbContext dbContext, ICacheService c
             return ResultError.BadRequest("Field type is invalid.");
         }
 
-        if (!TryParseTextFormat(request.TextFormat, fieldType, out var textFormat, out var textFormatError))
+        if (!TryParseTextFormat(request.TextFormat, out var textFormat, out var textFormatError))
         {
             return ResultError.BadRequest(textFormatError!);
         }
@@ -126,8 +126,6 @@ public sealed class CategoryAdminService(AppDbContext dbContext, ICacheService c
             SortOrder = request.SortOrder,
             MinLength = request.MinLength,
             MaxLength = request.MaxLength,
-            MinInt = request.MinInt,
-            MaxInt = request.MaxInt,
             TextFormat = textFormat,
         };
 
@@ -170,7 +168,7 @@ public sealed class CategoryAdminService(AppDbContext dbContext, ICacheService c
             return ResultError.BadRequest("Field type is invalid.");
         }
 
-        if (!TryParseTextFormat(request.TextFormat, fieldType, out var textFormat, out var textFormatError))
+        if (!TryParseTextFormat(request.TextFormat, out var textFormat, out var textFormatError))
         {
             return ResultError.BadRequest(textFormatError!);
         }
@@ -181,8 +179,6 @@ public sealed class CategoryAdminService(AppDbContext dbContext, ICacheService c
         field.SortOrder = request.SortOrder;
         field.MinLength = request.MinLength;
         field.MaxLength = request.MaxLength;
-        field.MinInt = request.MinInt;
-        field.MaxInt = request.MaxInt;
         field.TextFormat = textFormat;
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -211,23 +207,18 @@ public sealed class CategoryAdminService(AppDbContext dbContext, ICacheService c
 
     private static bool TryParseFieldType(string type, out CategoryFieldType fieldType)
     {
-        switch (type.Trim().ToLowerInvariant())
+        if (type.Trim().Equals("text", StringComparison.OrdinalIgnoreCase))
         {
-            case "text":
-                fieldType = CategoryFieldType.Text;
-                return true;
-            case "integer":
-                fieldType = CategoryFieldType.Integer;
-                return true;
-            default:
-                fieldType = default;
-                return false;
+            fieldType = CategoryFieldType.Text;
+            return true;
         }
+
+        fieldType = default;
+        return false;
     }
 
     private static bool TryParseTextFormat(
         string? textFormat,
-        CategoryFieldType fieldType,
         out CategoryTextFormat? parsed,
         out string? error)
     {
@@ -237,12 +228,6 @@ public sealed class CategoryAdminService(AppDbContext dbContext, ICacheService c
         if (string.IsNullOrWhiteSpace(textFormat))
         {
             return true;
-        }
-
-        if (fieldType != CategoryFieldType.Text)
-        {
-            error = "Text format is only valid for text fields.";
-            return false;
         }
 
         if (textFormat.Trim().Equals("letters_and_spaces", StringComparison.Ordinal))
@@ -277,13 +262,11 @@ internal static class CategoryAdminMapper
         {
             Id = field.Id,
             FieldKey = field.FieldKey,
-            Type = field.Type == CategoryFieldType.Integer ? "integer" : "text",
+            Type = "text",
             Required = field.Required,
             SortOrder = field.SortOrder,
             MinLength = field.MinLength,
             MaxLength = field.MaxLength,
-            MinInt = field.MinInt,
-            MaxInt = field.MaxInt,
             TextFormat = field.TextFormat == CategoryTextFormat.LettersAndSpaces
                 ? "letters_and_spaces"
                 : null,

@@ -81,15 +81,7 @@ public static class CategoryFieldValidator
                 continue;
             }
 
-            switch (definition.Type)
-            {
-                case CategoryFieldType.Text:
-                    ValidateTextField(definition, normalized, errors);
-                    break;
-                case CategoryFieldType.Integer:
-                    ValidateIntegerField(definition, normalized, errors);
-                    break;
-            }
+            ValidateTextField(definition, normalized, errors);
         }
 
         return errors;
@@ -116,29 +108,6 @@ public static class CategoryFieldValidator
             && !normalized.All(character => char.IsLetter(character) || character == ' '))
         {
             ValidationErrors.Add(errors, definition.FieldKey, "Must contain letters and spaces only.");
-        }
-    }
-
-    private static void ValidateIntegerField(
-        CategoryFieldDefinition definition,
-        string normalized,
-        Dictionary<string, string[]> errors)
-    {
-        if (!int.TryParse(normalized, out var value))
-        {
-            ValidationErrors.Add(errors, definition.FieldKey, "Must be a whole number.");
-            return;
-        }
-
-        if (definition.MinInt is int minInt && value < minInt)
-        {
-            ValidationErrors.Add(errors, definition.FieldKey, $"Must be at least {minInt}.");
-            return;
-        }
-
-        if (definition.MaxInt is int maxInt && value > maxInt)
-        {
-            ValidationErrors.Add(errors, definition.FieldKey, $"Must be at most {maxInt}.");
         }
     }
 }

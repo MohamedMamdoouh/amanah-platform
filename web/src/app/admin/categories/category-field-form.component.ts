@@ -6,13 +6,10 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
 
 export type CategoryFieldFormGroup = FormGroup<{
   fieldKey: FormControl<string>;
-  type: FormControl<string>;
   required: FormControl<boolean>;
   sortOrder: FormControl<number>;
   minLength: FormControl<string>;
   maxLength: FormControl<string>;
-  minInt: FormControl<string>;
-  maxInt: FormControl<string>;
   textFormat: FormControl<string>;
 }>;
 
@@ -28,16 +25,7 @@ export class CategoryFieldFormComponent {
 
   readonly form = input.required<CategoryFieldFormGroup>();
 
-  readonly fieldTypes = ['text', 'integer'];
   readonly textFormats = ['', 'letters_and_spaces'];
-
-  isTextType(type: string): boolean {
-    return type === 'text';
-  }
-
-  fieldTypeLabel(type: string): string {
-    return this.translate.instant(`admin.categories.field_type.${type}`);
-  }
 
   textFormatLabel(format: string | null | undefined): string {
     if (!format) {

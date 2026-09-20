@@ -157,7 +157,7 @@ From [SPEC.md Section 15.1](./SPEC.md#151-report-submission-and-validation).
 - [x] **Date bounds:** a date lost/found in the future, or more than 12 months before today in Africa/Cairo time, is rejected with field-level validation. Today's local date is always accepted
 - [x] **Hidden-detail format:** the hidden verification detail is private text of 10-500 characters, and is required
 - [x] **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held location, public category fields, and claim text - and is accepted in the hidden verification detail and in chat messages
-- [x] **Category fields:** required category fields are validated per the active category's field definitions (Section 5.2), including seed defaults (text 2-80 chars, `first name on document` 2-40 letters/spaces, `key count` integer 1-20)
+- [x] **Category fields:** required category fields are validated per the active category's field definitions (Section 5.2), including seed defaults for the seven seeded categories (text 2-80 chars; `first name on document` 2-40 letters/spaces)
 - [x] **Submission quota:** at 3 new reports in the current Africa/Cairo day, the next submission is rejected with clear quota messaging
 - [x] **Open-report cap:** at 5 reports in `Pending Review`, `Published`, or `Claim In Progress`, the next new submission is rejected with clear cap messaging; resubmitting a `Rejected` report still succeeds (verified in Phase 02 `ReportResubmitTests`)
 

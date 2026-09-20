@@ -45,13 +45,11 @@ public sealed class CatalogService(
                     .Select(field => new CategoryFieldDefinitionResponse
                     {
                         FieldKey = field.FieldKey,
-                        Type = field.Type == CategoryFieldType.Integer ? "integer" : "text",
+                        Type = "text",
                         Required = field.Required,
                         SortOrder = field.SortOrder,
                         MinLength = field.MinLength,
                         MaxLength = field.MaxLength,
-                        MinInt = field.MinInt,
-                        MaxInt = field.MaxInt,
                         TextFormat = field.TextFormat == CategoryTextFormat.LettersAndSpaces
                             ? "letters_and_spaces"
                             : null,

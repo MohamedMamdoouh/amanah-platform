@@ -7,7 +7,7 @@ public static class CategoryCatalogConstraints
     public const string FieldKeyPattern = @"^[a-z][a-z0-9_]*$";
 
     public static readonly IReadOnlySet<string> ValidFieldTypes =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "text", "integer" };
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "text" };
 
     public static readonly IReadOnlySet<string> ValidTextFormats =
         new HashSet<string>(StringComparer.Ordinal) { "letters_and_spaces" };
@@ -17,7 +17,4 @@ public static class CategoryCatalogConstraints
 
     public static bool IsValidTextFormat(string? textFormat) =>
         textFormat is null || ValidTextFormats.Contains(textFormat.Trim());
-
-    public static bool IsTextType(string type) =>
-        type.Trim().Equals("text", StringComparison.OrdinalIgnoreCase);
 }

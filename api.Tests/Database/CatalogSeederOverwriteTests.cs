@@ -23,10 +23,10 @@ public class CatalogSeederOverwriteTests
         other.SortOrder = 99;
         other.PhotosPrivate = true;
 
-        var keyCount = await context.CategoryFieldDefinitions
-            .SingleAsync(field => field.FieldKey == "key_count");
-        keyCount.MaxInt = 10;
-        keyCount.Required = false;
+        var phonesColour = await context.CategoryFieldDefinitions
+            .SingleAsync(field => field.FieldKey == "colour" && field.Category.Code == "phones");
+        phonesColour.MaxLength = 10;
+        phonesColour.Required = false;
 
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
@@ -34,15 +34,15 @@ public class CatalogSeederOverwriteTests
         await seeder.SeedAsync();
 
         var otherAfter = await context.Categories.SingleAsync(category => category.Code == "other");
-        var keyCountAfter = await context.CategoryFieldDefinitions
-            .SingleAsync(field => field.FieldKey == "key_count");
+        var phonesColourAfter = await context.CategoryFieldDefinitions
+            .SingleAsync(field => field.FieldKey == "colour" && field.Category.Code == "phones");
 
         Assert.False(otherAfter.Active);
         Assert.Equal(99, otherAfter.SortOrder);
         Assert.True(otherAfter.PhotosPrivate);
-        Assert.Equal(10, keyCountAfter.MaxInt);
-        Assert.False(keyCountAfter.Required);
-        Assert.Equal(8, await context.Categories.CountAsync());
+        Assert.Equal(10, phonesColourAfter.MaxLength);
+        Assert.False(phonesColourAfter.Required);
+        Assert.Equal(7, await context.Categories.CountAsync());
     }
 
     [Fact]

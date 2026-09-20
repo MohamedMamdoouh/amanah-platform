@@ -71,8 +71,6 @@ public sealed class CatalogSeeder(
                     Type = fieldType,
                     MinLength = fieldSeed.MinLength,
                     MaxLength = fieldSeed.MaxLength,
-                    MinInt = fieldSeed.MinInt,
-                    MaxInt = fieldSeed.MaxInt,
                     Required = fieldSeed.Required,
                     SortOrder = fieldSeed.SortOrder,
                     TextFormat = fieldSeed.TextFormat,

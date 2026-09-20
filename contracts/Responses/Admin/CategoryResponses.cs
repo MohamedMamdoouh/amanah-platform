@@ -36,9 +36,5 @@ public sealed class AdminCategoryFieldDefinitionResponse
 
     public int? MaxLength { get; init; }
 
-    public int? MinInt { get; init; }
-
-    public int? MaxInt { get; init; }
-
     public string? TextFormat { get; init; }
 }

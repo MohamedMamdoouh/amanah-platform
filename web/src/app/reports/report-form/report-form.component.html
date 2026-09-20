@@ -80,23 +80,13 @@
                     >
                   }
                 </span>
-                @if (definition.type === "Integer") {
-                  <input
-                    type="number"
-                    class="form-input"
-                    [formControlName]="definition.fieldKey"
-                    [attr.min]="definition.minInt ?? null"
-                    [attr.max]="definition.maxInt ?? null"
-                  />
-                } @else {
-                  <input
-                    type="text"
-                    class="form-input"
-                    [formControlName]="definition.fieldKey"
-                    [attr.minlength]="definition.minLength ?? null"
-                    [attr.maxlength]="definition.maxLength ?? null"
-                  />
-                }
+                <input
+                  type="text"
+                  class="form-input"
+                  [formControlName]="definition.fieldKey"
+                  [attr.minlength]="definition.minLength ?? null"
+                  [attr.maxlength]="definition.maxLength ?? null"
+                />
                 @if (fieldHint(definition.fieldKey); as hint) {
                   <span class="form-hint">{{ hint }}</span>
                 }

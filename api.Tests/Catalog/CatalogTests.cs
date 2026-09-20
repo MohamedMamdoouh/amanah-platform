@@ -26,13 +26,12 @@ public class CatalogApiTests(ApiWebApplicationFactory factory) : IClassFixture<A
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
-        Assert.Equal(8, body.Items.Count);
+        Assert.Equal(7, body.Items.Count);
         Assert.Equal(
             [
                 "phones",
                 "documents-ids",
                 "wallets",
-                "keys",
                 "bags",
                 "electronics",
                 "accessories",
@@ -54,12 +53,6 @@ public class CatalogApiTests(ApiWebApplicationFactory factory) : IClassFixture<A
         var firstNameField = documents.FieldDefinitions.Single(field => field.FieldKey == "first_name_on_document");
         Assert.Equal("letters_and_spaces", firstNameField.TextFormat);
         Assert.Null(documents.FieldDefinitions.Single(field => field.FieldKey == "document_type").TextFormat);
-
-        var keys = body.Items.Single(category => category.Code == "keys");
-        var keyCount = keys.FieldDefinitions.Single(field => field.FieldKey == "key_count");
-        Assert.Equal("integer", keyCount.Type);
-        Assert.Equal(1, keyCount.MinInt);
-        Assert.Equal(20, keyCount.MaxInt);
     }
 
     [Fact]
@@ -81,7 +74,7 @@ public class CatalogApiTests(ApiWebApplicationFactory factory) : IClassFixture<A
             var body = await client.GetFromJsonAsync<CategoryListResponse>("/api/v1/categories");
 
             Assert.NotNull(body);
-            Assert.Equal(7, body.Items.Count);
+            Assert.Equal(6, body.Items.Count);
             Assert.DoesNotContain(body.Items, category => category.Code == "other");
         }
         finally

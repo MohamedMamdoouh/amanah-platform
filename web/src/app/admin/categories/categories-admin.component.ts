@@ -25,13 +25,10 @@ import {
 
 type FieldFormValue = {
   fieldKey: string;
-  type: string;
   required: boolean;
   sortOrder: number;
   minLength: string;
   maxLength: string;
-  minInt: string;
-  maxInt: string;
   textFormat: string;
 };
 
@@ -263,13 +260,10 @@ export class CategoriesAdminComponent implements OnInit {
   private createFieldForm(): CategoryFieldFormGroup {
     return this.fb.nonNullable.group({
       fieldKey: ['', [Validators.required, Validators.maxLength(40)]],
-      type: ['text', Validators.required],
       required: [true],
       sortOrder: [1, [Validators.required, Validators.min(0)]],
       minLength: [''],
       maxLength: [''],
-      minInt: [''],
-      maxInt: [''],
       textFormat: [''],
     });
   }
@@ -289,13 +283,10 @@ export class CategoriesAdminComponent implements OnInit {
   private emptyFieldFormValue(sortOrder: number): FieldFormValue {
     return {
       fieldKey: '',
-      type: 'text',
       required: true,
       sortOrder,
       minLength: '',
       maxLength: '',
-      minInt: '',
-      maxInt: '',
       textFormat: '',
     };
   }
@@ -303,13 +294,10 @@ export class CategoriesAdminComponent implements OnInit {
   private toFieldFormValue(field: AdminCategoryFieldDefinition): FieldFormValue {
     return {
       fieldKey: field.fieldKey,
-      type: field.type,
       required: field.required,
       sortOrder: field.sortOrder,
       minLength: field.minLength?.toString() ?? '',
       maxLength: field.maxLength?.toString() ?? '',
-      minInt: field.minInt?.toString() ?? '',
-      maxInt: field.maxInt?.toString() ?? '',
       textFormat: field.textFormat ?? '',
     };
   }
@@ -317,7 +305,7 @@ export class CategoriesAdminComponent implements OnInit {
   private buildFieldRequest(
     value: FieldFormValue,
   ): CreateCategoryFieldRequest | UpdateCategoryFieldRequest | null {
-    if (!value.fieldKey.trim() || !value.type) {
+    if (!value.fieldKey.trim()) {
       return null;
     }
 
@@ -331,38 +319,15 @@ export class CategoriesAdminComponent implements OnInit {
       return null;
     }
 
-    const minInt = this.parseOptionalInt(value.minInt);
-    if (!minInt.ok) {
-      return null;
-    }
-
-    const maxInt = this.parseOptionalInt(value.maxInt);
-    if (!maxInt.ok) {
-      return null;
-    }
-
-    const request: CreateCategoryFieldRequest = {
+    return {
       fieldKey: value.fieldKey.trim(),
-      type: value.type,
+      type: 'text',
       required: value.required,
       sortOrder: value.sortOrder,
       minLength: minLength.value,
       maxLength: maxLength.value,
-      minInt: minInt.value,
-      maxInt: maxInt.value,
       textFormat: value.textFormat || null,
     };
-
-    if (value.type === 'text') {
-      request.minInt = null;
-      request.maxInt = null;
-    } else {
-      request.minLength = null;
-      request.maxLength = null;
-      request.textFormat = null;
-    }
-
-    return request;
   }
 
   private parseOptionalInt(

@@ -16,10 +16,6 @@ public class CategoryFieldDefinition : IEntity
 
     public int? MaxLength { get; set; }
 
-    public int? MinInt { get; set; }
-
-    public int? MaxInt { get; set; }
-
     public bool Required { get; set; }
 
     public int SortOrder { get; set; }

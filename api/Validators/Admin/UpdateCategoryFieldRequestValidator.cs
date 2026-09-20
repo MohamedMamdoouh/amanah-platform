@@ -20,7 +20,7 @@ public sealed class UpdateCategoryFieldRequestValidator : AbstractValidator<Upda
             .NotEmpty()
             .WithMessage("Field type is required.")
             .Must(CategoryCatalogConstraints.IsValidFieldType)
-            .WithMessage("Field type must be text or integer.");
+            .WithMessage("Field type must be text.");
 
         RuleFor(request => request.SortOrder)
             .GreaterThanOrEqualTo(0)
@@ -31,29 +31,9 @@ public sealed class UpdateCategoryFieldRequestValidator : AbstractValidator<Upda
             .WithMessage("Text format is invalid.");
 
         RuleFor(request => request)
-            .Must(request => CategoryCatalogConstraints.IsTextType(request.Type) || request.TextFormat is null)
-            .WithMessage("Text format is only valid for text fields.");
-
-        RuleFor(request => request)
-            .Must(request => !CategoryCatalogConstraints.IsTextType(request.Type)
-                || request.MinInt is null && request.MaxInt is null)
-            .WithMessage("Integer bounds are only valid for integer fields.");
-
-        RuleFor(request => request)
-            .Must(request => CategoryCatalogConstraints.IsTextType(request.Type)
-                || request.MinLength is null && request.MaxLength is null)
-            .WithMessage("Length bounds are only valid for text fields.");
-
-        RuleFor(request => request)
             .Must(request => request.MinLength is null
                 || request.MaxLength is null
                 || request.MinLength <= request.MaxLength)
             .WithMessage("Minimum length cannot exceed maximum length.");
-
-        RuleFor(request => request)
-            .Must(request => request.MinInt is null
-                || request.MaxInt is null
-                || request.MinInt <= request.MaxInt)
-            .WithMessage("Minimum value cannot exceed maximum value.");
     }
 }

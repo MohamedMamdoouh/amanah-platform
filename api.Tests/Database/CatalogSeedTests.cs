@@ -26,7 +26,7 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
   }
 
   [Fact]
-  public async Task Seed_creates_eight_categories_with_field_definitions()
+  public async Task Seed_creates_seven_categories_with_field_definitions()
   {
     await RunWithSeededContextAsync(async context =>
     {
@@ -35,14 +35,13 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
         .OrderBy(category => category.SortOrder)
         .ToListAsync();
 
-      Assert.Equal(8, categories.Count);
+      Assert.Equal(7, categories.Count);
 
       Assert.Equal(
         [
           "phones",
           "documents-ids",
           "wallets",
-          "keys",
           "bags",
           "electronics",
           "accessories",
@@ -50,7 +49,7 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
         ],
         categories.Select(category => category.Code));
 
-      Assert.Equal([2, 2, 2, 2, 2, 2, 1, 1], categories.Select(category => category.FieldDefinitions.Count));
+      Assert.Equal([2, 2, 2, 2, 2, 1, 1], categories.Select(category => category.FieldDefinitions.Count));
     });
   }
 
@@ -186,7 +185,7 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
     await seeder.SeedAsync();
     await seeder.SeedAsync();
 
-    Assert.Equal(8, await context.Categories.CountAsync());
+    Assert.Equal(7, await context.Categories.CountAsync());
     Assert.Equal(27, await context.Governorates.CountAsync());
     Assert.Equal(1, await context.Users.CountAsync(user => user.Role == UserRole.Admin));
     Assert.Equal(1, await context.Users.CountAsync(user => user.Role == UserRole.User));
@@ -208,32 +207,32 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
     other.SortOrder = 99;
     other.PhotosPrivate = true;
 
-    var keyCount = await context.CategoryFieldDefinitions
-      .SingleAsync(field => field.FieldKey == "key_count");
-    keyCount.MaxInt = 10;
-    keyCount.Required = false;
-
     var phonesColour = await context.CategoryFieldDefinitions
       .SingleAsync(field => field.FieldKey == "colour" && field.Category.Code == "phones");
-    context.CategoryFieldDefinitions.Remove(phonesColour);
+    phonesColour.MaxLength = 10;
+    phonesColour.Required = false;
+
+    var phonesBrandModel = await context.CategoryFieldDefinitions
+      .SingleAsync(field => field.FieldKey == "brand_model" && field.Category.Code == "phones");
+    context.CategoryFieldDefinitions.Remove(phonesBrandModel);
 
     await context.SaveChangesAsync();
     context.ChangeTracker.Clear();
     await seeder.SeedAsync();
 
     var otherAfter = await context.Categories.SingleAsync(category => category.Code == "other");
-    var keyCountAfter = await context.CategoryFieldDefinitions
-      .SingleAsync(field => field.FieldKey == "key_count");
+    var phonesColourAfter = await context.CategoryFieldDefinitions
+      .SingleAsync(field => field.FieldKey == "colour" && field.Category.Code == "phones");
 
     Assert.False(otherAfter.Active);
     Assert.Equal(99, otherAfter.SortOrder);
     Assert.True(otherAfter.PhotosPrivate);
-    Assert.Equal(10, keyCountAfter.MaxInt);
-    Assert.False(keyCountAfter.Required);
+    Assert.Equal(10, phonesColourAfter.MaxLength);
+    Assert.False(phonesColourAfter.Required);
     Assert.True(
       await context.CategoryFieldDefinitions.AnyAsync(field =>
-        field.FieldKey == "colour" && field.Category.Code == "phones"));
-    Assert.Equal(8, await context.Categories.CountAsync());
+        field.FieldKey == "brand_model" && field.Category.Code == "phones"));
+    Assert.Equal(7, await context.Categories.CountAsync());
   }
 
   private async Task RunWithSeededContextAsync(Func<AppDbContext, Task> test)

@@ -12,8 +12,6 @@ export interface AdminCategoryFieldDefinition {
   sortOrder: number;
   minLength?: number | null;
   maxLength?: number | null;
-  minInt?: number | null;
-  maxInt?: number | null;
   textFormat?: string | null;
 }
 
@@ -51,8 +49,6 @@ export interface CreateCategoryFieldRequest {
   sortOrder: number;
   minLength?: number | null;
   maxLength?: number | null;
-  minInt?: number | null;
-  maxInt?: number | null;
   textFormat?: string | null;
 }
 

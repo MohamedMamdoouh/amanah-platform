@@ -27,23 +27,11 @@ export function buildFieldValidators(definition: CategoryFieldDefinition) {
     validators.push(Validators.required);
   }
 
-  if (definition.type === 'Text') {
-    if (definition.minLength != null) {
-      validators.push(Validators.minLength(definition.minLength));
-    }
-    if (definition.maxLength != null) {
-      validators.push(Validators.maxLength(definition.maxLength));
-    }
+  if (definition.minLength != null) {
+    validators.push(Validators.minLength(definition.minLength));
   }
-
-  if (definition.type === 'Integer') {
-    validators.push(Validators.pattern(/^-?\d+$/));
-    if (definition.minInt != null) {
-      validators.push(Validators.min(definition.minInt));
-    }
-    if (definition.maxInt != null) {
-      validators.push(Validators.max(definition.maxInt));
-    }
+  if (definition.maxLength != null) {
+    validators.push(Validators.maxLength(definition.maxLength));
   }
 
   return validators;
