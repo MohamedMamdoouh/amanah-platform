@@ -16,13 +16,15 @@ public sealed class ActiveAccountAuthorizationHandler(AppDbContext dbContext)
             return;
         }
 
-        var isActive = await dbContext.Users
+        // Ban must block ActiveAccount (and Admin) even while a pre-ban access JWT
+        // remains valid — refresh revocation alone leaves a ~AccessTokenLifetimeMinutes window.
+        var account = await dbContext.Users
             .AsNoTracking()
             .Where(user => user.Id == userId)
-            .Select(user => user.DeactivatedAt == null)
+            .Select(user => new { user.IsBanned, user.DeactivatedAt })
             .SingleOrDefaultAsync();
 
-        if (isActive)
+        if (account is not null && !account.IsBanned && account.DeactivatedAt is null)
         {
             context.Succeed(requirement);
         }

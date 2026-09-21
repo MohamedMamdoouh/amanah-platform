@@ -215,6 +215,34 @@ public class UserBanTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
         Assert.Equal(ErrorCodes.EnforcementUserAlreadyBanned, error?.Code);
     }
 
+    [Fact]
+    public async Task Ban_blocks_active_account_apis_with_pre_ban_access_token()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var preBanAccessToken = context.Session.AccessToken;
+        var userId = context.Session.User.Id;
+
+        await HttpTestHelpers.LoginAsAdminAsync(context);
+        var banResponse = await context.Client.PostAsJsonAsync(
+            $"/api/v1/admin/users/{userId}/ban",
+            new BanUserRequest { Reason = "Token must die" });
+        Assert.Equal(HttpStatusCode.OK, banResponse.StatusCode);
+
+        // Refresh tokens are revoked on ban, but the access JWT remains cryptographically
+        // valid until expiry — ActiveAccount must still reject it.
+        ClaimTestHelpers.Authenticate(context.Client, preBanAccessToken);
+
+        var notificationsResponse = await context.Client.GetAsync("/api/v1/notifications");
+        Assert.Equal(HttpStatusCode.Forbidden, notificationsResponse.StatusCode);
+        var notificationsError = await HttpTestHelpers.ReadErrorAsync(notificationsResponse);
+        Assert.Equal(ErrorCodes.Banned, notificationsError?.Code);
+
+        var claimsResponse = await context.Client.GetAsync("/api/v1/claims/mine");
+        Assert.Equal(HttpStatusCode.Forbidden, claimsResponse.StatusCode);
+        var claimsError = await HttpTestHelpers.ReadErrorAsync(claimsResponse);
+        Assert.Equal(ErrorCodes.Banned, claimsError?.Code);
+    }
+
     private static async Task<(Guid ReportId, Guid ReporterId)> CreateOtherReporterPublishedReportAsync(
         ReportTestContext context)
     {
