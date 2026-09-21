@@ -7,6 +7,7 @@ public static class AbuseServiceExtensions
     public static IServiceCollection AddAbuseServices(this IServiceCollection services)
     {
         services.AddScoped<AbuseFlagService>();
+        services.AddScoped<AbuseAdminService>();
 
         return services;
     }

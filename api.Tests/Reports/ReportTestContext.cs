@@ -60,6 +60,7 @@ public sealed class ReportTestContext : IAsyncDisposable
         await setupContext.Messages.ExecuteDeleteAsync();
         await setupContext.ChatThreads.ExecuteDeleteAsync();
         await setupContext.Claims.ExecuteDeleteAsync();
+        await setupContext.AbuseReports.ExecuteDeleteAsync();
         await setupContext.Reports.ExecuteDeleteAsync();
         await setupContext.OtpCodes.ExecuteDeleteAsync();
         await setupContext.OtpSmsOutboxMessages.ExecuteDeleteAsync();
