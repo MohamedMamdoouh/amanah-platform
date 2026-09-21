@@ -1,0 +1,140 @@
+<section
+  class="user-detail page-container--wide"
+  aria-labelledby="user-detail-title"
+>
+  @if (loading()) {
+    <app-loading-indicator [label]="'admin.users.loading' | translate" />
+  } @else if (loadError()) {
+    <app-alert variant="error">{{ loadError() }}</app-alert>
+  } @else if (user()) {
+    @let detail = user()!;
+    <app-page-header
+      [backLink]="'/admin/users'"
+      [backLabel]="'admin.users.back' | translate"
+      [title]="detail.displayName"
+      [intro]="'admin.users.detail_title' | translate"
+    >
+      @if (detail.isBanned) {
+        <app-badge variant="rejected">
+          {{ "admin.users.banned_yes" | translate }}
+        </app-badge>
+      }
+    </app-page-header>
+
+    @if (actionSuccess()) {
+      <app-alert variant="success">{{ actionSuccess() }}</app-alert>
+    }
+    @if (actionError()) {
+      <app-alert variant="error">{{ actionError() }}</app-alert>
+    }
+
+    <app-card variant="flat" padding="md">
+      <dl class="user-detail__fields">
+        <div>
+          <dt>{{ "admin.users.field_display_name" | translate }}</dt>
+          <dd>{{ detail.displayName }}</dd>
+        </div>
+        <div>
+          <dt>{{ "admin.users.field_phone" | translate }}</dt>
+          <dd>{{ detail.normalizedPhone }}</dd>
+        </div>
+        <div>
+          <dt>{{ "admin.users.field_role" | translate }}</dt>
+          <dd>{{ detail.role }}</dd>
+        </div>
+        <div>
+          <dt>{{ "admin.users.field_reports_count" | translate }}</dt>
+          <dd>{{ detail.reportsCount }}</dd>
+        </div>
+        <div>
+          <dt>{{ "admin.users.field_created_at" | translate }}</dt>
+          <dd>{{ detail.createdAt | date: "medium" }}</dd>
+        </div>
+        <div>
+          <dt>{{ "admin.users.ban_status" | translate }}</dt>
+          <dd>
+            @if (detail.isBanned) {
+              {{ "admin.users.banned_yes" | translate }}
+            } @else {
+              {{ "admin.users.banned_no" | translate }}
+            }
+          </dd>
+        </div>
+        @if (detail.isBanned && detail.banReason) {
+          <div>
+            <dt>{{ "admin.users.ban_reason" | translate }}</dt>
+            <dd>{{ detail.banReason }}</dd>
+          </div>
+        }
+        @if (detail.isBanned && detail.bannedAt) {
+          <div>
+            <dt>{{ "admin.users.banned_at" | translate }}</dt>
+            <dd>{{ detail.bannedAt | date: "medium" }}</dd>
+          </div>
+        }
+      </dl>
+    </app-card>
+
+    <div class="user-detail__actions">
+      @if (!detail.isBanned) {
+        <app-form-field
+          [label]="'admin.users.ban_reason_label' | translate"
+          htmlFor="ban-reason"
+        >
+          <textarea
+            id="ban-reason"
+            class="user-detail__textarea"
+            rows="3"
+            [formControl]="banReasonControl"
+            [placeholder]="'admin.users.ban_reason_placeholder' | translate"
+          ></textarea>
+        </app-form-field>
+        <app-button
+          variant="danger"
+          [disabled]="banReasonControl.invalid || banning()"
+          (clicked)="openBanConfirm()"
+        >
+          {{ "admin.users.ban_action" | translate }}
+        </app-button>
+      } @else {
+        <app-button
+          variant="secondary"
+          [disabled]="unbanning()"
+          (clicked)="openUnbanConfirm()"
+        >
+          {{ "admin.users.unban_action" | translate }}
+        </app-button>
+      }
+    </div>
+
+    @if (showBanConfirm()) {
+      <app-confirm-dialog
+        titleId="ban-user-title"
+        [title]="'admin.users.ban_confirm_title' | translate"
+        [intro]="'admin.users.ban_confirm_intro' | translate"
+        [cancelLabel]="'admin.users.cancel' | translate"
+        [confirmLabel]="'admin.users.ban_confirm' | translate"
+        confirmVariant="danger"
+        [loading]="banning()"
+        [disabled]="banning()"
+        (cancelled)="closeBanConfirm()"
+        (confirmed)="confirmBan()"
+      />
+    }
+
+    @if (showUnbanConfirm()) {
+      <app-confirm-dialog
+        titleId="unban-user-title"
+        [title]="'admin.users.unban_confirm_title' | translate"
+        [intro]="'admin.users.unban_confirm_intro' | translate"
+        [cancelLabel]="'admin.users.cancel' | translate"
+        [confirmLabel]="'admin.users.unban_confirm' | translate"
+        confirmVariant="primary"
+        [loading]="unbanning()"
+        [disabled]="unbanning()"
+        (cancelled)="closeUnbanConfirm()"
+        (confirmed)="confirmUnban()"
+      />
+    }
+  }
+</section>

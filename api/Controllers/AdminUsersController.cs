@@ -1,4 +1,5 @@
 using Amanah.Api.Auth;
+using Amanah.Api.Services.Admin;
 using Amanah.Api.Services.Enforcement;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Admin;
@@ -13,8 +14,38 @@ namespace Amanah.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin/users")]
 [Authorize(AuthPolicies.Admin)]
-public sealed class AdminUsersController(UserEnforcementService userEnforcementService) : ControllerBase
+public sealed class AdminUsersController(
+    AdminUserLookupService adminUserLookupService,
+    UserEnforcementService userEnforcementService) : ControllerBase
 {
+    [HttpGet]
+    [EndpointName(nameof(SearchUsers))]
+    [EndpointSummary("Search users. Requires searchBy=name (display name fragment) or searchBy=phone (Egyptian mobile; normalized to E.164 server-side).")]
+    [ProducesResponseType(typeof(AdminUserListResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SearchUsers(
+        [FromQuery] AdminUserSearchQuery search,
+        CancellationToken cancellationToken)
+    {
+        var result = await adminUserLookupService.SearchAsync(search, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [HttpGet("{id:guid}")]
+    [EndpointName(nameof(GetUserDetail))]
+    [EndpointSummary("Get user detail for enforcement, including ban status and report count.")]
+    [ProducesResponseType(typeof(AdminUserDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUserDetail(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await adminUserLookupService.GetDetailAsync(id, cancellationToken);
+        return result.ToActionResult();
+    }
+
     [HttpPost("{id:guid}/ban")]
     [EndpointName(nameof(BanUser))]
     [EndpointSummary("Ban a user and run lifecycle cleanup.")]

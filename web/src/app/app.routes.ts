@@ -4,6 +4,8 @@ import { AdminShellComponent } from './admin/admin-shell/admin-shell.component';
 import { ModerationQueueComponent } from './admin/moderation/moderation-queue.component';
 import { ModerationReviewComponent } from './admin/moderation/moderation-review.component';
 import { CategoriesAdminComponent } from './admin/categories/categories-admin.component';
+import { UserDetailComponent } from './admin/users/user-detail.component';
+import { UsersLookupComponent } from './admin/users/users-lookup.component';
 import {
   authGuard,
   guestGuard,
@@ -111,6 +113,8 @@ export const routes: Routes = [
           { path: '', redirectTo: 'moderation', pathMatch: 'full' },
           { path: 'moderation', component: ModerationQueueComponent },
           { path: 'moderation/:id', component: ModerationReviewComponent },
+          { path: 'users', component: UsersLookupComponent },
+          { path: 'users/:id', component: UserDetailComponent },
           { path: 'categories', component: CategoriesAdminComponent },
         ],
       },

@@ -10,6 +10,7 @@ const translationFiles = [
   'rejection-reasons',
   'admin-moderation',
   'admin-categories',
+  'admin-users',
   'notifications',
   'pages',
   'reports',

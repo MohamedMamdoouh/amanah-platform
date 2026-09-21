@@ -1,0 +1,112 @@
+<section
+  class="users-lookup page-container--wide"
+  aria-labelledby="users-lookup-title"
+>
+  <app-page-header
+    [title]="'admin.users.title' | translate"
+    [intro]="'admin.users.intro' | translate"
+  />
+
+  <div class="users-lookup__mode">
+    <p class="users-lookup__mode-label" id="users-search-mode-label">
+      {{ "admin.users.mode_label" | translate }}
+    </p>
+    <nav
+      class="users-lookup__tabs tabs"
+      role="tablist"
+      [attr.aria-label]="'admin.users.mode_label' | translate"
+    >
+      <button
+        type="button"
+        class="tabs__tab"
+        role="tab"
+        [class.tabs__tab--active]="searchMode() === 'name'"
+        [attr.aria-selected]="searchMode() === 'name'"
+        (click)="selectMode('name')"
+      >
+        {{ "admin.users.mode_name" | translate }}
+      </button>
+      <button
+        type="button"
+        class="tabs__tab"
+        role="tab"
+        [class.tabs__tab--active]="searchMode() === 'phone'"
+        [attr.aria-selected]="searchMode() === 'phone'"
+        (click)="selectMode('phone')"
+      >
+        {{ "admin.users.mode_phone" | translate }}
+      </button>
+    </nav>
+  </div>
+
+  @if (!searchMode()) {
+    <app-empty-state [title]="'admin.users.pick_mode' | translate" />
+  } @else if (searchMode() === "name") {
+    <app-form-field
+      class="users-lookup__field"
+      [label]="'admin.users.name_label' | translate"
+      htmlFor="users-name-search"
+      [error]="fieldError('query')"
+    >
+      <app-search-input
+        [formControl]="nameControl"
+        [placeholder]="'admin.users.name_placeholder' | translate"
+        [ariaLabel]="'admin.users.name_label' | translate"
+      />
+    </app-form-field>
+  } @else {
+    <form class="users-lookup__phone-form" (submit)="onPhoneEnter($event)">
+      <app-form-field
+        class="users-lookup__field"
+        [label]="'admin.users.phone_label' | translate"
+        htmlFor="users-phone-search"
+        [error]="fieldError('query')"
+      >
+        <input
+          id="users-phone-search"
+          class="users-lookup__phone-input"
+          type="tel"
+          inputmode="tel"
+          autocomplete="off"
+          [formControl]="phoneControl"
+          [placeholder]="'admin.users.phone_placeholder' | translate"
+        />
+      </app-form-field>
+      <app-button
+        type="submit"
+        [disabled]="phoneControl.invalid || searchLoading()"
+        [loading]="searchLoading()"
+      >
+        {{ "admin.users.search_button" | translate }}
+      </app-button>
+    </form>
+  }
+
+  @if (searchError()) {
+    <app-alert variant="error">{{ searchError() }}</app-alert>
+  }
+
+  @if (searchMode() && searchLoading() && searchMode() === "name") {
+    <app-loading-indicator [label]="'admin.users.searching' | translate" />
+  } @else if (
+    searchMode() &&
+    hasActiveSearch() &&
+    !searchLoading() &&
+    results().length === 0 &&
+    !searchError()
+  ) {
+    <app-empty-state [title]="'admin.users.search_empty' | translate" />
+  } @else if (results().length > 0) {
+    <ul class="users-lookup__list">
+      @for (item of results(); track item.id) {
+        <li>
+          <app-listing-card
+            [title]="item.displayName"
+            [routerLink]="['/admin/users', item.id]"
+            [actionLabel]="'admin.users.view_detail' | translate"
+          />
+        </li>
+      }
+    </ul>
+  }
+</section>
