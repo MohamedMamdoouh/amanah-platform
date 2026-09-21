@@ -253,4 +253,63 @@ public class AdminTakedownTests(ApiWebApplicationFactory factory) : IClassFixtur
             Assert.Null(claim.ChatThread!.ReadOnlyAt);
         }
     }
+
+    [Fact]
+    public async Task Cancel_after_admin_takedown_does_not_resurrect_listing()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
+
+        await HttpTestHelpers.LoginAsAdminAsync(context);
+        var takedownResponse = await context.Client.PostAsJsonAsync(
+            $"/api/v1/admin/reports/{scenario.ReportId}/takedown",
+            new AdminReportTakedownRequest { Note = "policy" });
+        Assert.Equal(HttpStatusCode.OK, takedownResponse.StatusCode);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var cancelResponse = await ResolutionTestHelpers.CancelClaimAsync(
+            context.Client,
+            scenario.ClaimId);
+        Assert.Equal(HttpStatusCode.Conflict, cancelResponse.StatusCode);
+
+        var error = await HttpTestHelpers.ReadErrorAsync(cancelResponse);
+        Assert.Equal(ErrorCodes.ClaimInvalidStatus, error?.Code);
+
+        context.DbContext.ChangeTracker.Clear();
+        var report = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == scenario.ReportId);
+        Assert.Equal(ReportStatus.RemovedByAdmin, report.Status);
+    }
+
+    [Fact]
+    public async Task Second_confirm_after_admin_takedown_does_not_overwrite_removed_status()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var scenario = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var firstConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(
+            context.Client,
+            scenario.ClaimId);
+        Assert.Equal(HttpStatusCode.NoContent, firstConfirm.StatusCode);
+
+        await HttpTestHelpers.LoginAsAdminAsync(context);
+        var takedownResponse = await context.Client.PostAsJsonAsync(
+            $"/api/v1/admin/reports/{scenario.ReportId}/takedown",
+            new AdminReportTakedownRequest());
+        Assert.Equal(HttpStatusCode.OK, takedownResponse.StatusCode);
+
+        ClaimTestHelpers.Authenticate(context.Client, scenario.ClaimantSession.AccessToken);
+        var secondConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(
+            context.Client,
+            scenario.ClaimId);
+        Assert.Equal(HttpStatusCode.Conflict, secondConfirm.StatusCode);
+
+        context.DbContext.ChangeTracker.Clear();
+        var report = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == scenario.ReportId);
+        Assert.Equal(ReportStatus.RemovedByAdmin, report.Status);
+    }
 }
