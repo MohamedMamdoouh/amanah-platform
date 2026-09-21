@@ -2,7 +2,6 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Options;
-using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Services.Uploads;
@@ -25,7 +24,6 @@ public sealed class ClaimService(
     IBucketStorage bucketStorage,
     ClaimPhotoAttachService claimPhotoAttachService,
     ClaimCleanupService claimCleanupService,
-    ReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider,
     IOptions<LifecycleOptions> lifecycleOptions)
 {
@@ -204,20 +202,57 @@ public sealed class ClaimService(
         }
 
         var now = timeProvider.GetUtcNow();
+        var reportId = claim.ReportId;
+        var pausedPublishedSecondsElapsed = ComputePublishedSecondsAfterPause(claim.Report, now);
 
-        claim.Status = ClaimStatus.Approved;
-        claim.ReviewedAt = now;
-        claim.ReviewerDecision = "approved";
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        claim.Report.Status = ReportStatus.ClaimInProgress;
-        reportLifecycleService.PausePublishedTimer(claim.Report, now);
-        claim.Report.UpdatedAt = now;
+        var reportTransitionRows = await dbContext.Reports
+            .Where(existingReport =>
+                existingReport.Id == reportId
+                && existingReport.Status == ReportStatus.Published)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingReport => existingReport.Status, ReportStatus.ClaimInProgress)
+                    .SetProperty(existingReport => existingReport.UpdatedAt, now)
+                    .SetProperty(existingReport => existingReport.PublishedSecondsElapsed, pausedPublishedSecondsElapsed)
+                    .SetProperty(existingReport => existingReport.PublishedTimerResumedAt, (DateTimeOffset?)null),
+                cancellationToken);
+
+        if (reportTransitionRows == 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ResultError.Conflict("Claims can only be approved on published reports.");
+        }
+
+        var claimTransitionRows = await dbContext.Claims
+            .Where(existingClaim =>
+                existingClaim.Id == claimId
+                && existingClaim.Status == ClaimStatus.Pending)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingClaim => existingClaim.Status, ClaimStatus.Approved)
+                    .SetProperty(existingClaim => existingClaim.ReviewedAt, now)
+                    .SetProperty(existingClaim => existingClaim.ReviewerDecision, "approved"),
+                cancellationToken);
+
+        if (claimTransitionRows == 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ResultError.Conflict("Only pending claims can be approved.");
+        }
+
+        dbContext.ChangeTracker.Clear();
+
+        claim = await dbContext.Claims
+            .Include(existingClaim => existingClaim.Report)
+            .SingleAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
         // Drop any leftover Resolution from a prior cancelled claim (or a confirm/cancel
         // race) so the new approved claim always starts with a clean mutual-confirm slate.
         var staleResolution = await dbContext.Resolutions
             .SingleOrDefaultAsync(
-                existingResolution => existingResolution.ReportId == claim.ReportId,
+                existingResolution => existingResolution.ReportId == reportId,
                 cancellationToken);
         if (staleResolution is not null)
         {
@@ -236,7 +271,7 @@ public sealed class ClaimService(
 
         var otherPendingClaims = await dbContext.Claims
             .Where(existingClaim =>
-                existingClaim.ReportId == claim.ReportId
+                existingClaim.ReportId == reportId
                 && existingClaim.Status == ClaimStatus.Pending
                 && existingClaim.Id != claim.Id)
             .ToListAsync(cancellationToken);
@@ -288,7 +323,25 @@ public sealed class ClaimService(
 
         await claimCleanupService.EnqueueClaimPhotoStorageAsync(rejectedPhotoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return Result.Ok();
+    }
+
+    private static int ComputePublishedSecondsAfterPause(Report report, DateTimeOffset now)
+    {
+        if (report.PublishedTimerResumedAt is null)
+        {
+            return report.PublishedSecondsElapsed;
+        }
+
+        var elapsedSinceResume = (int)(now - report.PublishedTimerResumedAt.Value).TotalSeconds;
+        elapsedSinceResume = Math.Max(0, elapsedSinceResume);
+        if (elapsedSinceResume == 0)
+        {
+            return report.PublishedSecondsElapsed;
+        }
+
+        return report.PublishedSecondsElapsed + elapsedSinceResume;
     }
 
     public async Task<Result> RejectAsync(

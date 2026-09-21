@@ -141,22 +141,22 @@ public sealed class ReportLifecycleService(
         return Result.Ok();
     }
 
-    public async Task ApplyAdminTakedownAsync(
-        Report report,
+    public Task ClosePendingClaimsForAdminTakedownAsync(
+        Guid reportId,
+        CancellationToken cancellationToken = default) =>
+        ClosePendingClaimsAsync(
+            reportId,
+            AdminTakedownReason,
+            NotificationTypes.ClaimClosedReportUnavailable,
+            cancellationToken);
+
+    public async Task FinalizeAdminTakedownPhotosAsync(
+        Guid reportId,
         CancellationToken cancellationToken = default)
     {
-        if (report.Status == ReportStatus.Published)
-        {
-            await ClosePendingClaimsAsync(
-                report.Id,
-                AdminTakedownReason,
-                NotificationTypes.ClaimClosedReportUnavailable,
-                cancellationToken);
-        }
-
-        var now = timeProvider.GetUtcNow();
-        report.Status = ReportStatus.RemovedByAdmin;
-        report.UpdatedAt = now;
+        var report = await dbContext.Reports
+            .Include(existingReport => existingReport.Photos)
+            .SingleAsync(existingReport => existingReport.Id == reportId, cancellationToken);
 
         var storageKeys = RemoveReportPhotos(report);
         await storageDeletionEnqueueService.EnqueueAsync(

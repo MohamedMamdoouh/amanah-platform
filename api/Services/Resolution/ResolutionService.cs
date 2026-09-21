@@ -221,6 +221,13 @@ public sealed class ResolutionService(
                 ErrorCodes.ClaimInvalidStatus);
         }
 
+        if (claim.Report.Status != ReportStatus.ClaimInProgress)
+        {
+            return ResultError.Conflict(
+                "This claim can no longer be cancelled on the current report status.",
+                ErrorCodes.ClaimInvalidStatus);
+        }
+
         var resolution = claim.Report.Resolution;
         if (isReporter && resolution?.ReporterConfirmedAt is not null)
         {

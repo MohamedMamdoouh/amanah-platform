@@ -28,59 +28,113 @@ public sealed class AdminTakedownService(
         AdminReportTakedownRequest request,
         CancellationToken cancellationToken = default)
     {
-        var report = await dbContext.Reports
-            .Include(existingReport => existingReport.Photos)
-            .SingleOrDefaultAsync(existingReport => existingReport.Id == reportId, cancellationToken);
-
-        if (report is null)
+        if (!await dbContext.Reports.AnyAsync(
+                existingReport => existingReport.Id == reportId,
+                cancellationToken))
         {
             return ResultError.NotFound("Report not found.");
         }
 
-        if (report.Status is not ReportStatus.Published and not ReportStatus.ClaimInProgress)
-        {
-            return ResultError.Conflict(
-                "Only published reports or reports with an approved claim can be taken down.",
-                ErrorCodes.EnforcementReportNotTakedownable);
-        }
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
+        var now = timeProvider.GetUtcNow();
         Guid? approvedClaimantId = null;
         ApprovedClaimCancellation.CancellationOutcome? cancellation = null;
 
-        if (report.Status == ReportStatus.ClaimInProgress)
+        if (await dbContext.Reports.AnyAsync(
+                existingReport =>
+                    existingReport.Id == reportId
+                    && existingReport.Status == ReportStatus.Published,
+                cancellationToken))
         {
+            await reportLifecycleService.ClosePendingClaimsForAdminTakedownAsync(
+                reportId,
+                cancellationToken);
+        }
+
+        var publishedTransitionRows = await dbContext.Reports
+            .Where(existingReport =>
+                existingReport.Id == reportId
+                && existingReport.Status == ReportStatus.Published)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingReport => existingReport.Status, ReportStatus.RemovedByAdmin)
+                    .SetProperty(existingReport => existingReport.UpdatedAt, now),
+                cancellationToken);
+
+        if (publishedTransitionRows == 0)
+        {
+            var report = await dbContext.Reports
+                .Include(existingReport => existingReport.Photos)
+                .SingleAsync(existingReport => existingReport.Id == reportId, cancellationToken);
+
+            if (report.Status != ReportStatus.ClaimInProgress)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ResultError.Conflict(
+                    "Only published reports or reports with an approved claim can be taken down.",
+                    ErrorCodes.EnforcementReportNotTakedownable);
+            }
+
             var cancelResult = await approvedClaimCancellation.CancelForEnforcementAsync(
                 report,
                 cancellationToken);
             if (!cancelResult.IsSuccess)
             {
+                await transaction.RollbackAsync(cancellationToken);
                 return cancelResult.Error!;
             }
 
             cancellation = cancelResult.Value!;
             approvedClaimantId = cancellation.ClaimantId;
+
+            var claimInProgressTransitionRows = await dbContext.Reports
+                .Where(existingReport =>
+                    existingReport.Id == reportId
+                    && existingReport.Status == ReportStatus.ClaimInProgress)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(existingReport => existingReport.Status, ReportStatus.RemovedByAdmin)
+                        .SetProperty(existingReport => existingReport.UpdatedAt, now),
+                    cancellationToken);
+
+            if (claimInProgressTransitionRows == 0)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ResultError.Conflict(
+                    "Only published reports or reports with an approved claim can be taken down.",
+                    ErrorCodes.EnforcementReportNotTakedownable);
+            }
         }
 
-        await reportLifecycleService.ApplyAdminTakedownAsync(report, cancellationToken);
+        await reportLifecycleService.FinalizeAdminTakedownPhotosAsync(reportId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var reportForNotifications = await dbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(existingReport => existingReport.Id == reportId, cancellationToken);
 
         dbContext.ModerationActions.Add(new ModerationAction
         {
-            ReportId = report.Id,
+            ReportId = reportId,
             AdminId = adminId,
             Decision = ModerationDecision.Takedown,
             Note = request.Note,
             CreatedAt = now,
         });
 
-        EnqueueTakedownNotification(report, report.ReporterId, now);
+        EnqueueTakedownNotification(reportForNotifications, reportForNotifications.ReporterId, now);
         if (approvedClaimantId is Guid claimantId)
         {
-            EnqueueTakedownNotification(report, claimantId, now, cancellation!.ClaimId, cancellation.ReadOnlyThread?.Id);
+            EnqueueTakedownNotification(
+                reportForNotifications,
+                claimantId,
+                now,
+                cancellation!.ClaimId,
+                cancellation.ReadOnlyThread?.Id);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         if (cancellation?.ReadOnlyThread is { } readOnlyThread)
         {
@@ -98,7 +152,7 @@ public sealed class AdminTakedownService(
 
         return new AdminReportTakedownResponse
         {
-            ReportId = report.Id,
+            ReportId = reportId,
             Status = "removed_by_admin",
         };
     }

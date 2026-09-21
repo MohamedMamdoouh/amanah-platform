@@ -157,4 +157,100 @@ public class AdminTakedownTests(ApiWebApplicationFactory factory) : IClassFixtur
         var error = await HttpTestHelpers.ReadErrorAsync(response);
         Assert.Equal(ErrorCodes.EnforcementReportNotTakedownable, error?.Code);
     }
+
+    [Fact]
+    public async Task Takedown_after_approve_uses_claim_in_progress_path_and_cancels_claim()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        var claimId = await ClaimTestHelpers.SeedPendingClaimAsync(
+            context,
+            reportId,
+            claimantSession.User.Id);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var approveResponse = await ClaimTestHelpers.ApproveClaimAsync(context.Client, claimId);
+        Assert.Equal(HttpStatusCode.NoContent, approveResponse.StatusCode);
+
+        context.DbContext.ChangeTracker.Clear();
+
+        var stalePublishedTransitionRows = await context.DbContext.Reports
+            .Where(report =>
+                report.Id == reportId
+                && report.Status == ReportStatus.Published)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(report => report.Status, ReportStatus.RemovedByAdmin)
+                .SetProperty(report => report.UpdatedAt, DateTimeOffset.UtcNow));
+        Assert.Equal(0, stalePublishedTransitionRows);
+
+        await HttpTestHelpers.LoginAsAdminAsync(context);
+        var takedownResponse = await context.Client.PostAsJsonAsync(
+            $"/api/v1/admin/reports/{reportId}/takedown",
+            new AdminReportTakedownRequest { Note = "after approve" });
+
+        Assert.Equal(HttpStatusCode.OK, takedownResponse.StatusCode);
+
+        var report = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == reportId);
+        var claim = await context.DbContext.Claims
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == claimId);
+
+        Assert.Equal(ReportStatus.RemovedByAdmin, report.Status);
+        Assert.Equal(ClaimStatus.Cancelled, claim.Status);
+        Assert.False(claim.CountsAsFailure);
+    }
+
+    [Fact]
+    public async Task Concurrent_takedown_and_approve_leaves_consistent_report_and_claim_state()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        var claimId = await ClaimTestHelpers.SeedPendingClaimAsync(
+            context,
+            reportId,
+            claimantSession.User.Id);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+
+        await using var adminContext = await ReportTestContext.CreateAsync(factory);
+        await HttpTestHelpers.LoginAsAdminAsync(adminContext);
+
+        var approveTask = ClaimTestHelpers.ApproveClaimAsync(context.Client, claimId);
+        var takedownTask = adminContext.Client.PostAsJsonAsync(
+            $"/api/v1/admin/reports/{reportId}/takedown",
+            new AdminReportTakedownRequest { Note = "race" });
+
+        await Task.WhenAll(approveTask, takedownTask);
+
+        context.DbContext.ChangeTracker.Clear();
+
+        var report = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == reportId);
+        var claim = await context.DbContext.Claims
+            .AsNoTracking()
+            .Include(item => item.ChatThread)
+            .SingleAsync(item => item.Id == claimId);
+
+        var hybridCorruption =
+            report.Status == ReportStatus.RemovedByAdmin
+            && claim.Status == ClaimStatus.Approved;
+        Assert.False(hybridCorruption);
+
+        if (report.Status == ReportStatus.RemovedByAdmin)
+        {
+            Assert.NotEqual(ClaimStatus.Approved, claim.Status);
+        }
+        else
+        {
+            Assert.Equal(ReportStatus.ClaimInProgress, report.Status);
+            Assert.Equal(ClaimStatus.Approved, claim.Status);
+            Assert.NotNull(claim.ChatThread);
+            Assert.Null(claim.ChatThread!.ReadOnlyAt);
+        }
+    }
 }
