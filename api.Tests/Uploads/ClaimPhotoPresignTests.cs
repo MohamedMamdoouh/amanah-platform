@@ -95,7 +95,7 @@ public class ClaimPhotoPresignTests(ApiWebApplicationFactory factory) : IClassFi
     }
 
     [Fact]
-    public async Task Admin_cannot_presign_claim_photo_before_phase_07()
+    public async Task Admin_cannot_presign_claim_photo_without_open_investigation()
     {
         await using var reporterContext = await ReportTestContext.CreateAsync(factory);
         var reportId = await ClaimTestHelpers.PublishLostReportAsync(reporterContext);
@@ -123,7 +123,7 @@ public class ClaimPhotoPresignTests(ApiWebApplicationFactory factory) : IClassFi
         var (response, error) = await GetClaimPhotoUrlWithErrorAsync(reporterContext, submitBody.Id);
 
         Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Equal(ErrorCodes.Forbidden, error?.Code);
+        Assert.Equal(ErrorCodes.AbuseInvestigationUnavailable, error?.Code);
     }
 
     private static async Task<(HttpResponseMessage Response, ApiError? Error)> GetClaimPhotoUrlWithErrorAsync(

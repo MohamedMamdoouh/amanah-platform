@@ -1,6 +1,7 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Services.Abuse;
 using Amanah.Api.Services.Storage;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Responses.Uploads;
@@ -10,7 +11,8 @@ namespace Amanah.Api.Services.Uploads;
 
 public sealed class ReportPhotoPresignService(
     AppDbContext dbContext,
-    IBucketStorage bucketStorage)
+    IBucketStorage bucketStorage,
+    FlaggedListingInvestigationService investigationService)
 {
     public async Task<Result<ReportPhotoPresignResponse>> GetReportPhotoUrlAsync(
         Guid photoId,
@@ -41,9 +43,25 @@ public sealed class ReportPhotoPresignService(
             return ResultError.NotFound("Photo not found.");
         }
 
-        if (!isReporter && photo.Report.Status is not ReportStatus.PendingReview and not ReportStatus.Rejected)
+        if (!isReporter && isAdmin)
         {
-            return ResultError.NotFound("Photo not found.");
+            if (photo.Report.Status is ReportStatus.PendingReview or ReportStatus.Rejected)
+            {
+                // Moderation review path unchanged.
+            }
+            else if (photo.Report.Status is ReportStatus.Published or ReportStatus.ClaimInProgress)
+            {
+                if (!await investigationService.IsInvestigationOpenForReportAsync(
+                        photo.ReportId,
+                        cancellationToken))
+                {
+                    return ResultError.NotFound("Photo not found.");
+                }
+            }
+            else
+            {
+                return ResultError.NotFound("Photo not found.");
+            }
         }
 
         var storageKey = photo.ThumbnailStorageKey ?? photo.StorageKey;

@@ -1,7 +1,9 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
+using Amanah.Api.Services.Abuse;
 using Amanah.Api.Services.Storage;
+using Amanah.Contracts.Errors;
 using Amanah.Contracts.Responses.Uploads;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +11,8 @@ namespace Amanah.Api.Services.Uploads;
 
 public sealed class ClaimPhotoPresignService(
     AppDbContext dbContext,
-    IBucketStorage bucketStorage)
+    IBucketStorage bucketStorage,
+    FlaggedListingInvestigationService investigationService)
 {
     public async Task<Result<ClaimPhotoPresignResponse>> GetClaimPhotoUrlAsync(
         Guid claimId,
@@ -29,8 +32,16 @@ public sealed class ClaimPhotoPresignService(
 
         if (role == UserRole.Admin)
         {
-            // Phase 07: allow admin access during flagged-listing investigation only.
-            return ResultError.Forbidden("Admin claim photo access is not available yet.");
+            if (!await investigationService.IsInvestigationOpenForReportAsync(
+                    claim.ReportId,
+                    cancellationToken))
+            {
+                return ResultError.Forbidden(
+                    "Investigation access is only available while an abuse report is open.",
+                    ErrorCodes.AbuseInvestigationUnavailable);
+            }
+
+            return await BuildPresignResponseAsync(claim.PhotoStorageKey, cancellationToken);
         }
 
         if (claim.Report.ReporterId != userId && claim.ClaimantId != userId)
@@ -38,11 +49,18 @@ public sealed class ClaimPhotoPresignService(
             return ResultError.NotFound("Photo not found.");
         }
 
-        var thumbnailKey = ClaimPhotoStorageKeys.ThumbnailForOriginal(claim.PhotoStorageKey);
+        return await BuildPresignResponseAsync(claim.PhotoStorageKey, cancellationToken);
+    }
+
+    private async Task<Result<ClaimPhotoPresignResponse>> BuildPresignResponseAsync(
+        string photoStorageKey,
+        CancellationToken cancellationToken)
+    {
+        var thumbnailKey = ClaimPhotoStorageKeys.ThumbnailForOriginal(photoStorageKey);
         var storageKey = thumbnailKey is not null
             && await bucketStorage.ExistsAsync(thumbnailKey, cancellationToken)
             ? thumbnailKey
-            : claim.PhotoStorageKey;
+            : photoStorageKey;
 
         var url = bucketStorage.GetPreSignedUrl(storageKey, TimeSpan.FromMinutes(5));
 

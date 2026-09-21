@@ -61,21 +61,77 @@ public sealed class ChatService(
     public async Task<Result<ChatThreadDetailResponse>> GetThreadAsync(
         Guid threadId,
         Guid userId,
+        UserRole role,
         Guid? beforeMessageId,
         int? limit,
         CancellationToken cancellationToken = default)
     {
         var thread = await LoadThreadAsync(threadId, cancellationToken);
-        if (thread is null
-            || (thread.Claim.Report.ReporterId != userId && thread.Claim.ClaimantId != userId))
+        if (thread is null)
         {
             return ResultError.NotFound("Chat thread not found.");
         }
 
+        var isParticipant = thread.Claim.Report.ReporterId == userId
+            || thread.Claim.ClaimantId == userId;
+
+        if (!isParticipant)
+        {
+            if (role != UserRole.Admin)
+            {
+                return ResultError.NotFound("Chat thread not found.");
+            }
+
+            var investigationOpen = await dbContext.AbuseReports
+                .AsNoTracking()
+                .AnyAsync(
+                    abuseReport => abuseReport.ReportId == thread.Claim.ReportId
+                        && abuseReport.Status == AbuseReportStatus.Open,
+                    cancellationToken);
+
+            if (!investigationOpen)
+            {
+                return ResultError.NotFound("Chat thread not found.");
+            }
+        }
+
         var messageLimit = NormalizeMessageLimit(limit);
         var messages = await LoadMessagesAsync(threadId, beforeMessageId, messageLimit, cancellationToken);
+        var viewerUserId = isParticipant ? userId : thread.Claim.Report.ReporterId;
 
-        return ToThreadDetail(thread, userId, messages);
+        return ToThreadDetail(thread, viewerUserId, messages);
+    }
+
+    public async Task<IReadOnlyList<ChatThreadDetailResponse>> GetInvestigationThreadsForReportAsync(
+        Guid reportId,
+        CancellationToken cancellationToken = default)
+    {
+        var threads = await dbContext.ChatThreads
+            .AsNoTracking()
+            .Include(thread => thread.Claim)
+            .ThenInclude(claim => claim.Report)
+            .ThenInclude(report => report.Resolution)
+            .Include(thread => thread.Claim)
+            .ThenInclude(claim => claim.Report)
+            .ThenInclude(report => report.Reporter)
+            .Include(thread => thread.Claim)
+            .ThenInclude(claim => claim.Claimant)
+            .Where(thread => thread.Claim.ReportId == reportId)
+            .OrderBy(thread => thread.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        var details = new List<ChatThreadDetailResponse>(threads.Count);
+        foreach (var thread in threads)
+        {
+            var messages = await LoadMessagesAsync(
+                thread.Id,
+                beforeMessageId: null,
+                DefaultMessageLimit,
+                cancellationToken);
+            details.Add(ToThreadDetail(thread, thread.Claim.Report.ReporterId, messages));
+        }
+
+        return details;
     }
 
     public Task<bool> IsParticipantAsync(

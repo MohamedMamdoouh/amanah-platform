@@ -46,6 +46,7 @@ public sealed class ChatsController(ChatService chatService) : ControllerBase
         var result = await chatService.GetThreadAsync(
             threadId,
             userId,
+            User.GetUserRole(),
             before,
             limit,
             cancellationToken);

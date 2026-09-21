@@ -8,6 +8,7 @@ public static class AbuseServiceExtensions
     {
         services.AddScoped<AbuseFlagService>();
         services.AddScoped<AbuseAdminService>();
+        services.AddScoped<FlaggedListingInvestigationService>();
 
         return services;
     }

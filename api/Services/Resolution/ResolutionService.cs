@@ -3,7 +3,6 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Claims;
-using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Notifications;
 using Amanah.Contracts.Chats;
@@ -16,7 +15,6 @@ namespace Amanah.Api.Services.Resolution;
 
 public sealed class ResolutionService(
     AppDbContext dbContext,
-    ReportLifecycleService reportLifecycleService,
     ClaimCleanupService claimCleanupService,
     TimeProvider timeProvider,
     IHubContext<ChatHub> hubContext)
@@ -99,8 +97,26 @@ public sealed class ResolutionService(
         if (bothConfirmed)
         {
             resolution.ResolvedAt = now;
-            claim.Report.Status = ReportStatus.Resolved;
-            claim.Report.UpdatedAt = now;
+
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            var reportTransitionRows = await dbContext.Reports
+                .Where(existingReport =>
+                    existingReport.Id == claim.ReportId
+                    && existingReport.Status == ReportStatus.ClaimInProgress)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(existingReport => existingReport.Status, ReportStatus.Resolved)
+                        .SetProperty(existingReport => existingReport.UpdatedAt, now),
+                    cancellationToken);
+
+            if (reportTransitionRows == 0)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ResultError.Conflict(
+                    "Only claims on in-progress reports can be confirmed.",
+                    ErrorCodes.ClaimInvalidStatus);
+            }
 
             if (claim.ChatThread is not null)
             {
@@ -151,6 +167,7 @@ public sealed class ResolutionService(
 
             await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
         else
         {
@@ -244,31 +261,67 @@ public sealed class ResolutionService(
         }
 
         var now = timeProvider.GetUtcNow();
+        var reportId = claim.ReportId;
 
-        claim.Status = ClaimStatus.Cancelled;
-        claim.CancelledByUserId = userId;
-        if (isClaimant)
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var claimTransitionRows = await dbContext.Claims
+            .Where(existingClaim =>
+                existingClaim.Id == claimId
+                && existingClaim.Status == ClaimStatus.Approved)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingClaim => existingClaim.Status, ClaimStatus.Cancelled)
+                    .SetProperty(existingClaim => existingClaim.CancelledByUserId, userId)
+                    .SetProperty(existingClaim => existingClaim.CountsAsFailure, isClaimant),
+                cancellationToken);
+
+        if (claimTransitionRows == 0)
         {
-            claim.CountsAsFailure = true;
+            await transaction.RollbackAsync(cancellationToken);
+            return ResultError.Conflict(
+                "Only approved claims can be cancelled.",
+                ErrorCodes.ClaimInvalidStatus);
         }
 
-        claim.Report.Status = ReportStatus.Published;
-        reportLifecycleService.ResumePublishedTimer(claim.Report, now);
-        claim.Report.UpdatedAt = now;
+        var reportTransitionRows = await dbContext.Reports
+            .Where(existingReport =>
+                existingReport.Id == reportId
+                && existingReport.Status == ReportStatus.ClaimInProgress)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingReport => existingReport.Status, ReportStatus.Published)
+                    .SetProperty(existingReport => existingReport.UpdatedAt, now)
+                    .SetProperty(existingReport => existingReport.PublishedTimerResumedAt, now),
+                cancellationToken);
+
+        if (reportTransitionRows == 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ResultError.Conflict(
+                "This claim can no longer be cancelled on the current report status.",
+                ErrorCodes.ClaimInvalidStatus);
+        }
+
+        dbContext.ChangeTracker.Clear();
+
+        claim = await LoadClaimAsync(claimId, cancellationToken);
+        if (claim is null)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ResultError.NotFound("Claim not found.");
+        }
 
         // Always delete by report id so a concurrent confirm that committed after our
         // initial load cannot leave a stale Resolution for the next claim cycle.
-        var resolutionToRemove = resolution
-            ?? await dbContext.Resolutions
-                .SingleOrDefaultAsync(
-                    existingResolution => existingResolution.ReportId == claim.ReportId,
-                    cancellationToken);
+        var resolutionToRemove = await dbContext.Resolutions
+            .SingleOrDefaultAsync(
+                existingResolution => existingResolution.ReportId == reportId,
+                cancellationToken);
         if (resolutionToRemove is not null)
         {
             dbContext.Resolutions.Remove(resolutionToRemove);
         }
-
-        claim.Report.Resolution = null;
 
         ChatThread? readOnlyThread = null;
         if (claim.ChatThread is not null)
@@ -303,6 +356,7 @@ public sealed class ResolutionService(
 
         await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         if (readOnlyThread is not null)
         {
