@@ -182,6 +182,116 @@ public class UserBanTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
     }
 
     [Fact]
+    public async Task Ban_after_resolution_leaves_resolved_report_and_still_cancels_in_progress_claim()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var resolved = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var reporterConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(
+            context.Client,
+            resolved.ClaimId);
+        Assert.Equal(HttpStatusCode.NoContent, reporterConfirm.StatusCode);
+
+        ClaimTestHelpers.Authenticate(context.Client, resolved.ClaimantSession.AccessToken);
+        var claimantConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(
+            context.Client,
+            resolved.ClaimId);
+        Assert.Equal(HttpStatusCode.NoContent, claimantConfirm.StatusCode);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var inProgress = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
+
+        await HttpTestHelpers.LoginAsAdminAsync(context);
+        var response = await context.Client.PostAsJsonAsync(
+            $"/api/v1/admin/users/{context.Session.User.Id}/ban",
+            new BanUserRequest { Reason = "Fraud after a completed return" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        context.DbContext.ChangeTracker.Clear();
+
+        var user = await context.DbContext.Users
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == context.Session.User.Id);
+        Assert.True(user.IsBanned);
+
+        var resolvedReport = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == resolved.ReportId);
+        Assert.Equal(ReportStatus.Resolved, resolvedReport.Status);
+
+        var resolvedClaim = await context.DbContext.Claims
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == resolved.ClaimId);
+        Assert.Equal(ClaimStatus.Approved, resolvedClaim.Status);
+
+        var resolution = await context.DbContext.Resolutions
+            .AsNoTracking()
+            .SingleAsync(item => item.ReportId == resolved.ReportId);
+        Assert.NotNull(resolution.ResolvedAt);
+
+        var inProgressReport = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == inProgress.ReportId);
+        Assert.Equal(ReportStatus.Withdrawn, inProgressReport.Status);
+        Assert.Equal(ReportLifecycleService.BanCleanupWithdrawReason, inProgressReport.WithdrawalReason);
+
+        var inProgressClaim = await context.DbContext.Claims
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == inProgress.ClaimId);
+        Assert.Equal(ClaimStatus.Cancelled, inProgressClaim.Status);
+    }
+
+    [Fact]
+    public async Task Ban_claimant_after_resolution_does_not_republish_the_report()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var resolved = await ResolutionTestHelpers.CreateApprovedClaimScenarioAsync(context);
+
+        ClaimTestHelpers.AuthenticateReporter(context.Client, context);
+        var reporterConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(
+            context.Client,
+            resolved.ClaimId);
+        Assert.Equal(HttpStatusCode.NoContent, reporterConfirm.StatusCode);
+
+        ClaimTestHelpers.Authenticate(context.Client, resolved.ClaimantSession.AccessToken);
+        var claimantConfirm = await ResolutionTestHelpers.ConfirmResolutionAsync(
+            context.Client,
+            resolved.ClaimId);
+        Assert.Equal(HttpStatusCode.NoContent, claimantConfirm.StatusCode);
+
+        await HttpTestHelpers.LoginAsAdminAsync(context);
+        var response = await context.Client.PostAsJsonAsync(
+            $"/api/v1/admin/users/{resolved.ClaimantSession.User.Id}/ban",
+            new BanUserRequest { Reason = "Fraud after a completed return" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        context.DbContext.ChangeTracker.Clear();
+
+        var claimant = await context.DbContext.Users
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == resolved.ClaimantSession.User.Id);
+        Assert.True(claimant.IsBanned);
+
+        var report = await context.DbContext.Reports
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == resolved.ReportId);
+        Assert.Equal(ReportStatus.Resolved, report.Status);
+
+        var claim = await context.DbContext.Claims
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == resolved.ClaimId);
+        Assert.Equal(ClaimStatus.Approved, claim.Status);
+
+        var resolution = await context.DbContext.Resolutions
+            .AsNoTracking()
+            .SingleAsync(item => item.ReportId == resolved.ReportId);
+        Assert.NotNull(resolution.ResolvedAt);
+    }
+
+    [Fact]
     public async Task Ban_as_non_admin_returns_forbidden()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
