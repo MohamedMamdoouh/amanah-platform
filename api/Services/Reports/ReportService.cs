@@ -47,10 +47,11 @@ public sealed class ReportService(
         ReportStatus.ClaimInProgress,
     ];
 
-    private static readonly ReportStatus[] Phase02ReadableStatuses =
+    private static readonly ReportStatus[] AdminReportDetailReadableStatuses =
     [
         ReportStatus.PendingReview,
         ReportStatus.Rejected,
+        ReportStatus.Withdrawn,
     ];
 
     public async Task<Result<CreateReportResponse>> CreateAsync(
@@ -341,7 +342,7 @@ public sealed class ReportService(
             return ResultError.NotFound("Report not found.");
         }
 
-        if (!isReporter && !Phase02ReadableStatuses.Contains(report.Status))
+        if (!isReporter && !AdminReportDetailReadableStatuses.Contains(report.Status))
         {
             return ResultError.NotFound("Report not found.");
         }
