@@ -16,6 +16,12 @@
   "notifications.type.CounterpartyConfirmedResolution": "أكّد الطرف الآخر الإرجاع",
   "notifications.type.ReportResolved": "تم حل البلاغ — تأكيد متبادل على الإرجاع",
   "notifications.type.NewChatMessage": "رسالة جديدة في المحادثة",
+  "notifications.type.AdminTakedownAffectingYou": "أُزيل بلاغ يخصك بقرار إداري",
+  "notifications.type.ClaimEndedByEnforcement": "أُنهيت مطالبة بقرار إداري",
+  "notifications.type.AbuseReportResolvedForFlagger": "تمت مراجعة بلاغ الإساءة الذي أرسلته",
+  "notifications.outcome.no_action": "لم يُتخذ إجراء على البلاغ",
+  "notifications.outcome.takedown": "أُزيل البلاغ",
+  "notifications.outcome.ban": "اتُخذ إجراء بحق مستخدم",
   "notifications.open_report": "عرض البلاغ",
   "notifications.open_chat": "فتح المحادثة"
 }

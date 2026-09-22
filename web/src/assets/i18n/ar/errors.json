@@ -12,6 +12,7 @@
   "error.auth.token_expired": "انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.",
   "error.auth.refresh_invalid": "انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.",
   "error.auth.banned": "تم تعليق حسابك.",
+  "error.auth.banned_with_reason": "تم تعليق حسابك. السبب: {{reason}}",
   "error.auth.forbidden": "لا تملك صلاحية لهذا الإجراء.",
   "error.otp.cooldown": "يرجى الانتظار قبل طلب رمز جديد.",
   "error.otp.hourly_limit": "تجاوزت حد إرسال الرموز لهذه الساعة.",
@@ -58,5 +59,12 @@
   "error.abuse.duplicate_flag": "لديك بلاغ مفتوح على هذا الإدراج بالفعل.",
   "error.abuse.invalid_reason": "سبب الإبلاغ غير مقبول.",
   "error.abuse.cannot_flag_own_listing": "لا يمكنك الإبلاغ عن بلاغك الخاص.",
-  "error.abuse.listing_not_flaggable": "لا يمكن الإبلاغ عن هذا البلاغ في حالته الحالية."
+  "error.abuse.listing_not_flaggable": "لا يمكن الإبلاغ عن هذا البلاغ في حالته الحالية.",
+  "error.abuse.already_resolved": "بلاغ الإساءة هذا مُغلق بالفعل.",
+  "error.abuse.not_open": "لا يمكن تنفيذ هذا الإجراء لأن بلاغ الإساءة ليس مفتوحاً.",
+  "error.abuse.invalid_outcome": "نتيجة المراجعة غير مقبولة.",
+  "error.abuse.investigation_unavailable": "التحقيق متاح فقط أثناء وجود بلاغ إساءة مفتوح.",
+  "error.enforcement.user_already_banned": "هذا المستخدم محظور بالفعل.",
+  "error.enforcement.user_not_banned": "هذا المستخدم غير محظور.",
+  "error.enforcement.report_not_takedownable": "لا يمكن إزالة هذا البلاغ في حالته الحالية."
 }

@@ -11,6 +11,7 @@ const translationFiles = [
   'admin-moderation',
   'admin-categories',
   'admin-users',
+  'admin-abuse',
   'notifications',
   'pages',
   'reports',

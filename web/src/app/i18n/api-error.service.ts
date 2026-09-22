@@ -18,6 +18,10 @@ export class ApiErrorService {
   private readonly translate = inject(TranslateService);
 
   summary(error: ApiErrorBody): string {
+    if (error.code === 'auth.banned') {
+      return this.bannedMessage(error.message);
+    }
+
     return this.translateCode(error.code, error.message);
   }
 
@@ -84,9 +88,24 @@ export class ApiErrorService {
     return null;
   }
 
+  private bannedMessage(apiMessage: string): string {
+    // Server copies the recorded ban reason after this English prefix.
+    const reasonPrefix = 'Your account has been banned: ';
+    if (apiMessage.startsWith(reasonPrefix)) {
+      const reason = apiMessage.slice(reasonPrefix.length).trim();
+      if (reason.length > 0) {
+        return this.translate.instant('error.auth.banned_with_reason', {
+          reason,
+        });
+      }
+    }
+
+    return this.translate.instant('error.auth.banned');
+  }
+
   private translateCode(code: string, fallback?: string): string {
     const key = `error.${code}`;
     const translated = this.translate.instant(key);
-    return translated === key ? fallback ?? code : translated;
+    return translated === key ? (fallback ?? code) : translated;
   }
 }

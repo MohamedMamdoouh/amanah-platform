@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 
+import { AbuseDetailComponent } from './admin/abuse/abuse-detail.component';
+import { AbuseQueueComponent } from './admin/abuse/abuse-queue.component';
 import { AdminShellComponent } from './admin/admin-shell/admin-shell.component';
 import { ModerationQueueComponent } from './admin/moderation/moderation-queue.component';
 import { ModerationReviewComponent } from './admin/moderation/moderation-review.component';
@@ -113,6 +115,8 @@ export const routes: Routes = [
           { path: '', redirectTo: 'moderation', pathMatch: 'full' },
           { path: 'moderation', component: ModerationQueueComponent },
           { path: 'moderation/:id', component: ModerationReviewComponent },
+          { path: 'abuse', component: AbuseQueueComponent },
+          { path: 'abuse/:id', component: AbuseDetailComponent },
           { path: 'users', component: UsersLookupComponent },
           { path: 'users/:id', component: UserDetailComponent },
           { path: 'categories', component: CategoriesAdminComponent },

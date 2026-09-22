@@ -56,6 +56,11 @@ export class NotificationsComponent implements OnInit {
     if (!code) {
       return '';
     }
+
+    if (code === 'no_action' || code === 'takedown' || code === 'ban') {
+      return this.translate.instant(`notifications.outcome.${code}`);
+    }
+
     return this.translate.instant(code);
   }
 

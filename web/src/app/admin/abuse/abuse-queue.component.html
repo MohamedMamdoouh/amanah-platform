@@ -1,0 +1,39 @@
+<section class="abuse-queue">
+  <app-page-header
+    [title]="'admin.abuse.queue.title' | translate"
+    [intro]="'admin.abuse.queue.intro' | translate"
+  >
+    @if (openCount() > 0) {
+      <app-badge variant="pending">
+        {{ "admin.abuse.queue.open_badge" | translate: { count: openCount() } }}
+      </app-badge>
+    }
+  </app-page-header>
+
+  @if (loading()) {
+    <app-loading-indicator [label]="'admin.abuse.queue.loading' | translate" />
+  } @else if (error()) {
+    <app-alert variant="error">{{ error() }}</app-alert>
+  } @else if (items().length === 0) {
+    <app-empty-state [title]="'admin.abuse.queue.empty' | translate" />
+  } @else {
+    <ul class="abuse-queue__list">
+      @for (item of items(); track item.id) {
+        <li>
+          <app-listing-card
+            [title]="item.reportTitle"
+            [typeLabel]="domainLabels.reportType(item.reportType)"
+            [subtitle]="queueSubtitle(item)"
+            [date]="(item.createdAt | date: 'medium') ?? ''"
+            [badgeLabel]="domainLabels.reportStatus(item.reportStatus)"
+            [badgeVariant]="
+              domainLabels.reportBadgeVariant(item.reportStatus, 'mine')
+            "
+            [routerLink]="['/admin/abuse', item.id]"
+            [actionLabel]="'admin.abuse.queue.review' | translate"
+          />
+        </li>
+      }
+    </ul>
+  }
+</section>

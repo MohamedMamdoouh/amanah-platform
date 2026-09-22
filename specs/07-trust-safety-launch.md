@@ -1,6 +1,6 @@
 # Phase 07 - Trust, Safety & Launch Readiness
 
-**Status:** In progress — enforcement API and automated permission tests shipped; abuse/flag UI and launch checklist remaining  
+**Status:** Implementation complete — walk the [pre-launch checklist](../docs/deployment.md#pre-launch-checklist) on staging and configure the custom domain before v1 deploy  
 **Prerequisites:** Phase 06 - Lifecycle, Retention & Account Management (complete)
 
 ---
@@ -128,7 +128,7 @@ From [SPEC.md Section 15.6](./SPEC.md#156-abuse-and-enforcement).
 - [x] **Ban cleanup:** on ban the user is signed out everywhere, their `Pending Review` and `Published` reports are withdrawn, their pending claims are withdrawn, any approved claim they are part of is cancelled, a report of theirs in `Claim In Progress` ends as `Withdrawn`, impacted counterparties are notified, and a later sign-in attempt is refused with the ban reason
 - [x] **Unban:** an unbanned user can sign in again, and nothing withdrawn or cancelled by the ban is restored
 - [x] **Takedown during `Claim In Progress`:** the approved claim is cancelled first, the report becomes `Removed by Admin`, and the chat becomes read-only immediately
-- [ ] **In-chat report shortcut:** a user in a chat thread can open the listing-flag flow for the linked report; if they already have an open flag, the UI shows that flag instead of creating a duplicate
+- [x] **In-chat report shortcut:** a user in a chat thread can open the listing-flag flow for the linked report; if they already have an open flag, the UI shows that flag instead of creating a duplicate
 
 From [SPEC.md Section 15.8](./SPEC.md#158-privacy-and-permissions).
 
