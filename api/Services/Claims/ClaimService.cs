@@ -50,23 +50,23 @@ public sealed class ClaimService(
 
         var normalizedAnswer = TextNormalizer.Normalize(request.SubmittedAnswer);
 
-        var report = await dbContext.Reports
+        var reportSnapshot = await dbContext.Reports
             .AsNoTracking()
             .SingleOrDefaultAsync(existingReport => existingReport.Id == reportId, cancellationToken);
 
-        if (report is null)
+        if (reportSnapshot is null)
         {
             return ResultError.NotFound("Report not found.");
         }
 
-        if (report.Status != ReportStatus.Published)
+        if (reportSnapshot.Status != ReportStatus.Published)
         {
             return ResultError.Conflict(
                 "Claims can only be submitted on published reports.",
                 ErrorCodes.ClaimInvalidStatus);
         }
 
-        if (report.ReporterId == claimantId)
+        if (reportSnapshot.ReporterId == claimantId)
         {
             return ResultError.Conflict(
                 "You cannot claim your own report.",
@@ -130,22 +130,6 @@ public sealed class ClaimService(
             claim.PhotoStorageKey = photoResult.Value;
         }
 
-        dbContext.Claims.Add(claim);
-
-        dbContext.Notifications.Add(new Notification
-        {
-            Id = Guid.NewGuid(),
-            UserId = report.ReporterId,
-            Type = NotificationTypes.NewClaimSubmitted,
-            PayloadJson = new NotificationPayload(
-                NotificationTypes.NewClaimSubmitted,
-                now,
-                DeepLink: $"/my/reports/{reportId}#claims-section",
-                ReportId: reportId).ToJson(),
-            IsRead = false,
-            CreatedAt = now,
-        });
-
         IReadOnlyList<string>? promotedPhotoKeys = claim.PhotoStorageKey is null
             ? null
             :
@@ -156,7 +140,57 @@ public sealed class ClaimService(
 
         try
         {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            var reportStillPublished = await dbContext.Reports
+                .AnyAsync(
+                    existingReport =>
+                        existingReport.Id == reportId
+                        && existingReport.Status == ReportStatus.Published,
+                    cancellationToken);
+
+            if (!reportStillPublished)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ResultError.Conflict(
+                    "Claims can only be submitted on published reports.",
+                    ErrorCodes.ClaimInvalidStatus);
+            }
+
+            var hasPendingClaim = await dbContext.Claims
+                .AnyAsync(
+                    existingClaim =>
+                        existingClaim.ReportId == reportId
+                        && existingClaim.ClaimantId == claimantId
+                        && existingClaim.Status == ClaimStatus.Pending,
+                    cancellationToken);
+
+            if (hasPendingClaim)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ResultError.Conflict(
+                    "You already have a pending claim on this report.",
+                    ErrorCodes.ClaimPendingExists);
+            }
+
+            dbContext.Claims.Add(claim);
+
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = reportSnapshot.ReporterId,
+                Type = NotificationTypes.NewClaimSubmitted,
+                PayloadJson = new NotificationPayload(
+                    NotificationTypes.NewClaimSubmitted,
+                    now,
+                    DeepLink: $"/my/reports/{reportId}#claims-section",
+                    ReportId: reportId).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
+
             await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
         catch (Exception)
         {
@@ -349,26 +383,46 @@ public sealed class ClaimService(
         Guid reporterId,
         CancellationToken cancellationToken = default)
     {
-        var claim = await dbContext.Claims
-            .Include(existingClaim => existingClaim.Report)
-            .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
+        var claimExists = await dbContext.Claims
+            .AsNoTracking()
+            .AnyAsync(
+                existingClaim =>
+                    existingClaim.Id == claimId
+                    && existingClaim.Report.ReporterId == reporterId,
+                cancellationToken);
 
-        if (claim is null || claim.Report.ReporterId != reporterId)
+        if (!claimExists)
         {
             return ResultError.NotFound("Claim not found.");
         }
 
-        if (claim.Status != ClaimStatus.Pending)
+        var now = timeProvider.GetUtcNow();
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var claimTransitionRows = await dbContext.Claims
+            .Where(existingClaim =>
+                existingClaim.Id == claimId
+                && existingClaim.Status == ClaimStatus.Pending
+                && existingClaim.Report.ReporterId == reporterId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingClaim => existingClaim.Status, ClaimStatus.Rejected)
+                    .SetProperty(existingClaim => existingClaim.ReviewedAt, now)
+                    .SetProperty(existingClaim => existingClaim.ReviewerDecision, "rejected")
+                    .SetProperty(existingClaim => existingClaim.CountsAsFailure, true),
+                cancellationToken);
+
+        if (claimTransitionRows == 0)
         {
+            await transaction.RollbackAsync(cancellationToken);
             return ResultError.Conflict("Only pending claims can be rejected.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var claim = await dbContext.Claims
+            .Include(existingClaim => existingClaim.Report)
+            .SingleAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
-        claim.Status = ClaimStatus.Rejected;
-        claim.ReviewedAt = now;
-        claim.ReviewerDecision = "rejected";
-        claim.CountsAsFailure = true;
         var photoKeys = claimCleanupService.ClearClaimPhoto(claim);
 
         dbContext.Notifications.Add(new Notification
@@ -392,6 +446,7 @@ public sealed class ClaimService(
 
         await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return Result.Ok();
     }
 
@@ -400,25 +455,45 @@ public sealed class ClaimService(
         Guid claimantId,
         CancellationToken cancellationToken = default)
     {
-        var claim = await dbContext.Claims
-            .Include(existingClaim => existingClaim.Report)
-            .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
+        var claimExists = await dbContext.Claims
+            .AsNoTracking()
+            .AnyAsync(
+                existingClaim =>
+                    existingClaim.Id == claimId
+                    && existingClaim.ClaimantId == claimantId,
+                cancellationToken);
 
-        if (claim is null || claim.ClaimantId != claimantId)
+        if (!claimExists)
         {
             return ResultError.NotFound("Claim not found.");
         }
 
-        if (claim.Status != ClaimStatus.Pending)
+        var now = timeProvider.GetUtcNow();
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var claimTransitionRows = await dbContext.Claims
+            .Where(existingClaim =>
+                existingClaim.Id == claimId
+                && existingClaim.Status == ClaimStatus.Pending
+                && existingClaim.ClaimantId == claimantId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingClaim => existingClaim.Status, ClaimStatus.Withdrawn)
+                    .SetProperty(existingClaim => existingClaim.ReviewedAt, now)
+                    .SetProperty(existingClaim => existingClaim.CountsAsFailure, false),
+                cancellationToken);
+
+        if (claimTransitionRows == 0)
         {
+            await transaction.RollbackAsync(cancellationToken);
             return ResultError.Conflict("Only pending claims can be withdrawn.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var claim = await dbContext.Claims
+            .Include(existingClaim => existingClaim.Report)
+            .SingleAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
 
-        claim.Status = ClaimStatus.Withdrawn;
-        claim.ReviewedAt = now;
-        claim.CountsAsFailure = false;
         var photoKeys = claimCleanupService.ClearClaimPhoto(claim);
 
         dbContext.Notifications.Add(new Notification
@@ -437,6 +512,7 @@ public sealed class ClaimService(
 
         await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return Result.Ok();
     }
 
@@ -463,9 +539,10 @@ public sealed class ClaimService(
         }
 
         var withdrawnCount = 0;
-        var withdrawnPhotoKeys = new List<string>();
         foreach (var claimId in timedOutClaimIds)
         {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
             var updatedRows = await dbContext.Claims
                 .Where(claim =>
                     claim.Id == claimId
@@ -480,13 +557,14 @@ public sealed class ClaimService(
 
             if (updatedRows == 0)
             {
+                await transaction.RollbackAsync(cancellationToken);
                 continue;
             }
 
             var claim = await dbContext.Claims
                 .Include(existingClaim => existingClaim.Report)
                 .SingleAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
-            withdrawnPhotoKeys.AddRange(claimCleanupService.ClearClaimPhoto(claim));
+            var withdrawnPhotoKeys = claimCleanupService.ClearClaimPhoto(claim).ToList();
 
             dbContext.Notifications.Add(new Notification
             {
@@ -521,13 +599,10 @@ public sealed class ClaimService(
                 CreatedAt = now,
             });
 
-            withdrawnCount++;
-        }
-
-        if (withdrawnCount > 0)
-        {
             await claimCleanupService.EnqueueClaimPhotoStorageAsync(withdrawnPhotoKeys, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            withdrawnCount++;
         }
 
         return withdrawnCount;

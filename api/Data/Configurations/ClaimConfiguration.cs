@@ -47,5 +47,9 @@ public sealed class ClaimConfiguration : IEntityTypeConfiguration<Claim>
             .WithMany()
             .HasForeignKey(claim => claim.CancelledByUserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(claim => new { claim.ReportId, claim.ClaimantId })
+            .IsUnique()
+            .HasFilter("\"Status\" = 'Pending'");
     }
 }

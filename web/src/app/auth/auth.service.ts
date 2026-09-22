@@ -138,6 +138,23 @@ export class AuthService {
       );
   }
 
+  logoutEverywhere(): Observable<void> {
+    if (!this.accessToken) {
+      this.clearSession();
+      return of(undefined);
+    }
+
+    return this.http
+      .post<void>(`${this.authBaseUrl}/logout-everywhere`, {}, AUTH_HTTP_OPTIONS)
+      .pipe(
+        tap(() => this.clearSession()),
+        catchError((error: HttpErrorResponse) => {
+          this.clearSession();
+          throw error;
+        }),
+      );
+  }
+
   clearSession(): void {
     this.accessToken = null;
     this.userSignal.set(null);

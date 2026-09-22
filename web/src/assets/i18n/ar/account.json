@@ -6,6 +6,7 @@
   "account.blockers_title": "لا يمكن إيقاف الحساب حالياً",
   "account.blocker.claim_in_progress": "لديك بلاغ فيه مطالبة قيد التنفيذ. ألغِ المطالبة أولاً ثم حاول مرة أخرى.",
   "account.blocker.approved_claim": "لديك مطالبة مقبولة قيد التنفيذ. ألغِ المطالبة أولاً ثم حاول مرة أخرى.",
+  "account.logout_everywhere_button": "تسجيل الخروج من جميع الأجهزة",
   "account.deactivate_button": "إيقاف حسابي",
   "account.confirm_title": "تأكيد إيقاف الحساب؟",
   "account.confirm_intro": "سيتم تسجيل خروجك فوراً. يمكنك إعادة تفعيل الحساب لاحقاً بتسجيل الدخول.",

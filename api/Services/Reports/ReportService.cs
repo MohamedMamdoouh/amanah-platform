@@ -380,10 +380,22 @@ public sealed class ReportService(
             return ResultError.NotFound("Report not found.");
         }
 
-        return await reportLifecycleService.WithdrawAsync(
+        await using var transaction =
+            await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var result = await reportLifecycleService.WithdrawAsync(
             report,
             request.Reason,
             cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return result;
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
 
     public async Task<Result> UpdateAsync(

@@ -247,6 +247,7 @@ public sealed class UserEnforcementService(
         CancellationToken cancellationToken)
     {
         var pendingClaims = await dbContext.Claims
+            .Include(claim => claim.Report)
             .Where(claim => claim.ClaimantId == userId && claim.Status == ClaimStatus.Pending)
             .ToListAsync(cancellationToken);
 
@@ -262,6 +263,20 @@ public sealed class UserEnforcementService(
             claim.ReviewedAt = now;
             claim.CountsAsFailure = false;
             photoKeys.AddRange(claimCleanupService.ClearClaimPhoto(claim));
+
+            dbContext.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = claim.Report.ReporterId,
+                Type = NotificationTypes.ClaimWithdrawnByClaimant,
+                PayloadJson = new NotificationPayload(
+                    NotificationTypes.ClaimWithdrawnByClaimant,
+                    now,
+                    DeepLink: $"/my/reports/{claim.ReportId}",
+                    ReportId: claim.ReportId).ToJson(),
+                IsRead = false,
+                CreatedAt = now,
+            });
         }
 
         await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);

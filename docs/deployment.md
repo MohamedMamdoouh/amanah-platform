@@ -38,7 +38,8 @@ See [observability.md](observability.md) for logs, metrics, and alerting.
 | Dockerfile path | `api/Dockerfile` |
 | Build context | Repository root |
 | Health check path | `/health` |
-| Docker build arg | `TURNSTILE_SITE_KEY` — Cloudflare Turnstile site key (baked into Angular build) |
+
+The Angular production Turnstile **site key** is committed in `web/src/environments/environment.production.ts` (public key; must match the Turnstile widget for `Turnstile__SecretKey`).
 
 The API binds `0.0.0.0:$PORT` (Render sets `PORT` automatically). EF Core migrations run on startup (`Database:AutoMigrate` defaults `true`).
 
@@ -57,7 +58,6 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 | `Cors__AllowedOrigins__0` | Yes | Public origin (e.g. `https://<service>.onrender.com`) |
 | `Sms__ApiKey` | Yes | Unimtx AccessKey ID |
 | `Turnstile__SecretKey` | Yes | Cloudflare Turnstile server secret |
-| `TURNSTILE_SITE_KEY` | Yes (Docker build arg) | Turnstile site key in Angular build |
 | `ADMIN_PHONE` | Yes | Bootstrap admin phone (`+20...`) |
 | `ADMIN_PASSWORD` | Yes | Bootstrap admin password (≥8 chars) |
 | `SEED_USER_PHONE` | No | Optional bootstrap normal user for staging/dev (`+20...`); omit in production |
@@ -172,7 +172,7 @@ Walk this on the staging or production service before public launch. Product cod
 - [ ] JWT signing keys, `ADMIN_PHONE`, and `ADMIN_PASSWORD` set; `SEED_USER_PHONE` and `SEED_USER_PASSWORD` omitted
 - [ ] `Bucket__Endpoint`, `Bucket__AccessKey`, `Bucket__SecretKey`, and `Bucket__Name` set so `/health/ready` checks R2
 - [ ] `Sms__ApiKey` set and the Unimtx balance is funded
-- [ ] `Turnstile__SecretKey` set and the Docker build arg `TURNSTILE_SITE_KEY` matches that site
+- [ ] `Turnstile__SecretKey` set and `web/src/environments/environment.production.ts` `turnstileSiteKey` matches that widget
 - [ ] `Cors__AllowedOrigins__0` is the public origin; add the custom domain as another origin when DNS is live
 - [ ] Custom domain configured on Render (still open — see SPEC section 14)
 - [ ] Resend domain verified and `Email__FromAddress` uses that domain

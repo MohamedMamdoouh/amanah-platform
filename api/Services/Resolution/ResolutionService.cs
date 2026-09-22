@@ -3,6 +3,7 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Hubs;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Services.Claims;
+using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Utilities.Notifications;
 using Amanah.Contracts.Chats;
@@ -16,6 +17,7 @@ namespace Amanah.Api.Services.Resolution;
 public sealed class ResolutionService(
     AppDbContext dbContext,
     ClaimCleanupService claimCleanupService,
+    ReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider,
     IHubContext<ChatHub> hubContext)
 {
@@ -166,6 +168,9 @@ public sealed class ResolutionService(
             });
 
             await claimCleanupService.EnqueueClaimPhotoStorageAsync(photoKeys, cancellationToken);
+            await reportLifecycleService.FinalizeResolvedReportPhotosAsync(
+                claim.ReportId,
+                cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }

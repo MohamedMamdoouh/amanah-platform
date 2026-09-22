@@ -6,10 +6,7 @@ RUN npm ci
 
 COPY web/ ./
 
-ARG TURNSTILE_SITE_KEY=
-ENV TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY
-RUN node scripts/generate-production-env.mjs \
-    && npm run build
+RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-build
 WORKDIR /src

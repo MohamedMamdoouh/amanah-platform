@@ -1,7 +1,6 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
-using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Services.Reports;
 using Amanah.Api.Utilities.Common;
@@ -17,7 +16,6 @@ namespace Amanah.Api.Services.Moderation;
 public sealed class ModerationService(
     AppDbContext dbContext,
     ReportService reportService,
-    ReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider)
 {
     public async Task<Result<ModerationQueueResponse>> GetQueueAsync(
@@ -85,15 +83,28 @@ public sealed class ModerationService(
             return ResultError.NotFound("Report not found.");
         }
 
-        if (report.Status != ReportStatus.PendingReview)
+        var now = timeProvider.GetUtcNow();
+
+        var transitionRows = await dbContext.Reports
+            .Where(existingReport =>
+                existingReport.Id == reportId
+                && existingReport.Status == ReportStatus.PendingReview)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingReport => existingReport.Status, ReportStatus.Published)
+                    .SetProperty(existingReport => existingReport.UpdatedAt, now)
+                    .SetProperty(existingReport => existingReport.PublishedAt, now)
+                    .SetProperty(existingReport => existingReport.PublishedTimerResumedAt, now)
+                    .SetProperty(existingReport => existingReport.PublishedSecondsElapsed, 0),
+                cancellationToken);
+
+        if (transitionRows == 0)
         {
             return ResultError.Conflict("Only pending reports can be approved.");
         }
 
-        var now = timeProvider.GetUtcNow();
-        report.Status = ReportStatus.Published;
-        reportLifecycleService.InitializePublishedTimer(report, now);
-        report.UpdatedAt = now;
+        report = await dbContext.Reports
+            .SingleAsync(existingReport => existingReport.Id == reportId, cancellationToken);
 
         dbContext.ModerationActions.Add(new ModerationAction
         {
@@ -135,14 +146,25 @@ public sealed class ModerationService(
             return ResultError.NotFound("Report not found.");
         }
 
-        if (report.Status != ReportStatus.PendingReview)
+        var now = timeProvider.GetUtcNow();
+
+        var transitionRows = await dbContext.Reports
+            .Where(existingReport =>
+                existingReport.Id == reportId
+                && existingReport.Status == ReportStatus.PendingReview)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingReport => existingReport.Status, ReportStatus.Rejected)
+                    .SetProperty(existingReport => existingReport.UpdatedAt, now),
+                cancellationToken);
+
+        if (transitionRows == 0)
         {
             return ResultError.Conflict("Only pending reports can be rejected.");
         }
 
-        var now = timeProvider.GetUtcNow();
-        report.Status = ReportStatus.Rejected;
-        report.UpdatedAt = now;
+        report = await dbContext.Reports
+            .SingleAsync(existingReport => existingReport.Id == reportId, cancellationToken);
 
         dbContext.ModerationActions.Add(new ModerationAction
         {

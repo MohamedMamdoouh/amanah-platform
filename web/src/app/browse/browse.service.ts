@@ -59,12 +59,6 @@ export class BrowseService {
     );
   }
 
-  getPublicDetail(id: string): Observable<PublicReportDetail> {
-    return this.http.get<PublicReportDetail>(
-      `${environment.apiBaseUrl}/reports/${id}/public`,
-    );
-  }
-
   getLostDetail(id: string): Observable<PublicReportDetail> {
     return this.http.get<PublicReportDetail>(
       `${environment.apiBaseUrl}/lost/${id}`,

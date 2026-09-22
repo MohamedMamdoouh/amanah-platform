@@ -28,15 +28,27 @@
         </div>
       }
 
-      <div class="account-settings__actions">
+      <div class="account-settings__actions cluster">
+        <app-button
+          variant="secondary"
+          [loading]="loggingOutEverywhere()"
+          [disabled]="loggingOutEverywhere() || deactivating()"
+          (clicked)="logoutEverywhere()"
+        >
+          {{ 'account.logout_everywhere_button' | translate }}
+        </app-button>
         <app-button
           variant="danger"
-          [disabled]="!deactivationStatus.canDeactivate || deactivating()"
+          [disabled]="!deactivationStatus.canDeactivate || deactivating() || loggingOutEverywhere()"
           (clicked)="openConfirmDialog()"
         >
           {{ 'account.deactivate_button' | translate }}
         </app-button>
       </div>
+
+      @if (logoutEverywhereError()) {
+        <app-alert variant="error">{{ logoutEverywhereError() }}</app-alert>
+      }
     </div>
 
     @if (showConfirmDialog()) {

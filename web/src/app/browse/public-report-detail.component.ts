@@ -15,7 +15,9 @@ import { ClaimFormComponent } from '../claims/claim-form/claim-form.component';
 import { ClaimResolutionActionsComponent } from '../claims/claim-resolution-actions/claim-resolution-actions.component';
 import { ClaimService } from '../claims/claim.service';
 import {
+  isResolutionEligibleReportStatus,
   loadClaimantApprovedClaimId,
+  loadReporterApprovedClaimId,
   showResolutionActions,
 } from '../claims/resolution/resolution.helpers';
 import { CatalogLabelService } from '../i18n/catalog-label.service';
@@ -66,6 +68,7 @@ export class PublicReportDetailComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly report = signal<PublicReportDetail | null>(null);
   readonly approvedClaimId = signal<string | null>(null);
+  readonly chatThreadId = signal<string | null>(null);
   readonly isListingOwner = signal(false);
   readonly openFlag = signal<FlagListingResponse | null>(null);
   readonly flagDialogOpen = signal(false);
@@ -167,7 +170,11 @@ export class PublicReportDetailComponent implements OnInit {
   }
 
   showClaimForm(): boolean {
-    return this.isPublished() && this.auth.isLoggedIn();
+    return (
+      this.isPublished() &&
+      this.auth.isLoggedIn() &&
+      !this.isListingOwner()
+    );
   }
 
   isClaimDisabled(): boolean {
@@ -175,11 +182,11 @@ export class PublicReportDetailComponent implements OnInit {
   }
 
   canClickMessage(): boolean {
-    return !this.auth.isLoggedIn();
+    return !this.auth.isLoggedIn() || this.chatThreadId() !== null;
   }
 
   isMessageDisabled(): boolean {
-    return this.auth.isLoggedIn();
+    return this.auth.isLoggedIn() && this.chatThreadId() === null;
   }
 
   claimHint(): string | null {
@@ -199,6 +206,10 @@ export class PublicReportDetailComponent implements OnInit {
       return this.translate.instant('browse.detail.message_login_required');
     }
 
+    if (this.chatThreadId() !== null) {
+      return null;
+    }
+
     return this.translate.instant('browse.detail.message_coming_soon');
   }
 
@@ -213,7 +224,13 @@ export class PublicReportDetailComponent implements OnInit {
   }
 
   onMessageClick(): void {
-    if (!this.canClickMessage()) {
+    if (this.isMessageDisabled()) {
+      return;
+    }
+
+    const threadId = this.chatThreadId();
+    if (threadId) {
+      void this.router.navigate(['/my/chats', threadId]);
       return;
     }
 
@@ -286,16 +303,8 @@ export class PublicReportDetailComponent implements OnInit {
     try {
       const detail = await firstValueFrom(request$);
       this.report.set(detail);
-      this.approvedClaimId.set(
-        this.auth.isLoggedIn()
-          ? await loadClaimantApprovedClaimId(
-              this.claimService,
-              id,
-              detail.status,
-            )
-          : null,
-      );
       await this.loadFlagContext(id, detail.status);
+      await this.loadParticipantChat(id, detail.status);
       this.loading.set(false);
     } catch (error) {
       const route = mapBrowseError(error);
@@ -343,6 +352,42 @@ export class PublicReportDetailComponent implements OnInit {
       ) {
         return;
       }
+    }
+  }
+
+  private async loadParticipantChat(
+    reportId: string,
+    status: PublicReportDetail['status'],
+  ): Promise<void> {
+    this.approvedClaimId.set(null);
+    this.chatThreadId.set(null);
+
+    if (!this.auth.isLoggedIn() || !isResolutionEligibleReportStatus(status)) {
+      return;
+    }
+
+    const approvedId = this.isListingOwner()
+      ? await loadReporterApprovedClaimId(
+          this.claimService,
+          reportId,
+          status,
+        )
+      : await loadClaimantApprovedClaimId(
+          this.claimService,
+          reportId,
+          status,
+        );
+
+    this.approvedClaimId.set(approvedId);
+    if (!approvedId) {
+      return;
+    }
+
+    try {
+      const claim = await firstValueFrom(this.claimService.getById(approvedId));
+      this.chatThreadId.set(claim.chatThreadId ?? null);
+    } catch {
+      this.chatThreadId.set(null);
     }
   }
 

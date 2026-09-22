@@ -39,6 +39,8 @@ export class AccountComponent implements OnInit {
   readonly showConfirmDialog = signal(false);
   readonly deactivating = signal(false);
   readonly deactivateError = signal<string | null>(null);
+  readonly loggingOutEverywhere = signal(false);
+  readonly logoutEverywhereError = signal<string | null>(null);
 
   readonly translatedBlockers = computed(() => {
     const blockers = this.status()?.blockers ?? [];
@@ -61,6 +63,24 @@ export class AccountComponent implements OnInit {
   closeConfirmDialog(): void {
     this.showConfirmDialog.set(false);
     this.deactivateError.set(null);
+  }
+
+  async logoutEverywhere(): Promise<void> {
+    if (this.loggingOutEverywhere()) {
+      return;
+    }
+
+    this.loggingOutEverywhere.set(true);
+    this.logoutEverywhereError.set(null);
+
+    try {
+      await firstValueFrom(this.auth.logoutEverywhere());
+      await this.router.navigate(['/']);
+    } catch (error) {
+      this.logoutEverywhereError.set(this.apiErrors.messageFromHttpError(error));
+    } finally {
+      this.loggingOutEverywhere.set(false);
+    }
   }
 
   async confirmDeactivate(): Promise<void> {

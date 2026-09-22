@@ -84,18 +84,58 @@ public sealed class ReportLifecycleService(
             return ResultError.Conflict("Only pending or published reports can be withdrawn.");
         }
 
-        if (report.Status == ReportStatus.Published)
+        var reportId = report.Id;
+        var withdrawalReason = reason;
+        var now = timeProvider.GetUtcNow();
+
+        return await WithdrawPublishedOrPendingReviewAsync(
+            reportId,
+            withdrawalReason,
+            now,
+            cancellationToken);
+    }
+
+    private async Task<Result> WithdrawPublishedOrPendingReviewAsync(
+        Guid reportId,
+        string? withdrawalReason,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var reportStatus = await dbContext.Reports
+            .AsNoTracking()
+            .Where(existingReport => existingReport.Id == reportId)
+            .Select(existingReport => existingReport.Status)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (reportStatus == ReportStatus.Published)
         {
             await ClosePendingClaimsAsync(
-                report.Id,
-                reason ?? DefaultWithdrawReason,
+                reportId,
+                withdrawalReason ?? DefaultWithdrawReason,
                 NotificationTypes.ClaimClosedReportUnavailable,
                 cancellationToken);
         }
 
-        report.Status = ReportStatus.Withdrawn;
-        report.WithdrawalReason = reason;
-        report.UpdatedAt = timeProvider.GetUtcNow();
+        var transitionRows = await dbContext.Reports
+            .Where(existingReport =>
+                existingReport.Id == reportId
+                && (existingReport.Status == ReportStatus.PendingReview
+                    || existingReport.Status == ReportStatus.Published))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingReport => existingReport.Status, ReportStatus.Withdrawn)
+                    .SetProperty(existingReport => existingReport.WithdrawalReason, withdrawalReason)
+                    .SetProperty(existingReport => existingReport.UpdatedAt, now),
+                cancellationToken);
+
+        if (transitionRows == 0)
+        {
+            return ResultError.Conflict("Only pending or published reports can be withdrawn.");
+        }
+
+        var report = await dbContext.Reports
+            .Include(existingReport => existingReport.Photos)
+            .SingleAsync(existingReport => existingReport.Id == reportId, cancellationToken);
 
         var storageKeys = RemoveReportPhotos(report);
         await storageDeletionEnqueueService.EnqueueAsync(
@@ -151,6 +191,21 @@ public sealed class ReportLifecycleService(
             cancellationToken);
 
     public async Task FinalizeAdminTakedownPhotosAsync(
+        Guid reportId,
+        CancellationToken cancellationToken = default)
+    {
+        var report = await dbContext.Reports
+            .Include(existingReport => existingReport.Photos)
+            .SingleAsync(existingReport => existingReport.Id == reportId, cancellationToken);
+
+        var storageKeys = RemoveReportPhotos(report);
+        await storageDeletionEnqueueService.EnqueueAsync(
+            storageKeys,
+            StorageDeletionSource.ReportWithdraw,
+            cancellationToken);
+    }
+
+    public async Task FinalizeResolvedReportPhotosAsync(
         Guid reportId,
         CancellationToken cancellationToken = default)
     {
@@ -238,15 +293,36 @@ public sealed class ReportLifecycleService(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        var reportId = report.Id;
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
         await ClosePendingClaimsAsync(
-            report.Id,
+            reportId,
             ExpiredWithdrawReason,
             NotificationTypes.ReportExpired,
             cancellationToken);
 
-        report.Status = ReportStatus.Withdrawn;
-        report.WithdrawalReason = ExpiredWithdrawReason;
-        report.UpdatedAt = now;
+        var transitionRows = await dbContext.Reports
+            .Where(existingReport =>
+                existingReport.Id == reportId
+                && existingReport.Status == ReportStatus.Published)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(existingReport => existingReport.Status, ReportStatus.Withdrawn)
+                    .SetProperty(existingReport => existingReport.WithdrawalReason, ExpiredWithdrawReason)
+                    .SetProperty(existingReport => existingReport.UpdatedAt, now),
+                cancellationToken);
+
+        if (transitionRows == 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return;
+        }
+
+        report = await dbContext.Reports
+            .Include(existingReport => existingReport.Photos)
+            .SingleAsync(existingReport => existingReport.Id == reportId, cancellationToken);
 
         dbContext.Notifications.Add(new Notification
         {
@@ -269,6 +345,7 @@ public sealed class ReportLifecycleService(
             StorageDeletionSource.ReportWithdraw,
             cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
     private bool HasReachedPublishedDayThreshold(

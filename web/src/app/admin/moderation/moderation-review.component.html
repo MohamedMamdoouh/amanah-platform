@@ -98,22 +98,24 @@
       <app-alert variant="error">{{ actionError() }}</app-alert>
     }
 
-    <div class="moderation-review__actions cluster">
-      <app-button
-        variant="primary"
-        [loading]="approving()"
-        (clicked)="approveReport()"
-      >
-        {{
-          approving()
-            ? ("admin.moderation.approving" | translate)
-            : ("admin.moderation.approve" | translate)
-        }}
-      </app-button>
-      <app-button variant="danger" (clicked)="openReject()">
-        {{ "admin.moderation.reject" | translate }}
-      </app-button>
-    </div>
+    @if (report()?.status === 'pending_review') {
+      <div class="moderation-review__actions cluster">
+        <app-button
+          variant="primary"
+          [loading]="approving()"
+          (clicked)="approveReport()"
+        >
+          {{
+            approving()
+              ? ("admin.moderation.approving" | translate)
+              : ("admin.moderation.approve" | translate)
+          }}
+        </app-button>
+        <app-button variant="danger" (clicked)="openReject()">
+          {{ "admin.moderation.reject" | translate }}
+        </app-button>
+      </div>
+    }
 
     @if (showReject()) {
       <form

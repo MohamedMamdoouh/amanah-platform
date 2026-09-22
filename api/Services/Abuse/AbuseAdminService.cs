@@ -90,7 +90,11 @@ public sealed class AbuseAdminService(
                     adminId,
                     new AdminReportTakedownRequest { Note = adminNote },
                     cancellationToken);
-                if (!takedownResult.IsSuccess)
+                if (!takedownResult.IsSuccess
+                    && !await IsTakedownAlreadyAppliedAsync(
+                        abuseReport.ReportId,
+                        takedownResult.Error,
+                        cancellationToken))
                 {
                     return takedownResult.Error!;
                 }
@@ -120,7 +124,11 @@ public sealed class AbuseAdminService(
                     adminId,
                     new BanUserRequest { Reason = banReason },
                     cancellationToken);
-                if (!banResult.IsSuccess)
+                if (!banResult.IsSuccess
+                    && !await IsBanAlreadyAppliedAsync(
+                        banTargetUserId,
+                        banResult.Error,
+                        cancellationToken))
                 {
                     return banResult.Error!;
                 }
@@ -170,6 +178,40 @@ public sealed class AbuseAdminService(
         return await query.SingleOrDefaultAsync(
             abuseReport => abuseReport.Id == abuseReportId,
             cancellationToken);
+    }
+
+    private async Task<bool> IsTakedownAlreadyAppliedAsync(
+        Guid reportId,
+        ResultError? error,
+        CancellationToken cancellationToken)
+    {
+        if (error?.Code != ErrorCodes.EnforcementReportNotTakedownable)
+        {
+            return false;
+        }
+
+        var status = await dbContext.Reports
+            .AsNoTracking()
+            .Where(report => report.Id == reportId)
+            .Select(report => report.Status)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return status == ReportStatus.RemovedByAdmin;
+    }
+
+    private async Task<bool> IsBanAlreadyAppliedAsync(
+        Guid userId,
+        ResultError? error,
+        CancellationToken cancellationToken)
+    {
+        if (error?.Code != ErrorCodes.EnforcementUserAlreadyBanned)
+        {
+            return false;
+        }
+
+        return await dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(user => user.Id == userId && user.IsBanned, cancellationToken);
     }
 
     private void EnqueueFlaggerNotification(
