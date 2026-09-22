@@ -65,3 +65,19 @@ public sealed class AdminAlertEmailOutboxCleanupJob(
             deletedCount);
     }
 }
+
+public sealed class NotificationCleanupJob(
+    RetentionService retentionService,
+    ILogger<NotificationCleanupJob> logger) : ILifecycleJob
+{
+    public string Name => "NotificationCleanup";
+
+    public async Task ExecuteAsync(CancellationToken cancellationToken)
+    {
+        var deletedCount = await retentionService.ProcessNotificationCleanupAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Notification cleanup job removed {DeletedCount} notification row(s).",
+            deletedCount);
+    }
+}

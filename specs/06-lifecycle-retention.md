@@ -86,6 +86,7 @@ All jobs use Africa/Cairo day boundaries where applicable. Run on a configurable
 | `OtpSmsOutboxCleanup` | 30 days after `ProcessedAt` | Delete `Sent` and `Failed` rows from `otp_sms_outbox` (limit queries only need recent history) |
 | `AdminAlertEmailOutboxCleanup` | 30 days after `ProcessedAt` | Delete `Sent` and `Failed` rows from `admin_alert_email_outbox` |
 | `SessionCleanup` | 30 days after expiry/revoke | Delete `RefreshToken` rows |
+| `NotificationCleanup` | 7 days after `CreatedAt` | Delete `Notification` rows (read and unread) |
 | `OrphanedStorageCleanup` | Daily (configurable) | Delete R2 objects under report photo prefixes with no matching `ReportPhoto` row (see below) |
 
 ### Orphaned storage cleanup
@@ -115,6 +116,7 @@ Implement both where practical: immediate cleanup limits orphan volume; the job 
 | `Lifecycle__ListingExpiryWarningDaysBefore` | Days before expiry to warn (default `7`) |
 | `Lifecycle__ClaimTimeoutMinutes` | Pending-claim auto-withdraw timeout (default `14400` = 10 days) |
 | `Lifecycle__RetentionDays` | 30-day retention windows (rejected reports, chat, sessions) |
+| `Lifecycle__NotificationRetentionDays` | In-app notification retention (default `7`) |
 | `POST /api/v1/admin/test/run-job/{jobName}` | Admin-only manual job trigger for CI (supersedes Phase 04 `trigger-claim-timeout` stub) |
 
 ---

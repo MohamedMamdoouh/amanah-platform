@@ -27,6 +27,7 @@ public static class LifecycleServiceExtensions
         services.AddLifecycleJob<SessionCleanupJob>();
         services.AddLifecycleJob<OtpSmsOutboxCleanupJob>();
         services.AddLifecycleJob<AdminAlertEmailOutboxCleanupJob>();
+        services.AddLifecycleJob<NotificationCleanupJob>();
         services.AddLifecycleJob<OrphanedStorageCleanupJob>();
 
         return services;

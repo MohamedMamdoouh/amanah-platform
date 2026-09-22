@@ -553,10 +553,11 @@ No formal performance targets for v1. Optimized image thumbnails are used to kee
 - **Rejected reports:** deleted **30 days** after rejection if never resubmitted. Resubmission restarts the report's life; a later rejection starts a new 30-day window.
 - **Claim photos:** deleted when the claim reaches `Rejected`, `Withdrawn`, or `Cancelled`, or when the report reaches a terminal status.
 - **Chat threads and messages:** read-only immediately on claim cancellation or report resolution; permanently deleted **30 days** later.
+- **In-app notifications:** deleted **7 days** after `CreatedAt` (read and unread).
 - **On account deactivation:** user signed out immediately; message bodies remain until the normal chat deadline; direct personal data retained; account reactivatable on login; anonymized aggregates retained only where required for audit.
 - **Retained internally:** moderation decisions and audit metadata. Moderation records survive deletion of the report they refer to.
 
-Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Report`, `ReportPhoto`, `Claim`, chat records, and `ModerationAction` follow the rules above; scheduled jobs enforce retention windows, **listing expiry** (4.7), and **pending-claim timeout** (6.3).
+Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Notification`, `Report`, `ReportPhoto`, `Claim`, chat records, and `ModerationAction` follow the rules above; scheduled jobs enforce retention windows, **listing expiry** (4.7), and **pending-claim timeout** (6.3).
 
 ---
 

@@ -29,5 +29,7 @@ public sealed class NotificationConfiguration : IEntityTypeConfiguration<Notific
             .WithMany()
             .HasForeignKey(notification => notification.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(notification => notification.CreatedAt);
     }
 }

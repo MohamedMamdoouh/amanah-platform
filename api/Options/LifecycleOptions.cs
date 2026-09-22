@@ -12,6 +12,8 @@ public sealed class LifecycleOptions
 
     public int RetentionDays { get; set; } = 30;
 
+    public int NotificationRetentionDays { get; set; } = 7;
+
     public int JobsPollIntervalSeconds { get; set; } = 3600;
 
     public int ListingExpiryWarningDays =>

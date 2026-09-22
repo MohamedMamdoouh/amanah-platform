@@ -14,12 +14,52 @@ public sealed class HousekeepingJobsWebApplicationFactory : ApiWebApplicationFac
     {
         base.ConfigureWebHost(builder);
         builder.UseSetting("Lifecycle:RetentionDays", "30");
+        builder.UseSetting("Lifecycle:NotificationRetentionDays", "7");
     }
 }
 
 public class HousekeepingJobsTests(HousekeepingJobsWebApplicationFactory factory)
     : IClassFixture<HousekeepingJobsWebApplicationFactory>
 {
+    [Fact]
+    public async Task NotificationCleanup_removes_notifications_older_than_retention_window()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var staleId = Guid.NewGuid();
+        var freshId = Guid.NewGuid();
+        var userId = context.Session.User.Id;
+        var now = DateTimeOffset.UtcNow;
+        const string payload =
+            """{"type":"ReportApproved","createdAt":"2026-01-01T00:00:00Z","deepLink":"/my/reports"}""";
+
+        context.DbContext.Notifications.AddRange(
+            new Notification
+            {
+                Id = staleId,
+                UserId = userId,
+                Type = "ReportApproved",
+                PayloadJson = payload,
+                IsRead = false,
+                CreatedAt = now.AddDays(-8),
+            },
+            new Notification
+            {
+                Id = freshId,
+                UserId = userId,
+                Type = "ReportApproved",
+                PayloadJson = payload,
+                IsRead = true,
+                CreatedAt = now.AddDays(-5),
+            });
+        await context.DbContext.SaveChangesAsync();
+
+        var response = await RunJobAsync(context, "NotificationCleanup");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        Assert.False(await context.DbContext.Notifications.AnyAsync(item => item.Id == staleId));
+        Assert.True(await context.DbContext.Notifications.AnyAsync(item => item.Id == freshId));
+    }
+
     [Fact]
     public async Task OtpCleanup_removes_codes_expired_more_than_24_hours_ago()
     {

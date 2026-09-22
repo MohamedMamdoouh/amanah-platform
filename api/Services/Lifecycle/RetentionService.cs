@@ -167,6 +167,16 @@ public sealed class RetentionService(
             .ExecuteDeleteAsync(cancellationToken);
     }
 
+    public async Task<int> ProcessNotificationCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var threshold = timeProvider.GetUtcNow()
+            .AddDays(-lifecycleOptions.Value.NotificationRetentionDays);
+
+        return await dbContext.Notifications
+            .Where(notification => notification.CreatedAt <= threshold)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     private static IReadOnlyList<string> CollectReportPhotoKeys(IEnumerable<ReportPhoto> photos) =>
         photos
             .SelectMany(photo => new[] { photo.StorageKey, photo.ThumbnailStorageKey })
