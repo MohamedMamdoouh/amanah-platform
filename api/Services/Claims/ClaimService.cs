@@ -142,7 +142,15 @@ public sealed class ClaimService(
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
+            // Lock the report row so Approve/Withdraw cannot flip status between the
+            // published check and the claim insert (would strand Pending claims and
+            // leave promoted claim photos unreferenced under private/claims/).
+            await dbContext.Database.ExecuteSqlAsync(
+                $"SELECT 1 FROM reports WHERE \"Id\" = {reportId} FOR UPDATE",
+                cancellationToken);
+
             var reportStillPublished = await dbContext.Reports
+                .AsNoTracking()
                 .AnyAsync(
                     existingReport =>
                         existingReport.Id == reportId
@@ -152,12 +160,14 @@ public sealed class ClaimService(
             if (!reportStillPublished)
             {
                 await transaction.RollbackAsync(cancellationToken);
+                await DeletePromotedClaimPhotosAsync(promotedPhotoKeys, cancellationToken);
                 return ResultError.Conflict(
                     "Claims can only be submitted on published reports.",
                     ErrorCodes.ClaimInvalidStatus);
             }
 
             var hasPendingClaim = await dbContext.Claims
+                .AsNoTracking()
                 .AnyAsync(
                     existingClaim =>
                         existingClaim.ReportId == reportId
@@ -168,6 +178,7 @@ public sealed class ClaimService(
             if (hasPendingClaim)
             {
                 await transaction.RollbackAsync(cancellationToken);
+                await DeletePromotedClaimPhotosAsync(promotedPhotoKeys, cancellationToken);
                 return ResultError.Conflict(
                     "You already have a pending claim on this report.",
                     ErrorCodes.ClaimPendingExists);
@@ -194,10 +205,7 @@ public sealed class ClaimService(
         }
         catch (Exception)
         {
-            if (promotedPhotoKeys is { Count: > 0 })
-            {
-                await bucketStorage.DeleteManyAsync(promotedPhotoKeys, cancellationToken);
-            }
+            await DeletePromotedClaimPhotosAsync(promotedPhotoKeys, cancellationToken);
 
             return ResultError.ServiceUnavailable(
                 "Claim submission is temporarily unavailable. Please try again later.",
@@ -209,6 +217,18 @@ public sealed class ClaimService(
             Id = claim.Id,
             Status = ToClaimStatus(claim.Status),
         };
+    }
+
+    private async Task DeletePromotedClaimPhotosAsync(
+        IReadOnlyList<string>? promotedPhotoKeys,
+        CancellationToken cancellationToken)
+    {
+        if (promotedPhotoKeys is not { Count: > 0 })
+        {
+            return;
+        }
+
+        await bucketStorage.DeleteManyAsync(promotedPhotoKeys, cancellationToken);
     }
 
     public async Task<Result> ApproveAsync(

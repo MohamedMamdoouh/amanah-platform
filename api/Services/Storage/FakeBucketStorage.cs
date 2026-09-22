@@ -5,8 +5,42 @@ namespace Amanah.Api.Services.Storage;
 public sealed class FakeBucketStorage : IBucketStorage
 {
     private readonly ConcurrentDictionary<string, StoredObject> _objects = new(StringComparer.Ordinal);
+    private int _putCount;
+    private int _holdAfterPutCount = int.MaxValue;
+    private TaskCompletionSource<bool>? _holdPuts;
+    private TaskCompletionSource<bool>? _heldPutsReached;
 
-    public Task PutAsync(
+    /// <summary>
+    /// Test hook: after <paramref name="putCount"/> successful puts, further PutAsync
+    /// calls block until <see cref="ReleaseHeldPuts"/> (used to race claim submit vs withdraw).
+    /// </summary>
+    public void HoldPutsAfter(int putCount)
+    {
+        _holdAfterPutCount = putCount;
+        _holdPuts = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _heldPutsReached = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Interlocked.Exchange(ref _putCount, 0);
+    }
+
+    public Task WaitUntilPutsHeldAsync(CancellationToken cancellationToken = default)
+    {
+        if (_heldPutsReached is null)
+        {
+            throw new InvalidOperationException("HoldPutsAfter was not called.");
+        }
+
+        return _heldPutsReached.Task.WaitAsync(cancellationToken);
+    }
+
+    public void ReleaseHeldPuts()
+    {
+        _holdPuts?.TrySetResult(true);
+        _holdAfterPutCount = int.MaxValue;
+        _holdPuts = null;
+        _heldPutsReached = null;
+    }
+
+    public async Task PutAsync(
         string key,
         Stream content,
         string contentType,
@@ -18,7 +52,14 @@ public sealed class FakeBucketStorage : IBucketStorage
             memory.ToArray(),
             contentType,
             DateTimeOffset.UtcNow);
-        return Task.CompletedTask;
+
+        var putCount = Interlocked.Increment(ref _putCount);
+        var holdPuts = _holdPuts;
+        if (holdPuts is not null && putCount >= _holdAfterPutCount)
+        {
+            _heldPutsReached?.TrySetResult(true);
+            await holdPuts.Task.WaitAsync(cancellationToken);
+        }
     }
 
     public Task CopyAsync(string sourceKey, string destKey, CancellationToken cancellationToken = default)

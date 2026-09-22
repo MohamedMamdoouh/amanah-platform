@@ -1,5 +1,6 @@
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Services.Claims;
+using Amanah.Api.Services.Storage;
 using Amanah.Api.Tests.Browse;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
@@ -9,6 +10,7 @@ using Amanah.Api.Utilities.Reports;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Amanah.Api.Tests.Claims;
 
@@ -359,6 +361,54 @@ public class ClaimSubmissionTests(ApiWebApplicationFactory factory) : IClassFixt
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
         Assert.Contains("photo", error!.Errors!.Keys);
         Assert.Equal(0, await ClaimTestHelpers.CountClaimsAsync(context, reportId, claimantSession.User.Id));
+    }
+
+    [Fact]
+    public async Task Submit_with_photo_deletes_storage_when_report_withdrawn_during_upload()
+    {
+        await using var context = await CreateContextAsync(factory);
+        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
+        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
+        var storage = Assert.IsType<FakeBucketStorage>(
+            factory.Services.GetRequiredService<IBucketStorage>());
+
+        storage.HoldPutsAfter(2);
+        try
+        {
+            ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
+            var submitTask = ClaimTestHelpers.SubmitClaimAsync(
+                context.Client,
+                reportId,
+                new SubmitClaimRequest
+                {
+                    SubmittedAnswer = ClaimTestHelpers.ValidAnswer,
+                },
+                [TestImageFactory.CreateMinimalJpeg()]);
+
+            await storage.WaitUntilPutsHeldAsync().WaitAsync(TimeSpan.FromSeconds(30));
+
+            ClaimTestHelpers.Authenticate(context.Client, context.Session.AccessToken);
+            var withdrawResponse = await context.WithdrawReportAsync(
+                reportId,
+                new() { Reason = "posted_by_mistake" });
+            Assert.Equal(System.Net.HttpStatusCode.NoContent, withdrawResponse.StatusCode);
+
+            storage.ReleaseHeldPuts();
+
+            var (submitResponse, _) = await submitTask.WaitAsync(TimeSpan.FromSeconds(30));
+            var error = await HttpTestHelpers.ReadErrorAsync(submitResponse);
+
+            Assert.Equal(System.Net.HttpStatusCode.Conflict, submitResponse.StatusCode);
+            Assert.Equal(ErrorCodes.ClaimInvalidStatus, error?.Code);
+            Assert.Equal(0, await ClaimTestHelpers.CountClaimsAsync(context, reportId, claimantSession.User.Id));
+
+            var claimPhotoKeys = await storage.ListAsync("private/claims/");
+            Assert.Empty(claimPhotoKeys);
+        }
+        finally
+        {
+            storage.ReleaseHeldPuts();
+        }
     }
 
     [Fact]
