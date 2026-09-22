@@ -18,10 +18,25 @@
       [backLink]="'/my/chats'"
       [backLabel]="'chats.thread.back' | translate"
     >
-      <a class="chat-thread__report-link" [routerLink]="reportLink()">
-        {{ "chats.thread.view_report" | translate }}
-      </a>
+      <div class="chat-thread__header-actions">
+        <a class="chat-thread__report-link" [routerLink]="reportLink()">
+          {{ "chats.thread.view_report" | translate }}
+        </a>
+        @if (reportControlVisible()) {
+          <app-button
+            variant="outline"
+            size="sm"
+            (clicked)="onReportClick()"
+          >
+            {{ reportControlLabelKey() | translate }}
+          </app-button>
+        }
+      </div>
     </app-page-header>
+
+    @if (flagSuccessMessage(); as successMessage) {
+      <app-alert variant="success">{{ successMessage }}</app-alert>
+    }
 
     <app-safety-banner />
 
@@ -189,5 +204,14 @@
         </div>
       </form>
     </div>
+
+    @if (flagDialogOpen()) {
+      <app-flag-listing-dialog
+        [reportId]="thread()!.reportId"
+        [existingFlag]="openFlag()"
+        (closed)="closeFlagDialog()"
+        (submitted)="onFlagSubmitted($event)"
+      />
+    }
   }
 </section>

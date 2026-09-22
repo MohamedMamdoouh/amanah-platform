@@ -15,8 +15,14 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { distinctUntilChanged, firstValueFrom, map } from 'rxjs';
 
+import {
+  AbuseFlagService,
+  FlagListingResponse,
+} from '../../abuse/abuse-flag.service';
+import { FlagListingDialogComponent } from '../../abuse/flag-listing-dialog.component';
 import { AuthService } from '../../auth/auth.service';
 import { ApiErrorService } from '../../i18n/api-error.service';
+import { ReportService } from '../../reports/report.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
@@ -47,6 +53,7 @@ const ALLOWED_ATTACHMENT_TYPES = new Set([
     AlertComponent,
     ButtonComponent,
     DatePipe,
+    FlagListingDialogComponent,
     FormsModule,
     IconComponent,
     LoadingIndicatorComponent,
@@ -63,6 +70,8 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
   private readonly chatService = inject(ChatService);
   private readonly chatHub = inject(ChatHubService);
   private readonly auth = inject(AuthService);
+  private readonly abuseFlagService = inject(AbuseFlagService);
+  private readonly reportService = inject(ReportService);
   private readonly apiErrors = inject(ApiErrorService);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
@@ -83,6 +92,10 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
   readonly attachmentStates = signal<Record<string, MessageAttachmentState>>(
     {},
   );
+  readonly openFlag = signal<FlagListingResponse | null>(null);
+  readonly flagDialogOpen = signal(false);
+  readonly flagSuccessMessage = signal<string | null>(null);
+  readonly reportControlVisible = signal(false);
 
   private threadId = '';
   private loadGeneration = 0;
@@ -162,6 +175,36 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
       return ['/browse'];
     }
     return [`/${thread.reportType}`, thread.reportId];
+  }
+
+  reportControlLabelKey(): string {
+    return this.openFlag()
+      ? 'abuse.flag.view_button'
+      : 'abuse.flag.chat_button';
+  }
+
+  onReportClick(): void {
+    if (!this.reportControlVisible()) {
+      return;
+    }
+
+    if (!this.openFlag()) {
+      this.flagSuccessMessage.set(null);
+    }
+
+    this.flagDialogOpen.set(true);
+  }
+
+  closeFlagDialog(): void {
+    this.flagDialogOpen.set(false);
+  }
+
+  onFlagSubmitted(flag: FlagListingResponse): void {
+    this.openFlag.set(flag);
+    this.flagDialogOpen.set(false);
+    this.flagSuccessMessage.set(
+      this.translate.instant('abuse.flag.submit_success'),
+    );
   }
 
   canSend(): boolean {
@@ -326,6 +369,7 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
 
     this.loading.set(true);
     this.error.set(null);
+    this.resetFlagState();
 
     try {
       const response = await firstValueFrom(
@@ -342,6 +386,12 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
       this.hasOlderMessages.set(response.messages.length >= MESSAGE_PAGE_SIZE);
       this.loadAttachmentsForMessages(response.messages);
       this.shouldScrollToBottom = true;
+      void this.loadFlagContext(
+        response.reportId,
+        response.reportStatus,
+        generation,
+        threadId,
+      );
 
       try {
         if (generation !== this.loadGeneration) {
@@ -375,6 +425,68 @@ export class ChatThreadComponent implements OnInit, AfterViewChecked {
       if (generation === this.loadGeneration) {
         this.loading.set(false);
       }
+    }
+  }
+
+  private resetFlagState(): void {
+    this.openFlag.set(null);
+    this.flagDialogOpen.set(false);
+    this.flagSuccessMessage.set(null);
+    this.reportControlVisible.set(false);
+  }
+
+  private async loadFlagContext(
+    reportId: string,
+    reportStatus: string,
+    generation: number,
+    threadId: string,
+  ): Promise<void> {
+    const isOwner = await this.checkListingOwnership(reportId);
+    if (!this.isCurrentLoad(generation, threadId)) {
+      return;
+    }
+
+    if (isOwner) {
+      return;
+    }
+
+    let openFlag: FlagListingResponse | null = null;
+    try {
+      openFlag = await firstValueFrom(
+        this.abuseFlagService.getOpenFlag(reportId),
+      );
+    } catch {
+      openFlag = null;
+    }
+
+    if (!this.isCurrentLoad(generation, threadId)) {
+      return;
+    }
+
+    const flaggable =
+      reportStatus === 'published' || reportStatus === 'claim_in_progress';
+
+    if (openFlag) {
+      this.openFlag.set(openFlag);
+      this.reportControlVisible.set(true);
+      return;
+    }
+
+    if (flaggable) {
+      this.reportControlVisible.set(true);
+    }
+  }
+
+  private isCurrentLoad(generation: number, threadId: string): boolean {
+    return generation === this.loadGeneration && this.threadId === threadId;
+  }
+
+  private async checkListingOwnership(reportId: string): Promise<boolean> {
+    try {
+      await firstValueFrom(this.reportService.getById(reportId));
+      return true;
+    } catch {
+      return false;
     }
   }
 

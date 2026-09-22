@@ -7,6 +7,7 @@
   "abuse.flag.section_title": "الإبلاغ عن إساءة",
   "abuse.flag.section_intro": "إذا كان هذا البلاغ مشبوهاً أو ينتهك قواعد المنصة، يمكنك إرسال بلاغ للمراجعة. يبقى البلاغ ظاهراً للعامة حتى تنتهي المراجعة.",
   "abuse.flag.button": "إبلاغ عن البلاغ",
+  "abuse.flag.chat_button": "إبلاغ",
   "abuse.flag.view_button": "عرض بلاغك المفتوح",
   "abuse.flag.owner_note": "لا يمكنك الإبلاغ عن بلاغك الخاص.",
   "abuse.flag.login_required": "سجّل الدخول للإبلاغ عن هذا البلاغ.",
