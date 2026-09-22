@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddApiValidation();
         services.AddJwtAuthentication(configuration);
         services.AddApiVersioningServices();
+        services.AddApiSwagger();
         services.AddExceptionHandler<ApiExceptionHandler>();
         services.AddProblemDetails();
         services.AddApiRateLimiting(configuration);
@@ -78,6 +79,7 @@ public static class DependencyInjection
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseRateLimiter();
+        app.UseApiSwagger();
         app.MapControllers();
         app.MapChatHub();
         app.MapObservabilityEndpoints();

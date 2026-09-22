@@ -80,7 +80,7 @@ Behavioral detail: [specs/README.md](specs/README.md).
 | Caching          | `Microsoft.Extensions.Caching.Hybrid` (catalog/governorate TTLs)           |
 | Containerisation | Multi-stage Docker ([api/Dockerfile](api/Dockerfile))                      |
 | Testing          | xUnit, Testcontainers (PostgreSQL 16), `WebApplicationFactory`             |
-| API docs         | Not shipped (no OpenAPI/Swagger in this repository)                        |
+| API docs         | Swashbuckle OpenAPI + Swagger UI at `/swagger` (all environments)          |
 | Production host  | Render (single service: API + built SPA) · Supabase Postgres               |
 
 Central NuGet versions: [Directory.Packages.props](Directory.Packages.props). Frontend: [web/package.json](web/package.json).
@@ -255,7 +255,12 @@ Set `turnstileSiteKey` in [web/src/environments/environment.production.ts](web/s
 
 ## API Documentation
 
-All HTTP endpoints are versioned under **`/api/v1/`**. There is no interactive OpenAPI UI in this repository — use [specs/00-api-conventions.md](specs/00-api-conventions.md) and controller routes under [api/Controllers/](api/Controllers/).
+All HTTP endpoints are versioned under **`/api/v1/`**. Interactive docs:
+
+- **Local:** [http://localhost:5000/swagger](http://localhost:5000/swagger) (OpenAPI JSON at `/swagger/v1/swagger.json`)
+- **Production:** [https://amanah-egh5.onrender.com/swagger](https://amanah-egh5.onrender.com/swagger)
+
+Use **Authorize** in Swagger UI with `Bearer <access_token>` for protected routes. Error envelope and codes: [specs/00-api-conventions.md](specs/00-api-conventions.md).
 
 ### Authentication
 
