@@ -138,6 +138,86 @@
       }
     </section>
 
+    @if (showFlagSection()) {
+      <section
+        class="public-report-detail__flag"
+        aria-labelledby="public-report-flag-title"
+      >
+        <h2 id="public-report-flag-title">
+          {{ "abuse.flag.section_title" | translate }}
+        </h2>
+        <p class="public-report-detail__flag-intro">
+          {{ "abuse.flag.section_intro" | translate }}
+        </p>
+
+        @if (flagSuccessMessage(); as successMessage) {
+          <app-alert variant="success">{{ successMessage }}</app-alert>
+        }
+
+        @if (isListingOwner()) {
+          <p class="public-report-detail__action-note">
+            {{ "abuse.flag.owner_note" | translate }}
+          </p>
+        } @else if (showOpenFlagSummary()) {
+          @if (openFlag(); as flag) {
+            <app-card variant="flat" padding="md">
+              <h3 class="public-report-detail__flag-existing-title">
+                {{ "abuse.flag.existing_title" | translate }}
+              </h3>
+              <p class="public-report-detail__flag-existing-intro">
+                {{ "abuse.flag.existing_intro" | translate }}
+              </p>
+              <dl class="public-report-detail__flag-summary">
+                <div>
+                  <dt>{{ "abuse.flag.status_label" | translate }}</dt>
+                  <dd>{{ "abuse.flag.status_open" | translate }}</dd>
+                </div>
+                <div>
+                  <dt>{{ "abuse.flag.reason_label" | translate }}</dt>
+                  <dd>{{ flagReasonLabel(flag.reason) }}</dd>
+                </div>
+                @if (flag.note) {
+                  <div>
+                    <dt>{{ "abuse.flag.note_label" | translate }}</dt>
+                    <dd>{{ flag.note }}</dd>
+                  </div>
+                }
+                <div>
+                  <dt>{{ "abuse.flag.submitted_at_label" | translate }}</dt>
+                  <dd>{{ flag.createdAt | date: "medium" }}</dd>
+                </div>
+              </dl>
+              <div class="public-report-detail__action-buttons">
+                <app-button variant="secondary" (clicked)="onFlagClick()">
+                  {{ "abuse.flag.view_button" | translate }}
+                </app-button>
+              </div>
+            </app-card>
+          }
+        } @else if (showFlagAction()) {
+          <div class="public-report-detail__action-buttons">
+            <app-button variant="outline" (clicked)="onFlagClick()">
+              {{ "abuse.flag.button" | translate }}
+            </app-button>
+          </div>
+          @if (!auth.isLoggedIn()) {
+            <p class="public-report-detail__action-note">
+              {{ "abuse.flag.login_required" | translate }}
+            </p>
+          }
+        }
+      </section>
+    }
+
+    @if (flagDialogOpen()) {
+      <app-flag-listing-dialog
+        [reportId]="detail.id"
+        [existingFlag]="openFlag()"
+        (closed)="closeFlagDialog()"
+        (submitted)="onFlagSubmitted($event)"
+      />
+    }
+
     @if (showResolutionActions()) {
       <app-claim-resolution-actions
         [claimId]="approvedClaimId()!"

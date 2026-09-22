@@ -54,5 +54,9 @@
   "error.account.deactivated": "تم إيقاف هذا الحساب.",
   "error.account.deactivation_blocked": "لا يمكن إيقاف الحساب حالياً.",
   "error.account.deactivation_already_requested": "تم إيقاف هذا الحساب مسبقاً.",
-  "error.account.reactivation_required": "يلزم إعادة تفعيل الحساب للمتابعة."
+  "error.account.reactivation_required": "يلزم إعادة تفعيل الحساب للمتابعة.",
+  "error.abuse.duplicate_flag": "لديك بلاغ مفتوح على هذا الإدراج بالفعل.",
+  "error.abuse.invalid_reason": "سبب الإبلاغ غير مقبول.",
+  "error.abuse.cannot_flag_own_listing": "لا يمكنك الإبلاغ عن بلاغك الخاص.",
+  "error.abuse.listing_not_flaggable": "لا يمكن الإبلاغ عن هذا البلاغ في حالته الحالية."
 }

@@ -66,3 +66,48 @@
   color: var(--color-text-muted);
   line-height: var(--line-height-base);
 }
+
+.public-report-detail__flag {
+  margin-top: var(--space-lg);
+}
+
+.public-report-detail__flag h2 {
+  font-size: 1rem;
+  margin: 0 0 var(--space-sm);
+}
+
+.public-report-detail__flag-intro {
+  margin: 0 0 var(--space-md);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  line-height: var(--line-height-base);
+}
+
+.public-report-detail__flag-existing-title {
+  margin: 0 0 var(--space-xs);
+  font-size: 1rem;
+}
+
+.public-report-detail__flag-existing-intro {
+  margin: 0 0 var(--space-md);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  line-height: var(--line-height-base);
+}
+
+.public-report-detail__flag-summary {
+  display: grid;
+  gap: var(--space-md);
+  margin: 0 0 var(--space-md);
+}
+
+.public-report-detail__flag-summary dt {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.public-report-detail__flag-summary dd {
+  margin: 0;
+}

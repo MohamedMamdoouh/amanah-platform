@@ -1,9 +1,15 @@
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
+import {
+  AbuseFlagService,
+  FlagListingResponse,
+} from '../abuse/abuse-flag.service';
+import { FlagListingDialogComponent } from '../abuse/flag-listing-dialog.component';
 import { AuthService } from '../auth/auth.service';
 import { ClaimFormComponent } from '../claims/claim-form/claim-form.component';
 import { ClaimResolutionActionsComponent } from '../claims/claim-resolution-actions/claim-resolution-actions.component';
@@ -15,6 +21,7 @@ import {
 import { CatalogLabelService } from '../i18n/catalog-label.service';
 import { DomainLabelService } from '../i18n/domain-label.service';
 import { ReportType } from '../reports/models/report.models';
+import { ReportService } from '../reports/report.service';
 import { AlertComponent } from '../shared/ui/alert/alert.component';
 import { BadgeComponent } from '../shared/ui/badge/badge.component';
 import { ButtonComponent } from '../shared/ui/button/button.component';
@@ -35,6 +42,7 @@ import { PublicReportDetail } from './models/browse.models';
     ClaimFormComponent,
     ClaimResolutionActionsComponent,
     DatePipe,
+    FlagListingDialogComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,
     TranslateModule,
@@ -47,8 +55,10 @@ export class PublicReportDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly browseService = inject(BrowseService);
   private readonly catalogLabels = inject(CatalogLabelService);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly claimService = inject(ClaimService);
+  private readonly reportService = inject(ReportService);
+  private readonly abuseFlagService = inject(AbuseFlagService);
   protected readonly domainLabels = inject(DomainLabelService);
   private readonly translate = inject(TranslateService);
 
@@ -56,6 +66,10 @@ export class PublicReportDetailComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly report = signal<PublicReportDetail | null>(null);
   readonly approvedClaimId = signal<string | null>(null);
+  readonly isListingOwner = signal(false);
+  readonly openFlag = signal<FlagListingResponse | null>(null);
+  readonly flagDialogOpen = signal(false);
+  readonly flagSuccessMessage = signal<string | null>(null);
 
   readonly displayPhotos = computed(() => {
     const detail = this.report();
@@ -119,6 +133,35 @@ export class PublicReportDetailComponent implements OnInit {
     return this.report()?.status === 'published';
   }
 
+  isFlaggableListing(): boolean {
+    return this.isPublished() || this.isClaimInProgress();
+  }
+
+  showFlagSection(): boolean {
+    return this.isFlaggableListing();
+  }
+
+  showFlagAction(): boolean {
+    return (
+      this.isFlaggableListing() &&
+      !this.isListingOwner() &&
+      !this.openFlag()
+    );
+  }
+
+  showOpenFlagSummary(): boolean {
+    return (
+      this.auth.isLoggedIn() &&
+      !this.isListingOwner() &&
+      this.openFlag() !== null
+    );
+  }
+
+  flagReasonLabel(code: string): string {
+    const translated = this.translate.instant(code);
+    return translated === code ? code : translated;
+  }
+
   canClickClaim(): boolean {
     return this.isPublished() && !this.auth.isLoggedIn();
   }
@@ -179,6 +222,39 @@ export class PublicReportDetailComponent implements OnInit {
     });
   }
 
+  onFlagClick(): void {
+    if (!this.isFlaggableListing() || this.isListingOwner()) {
+      return;
+    }
+
+    if (!this.auth.isLoggedIn()) {
+      void this.router.navigate(['/login'], {
+        queryParams: { returnUrl: this.router.url },
+      });
+      return;
+    }
+
+    if (this.openFlag()) {
+      this.flagDialogOpen.set(true);
+      return;
+    }
+
+    this.flagSuccessMessage.set(null);
+    this.flagDialogOpen.set(true);
+  }
+
+  closeFlagDialog(): void {
+    this.flagDialogOpen.set(false);
+  }
+
+  onFlagSubmitted(flag: FlagListingResponse): void {
+    this.openFlag.set(flag);
+    this.flagDialogOpen.set(false);
+    this.flagSuccessMessage.set(
+      this.translate.instant('abuse.flag.submit_success'),
+    );
+  }
+
   showResolutionActions(): boolean {
     const detail = this.report();
     if (!detail) {
@@ -219,6 +295,7 @@ export class PublicReportDetailComponent implements OnInit {
             )
           : null,
       );
+      await this.loadFlagContext(id, detail.status);
       this.loading.set(false);
     } catch (error) {
       const route = mapBrowseError(error);
@@ -229,6 +306,56 @@ export class PublicReportDetailComponent implements OnInit {
 
       this.error.set(this.translate.instant('error.internal.error'));
       this.loading.set(false);
+    }
+  }
+
+  private async loadFlagContext(
+    reportId: string,
+    status: PublicReportDetail['status'],
+  ): Promise<void> {
+    this.isListingOwner.set(false);
+    this.openFlag.set(null);
+
+    if (!this.auth.isLoggedIn()) {
+      return;
+    }
+
+    const flaggable =
+      status === 'published' || status === 'claim_in_progress';
+    if (!flaggable) {
+      return;
+    }
+
+    this.isListingOwner.set(await this.checkListingOwnership(reportId));
+    if (this.isListingOwner()) {
+      return;
+    }
+
+    try {
+      const flag = await firstValueFrom(
+        this.abuseFlagService.getOpenFlag(reportId),
+      );
+      this.openFlag.set(flag);
+    } catch (error) {
+      if (
+        error instanceof HttpErrorResponse &&
+        error.status === 404
+      ) {
+        return;
+      }
+    }
+  }
+
+  private async checkListingOwnership(reportId: string): Promise<boolean> {
+    try {
+      await firstValueFrom(this.reportService.getById(reportId));
+      return true;
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        return false;
+      }
+
+      return false;
     }
   }
 }

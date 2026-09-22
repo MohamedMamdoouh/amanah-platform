@@ -1,0 +1,118 @@
+<div
+  class="flag-listing-dialog__overlay"
+  (click)="onBackdropClick()"
+  (keydown.escape)="onCancel()"
+>
+  <div
+    class="flag-listing-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="flag-listing-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <h2 id="flag-listing-dialog-title" class="flag-listing-dialog__title">
+      @if (isViewOnly()) {
+        {{ "abuse.flag.view_title" | translate }}
+      } @else {
+        {{ "abuse.flag.create_title" | translate }}
+      }
+    </h2>
+
+    <p class="flag-listing-dialog__intro">
+      @if (isViewOnly()) {
+        {{ "abuse.flag.view_intro" | translate }}
+      } @else {
+        {{ "abuse.flag.create_intro" | translate }}
+      }
+    </p>
+
+    @if (summaryError()) {
+      <app-alert variant="error">{{ summaryError() }}</app-alert>
+    }
+
+    @if (isViewOnly()) {
+      @if (existingFlag(); as openFlag) {
+        <dl class="flag-listing-dialog__summary">
+          <div>
+            <dt>{{ "abuse.flag.status_label" | translate }}</dt>
+            <dd>{{ "abuse.flag.status_open" | translate }}</dd>
+          </div>
+          <div>
+            <dt>{{ "abuse.flag.reason_label" | translate }}</dt>
+            <dd>{{ reasonLabel(openFlag.reason) }}</dd>
+          </div>
+          @if (openFlag.note) {
+            <div>
+              <dt>{{ "abuse.flag.note_label" | translate }}</dt>
+              <dd>{{ openFlag.note }}</dd>
+            </div>
+          }
+          <div>
+            <dt>{{ "abuse.flag.submitted_at_label" | translate }}</dt>
+            <dd>{{ openFlag.createdAt | date: "medium" }}</dd>
+          </div>
+        </dl>
+      }
+    } @else {
+      <form class="flag-listing-dialog__form" (ngSubmit)="onSubmit()">
+        <app-form-field
+          [label]="'abuse.flag.reason_label' | translate"
+          [error]="reasonFieldError()"
+          [required]="true"
+          htmlFor="flag-reason"
+        >
+          <select id="flag-reason" class="form-input" formControlName="reason">
+            <option value="" disabled>
+              {{ "abuse.flag.reason_placeholder" | translate }}
+            </option>
+            @for (reason of reasons; track reason) {
+              <option [value]="reason">{{ reasonLabel(reason) }}</option>
+            }
+          </select>
+        </app-form-field>
+
+        <app-form-field
+          [label]="'abuse.flag.note_label' | translate"
+          [hint]="'abuse.flag.note_hint' | translate"
+          [error]="noteFieldError()"
+          htmlFor="flag-note"
+        >
+          <textarea
+            id="flag-note"
+            class="form-input flag-listing-dialog__note"
+            formControlName="note"
+            rows="4"
+            [attr.placeholder]="'abuse.flag.note_placeholder' | translate"
+          ></textarea>
+        </app-form-field>
+
+        <div class="flag-listing-dialog__actions">
+          <app-button
+            type="button"
+            variant="ghost"
+            [disabled]="submitting()"
+            (clicked)="onCancel()"
+          >
+            {{ "abuse.flag.cancel" | translate }}
+          </app-button>
+          <app-button
+            type="submit"
+            variant="primary"
+            [loading]="submitting()"
+            [disabled]="submitting()"
+          >
+            {{ "abuse.flag.submit" | translate }}
+          </app-button>
+        </div>
+      </form>
+    }
+
+    @if (isViewOnly()) {
+      <div class="flag-listing-dialog__actions">
+        <app-button variant="primary" (clicked)="onCancel()">
+          {{ "abuse.flag.close" | translate }}
+        </app-button>
+      </div>
+    }
+  </div>
+</div>
