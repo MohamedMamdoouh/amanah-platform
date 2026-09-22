@@ -87,13 +87,14 @@ public sealed class AccountDeactivationService(
 
         foreach (var report in reports)
         {
-            var withdrawResult = await reportLifecycleService.WithdrawAsync(
+            var withdrawResult = await reportLifecycleService.WithdrawInTransactionAsync(
                 report,
                 WithdrawReason,
                 cancellationToken);
 
             if (!withdrawResult.IsSuccess)
             {
+                await transaction.RollbackAsync(cancellationToken);
                 return withdrawResult;
             }
         }

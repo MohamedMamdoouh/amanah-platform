@@ -30,6 +30,13 @@ public sealed class ReportLifecycleService(
 
     public const string ClosedReviewerDecision = "closed";
 
+    public Task LockReportRowForUpdateAsync(
+        Guid reportId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Database.ExecuteSqlAsync(
+            $"SELECT 1 FROM reports WHERE \"Id\" = {reportId} FOR UPDATE",
+            cancellationToken);
+
     public void InitializePublishedTimer(Report report, DateTimeOffset now)
     {
         report.PublishedAt = now;
@@ -88,21 +95,56 @@ public sealed class ReportLifecycleService(
         var withdrawalReason = reason;
         var now = timeProvider.GetUtcNow();
 
-        return await WithdrawPublishedOrPendingReviewAsync(
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var result = await WithdrawPublishedOrPendingReviewCoreAsync(
             reportId,
             withdrawalReason,
             now,
             cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return result;
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
 
-    private async Task<Result> WithdrawPublishedOrPendingReviewAsync(
+    public async Task<Result> WithdrawInTransactionAsync(
+        Report report,
+        string? reason,
+        CancellationToken cancellationToken = default)
+    {
+        if (report.Status == ReportStatus.ClaimInProgress)
+        {
+            return ResultError.Conflict(
+                "Cancel the approved claim before withdrawing this report.");
+        }
+
+        if (report.Status is not ReportStatus.PendingReview and not ReportStatus.Published)
+        {
+            return ResultError.Conflict("Only pending or published reports can be withdrawn.");
+        }
+
+        return await WithdrawPublishedOrPendingReviewCoreAsync(
+            report.Id,
+            reason,
+            timeProvider.GetUtcNow(),
+            cancellationToken);
+    }
+
+    private async Task<Result> WithdrawPublishedOrPendingReviewCoreAsync(
         Guid reportId,
         string? withdrawalReason,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        await LockReportRowForUpdateAsync(reportId, cancellationToken);
+
         var reportStatus = await dbContext.Reports
-            .AsNoTracking()
             .Where(existingReport => existingReport.Id == reportId)
             .Select(existingReport => existingReport.Status)
             .SingleOrDefaultAsync(cancellationToken);
@@ -157,6 +199,8 @@ public sealed class ReportLifecycleService(
         {
             return ResultError.Conflict("Only active reports can be withdrawn during ban cleanup.");
         }
+
+        await LockReportRowForUpdateAsync(report.Id, cancellationToken);
 
         if (report.Status == ReportStatus.Published)
         {
@@ -296,6 +340,8 @@ public sealed class ReportLifecycleService(
         var reportId = report.Id;
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        await LockReportRowForUpdateAsync(reportId, cancellationToken);
 
         await ClosePendingClaimsAsync(
             reportId,

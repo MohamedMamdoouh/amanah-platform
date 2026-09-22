@@ -41,6 +41,8 @@ public sealed class AdminTakedownService(
         Guid? approvedClaimantId = null;
         ApprovedClaimCancellation.CancellationOutcome? cancellation = null;
 
+        await reportLifecycleService.LockReportRowForUpdateAsync(reportId, cancellationToken);
+
         if (await dbContext.Reports.AnyAsync(
                 existingReport =>
                     existingReport.Id == reportId

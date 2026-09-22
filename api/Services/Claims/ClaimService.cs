@@ -2,6 +2,7 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
 using Amanah.Api.Options;
+using Amanah.Api.Services.Lifecycle;
 using Amanah.Api.Services.Notifications;
 using Amanah.Api.Services.Storage;
 using Amanah.Api.Services.Uploads;
@@ -24,6 +25,7 @@ public sealed class ClaimService(
     IBucketStorage bucketStorage,
     ClaimPhotoAttachService claimPhotoAttachService,
     ClaimCleanupService claimCleanupService,
+    ReportLifecycleService reportLifecycleService,
     TimeProvider timeProvider,
     IOptions<LifecycleOptions> lifecycleOptions)
 {
@@ -142,6 +144,8 @@ public sealed class ClaimService(
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
+            await reportLifecycleService.LockReportRowForUpdateAsync(reportId, cancellationToken);
+
             var reportStillPublished = await dbContext.Reports
                 .AnyAsync(
                     existingReport =>
@@ -152,6 +156,7 @@ public sealed class ClaimService(
             if (!reportStillPublished)
             {
                 await transaction.RollbackAsync(cancellationToken);
+                await DeletePromotedClaimPhotosAsync(promotedPhotoKeys, cancellationToken);
                 return ResultError.Conflict(
                     "Claims can only be submitted on published reports.",
                     ErrorCodes.ClaimInvalidStatus);
@@ -168,6 +173,7 @@ public sealed class ClaimService(
             if (hasPendingClaim)
             {
                 await transaction.RollbackAsync(cancellationToken);
+                await DeletePromotedClaimPhotosAsync(promotedPhotoKeys, cancellationToken);
                 return ResultError.Conflict(
                     "You already have a pending claim on this report.",
                     ErrorCodes.ClaimPendingExists);
@@ -194,10 +200,7 @@ public sealed class ClaimService(
         }
         catch (Exception)
         {
-            if (promotedPhotoKeys is { Count: > 0 })
-            {
-                await bucketStorage.DeleteManyAsync(promotedPhotoKeys, cancellationToken);
-            }
+            await DeletePromotedClaimPhotosAsync(promotedPhotoKeys, cancellationToken);
 
             return ResultError.ServiceUnavailable(
                 "Claim submission is temporarily unavailable. Please try again later.",
@@ -209,6 +212,18 @@ public sealed class ClaimService(
             Id = claim.Id,
             Status = ToClaimStatus(claim.Status),
         };
+    }
+
+    private async Task DeletePromotedClaimPhotosAsync(
+        IReadOnlyList<string>? promotedPhotoKeys,
+        CancellationToken cancellationToken)
+    {
+        if (promotedPhotoKeys is not { Count: > 0 })
+        {
+            return;
+        }
+
+        await bucketStorage.DeleteManyAsync(promotedPhotoKeys, cancellationToken);
     }
 
     public async Task<Result> ApproveAsync(
