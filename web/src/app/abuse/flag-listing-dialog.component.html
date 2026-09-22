@@ -54,7 +54,11 @@
         </dl>
       }
     } @else {
-      <form class="flag-listing-dialog__form" (ngSubmit)="onSubmit()">
+      <form
+        class="flag-listing-dialog__form"
+        [formGroup]="form"
+        (ngSubmit)="onSubmit()"
+      >
         <app-form-field
           [label]="'abuse.flag.reason_label' | translate"
           [error]="reasonFieldError()"
