@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 
-const LOGO_ASPECT = 89.6 / 100;
+const LOGO_ASPECT = 763 / 911;
 
 @Component({
   selector: 'app-logo-mark',
@@ -9,7 +9,7 @@ const LOGO_ASPECT = 89.6 / 100;
     <img
       class="logo-mark"
       [class.logo-mark--on-dark]="variant() === 'on-dark'"
-      src="assets/images/logo-mark.svg"
+      src="assets/images/logo-mark.png"
       [style.width.px]="width()"
       [style.height.px]="height()"
       alt=""
