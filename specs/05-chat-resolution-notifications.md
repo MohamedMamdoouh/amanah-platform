@@ -140,7 +140,7 @@ From [SPEC.md Section 15.5](./SPEC.md#155-resolution-and-chat).
 - [x] **Cancellation path:** cancelling before mutual confirmation sets the claim to `Cancelled`, returns the report to `Published`, notifies the counterparty, and makes the chat read-only immediately
 - [x] **Chat reachability:** both parties can still open a read-only thread from My Chats while it exists, even though the report's public URL is unavailable
 
-**Shipped in Phase 06** ([06-lifecycle-retention.md](./06-lifecycle-retention.md) §8): chat retention deletes a read-only thread 30 days after it becomes read-only.
+**Shipped in Phase 06** ([06-lifecycle-retention.md](./06-lifecycle-retention.md) #8): chat retention deletes a read-only thread 30 days after it becomes read-only.
 
 From [SPEC.md Section 15.9](./SPEC.md#159-notifications).
 

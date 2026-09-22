@@ -1,6 +1,6 @@
 # Phase 02 - Admin Moderation
 
-**Status:** Complete (API + Angular UI + automated tests). Manual smoke checklist (§9) not yet run in staging.  
+**Status:** Complete (API + Angular UI + automated tests). Manual smoke checklist (#9) not yet run in staging.  
 **Prerequisites:** Phase 01 - Report Submission
 
 ---
@@ -158,7 +158,7 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [x] **No editing outside `Rejected`:** content edit attempts are refused while the report is `Pending Review`, `Published`, `Claim In Progress`, or terminal (including reward flag/amount)
 - [x] **Rejected retention:** `ModerationAction` persists; 30-day report and photo deletion shipped in Phase 06 (`RejectedReportCleanup`)
 
-**Shipped in Phase 06** (acceptance checked in [06-lifecycle-retention.md](./06-lifecycle-retention.md) §8): listing expiry warning, listing auto-expiry, and no expiry while a report is in review.
+**Shipped in Phase 06** (acceptance checked in [06-lifecycle-retention.md](./06-lifecycle-retention.md) #8): listing expiry warning, listing auto-expiry, and no expiry while a report is in review.
 
 ---
 
