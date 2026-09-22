@@ -14,9 +14,10 @@ Lost-and-found platform for Egypt — moderated listings, ownership verification
 | 03    | Browse & discovery (search, filters, public detail)         | **Complete** |
 | 04    | Claims & verification (submit, review, photos, My Claims)   | **Complete** |
 | 05    | Chat, resolution & notifications                            | **Complete** |
-| 06–07 | Lifecycle, trust & safety                                     | Not started  |
+| 06    | Lifecycle, retention, and account management                | **Complete** |
+| 07    | Trust, safety, and launch readiness                         | **In progress** |
 
-**Next up:** Phase 06 — lifecycle, retention, and account management.
+**Next up:** Phase 07 — remaining abuse/enforcement UI, rate-limit audit, and launch checklist.
 
 ### Shipped (Phase 00)
 
@@ -64,9 +65,21 @@ SignalR live chat with REST fallback, photo attachments, safety banner, confirm 
 
 Details: [specs/05-chat-resolution-notifications.md](specs/05-chat-resolution-notifications.md)
 
-### Not built yet
+### Shipped (Phase 06)
 
-Lifecycle jobs, abuse enforcement — see [phase specs](specs/README.md).
+Background lifecycle jobs (listing expiry warning and auto-withdraw, pending-claim timeout, rejected-report and chat retention, session/OTP/notification cleanup, orphaned R2 sweeper), reporter withdraw from `Published` reports, cumulative published timer with pause during `Claim In Progress`, account deactivation with blockers and reactivation, compensating storage delete on failed report submit.
+
+**Routes:** `/settings/account` (+ withdraw flows on `/my/reports/{id}` and published detail)
+
+Details: [specs/06-lifecycle-retention.md](specs/06-lifecycle-retention.md)
+
+### In progress (Phase 07)
+
+**API (shipped):** listing flag, admin abuse queue/detail/resolve, admin takedown, ban/unban, flagged-listing investigation (chat/claims/photos), admin user lookup, permissions-matrix integration tests.
+
+**UI (partial):** `/admin/users`, `/admin/users/{id}` (ban/unban). Still planned: public flag control, in-chat report shortcut, `/admin/abuse` queue and detail.
+
+Details: [specs/07-trust-safety-launch.md](specs/07-trust-safety-launch.md)
 
 ## Stack
 
@@ -108,7 +121,7 @@ On first startup, migrations and catalog seed run automatically (7 categories, 2
 
 | Account | Phone (login) | Password | Unlocks |
 | ------- | ------------- | -------- | ------- |
-| Admin | `01011111111` | `AdminPass123` | `/admin/moderation`, `/admin/categories` |
+| Admin | `01011111111` | `AdminPass123` | `/admin/moderation`, `/admin/users`, `/admin/categories` |
 | User | `01022222222` | `UserPass123` | `/report/lost`, `/report/found`, `/my/reports`, `/my/claims`, `/my/chats`, `/browse` |
 
 ## Tests

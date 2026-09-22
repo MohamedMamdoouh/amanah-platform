@@ -100,7 +100,7 @@ Server-enforce these matrix rows before marking this phase done:
 
 | Data | Approved claimant | Reporter | Admin |
 | ---- | ----------------- | -------- | ----- |
-| Chat thread | yes | yes | yes (flagged-listing investigation only - Phase 07) |
+| Chat thread | yes | yes | yes (flagged-listing investigation only — open abuse flag on listing) |
 | Claim text and photo | own + reporter | yes | investigation only |
 | Display names | yes | yes | yes |
 | Phone numbers | own | own | yes |
@@ -117,8 +117,8 @@ Chat messages are **not** subject to contact-info block (Section 4.1.3).
 | Counterparty confirmed resolution | Other party | this phase |
 | Report resolved | Both parties | this phase |
 | New chat message | Recipient | this phase |
-| Claim ended by enforcement | Affected party | deferred to Phase 07 |
-| Admin takedown affecting you | Reporter and claimant | deferred to Phase 07 |
+| Claim ended by enforcement | Affected party | Shipped (Phase 07) |
+| Admin takedown affecting you | Reporter and claimant | Shipped (Phase 07) |
 
 Claim/report notification types from Phases 02–04 (`ReportApproved`, `ReportRejected`, `NewClaimSubmitted`, `ClaimWithdrawnByClaimant`, `ClaimApproved`, `ClaimRejected`, `ClaimClosedReportUnavailable`) remain active. This phase adds chat and resolution events.
 
@@ -128,10 +128,7 @@ Claim/report notification types from Phases 02–04 (`ReportApproved`, `ReportRe
 
 Explicitly deferred to later phases:
 
-- 30-day chat deletion job -> Phase 06
-- Report-from-chat abuse shortcut -> Phase 07
-- Admin chat access during investigation -> Phase 07
-- Claim-ended-by-enforcement -> Phase 07
+- Report-from-chat abuse shortcut UI -> Phase 07 (enforcement notifications shipped)
 
 ---
 

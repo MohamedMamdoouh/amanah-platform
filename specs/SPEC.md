@@ -3,7 +3,7 @@
 **Status:** v9 (spec document version)  
 **Owner:** Mohamed Mamdouh
 
-**Implementation:** Phases 00–05 complete (manual smoke pending on 02, 04, and 05); phases 06–07 not started. See [specs/README.md](./README.md) for per-phase delivery status.
+**Implementation:** Phases 00–06 complete (manual smoke pending on 02, 04, 05, and 06); phase 07 in progress (enforcement API shipped; abuse/flag UI and launch checklist remaining). See [specs/README.md](./README.md) for per-phase delivery status.
 
 - **Part I (1-15)** - product behavior.
 - **Part II (16-21)** - technical specification.
@@ -593,7 +593,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Notification
 | API error contract appendix                   | **Resolved** - [00-api-conventions.md](./00-api-conventions.md)                                                                                       |
 | SignalR event/payload contract                | **Resolved** — [05-signalr-contract.md](./05-signalr-contract.md)                                                                                     |
 | Transactional email provider for admin alerts | **Done** — [Resend](https://resend.com/) via `ResendAdminAlertEmailSender` ([deployment.md](../docs/deployment.md))                                   |
-| Orphaned R2 objects on failed report submit   | **Deferred — Phase 06** — compensating delete on DB failure + `OrphanedStorageCleanup` job ([06-lifecycle-retention.md](./06-lifecycle-retention.md)) |
+| Orphaned R2 objects on failed report submit   | **Done** — compensating delete on report submit DB failure + daily `OrphanedStorageCleanup` job ([06-lifecycle-retention.md](./06-lifecycle-retention.md); tests in `OrphanedStorageTests`) |
 | Domain name                                   | **To be chosen** before launch                                                                                                                        |
 
 ---

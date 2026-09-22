@@ -107,7 +107,7 @@ Each job emits one **Information** completion log with its outcome (for example 
 
 Photos are stored under `public/` or `private/` prefixes based on category `photosPrivate`. Report photos are uploaded with `POST /api/v1/reports` (multipart) and written directly to the report prefix on submit. Claim photos use `private/claims/{claimId}/…`, uploaded in the same multipart request as `POST /api/v1/reports/{id}/claims`, and served via short-lived presigned URLs (`GET /api/v1/uploads/claim-photo/{claimId}/url`).
 
-**Known gap:** if R2 upload succeeds but the database commit fails, promoted files are not deleted automatically today (report photos on create/update and claim photos on submit). Phase 06 will add compensating cleanup on submit failure and scheduled orphan sweeps. See [specs/06-lifecycle-retention.md](../specs/06-lifecycle-retention.md#orphaned-storage-cleanup).
+**Orphaned objects:** report submit runs compensating storage delete when `SaveChangesAsync` fails after photo promotion. The daily `OrphanedStorageCleanup` lifecycle job deletes unreferenced keys under report photo prefixes (backstop for partial failures). See [specs/06-lifecycle-retention.md](../specs/06-lifecycle-retention.md#orphaned-storage-cleanup) and `OrphanedStorageTests`.
 
 ---
 

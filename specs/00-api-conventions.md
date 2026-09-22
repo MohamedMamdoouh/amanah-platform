@@ -170,7 +170,36 @@ Claim notifications: `NewClaimSubmitted`, `ClaimApproved`, `ClaimRejected`, `Cla
 - More than one `photo` part → **400** `validation.failed` on `photo`
 - When a photo part is present, `rate_limit.exceeded` (429) may apply via the `photo-upload` policy (same as report create)
 
-`GET /api/v1/uploads/claim-photo/{claimId}/url` returns a 5-minute presigned URL for claimant or reporter; admin access is stubbed (403) until Phase 07.
+`GET /api/v1/uploads/claim-photo/{claimId}/url` returns a 5-minute presigned URL for claimant or reporter. Admin access requires an **open abuse flag** on the listing (`403` with `abuse.investigation_unavailable` when investigation is closed).
+
+`GET /api/v1/uploads/report-photo/{photoId}/url` for private category photos: reporter always; admin on `Pending Review` / `Rejected` for moderation, or on `Published` / `Claim In Progress` only during an open investigation (same error when blocked).
+
+Admin report detail (`GET /api/v1/reports/{id}` or moderation detail) omits hidden verification detail. Non-reporters (admin) may load detail only for statuses in the server allowlist (`pending_review`, `rejected`, `withdrawn`).
+
+---
+
+## Error codes - Phase 07 (abuse and enforcement)
+
+### Abuse (`abuse.*`)
+
+| Code | HTTP | When | `errors` map |
+| ---- | ---- | ---- | ------------ |
+| `abuse.duplicate_flag` | 409 | User already has an open flag on this listing | No |
+| `abuse.invalid_reason` | 400 | Flag reason not in predefined set | Yes — `reason` |
+| `abuse.cannot_flag_own_listing` | 409 | Listing owner attempted to flag | No |
+| `abuse.listing_not_flaggable` | 409 | Report not in a flaggable status | No |
+| `abuse.already_resolved` | 409 | Abuse report already resolved | No |
+| `abuse.not_open` | 409 | Resolve attempted on non-open flag | No |
+| `abuse.invalid_outcome` | 400 | Unknown resolve outcome | Yes — `outcome` |
+| `abuse.investigation_unavailable` | 403 | Admin investigation or presign without open flag | No |
+
+### Enforcement (`enforcement.*`)
+
+| Code | HTTP | When | `errors` map |
+| ---- | ---- | ---- | ------------ |
+| `enforcement.user_already_banned` | 409 | Ban on already-banned user | No |
+| `enforcement.user_not_banned` | 409 | Unban on non-banned user | No |
+| `enforcement.report_not_takedownable` | 409 | Takedown on wrong report status | No |
 
 ---
 

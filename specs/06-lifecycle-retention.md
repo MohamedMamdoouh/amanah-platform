@@ -1,6 +1,6 @@
 # Phase 06 - Lifecycle, Retention & Account Management
 
-**Status:** Not started  
+**Status:** Complete — automated tests shipped; manual smoke checklist (§9) pending in staging  
 **Prerequisites:** Phase 05 - Chat, Resolution & Notifications
 
 ---
@@ -91,9 +91,9 @@ All jobs use Africa/Cairo day boundaries where applicable. Run on a configurable
 
 ### Orphaned storage cleanup
 
-Report submit (`ReportPhotoAttachService`) uploads originals and thumbnails to R2 **before** `SaveChangesAsync`. If the DB write fails after storage succeeds, objects remain in the bucket with no database reference. Phase 01 does not roll back storage on DB failure.
+Report submit (`ReportPhotoAttachService`) uploads originals and thumbnails to R2 **before** `SaveChangesAsync`. If the DB write fails after storage succeeds, compensating delete removes keys from that request before the error is returned.
 
-**Phase 06 deliverable:**
+**Delivered:**
 
 1. **Immediate compensating delete (preferred on submit path):** on `SaveChangesAsync` failure after photo promotion, delete the keys written in that request before returning an error to the client.
 2. **Scheduled sweeper (`OrphanedStorageCleanup`):** daily job listing objects under `public/reports/` and `private/reports/` (or equivalent prefixes) and deleting any whose storage keys are not referenced by `ReportPhoto` (and not written within a short grace window, e.g. 1 hour, to avoid racing an in-flight submit).
@@ -160,33 +160,33 @@ Explicitly deferred to later phases:
 
 From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission) (expiry items deferred from Phase 02).
 
-- [ ] **Listing expiry warning:** when a `Published` report has **83 cumulative published days** elapsed (7 days before auto-expiry), the reporter receives `ReportExpiringSoon`
-- [ ] **Listing auto-expiry:** after **90 cumulative days** in `Published` (timer paused during `Claim In Progress`), the report becomes `Withdrawn` with `_expired_`; pending claims close; reporter and claimants are notified
-- [ ] **No expiry while in review:** `Pending Review` and `Rejected` reports never auto-expire
+- [x] **Listing expiry warning:** when a `Published` report has **83 cumulative published days** elapsed (7 days before auto-expiry), the reporter receives `ReportExpiringSoon`
+- [x] **Listing auto-expiry:** after **90 cumulative days** in `Published` (timer paused during `Claim In Progress`), the report becomes `Withdrawn` with `_expired_`; pending claims close; reporter and claimants are notified
+- [x] **No expiry while in review:** `Pending Review` and `Rejected` reports never auto-expire
 
 From [SPEC.md Section 15.4](./SPEC.md#154-claiming-and-review).
 
-- [ ] **Reporter timeout:** a `Pending` claim is auto-withdrawn after **10 days** without reporter action; no attempt is consumed; the report stays `Published`; both parties are notified
+- [x] **Reporter timeout:** a `Pending` claim is auto-withdrawn after **10 days** without reporter action; no attempt is consumed; the report stays `Published`; both parties are notified
 
 From [SPEC.md Section 15.5](./SPEC.md#155-resolution-and-chat).
 
-- [ ] **Chat retention:** after cancellation or resolution the thread is read-only and is deleted 30 days later
+- [x] **Chat retention:** after cancellation or resolution the thread is read-only and is deleted 30 days later
 
 From [SPEC.md Section 5.1](./SPEC.md#51-authentication) (account deactivation).
 
-- [ ] Account deactivation blocked while user has report in `Claim In Progress` or holds approved claim on another's report
-- [ ] On deactivation: `Pending Review`/`Published` reports withdrawn; pending claims withdrawn; signed out immediately; PII retained; reactivation available via login + confirm
+- [x] Account deactivation blocked while user has report in `Claim In Progress` or holds approved claim on another's report
+- [x] On deactivation: `Pending Review`/`Published` reports withdrawn; pending claims withdrawn; signed out immediately; PII retained; reactivation available via login + confirm
 
 From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission).
 
-- [ ] **Rejected retention:** a `Rejected` report and its photos are deleted 30 days after rejection when never resubmitted; the moderation decision record survives
+- [x] **Rejected retention:** a `Rejected` report and its photos are deleted 30 days after rejection when never resubmitted; the moderation decision record survives
 
 **Additional phase gate:**
 
-- [ ] Reporter can withdraw `Published` report (must cancel approved claim first)
-- [ ] Withdrawal closes pending claims; optional internal reason recorded
-- [ ] Timer pauses in `Claim In Progress`; resumes with remaining time on cancel
-- [ ] **Orphaned storage:** failed report submit does not leave permanent orphan objects in R2 (immediate delete on DB failure where possible; `OrphanedStorageCleanup` job removes any remaining unreferenced keys)
+- [x] Reporter can withdraw `Published` report (must cancel approved claim first)
+- [x] Withdrawal closes pending claims; optional internal reason recorded
+- [x] Timer pauses in `Claim In Progress`; resumes with remaining time on cancel
+- [x] **Orphaned storage:** failed report submit does not leave permanent orphan objects in R2 (immediate delete on DB failure where possible; `OrphanedStorageCleanup` job removes any remaining unreferenced keys)
 
 ---
 
@@ -194,17 +194,17 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 
 ### Automated tests
 
-- [ ] Listing expiry warning at 83 days
-- [ ] Auto-expiry at 90 days; pending claims closed
-- [ ] Timer pause during `Claim In Progress`; resume on cancel
-- [ ] 10-day claim auto-withdraw
-- [ ] Rejected report deleted after 30 days; `ModerationAction` survives
-- [ ] Chat deleted 30 days after read-only
-- [ ] Account deactivation blockers enforced
-- [ ] Account deactivation cleanup and reactivation flow
-- [ ] OTP and session cleanup jobs
-- [ ] Orphaned R2 cleanup after simulated failed report submit (immediate + sweeper job)
-- [ ] `Pending Review`/`Rejected` never expire
+- [x] Listing expiry warning at 83 days
+- [x] Auto-expiry at 90 days; pending claims closed
+- [x] Timer pause during `Claim In Progress`; resume on cancel
+- [x] 10-day claim auto-withdraw
+- [x] Rejected report deleted after 30 days; `ModerationAction` survives
+- [x] Chat deleted 30 days after read-only
+- [x] Account deactivation blockers enforced
+- [x] Account deactivation cleanup and reactivation flow
+- [x] OTP and session cleanup jobs
+- [x] Orphaned R2 cleanup after simulated failed report submit (immediate + sweeper job)
+- [x] `Pending Review`/`Rejected` never expire
 
 ### Manual smoke checklist
 

@@ -259,7 +259,7 @@ public sealed class ClaimService(
             dbContext.Resolutions.Remove(staleResolution);
         }
 
-        // ChatThread is created on claim approval; messaging is served via Phase 05 hub and REST endpoints.
+        // ChatThread is created on claim approval; messaging uses the chat hub and REST endpoints.
         var chatThread = new ChatThread
         {
             Id = Guid.NewGuid(),

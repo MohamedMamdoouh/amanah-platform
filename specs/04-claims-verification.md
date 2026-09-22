@@ -56,7 +56,7 @@ None additional.
 | POST | `/api/v1/claims/{id}/withdraw` | Claimant withdraws `Pending` claim | Shipped |
 | GET | `/api/v1/claims/mine` | Claimant's claims (My Claims) | Shipped |
 | GET | `/api/v1/claims/{id}` | Claim detail (claimant or reporter) | Shipped |
-| GET | `/api/v1/uploads/claim-photo/{id}/url` | Pre-signed URL (claimant, reporter; admin 403 stub) | Shipped |
+| GET | `/api/v1/uploads/claim-photo/{id}/url` | Pre-signed URL (claimant, reporter; admin when open abuse flag) | Shipped |
 
 **Claim submit multipart** (mirrors report create):
 
@@ -106,10 +106,10 @@ None additional.
 
 | Data | Claimant | Reporter | Admin |
 | ---- | -------- | -------- | ----- |
-| Claim text and claim photo | own | yes (for review) | yes (flagged-listing investigation only — stub 403 until Phase 07) |
+| Claim text and claim photo | own | yes (for review) | yes (flagged-listing investigation only — `GET /admin/investigations/{reportId}/claims` and presign gates) |
 | Display name of claimant | own | yes | yes |
 | Display name of reporter | yes | own | yes |
-| Chat thread | yes (Phase 05) | yes (Phase 05) | investigation only (Phase 07 stub) |
+| Chat thread | yes | yes | yes (flagged-listing investigation only — `GET /admin/investigations/{reportId}/chat` or direct thread read when an open flag exists) |
 
 ---
 
@@ -123,16 +123,14 @@ None additional.
 | Claim rejected | Claimant | Shipped |
 | Claim closed - report unavailable | Claimant | Shipped (`ClaimCleanupService` unit-tested; E2E on `Published` withdraw → Phase 06) |
 | Claim cancelled by counterparty | Other party | Shipped (Phase 05) |
-| Claim auto-withdrawn | Reporter and claimant | Phase 06 |
+| Claim auto-withdrawn | Reporter and claimant | Shipped (Phase 06) |
 
 ---
 
 ## 7. Out of scope
 
 - Real-time chat messaging, mutual resolution, cancel approved claim → shipped in [Phase 05](./05-chat-resolution-notifications.md)
-- 10-day pending-claim auto-withdraw job → Phase 06
-- Pending-claim closure on expiry/takedown/ban (E2E) → Phase 06/07
-- Abuse report-from-chat → Phase 07
+- Abuse report-from-chat UI → Phase 07 (API shipped)
 - Backend direction-specific answer validation (lost vs found wording) — deferred; frontend prompts shipped
 
 ---

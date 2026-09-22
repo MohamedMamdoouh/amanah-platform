@@ -1,7 +1,7 @@
 # Phase 07 - Trust, Safety & Launch Readiness
 
-**Status:** Not started  
-**Prerequisites:** Phase 06 - Lifecycle, Retention & Account Management
+**Status:** In progress — enforcement API and automated permission tests shipped; abuse/flag UI and launch checklist remaining  
+**Prerequisites:** Phase 06 - Lifecycle, Retention & Account Management (complete)
 
 ---
 
@@ -31,7 +31,7 @@ Complete v1 with abuse reporting, admin enforcement (takedown, ban, unban), admi
 
 ### Prior phases
 
-- [ ] Phases 00-06 complete
+- [x] Phases 00-06 complete
 
 ### Deferred decisions (Section 14)
 
@@ -123,21 +123,21 @@ Confirm Section 10 items remain **not implemented** as part of launch verificati
 
 From [SPEC.md Section 15.6](./SPEC.md#156-abuse-and-enforcement).
 
-- [ ] **Flagging constraints:** a listing owner cannot flag their own listing, each user can have at most one open flag per listing, a duplicate flag is refused, and the reason must come from the predefined list
-- [ ] **Abuse workflow:** an abuse report moves `Open` -> `Resolved` with an outcome of no action taken, report taken down, or user banned, and the flagger is notified of the high-level outcome
-- [ ] **Ban cleanup:** on ban the user is signed out everywhere, their `Pending Review` and `Published` reports are withdrawn, their pending claims are withdrawn, any approved claim they are part of is cancelled, a report of theirs in `Claim In Progress` ends as `Withdrawn`, impacted counterparties are notified, and a later sign-in attempt is refused with the ban reason
-- [ ] **Unban:** an unbanned user can sign in again, and nothing withdrawn or cancelled by the ban is restored
-- [ ] **Takedown during `Claim In Progress`:** the approved claim is cancelled first, the report becomes `Removed by Admin`, and the chat becomes read-only immediately
+- [x] **Flagging constraints:** a listing owner cannot flag their own listing, each user can have at most one open flag per listing, a duplicate flag is refused, and the reason must come from the predefined list
+- [x] **Abuse workflow:** an abuse report moves `Open` -> `Resolved` with an outcome of no action taken, report taken down, or user banned, and the flagger is notified of the high-level outcome
+- [x] **Ban cleanup:** on ban the user is signed out everywhere, their `Pending Review` and `Published` reports are withdrawn, their pending claims are withdrawn, any approved claim they are part of is cancelled, a report of theirs in `Claim In Progress` ends as `Withdrawn`, impacted counterparties are notified, and a later sign-in attempt is refused with the ban reason
+- [x] **Unban:** an unbanned user can sign in again, and nothing withdrawn or cancelled by the ban is restored
+- [x] **Takedown during `Claim In Progress`:** the approved claim is cancelled first, the report becomes `Removed by Admin`, and the chat becomes read-only immediately
 - [ ] **In-chat report shortcut:** a user in a chat thread can open the listing-flag flow for the linked report; if they already have an open flag, the UI shows that flag instead of creating a duplicate
 
 From [SPEC.md Section 15.8](./SPEC.md#158-privacy-and-permissions).
 
-- [ ] **Private photos (`photosPrivate`):** never exposed on public listing or to claimants - reporter and admin only
-- [ ] **Hidden verification detail:** reporter only - never claimant, public, or admin
-- [ ] **Claim text and photos:** claimant + reporter; admin only during flagged-listing investigation
-- [ ] **Chat access:** two parties only; admin during flagged-listing investigation
-- [ ] **Phone numbers:** never returned to another user
-- [ ] **Role enforcement:** every row of Section 9 enforced server-side
+- [x] **Private photos (`photosPrivate`):** never exposed on public listing or to claimants - reporter and admin only
+- [x] **Hidden verification detail:** reporter only - never claimant, public, or admin
+- [x] **Claim text and photos:** claimant + reporter; admin only during flagged-listing investigation
+- [x] **Chat access:** two parties only; admin during flagged-listing investigation
+- [x] **Phone numbers:** never returned to another user
+- [x] **Role enforcement:** every row of Section 9 enforced server-side
 
 Full Section 15.1-15.9 regression required before launch.
 
