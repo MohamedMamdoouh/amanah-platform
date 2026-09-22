@@ -145,7 +145,7 @@ Full Section 15.1-15.9 regression required before launch.
 
 ## 9. Definition of done
 
-Product code for this phase is shipped. The acceptance criteria in §8 are covered by `AbuseFlagTests`, `AbuseAdminTests`, `InvestigationAccessTests`, `AdminTakedownTests`, `UserBanTests`, `AdminUserLookupTests`, `PermissionsMatrixTests`, and `OutOfScopeGuardTests`.
+Product code for this phase is shipped. The acceptance criteria in #8 are covered by `AbuseFlagTests`, `AbuseAdminTests`, `InvestigationAccessTests`, `AdminTakedownTests`, `UserBanTests`, `AdminUserLookupTests`, `PermissionsMatrixTests`, and `OutOfScopeGuardTests`.
 
 Section 7.5 limits are implemented. Tests cover report and claim quotas, photo upload per minute and per hour, chat messages per minute, and OTP send limits. The chat hourly limit and the `auth-login` middleware limit are configured and do not have a dedicated test. `PermissionsMatrixTests` covers representative privacy rows from Section 9.
 

@@ -1,6 +1,6 @@
 # Phase 06 - Lifecycle, Retention & Account Management
 
-**Status:** Complete — automated tests shipped; manual smoke checklist (§9) pending in staging  
+**Status:** Complete — automated tests shipped; manual smoke checklist (#9) pending in staging  
 **Prerequisites:** Phase 05 - Chat, Resolution & Notifications
 
 ---
@@ -106,7 +106,7 @@ Implement both where practical: immediate cleanup limits orphan volume; the job 
 - `ClaimCleanupService` - close pending claims on report withdrawal/expiry/takedown
 - `RetentionService` - entity-level deletion per Section 12
 - `AccountDeactivationService` - blockers, deactivation side effects, reactivation
-- `OrphanedStorageCleanup` - R2 keys with no `ReportPhoto` reference (backstop for failed report submits; see §4)
+- `OrphanedStorageCleanup` - R2 keys with no `ReportPhoto` reference (backstop for failed report submits; see #4)
 
 ### Test harness (non-production)
 

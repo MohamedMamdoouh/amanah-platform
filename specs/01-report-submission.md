@@ -167,7 +167,7 @@ From [SPEC.md Section 15.1](./SPEC.md#151-report-submission-and-validation).
 - [x] No draft saving - single-session submission only
 - [x] Angular UI: `/report/lost`, `/report/found`, `/my/reports`, `/my/reports/{id}` with auth guard
 
-**Product deviation:** found-report held location is a single free-text `heldLocation` field (max 120 chars), not the dropdown + detail model in SPEC §4.2.
+**Product deviation:** found-report held location is a single free-text `heldLocation` field (max 120 chars), not the dropdown + detail model in SPEC #4.2.
 
 ---
 

@@ -23,7 +23,7 @@ One public origin serves both the app and `/api/v1/*`.
 5. **Resend** (optional until staging) — create account, verify domain (or use `onboarding@resend.dev`), configure admin alert email
 6. **Keepalive** (optional) — scheduled ping to avoid free-tier spin-down
 
-Verify `/health`, `/health/ready`, the home page, sign-in/sign-up, report submission, and claim submit/review flows after deploy (see [specs/04-claims-verification.md](../specs/04-claims-verification.md) §9 manual smoke).
+Verify `/health`, `/health/ready`, the home page, sign-in/sign-up, report submission, and claim submit/review flows after deploy (see [specs/04-claims-verification.md](../specs/04-claims-verification.md) #9 manual smoke).
 
 See [observability.md](observability.md) for logs, metrics, and alerting.
 
@@ -178,5 +178,5 @@ Walk this on the staging or production service before public launch. Product cod
 - [ ] Resend domain verified and `Email__FromAddress` uses that domain
 - [ ] `KEEPALIVE_URL` in `.github/workflows/keepalive.yml` matches the public origin
 - [ ] `GET /health` returns 200 and `GET /health/ready` is healthy
-- [ ] Manual smoke from phase specs §9: [02](../specs/02-admin-moderation.md), [04](../specs/04-claims-verification.md), [05](../specs/05-chat-resolution-notifications.md), [06](../specs/06-lifecycle-retention.md)
+- [ ] Manual smoke from phase specs #9: [02](../specs/02-admin-moderation.md), [04](../specs/04-claims-verification.md), [05](../specs/05-chat-resolution-notifications.md), [06](../specs/06-lifecycle-retention.md)
 - [ ] Flag a published listing, open `/admin/abuse`, and resolve it (no action, takedown, or ban)

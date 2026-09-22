@@ -192,4 +192,4 @@ None additional.
 
 ### Phase exit gate
 
-Phase 04 code and automated tests are complete. Remaining manual smoke is QA (Phase 05 code complete; see Phase 05 §9 for chat/resolution smoke).
+Phase 04 code and automated tests are complete. Remaining manual smoke is QA (Phase 05 code complete; see Phase 05 #9 for chat/resolution smoke).
