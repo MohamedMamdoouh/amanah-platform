@@ -37,6 +37,19 @@ public sealed class ReportLifecycleService(
             $"SELECT 1 FROM reports WHERE \"Id\" = {reportId} FOR UPDATE",
             cancellationToken);
 
+    private async Task<ReportStatus?> ReadLockedReportStatusAsync(
+        Report report,
+        CancellationToken cancellationToken)
+    {
+        var databaseValues = await dbContext.Entry(report).GetDatabaseValuesAsync(cancellationToken);
+        if (databaseValues is null)
+        {
+            return null;
+        }
+
+        return databaseValues.GetValue<ReportStatus>(nameof(Report.Status));
+    }
+
     public void InitializePublishedTimer(Report report, DateTimeOffset now)
     {
         report.PublishedAt = now;
@@ -202,7 +215,29 @@ public sealed class ReportLifecycleService(
 
         await LockReportRowForUpdateAsync(report.Id, cancellationToken);
 
-        if (report.Status == ReportStatus.Published)
+        // The caller loaded this report before the row lock. A concurrent approve can
+        // commit ClaimInProgress while this transaction waits, and writing the stale
+        // status would withdraw the report while leaving that claim Approved.
+        var currentStatus = await ReadLockedReportStatusAsync(report, cancellationToken);
+        if (currentStatus is null)
+        {
+            return ResultError.Conflict("Only active reports can be withdrawn during ban cleanup.");
+        }
+
+        if (report.Status != ReportStatus.ClaimInProgress
+            && currentStatus == ReportStatus.ClaimInProgress)
+        {
+            return ResultError.Conflict(
+                "A claim was approved while the ban was in progress. Please try again.");
+        }
+
+        if (report.Status != ReportStatus.ClaimInProgress
+            && currentStatus is not ReportStatus.PendingReview and not ReportStatus.Published)
+        {
+            return Result.Ok();
+        }
+
+        if (currentStatus == ReportStatus.Published)
         {
             await ClosePendingClaimsAsync(
                 report.Id,

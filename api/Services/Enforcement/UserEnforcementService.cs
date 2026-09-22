@@ -58,6 +58,8 @@ public sealed class UserEnforcementService(
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
+        // A claim stays Approved after both parties confirm, while the report becomes
+        // Resolved (terminal). Only an in-progress report still has a claim to cancel.
         var approvedClaims = await dbContext.Claims
             .Include(claim => claim.Report)
             .ThenInclude(report => report.Photos)
@@ -66,11 +68,26 @@ public sealed class UserEnforcementService(
             .Include(claim => claim.ChatThread)
             .Where(claim =>
                 claim.Status == ClaimStatus.Approved
+                && claim.Report.Status == ReportStatus.ClaimInProgress
                 && (claim.ClaimantId == userId || claim.Report.ReporterId == userId))
             .ToListAsync(cancellationToken);
 
         foreach (var claim in approvedClaims)
         {
+            await reportLifecycleService.LockReportRowForUpdateAsync(claim.Report.Id, cancellationToken);
+
+            // Confirm can commit Resolved after the query above and before this lock.
+            // Cancelling then would delete that resolution and reopen or withdraw the report.
+            var lockedStatus = await dbContext.Reports
+                .AsNoTracking()
+                .Where(existingReport => existingReport.Id == claim.ReportId)
+                .Select(existingReport => (ReportStatus?)existingReport.Status)
+                .SingleOrDefaultAsync(cancellationToken);
+            if (lockedStatus != ReportStatus.ClaimInProgress)
+            {
+                continue;
+            }
+
             var cancelResult = await approvedClaimCancellation.CancelForEnforcementAsync(
                 claim.Report,
                 cancellationToken);
