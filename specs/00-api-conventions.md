@@ -27,10 +27,11 @@ Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes v
 | Status | When                             | Code examples                             |
 | ------ | -------------------------------- | ----------------------------------------- |
 | 400    | Validation, client-fixable rules | `validation.*`, `auth.*`                  |
-| 401    | Missing / invalid token          | `auth.unauthorized`, `auth.token_expired` |
-| 403    | Wrong role or banned             | `auth.forbidden`, `auth.banned`           |
+| 401    | Missing / invalid token          | `auth.unauthorized`                       |
+| 403    | Wrong role, banned, or deactivated | `auth.forbidden`, `auth.banned`, `account.reactivation_required` |
 | 404    | Not found or no visibility       | `resource.not_found`                      |
 | 409    | State conflict                   | `resource.conflict`                       |
+| 410    | Permanently unavailable public listing | `resource.unavailable`               |
 | 429    | Rate limit or quota              | `rate_limit.*`, `otp.*`, `report.*`       |
 | 503    | External dependency down         | `service.*`, `upload.storage_failed`      |
 | 500    | Unexpected fault                 | `internal.error`                          |
@@ -57,7 +58,7 @@ Flat envelope: `{ code, message, errors? }`. English in API; Angular localizes v
 | `auth.invalid_credentials` | 400  | Wrong phone or password on login |
 | `auth.account_exists`        | 409  | Signup OTP requested for existing phone |
 | `auth.unauthorized`        | 401  | No valid access token         |
-| `auth.token_expired`       | 401  | Access token expired          |
+| `auth.token_expired`       | —    | Defined in `ErrorCodes`; expired bearer tokens are rejected by JWT middleware and do not emit this code |
 | `auth.refresh_invalid`     | 401  | Refresh token invalid/revoked |
 | `auth.banned`              | 403  | Account banned                |
 | `auth.forbidden`           | 403  | Insufficient permission       |
@@ -93,6 +94,24 @@ Used by auth validators; returned inside `validation.failed` or as field keys in
 | `field.captcha_token.required` | 400 | CAPTCHA token required |
 | `field.otp_code.required` | 400 | OTP code required |
 | `field.otp_purpose.required` | 400 | OTP purpose required |
+
+Constants defined in `ErrorCodes` and not emitted by current validators: `field.signup_token.required`, `field.reset_token.required`, `field.refresh_token.required`, `field.password.invalid`, `field.otp_purpose.invalid`, `field.otp_code.invalid`, `resource.not_implemented`.
+
+### Account (`account.*`)
+
+| Code | HTTP | When |
+| ---- | ---- | ---- |
+| `account.deactivation_blocked` | 409 | Deactivation refused; `errors.blockers` lists `claim_in_progress` and/or `approved_claim` |
+| `account.deactivation_already_requested` | 409 | Account is already deactivated |
+| `account.reactivation_required` | 403 | Deactivated account called an active-account API |
+
+`GET /api/v1/account/deactivation-status` returns `{ canDeactivate, blockers, deactivatedAt }`. Blocker ids are `claim_in_progress` and `approved_claim`. `account.deactivated` is defined in `ErrorCodes` and is not returned.
+
+### Chat
+
+| Code | HTTP | When |
+| ---- | ---- | ---- |
+| `chat.read_only` | 409 | Send attempted on a read-only thread (REST and SignalR) |
 
 ---
 
@@ -189,7 +208,7 @@ Admin report detail (`GET /api/v1/reports/{id}` or moderation detail) omits hidd
 | `abuse.cannot_flag_own_listing` | 409 | Listing owner attempted to flag | No |
 | `abuse.listing_not_flaggable` | 409 | Report not in a flaggable status | No |
 | `abuse.already_resolved` | 409 | Abuse report already resolved | No |
-| `abuse.not_open` | 409 | Resolve attempted on non-open flag | No |
+| `abuse.not_open` | — | Defined in `ErrorCodes`; resolve of a non-open flag returns `abuse.already_resolved` | No |
 | `abuse.invalid_outcome` | 400 | Unknown resolve outcome | Yes — `outcome` |
 | `abuse.investigation_unavailable` | 403 | Admin investigation or presign without open flag | No |
 
@@ -211,7 +230,21 @@ Admin report detail (`GET /api/v1/reports/{id}` or moderation detail) omits hidd
 | `POST /api/v1/reports/{id}/claims` | 200 | `{ id, status }` |
 | `POST /api/v1/auth/otp/send` | 204 | — |
 | Approve, reject, resubmit, withdraw, update, mark-read | 204 | — |
+| `POST /api/v1/reports/{id}/flag` | 200 | Flag body |
+| `POST /api/v1/admin/abuse/{id}/resolve`, takedown, ban, unban | 200 | Action result JSON |
 | List/detail GET endpoints | 200 | Resource JSON |
+
+Public detail for `Resolved`, `Withdrawn`, and `Removed by Admin` returns **410** with `resource.unavailable` (`GET /api/v1/reports/{id}/public`, `/api/v1/lost/{id}`, `/api/v1/found/{id}`).
+
+### Pagination
+
+| Endpoint | Query | Defaults |
+| -------- | ----- | -------- |
+| `GET /api/v1/reports` | `page`, `pageSize` (also `q`, `category`, `governorate`, `type`, `dateFrom`, `dateTo`) | page 1, size 20, max 50 |
+| `GET /api/v1/claims/mine` | `page`, `pageSize` | page 1, size 20, max 50 |
+| `GET /api/v1/chats/{threadId}` | `before` (message id), `limit` | limit 50, max 100 |
+
+Paginated JSON uses `items`, `page`, `pageSize`, `totalCount`, `totalPages`. `GET /api/v1/notifications` returns the caller's list without paging.
 
 ---
 
@@ -350,7 +383,7 @@ No stack traces, phone numbers, or OTP codes in error bodies.
 | Token | Transport | Client storage |
 | ----- | ----------- | -------------- |
 | Access token (15 min) | JSON body on `register`, `login`, `refresh` | Angular memory only |
-| Refresh token (30 days) | `Set-Cookie` `amanah_refresh` (`HttpOnly`, `SameSite=Lax`, `Path=/api/v1/auth`) | Browser cookie jar — not readable by JS |
+| Refresh token (30 days) | `Set-Cookie` `amanah_refresh` (`HttpOnly`, `SameSite=Lax`, `Secure` outside Development, `Path=/api/v1/auth`) | Browser cookie jar — not readable by JS |
 
 - `POST /api/v1/auth/refresh` — no body; refresh cookie sent automatically (`withCredentials: true` on web client).
 - `POST /api/v1/auth/logout` — no body; revokes cookie token and clears cookie.

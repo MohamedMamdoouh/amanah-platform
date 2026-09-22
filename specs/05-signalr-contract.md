@@ -228,7 +228,4 @@ Chat REST endpoints use the standard API error envelope ([00-api-conventions.md]
 
 ## Out of scope (this contract)
 
-- 30-day chat deletion (Phase 06)
-- Report-from-chat abuse shortcut (Phase 07)
-- Admin hub access / investigation (Phase 07)
-- Cross-instance presence (Redis backplane) — post-v1 if multiple API instances
+Hub methods in this document do not include chat deletion, listing flags, or admin reads. Thirty-day chat deletion shipped in Phase 06. The report-from-chat flag shortcut and admin investigation reads shipped in Phase 07 over REST. Cross-instance presence (Redis backplane) remains post-v1 if the API runs as more than one instance.

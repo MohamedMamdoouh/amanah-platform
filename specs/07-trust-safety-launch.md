@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-Complete v1 with abuse reporting, admin enforcement (takedown, ban, unban), admin access to chat/claim content during flagged-listing investigations, and a full permissions-matrix audit. Run an end-to-end acceptance pass against all Section 15 criteria, verify all Section 7.5 rate limits, confirm Section 10 out-of-scope items remain excluded, and resolve the domain name before launch.
+Abuse reporting, admin enforcement (takedown, ban, unban), and admin access to chat and claim content during a flagged-listing investigation are implemented. Before public launch, walk the pre-launch checklist, run a Section 15 pass on staging, confirm Section 10 stays excluded, and choose the domain name.
 
 ---
 
@@ -53,7 +53,7 @@ Resolve **before starting** this phase:
 | GET | `/api/v1/reports/{id}/flag` | Get user's open flag on listing (if any) |
 | GET | `/api/v1/admin/abuse` | Abuse report queue |
 | GET | `/api/v1/admin/abuse/{id}` | Abuse report detail (flag reason, listing summary - **not** inline chat/claim content) |
-| POST | `/api/v1/admin/abuse/{id}/resolve` | Resolve: no action / takedown / ban |
+| POST | `/api/v1/admin/abuse/{id}/resolve` | Resolve: no action / takedown / ban. `banTargetUserId` optional; defaults to the listing owner. The abuse detail screen can ban the owner or the flagger. |
 | POST | `/api/v1/admin/reports/{id}/takedown` | Take down published report |
 | GET | `/api/v1/admin/users` | User lookup (by display name or phone) |
 | GET | `/api/v1/admin/users/{id}` | User detail (`reportsCount`, ban status) |
@@ -91,13 +91,13 @@ Resolve **before starting** this phase:
 - One open flag per user per listing enforcement
 - Ban side effects (Section 7.2): sign out everywhere, withdraw reports, cancel claims, notify counterparties
 - Unban: restore sign-in only; no restoration of withdrawn/cancelled content
-- Admin investigation mode: temporary access to chat/claim content for flagged listings only
+- Admin investigation mode: temporary access to chat, claim content, and private photos for listings that have an open flag. The admin UI runs takedown from abuse resolve. `POST /api/v1/admin/reports/{id}/takedown` stays available to admins and has no separate screen.
 
 ---
 
 ## 5. Permissions (Section 9)
 
-Full matrix audit - every row must be server-enforced before marking this phase done.
+Full matrix is enforced on the server. `PermissionsMatrixTests` covers representative privacy rows.
 
 ---
 
@@ -145,8 +145,10 @@ Full Section 15.1-15.9 regression required before launch.
 
 ## 9. Definition of done
 
-Automated permission tests, rate limit audit, Section 15 regression, and launch checklist are required before v1 deploy.
+Product code for this phase is shipped. The acceptance criteria in §8 are covered by `AbuseFlagTests`, `AbuseAdminTests`, `InvestigationAccessTests`, `AdminTakedownTests`, `UserBanTests`, `AdminUserLookupTests`, `PermissionsMatrixTests`, and `OutOfScopeGuardTests`.
 
-### Phase exit gate
+Section 7.5 limits are implemented. Tests cover report and claim quotas, photo upload per minute and per hour, chat messages per minute, and OTP send limits. The chat hourly limit and the `auth-login` middleware limit are configured and do not have a dedicated test. `PermissionsMatrixTests` covers representative privacy rows from Section 9.
 
-This phase is complete when all acceptance criteria pass, the launch checklist is signed off, and v1 is deployable.
+### Launch gate
+
+Walk the [pre-launch checklist](../docs/deployment.md#pre-launch-checklist) on staging, configure the custom domain, and run the manual smoke lists in phases 02, 04, 05, and 06 before public launch.

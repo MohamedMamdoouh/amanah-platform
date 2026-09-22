@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-Implement background scheduled jobs for listing expiry, pending-claim timeout, and data retention cleanup. Enable reporter withdrawal from `Published` reports, account self-deletion with blockers, and the cumulative 90-day published timer (paused during `Claim In Progress`). Introduce shared cleanup services that Phase 07 ban/takedown flows will call.
+Implement background scheduled jobs for listing expiry, pending-claim timeout, and data retention cleanup. Enable reporter withdrawal from `Published` reports, account self-deletion with blockers, and the cumulative 90-day published timer (paused during `Claim In Progress`). Shared cleanup services from this phase are what Phase 07 ban and takedown flows call.
 
 ---
 
@@ -123,7 +123,7 @@ Implement both where practical: immediate cleanup limits orphan volume; the job 
 
 ## 5. Permissions (Section 9)
 
-Server-enforce these matrix rows before marking this phase done:
+These rows are server-enforced:
 
 | Data | Access on deactivation |
 | ---- | -------------------- |
@@ -148,11 +148,10 @@ Withdrawal reason: reporter and admin only - enforced in Phase 01; regression in
 
 ## 7. Out of scope
 
-Explicitly deferred to later phases:
+Shipped in Phase 07, using the cleanup services from this phase:
 
-- Abuse admin UI and ban/takedown flows -> Phase 07 (will call cleanup services from this phase)
-- Claim-ended-by-enforcement notification -> Phase 07
-- Admin takedown affecting you -> Phase 07
+- Abuse admin UI, ban, and takedown
+- `ClaimEndedByEnforcement` and `AdminTakedownAffectingYou` notifications
 
 ---
 

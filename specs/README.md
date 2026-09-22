@@ -4,7 +4,7 @@ Implementation specs for Amanah, in recommended reading order. Authoritative **b
 
 | # | Document | Topic | Status |
 | - | -------- | ----- | ------ |
-| — | [SPEC.md](./SPEC.md) | Master product & technical specification | v9 |
+| — | [SPEC.md](./SPEC.md) | Master product & technical specification | v10 |
 | 00 | [README](../README.md) · [SPEC.md](./SPEC.md) Part II | Platform foundation (auth, deploy, seeds) | Complete |
 | — | [00-api-conventions.md](./00-api-conventions.md) | API error envelope, status codes, versioning | Reference |
 | 01 | [01-report-submission.md](./01-report-submission.md) | Lost/found report creation | Complete |
@@ -13,7 +13,7 @@ Implementation specs for Amanah, in recommended reading order. Authoritative **b
 | 04 | [04-claims-verification.md](./04-claims-verification.md) | Claims and ownership verification | Complete (manual smoke pending) |
 | 05 | [05-chat-resolution-notifications.md](./05-chat-resolution-notifications.md) | Chat, resolution (+ remaining notification events) | Complete (manual smoke pending) |
 | 06 | [06-lifecycle-retention.md](./06-lifecycle-retention.md) | Expiry, retention, account deletion | Complete (manual smoke pending) |
-| 07 | [07-trust-safety-launch.md](./07-trust-safety-launch.md) | Trust, safety, launch readiness | In progress (API + partial admin UI) |
+| 07 | [07-trust-safety-launch.md](./07-trust-safety-launch.md) | Trust, safety, launch readiness | Code complete (launch checklist and custom domain still open) |
 
 When merging a phase, update this table and the root [README.md](../README.md) in the same PR as the feature work.
 

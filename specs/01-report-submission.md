@@ -83,7 +83,7 @@ None additional - Phase 00 prerequisites must be complete.
 - Photos uploaded with report submit: `POST /api/v1/reports` accepts `multipart/form-data` (`report` JSON part + optional `photos` file parts); processed and stored in one request
 - WebP thumbnail generation on submit
 - Upload rate limiting on report create: 5/min, 20/hour per account (Section 7.5)
-- **Known gap (deferred):** photos are written to R2 before `SaveChangesAsync`. If the DB commit fails after storage succeeds, promoted objects are not deleted and no `Report` / `ReportPhoto` rows exist. Compensating cleanup is planned for **Phase 06** — see [06-lifecycle-retention.md](./06-lifecycle-retention.md#orphaned-storage-cleanup).
+- **Failed submit:** photos are written to R2 before `SaveChangesAsync`. Phase 06 deletes those objects when the database commit fails, and `OrphanedStorageCleanup` removes any keys that remain. See [06-lifecycle-retention.md](./06-lifecycle-retention.md#orphaned-storage-cleanup).
 - **Cache consumers:** `GET /api/v1/categories` and `GET /api/v1/governorates` use `ICacheService` with `CacheKeys.Categories` (1h TTL) and `CacheKeys.Governorates` (24h TTL)
 
 ### Shared utilities
@@ -107,7 +107,7 @@ Report payloads use `categoryCode`, `governorateCode`, and `fieldKey` for catego
 
 ## 5. Permissions (Section 9)
 
-Server-enforce these matrix rows before marking this phase done:
+These rows are server-enforced:
 
 | Data                                | Roles granted access                                                                                                     |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -137,15 +137,12 @@ Submission confirmation is shown inline on the confirmation screen ("usually wit
 
 ## 7. Out of scope
 
-Implemented in Phase 02 ([02-admin-moderation.md](./02-admin-moderation.md)): admin approve/reject, resubmit, in-app notifications.
+Shipped in later phases:
 
-Still deferred to later phases:
-
-- Listing expiry and auto-withdraw jobs -> Phase 06
-- Reporter withdraw while `Published` -> Phase 06
-- Orphaned R2 objects after failed report submit (DB commit after photo upload) -> Phase 06
-
-Shipped in later phases: public browse (Phase 03), claims (Phase 04).
+- Admin approve/reject, resubmit, and in-app notifications (Phase 02)
+- Public browse (Phase 03)
+- Claims (Phase 04)
+- Listing expiry, auto-withdraw, reporter withdraw while `Published`, and orphaned R2 cleanup after a failed submit (Phase 06)
 
 ---
 

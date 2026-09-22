@@ -1,9 +1,9 @@
 # Amanah - Specification (SPEC)
 
-**Status:** v9 (spec document version)  
+**Status:** v10 (spec document version)  
 **Owner:** Mohamed Mamdouh
 
-**Implementation:** Phases 00–06 complete (manual smoke pending on 02, 04, 05, and 06); phase 07 in progress (enforcement API shipped; abuse/flag UI and launch checklist remaining). See [specs/README.md](./README.md) for per-phase delivery status.
+**Implementation:** Phases 00–07 product code is shipped. Manual smoke is still pending on phases 02, 04, 05, and 06. Phase 07 flag UI, abuse queue, investigation, and ban/unban are in the app; the launch gate (custom domain and [pre-launch checklist](../docs/deployment.md#pre-launch-checklist)) is still open. See [specs/README.md](./README.md) for per-phase delivery status.
 
 - **Part I (1-15)** - product behavior.
 - **Part II (16-21)** - technical specification.
@@ -716,14 +716,14 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
   - Normalization (applied identically to stored text and to the incoming query): alef variants (`أ إ آ ٱ` → `ا`), `ى` → `ي`, `ة` → `ه`, strip tatweel and Arabic diacritics, collapse whitespace, lowercase.
   - Matching: the query is normalized and split into terms; every term must match the search column (`ILIKE '%term%'`, AND-ed). A trigram index (`pg_trgm` GIN) on the search column keeps this workable.
   - No external search infrastructure. Postgres full-text search (`tsvector`) is a post-v1 upgrade.
-- **Caching:** `HybridCache` (L1 in-process + L2 `MemoryDistributedCache`) behind `ICacheService` (v1, single API instance). Cache-aside for **catalog data only** (categories, governorates); explicit invalidation on admin category writes. Built-in stampede protection; fail-open to DB on cache errors. **Browse/search is not cached in v1.** **Do not cache:** OTP send limits (DB-backed), JWT/refresh tokens, pre-signed media URLs. Swap L2 to Redis when running multiple API instances.
+- **Caching:** `HybridCache` behind `ICacheService` (v1, single API instance). The app calls `AddHybridCache()` and does not register `IDistributedCache`, so catalog entries stay in the in-process cache. Cache-aside for **catalog data only** (categories, governorates); explicit invalidation on admin category writes. Built-in stampede protection; fail-open to DB on cache errors. **Browse/search is not cached in v1.** **Do not cache:** OTP send limits (DB-backed), JWT/refresh tokens, pre-signed media URLs. Add a distributed cache (Redis) when running multiple API instances.
 
   | Cache key              | Value                                                   | TTL (default) | Invalidation                   |
   | ---------------------- | ------------------------------------------------------- | ------------- | ------------------------------ |
   | `catalog:categories`   | Active categories + field defs (`CacheKeys.Categories`) | 1h            | Admin category CRUD (Phase 02) |
   | `catalog:governorates` | Governorate list (`CacheKeys.Governorates`)             | 24h           | Seed change (rare)             |
 
-- **Admin dashboard:** same Angular app behind a role guard at `/admin/`. Phased: moderation + categories (phases 01–02); abuse queue + user lookup (phase 07).
+- **Admin dashboard:** same Angular app behind a role guard at `/admin/` — moderation, categories, abuse queue, and user lookup.
 
 ---
 
@@ -731,7 +731,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 | Entity                    | Key fields                                                                                                                                                                                                                                                                                                                                |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `User`                    | normalized phone (`+20...`), display name, role, banned flag + reason, created-at                                                                                                                                                                                                                                                         |
+| `User`                    | normalized phone (`+20...`), display name, role, banned flag + reason + banned-at, deactivated-at, created-at                                                                                                                                                                                                                              |
 | `Category`                | code (English key), sort order, `photosPrivate` flag, active flag                                                                                                                                                                                                                                                                         |
 | `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`), min/max length, optional `textFormat` preset (e.g. `letters_and_spaces`), required flag, sort order                                                                                                                                                                                   |
 | `Governorate`             | code (English key), sort order                                                                                                                                                                                                                                                                                                            |
@@ -742,6 +742,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 | `Resolution`              | report ref, reporter-confirmed-at, claimant-confirmed-at, resolved-at                                                                                                                                                                                                                                                                     |
 | `ChatThread`              | claim ref, created-at, read-only-at                                                                                                                                                                                                                                                                                                       |
 | `Message`                 | thread ref, sender, body, attachment ref, timestamp                                                                                                                                                                                                                                                                                       |
+| `ChatAttachment`          | thread ref, uploader, storage key, content type, size, thumbnail key, optional message ref, created-at                                                                                                                                                                                                                                   |
 | `Notification`            | user ref, type, payload (`type`, `createdAt`, `deepLink`, optional `reportId`/`claimId`/`chatThreadId`), read state, timestamp                                                                                                                                                                                                            |
 | `OtpCode`                 | phone, code hash, expires-at, attempt count                                                                                                                                                                                                                                                                                               |
 | `RefreshToken`            | user ref, token hash, expires-at, revoked flag                                                                                                                                                                                                                                                                                            |
@@ -754,6 +755,7 @@ Implementation notes:
 - Hidden verification detail is on `Report` and is never returned except to its reporter (sections 5.2 and 9).
 - `ModerationAction` survives report deletion (section 12) with a nullable report reference.
 - `Claim.counts-as-attempt` is persisted per claim (section 6.4).
+- Infrastructure outbox rows (not user-facing entities): `OtpSmsOutboxMessage`, `AdminAlertEmailOutboxMessage`, `StorageDeletionOutboxMessage`.
 
 ---
 
@@ -763,11 +765,12 @@ Implementation for section 5.1:
 
 - **OTP:** Unimtx via `UnimtxSmsSender` in production; `ConsoleSmsSender` in local dev. See [deployment.md](../docs/deployment.md).
 - **Account creation:** `User` row created only when display name and Terms are submitted.
-- **Session:** JWT access token (15 minutes) + refresh token (30 days), rotating on refresh. Multi-device allowed.
+- **Sign-in:** phone + password. OTP is used for signup and password reset only (section 5.1).
+- **Session:** JWT access token (15 minutes) + refresh token (30 days), rotating on refresh. The refresh token is the `HttpOnly` cookie `amanah_refresh` (`Path=/api/v1/auth`). Multi-device allowed.
 - **Logout everywhere:** revokes all refresh tokens; active access tokens expire within one access-token lifetime.
-- **Ban enforcement:** checked on token issue and refresh.
+- **Ban enforcement:** checked on token issue and refresh, and on each request through the active-account policy (a still-valid access token is rejected after a ban).
 - **Admin bootstrap:** admin phone seeded from environment variable at deploy.
-- **Bot protection:** CAPTCHA before OTP send.
+- **Bot protection:** Cloudflare Turnstile before OTP send in non-Development; a fake verifier in local Development.
 
 ---
 
@@ -803,10 +806,10 @@ Per section 7.5. On limit exceed: HTTP `429` with `Retry-After` header.
   - **Integration tests:** PostgreSQL 16 via Testcontainers (`postgres:16`); `IClassFixture` web application factories override `ConnectionStrings:Default`. Requires Docker; no docker-compose in repo.
   - **Production:** Supabase managed PostgreSQL. On Render use **Session pooler** (IPv4); local dev uses direct connection (SSL).
 - **Migrations:** EF Core migrations on API startup.
-- **Scheduled jobs:** retention cleanup (section 12); **listing expiry** and expiry-warning checks (4.7); **pending-claim timeout** (6.3). All business-date logic uses Africa/Cairo day boundaries where applicable.
+- **Scheduled jobs:** in-process on the API. `LifecycleJobsHostedService` polls lifecycle and retention jobs (default hourly): retention cleanup (section 12), **listing expiry** and expiry-warning checks (4.7), and **pending-claim timeout** (6.3). OTP SMS, admin-alert email, and storage-deletion outboxes run on separate shorter loops. Business-date logic uses Africa/Cairo day boundaries where applicable. See [deployment.md](../docs/deployment.md).
 - **Backups:** Supabase managed Postgres defaults.
 - **Monitoring:** Structured JSON logs to Render (correlation IDs, log-emitted metrics). Health: `GET /health` (liveness), `GET /health/ready` (DB + storage). Alerting: GitHub Actions keepalive + GitHub email on workflow failure. See [observability.md](../docs/observability.md).
-- **Caching:** `HybridCache` via `ICacheService` (Section 16). Config: `Cache:CategoriesTtlSeconds`, `Cache:GovernoratesTtlSeconds` in `appsettings.json`. L2 is memory in v1; Redis when multi-instance.
+- **Caching:** `HybridCache` via `ICacheService` (Section 16). Config: `Cache:CategoriesTtlSeconds`, `Cache:GovernoratesTtlSeconds` in `appsettings.json`. No distributed cache is registered in v1.
 - **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: Resend via `admin_alert_email_outbox` (section 14).
 - **Budget:** ~$0/month infra for MVP testing (Render + Supabase free tiers); ~$5/month recommended before public launch for always-on API. SMS via Unimtx (pay-as-you-go, ~$0.135/SMS in Egypt).
 - **Domain:** section 14.

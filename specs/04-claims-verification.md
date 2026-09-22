@@ -1,6 +1,6 @@
 # Phase 04 - Claims & Verification
 
-**Status:** Complete — code and automated tests shipped; manual smoke checklist ready for QA (Phase 06 deferrals documented below)  
+**Status:** Complete — code and automated tests shipped; manual smoke checklist ready for QA  
 **Prerequisites:** Phase 03 - Browse & Discovery
 
 ---
@@ -85,7 +85,7 @@ None additional.
 
 - R2 `private/claims/{claimId}/{uploadId}` for claim photos (original + `_thumb.webp`)
 - Pre-signed URLs (5-minute expiry) via `GET /uploads/claim-photo/{claimId}/url`
-- **Known gap:** photo written to R2 before `SaveChangesAsync`; compensating cleanup → Phase 06
+- Failed claim submit deletes the uploaded photo when the database commit fails; `OrphanedStorageCleanup` is the backstop (Phase 06)
 
 ### Shared utilities
 
@@ -94,7 +94,7 @@ None additional.
 - Daily claim quota: 5 submissions/day (Africa/Cairo)
 - One open `Pending` claim per user per report
 - 3 attempts per user per report lifetime (`CountsAsFailure` rows)
-- `ClaimCleanupService.ClosePendingClaimsAsync` — unit-tested; wired to report lifecycle in Phase 06
+- `ClaimCleanupService.ClosePendingClaimsAsync` — wired to report withdraw, expiry, deactivation, and Phase 07 enforcement
 
 ### Phase 03 / Phase 04 boundary
 
@@ -121,7 +121,7 @@ None additional.
 | Claim withdrawn by claimant | Reporter | Shipped |
 | Claim approved | Claimant | Shipped (deep link `/my/chats/{threadId}` opens chat thread) |
 | Claim rejected | Claimant | Shipped |
-| Claim closed - report unavailable | Claimant | Shipped (`ClaimCleanupService` unit-tested; E2E on `Published` withdraw → Phase 06) |
+| Claim closed - report unavailable | Claimant | Shipped (Phase 06; `ReportWithdrawTests` covers published withdraw) |
 | Claim cancelled by counterparty | Other party | Shipped (Phase 05) |
 | Claim auto-withdrawn | Reporter and claimant | Shipped (Phase 06) |
 
@@ -129,9 +129,9 @@ None additional.
 
 ## 7. Out of scope
 
-- Real-time chat messaging, mutual resolution, cancel approved claim → shipped in [Phase 05](./05-chat-resolution-notifications.md)
-- Abuse report-from-chat UI → Phase 07 (API shipped)
-- Backend direction-specific answer validation (lost vs found wording) — deferred; frontend prompts shipped
+- Real-time chat messaging, mutual resolution, cancel approved claim — shipped in [Phase 05](./05-chat-resolution-notifications.md)
+- Abuse report-from-chat UI — shipped in [Phase 07](./07-trust-safety-launch.md)
+- Backend direction-specific answer validation (lost vs found wording) — still frontend-only; the API checks length and contact info
 
 ---
 
@@ -144,9 +144,9 @@ None additional.
 - [x] **Approval side effects:** `Approved`, report `Claim In Progress`, `ChatThread` created, other pending → `Rejected` with `Another claim approved`, no attempt on auto-reject
 - [x] **Attempt counting:** manual reject and claimant cancel of approved claim count; withdraw, auto-reject, cleanup, refused claims do not
 - [x] **Daily claim quota:** 5/day Cairo
-- [x] **Pending claim closure:** `ClaimCleanupService` unit-tested; E2E on live report withdraw → Phase 06
+- [x] **Pending claim closure:** pending claims close when a report is withdrawn; covered by `ReportWithdrawTests` (Phase 06)
 
-**Deferred:** 10-day reporter timeout → Phase 06
+**Shipped in Phase 06:** 10-day reporter timeout (`PendingClaimTimeout`, `ClaimTimeoutTests`).
 
 ---
 

@@ -13,7 +13,10 @@ import { DomainLabelService } from '../../i18n/domain-label.service';
 import { ChatThreadDetail } from '../../chats/models/chat.models';
 import { ClaimStatus } from '../../claims/models/claim.models';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
-import { BadgeComponent, BadgeVariant } from '../../shared/ui/badge/badge.component';
+import {
+  BadgeComponent,
+  BadgeVariant,
+} from '../../shared/ui/badge/badge.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CardComponent } from '../../shared/ui/card/card.component';
 import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog.component';
@@ -206,10 +209,6 @@ export class AbuseDetailComponent implements OnInit {
     ];
   }
 
-  /**
-   * Investigation threads are projected from the listing owner's side,
-   * so the counterparty is the claimant.
-   */
   claimantName(thread: ChatThreadDetail): string {
     return thread.counterpartyDisplayName;
   }
@@ -344,7 +343,9 @@ export class AbuseDetailComponent implements OnInit {
         }),
       );
       this.showResolveConfirm.set(false);
-      this.actionSuccess.set(this.translate.instant(this.doneMessageKey(outcome)));
+      this.actionSuccess.set(
+        this.translate.instant(this.doneMessageKey(outcome)),
+      );
       this.resolveForm.controls.adminNote.setValue('');
       this.clearInvestigation();
       await this.refreshDetail(current.id);

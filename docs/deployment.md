@@ -50,6 +50,7 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 
 | Variable | Required | Purpose |
 | -------- | -------- | ------- |
+| `ASPNETCORE_ENVIRONMENT` | Yes | `Production` on Render — JSON logs, SPA static files, and real SMS/Turnstile. `Development` uses console SMS, a fake captcha, and in-memory storage when the bucket is unset |
 | `ConnectionStrings__Default` | Yes | Supabase Postgres — **Session pooler** on Render (`aws-0-<region>.pooler.supabase.com`, user `postgres.<ref>`); direct connection for local dev |
 | `Jwt__AccessTokenSigningKey` | Yes | JWT signing (≥32 chars) |
 | `Jwt__HandoffTokenSigningKey` | Yes | OTP handoff token (≥32 chars) |
@@ -77,7 +78,16 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 
 ## Lifecycle jobs (Phase 06)
 
-Background lifecycle and retention jobs run inside the API process via `LifecycleJobsHostedService` (`BackgroundService`, same poll loop as OTP/email outbox processors). Admins can trigger a registered job manually in non-production via `POST /api/v1/admin/test/run-job/{jobName}`.
+Background work runs inside the API process as separate hosted services:
+
+- `LifecycleJobsHostedService` polls the lifecycle jobs below (default every `Lifecycle__JobsPollIntervalSeconds`, 3600).
+- `OtpSmsOutboxProcessor` polls the OTP SMS outbox (`Otp__OutboxPollIntervalSeconds`, default 30).
+- `AdminAlertEmailOutboxProcessor` polls admin alert email (`Email__OutboxPollIntervalSeconds`, default 30).
+- `StorageDeletionOutboxProcessor` polls R2 deletes (`StorageDeletion__PollIntervalSeconds`, default 10).
+
+Admins can run one lifecycle job with `POST /api/v1/admin/test/run-job/{jobName}`. The route returns **404** when `ASPNETCORE_ENVIRONMENT` is `Production`. It stays available in Development and Staging.
+
+Registered lifecycle jobs: `ListingExpiryWarning`, `ListingAutoExpiry`, `PendingClaimTimeout`, `RejectedReportCleanup`, `ChatRetention`, `StorageDeletionOutboxCleanup`, `OtpCleanup`, `SessionCleanup`, `OtpSmsOutboxCleanup`, `AdminAlertEmailOutboxCleanup`, `NotificationCleanup`, `OrphanedStorageCleanup`.
 
 | Variable | Default | Purpose |
 | -------- | ------- | ------- |
@@ -85,12 +95,13 @@ Background lifecycle and retention jobs run inside the API process via `Lifecycl
 | `Lifecycle__ListingExpiryWarningDaysBefore` | `7` | Warning fires at `ListingExpiryDays -` this value |
 | `Lifecycle__ClaimTimeoutMinutes` | `14400` (10 days) | Pending-claim auto-withdraw timeout |
 | `Lifecycle__RetentionDays` | `30` | Retention for rejected reports, chat, sessions, and refresh tokens |
+| `Lifecycle__NotificationRetentionDays` | `7` | In-app notifications older than this are deleted |
 | `Lifecycle__JobsPollIntervalSeconds` | `3600` | Seconds between lifecycle job poll cycles |
 | `StorageDeletion__PollIntervalSeconds` | `10` | Seconds between storage deletion outbox processor poll cycles |
 | `StorageDeletion__BatchSize` | `50` | Max outbox rows processed per processor batch |
 | `StorageDeletion__MaxAttempts` | `5` | Max R2 delete attempts before an outbox row is marked failed |
 
-Same keys under `"Lifecycle"` in `appsettings.json`. Tests set values via `Lifecycle:ListingExpiryDays`, etc.
+These `Lifecycle` and `StorageDeletion` values default in option classes. Override them with environment variables. Tests set values via `Lifecycle:ListingExpiryDays` and the same pattern for the other keys. `appsettings.json` does not repeat the lifecycle block.
 
 Each job emits one **Information** completion log with its outcome (for example `WithdrawnCount`, `WarningsSent`, `ExpiredCount`). `JobRunner` also logs `Lifecycle job {JobName} completed.` Failures are logged at **Error** by `JobRunner` / `LifecycleJobsHostedService`. See [observability.md](observability.md).
 
@@ -149,3 +160,23 @@ Setup:
 ## Local development
 
 See [README.md](../README.md).
+
+---
+
+## Pre-launch checklist
+
+Walk this on the staging or production service before public launch. Product code through phase 07 is already in the repo; these items are environment and QA.
+
+- [ ] `ASPNETCORE_ENVIRONMENT=Production` (JSON logs, SPA fallback, Unimtx, Turnstile)
+- [ ] `ConnectionStrings__Default` uses the Supabase **Session pooler**
+- [ ] JWT signing keys, `ADMIN_PHONE`, and `ADMIN_PASSWORD` set; `SEED_USER_PHONE` and `SEED_USER_PASSWORD` omitted
+- [ ] `Bucket__Endpoint`, `Bucket__AccessKey`, `Bucket__SecretKey`, and `Bucket__Name` set so `/health/ready` checks R2
+- [ ] `Sms__ApiKey` set and the Unimtx balance is funded
+- [ ] `Turnstile__SecretKey` set and the Docker build arg `TURNSTILE_SITE_KEY` matches that site
+- [ ] `Cors__AllowedOrigins__0` is the public origin; add the custom domain as another origin when DNS is live
+- [ ] Custom domain configured on Render (still open — see SPEC section 14)
+- [ ] Resend domain verified and `Email__FromAddress` uses that domain
+- [ ] `KEEPALIVE_URL` in `.github/workflows/keepalive.yml` matches the public origin
+- [ ] `GET /health` returns 200 and `GET /health/ready` is healthy
+- [ ] Manual smoke from phase specs §9: [02](../specs/02-admin-moderation.md), [04](../specs/04-claims-verification.md), [05](../specs/05-chat-resolution-notifications.md), [06](../specs/06-lifecycle-retention.md)
+- [ ] Flag a published listing, open `/admin/abuse`, and resolve it (no action, takedown, or ban)

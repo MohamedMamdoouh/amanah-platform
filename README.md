@@ -15,9 +15,9 @@ Lost-and-found platform for Egypt — moderated listings, ownership verification
 | 04    | Claims & verification (submit, review, photos, My Claims)   | **Complete** |
 | 05    | Chat, resolution & notifications                            | **Complete** |
 | 06    | Lifecycle, retention, and account management                | **Complete** |
-| 07    | Trust, safety, and launch readiness                         | **In progress** |
+| 07    | Trust, safety, and launch readiness                         | **Code complete** |
 
-**Next up:** Phase 07 — remaining abuse/enforcement UI, rate-limit audit, and launch checklist.
+**Next up:** Launch gate — custom domain, the [pre-launch checklist](docs/deployment.md#pre-launch-checklist), and staging smoke for phases 02, 04, 05, and 06.
 
 ### Shipped (Phase 00)
 
@@ -69,15 +69,19 @@ Details: [specs/05-chat-resolution-notifications.md](specs/05-chat-resolution-no
 
 Background lifecycle jobs (listing expiry warning and auto-withdraw, pending-claim timeout, rejected-report and chat retention, session/OTP/notification cleanup, orphaned R2 sweeper), reporter withdraw from `Published` reports, cumulative published timer with pause during `Claim In Progress`, account deactivation with blockers and reactivation, compensating storage delete on failed report submit.
 
-**Routes:** `/settings/account` (+ withdraw flows on `/my/reports/{id}` and published detail)
+**Routes:** `/settings/account`, `/account/reactivate` (+ withdraw flows on `/my/reports/{id}` and published detail)
 
 Details: [specs/06-lifecycle-retention.md](specs/06-lifecycle-retention.md)
 
-### In progress (Phase 07)
+### Shipped (Phase 07)
 
-**API (shipped):** listing flag, admin abuse queue/detail/resolve, admin takedown, ban/unban, flagged-listing investigation (chat/claims/photos), admin user lookup, permissions-matrix integration tests.
+Listing flags on public detail and in chat, admin abuse queue and investigation (chat, claims, private photos), resolve outcomes (no action, takedown, ban), user lookup with ban and unban, and enforcement side effects (sign-out everywhere, withdraw or cancel related reports and claims, notifications). The admin UI takes a listing down from abuse resolve. `POST /api/v1/admin/reports/{id}/takedown` is also available to admins.
 
-**UI (partial):** `/admin/users`, `/admin/users/{id}` (ban/unban). Still planned: public flag control, in-chat report shortcut, `/admin/abuse` queue and detail.
+Rate limits from the spec are implemented. Automated tests cover report and claim quotas, photo upload limits, chat messages per minute, and OTP send limits. The chat hourly limit and the login middleware limit are configured with thinner test coverage. Permissions tests cover representative privacy rows.
+
+**Routes:** `/admin/abuse`, `/admin/abuse/{id}`, `/admin/users`, `/admin/users/{id}` (flag control on `/lost/{id}`, `/found/{id}`, and `/my/chats/{threadId}`)
+
+**Still open before public launch:** custom domain and the [pre-launch checklist](docs/deployment.md#pre-launch-checklist), including staging smoke for phases 02, 04, 05, and 06.
 
 Details: [specs/07-trust-safety-launch.md](specs/07-trust-safety-launch.md)
 
@@ -121,7 +125,7 @@ On first startup, migrations and catalog seed run automatically (7 categories, 2
 
 | Account | Phone (login) | Password | Unlocks |
 | ------- | ------------- | -------- | ------- |
-| Admin | `01011111111` | `AdminPass123` | `/admin/moderation`, `/admin/users`, `/admin/categories` |
+| Admin | `01011111111` | `AdminPass123` | `/admin/moderation`, `/admin/abuse`, `/admin/users`, `/admin/categories` |
 | User | `01022222222` | `UserPass123` | `/report/lost`, `/report/found`, `/my/reports`, `/my/claims`, `/my/chats`, `/browse` |
 
 ## Tests
@@ -134,6 +138,6 @@ dotnet test api.Tests/Amanah.Api.Tests.csproj
 
 ## Production deploy
 
-Single **Render** Docker service (API + Angular) + **Supabase** Postgres (Session pooler on Render) + **Cloudflare R2** + **Unimtx** SMS. Dashboard setup only — no `render.yaml`. See [docs/deployment.md](docs/deployment.md).
+Single **Render** Docker service (API + Angular) + **Supabase** Postgres (Session pooler on Render) + **Cloudflare R2** + **Unimtx** SMS. Set `ASPNETCORE_ENVIRONMENT=Production` so the service serves the SPA and writes JSON logs. Dashboard setup only — no `render.yaml`. See [docs/deployment.md](docs/deployment.md).
 
 After deploy, verify `/health`, `/health/ready`, sign-in/sign-up, and report submission. See [docs/observability.md](docs/observability.md) for logs, metrics, and alerting.

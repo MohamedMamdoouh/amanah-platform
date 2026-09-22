@@ -22,7 +22,7 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 | Section 8    | Status transitions through `Published` / `Rejected`                             |
 | Section 9    | Admin private-photo access during review                                        |
 | Section 12   | `ModerationAction` audit persistence                                            |
-| Section 15.2 | Moderation acceptance criteria (except expiry - Phase 06)                       |
+| Section 15.2 | Moderation acceptance criteria (expiry completed in Phase 06)                   |
 | Section 21   | Transactional email for admin alerts                                            |
 
 **Part II (technical):** Section 21 (email)
@@ -110,11 +110,11 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 
 ## 5. Permissions (Section 9)
 
-Server-enforce these matrix rows before marking this phase done:
+These rows are server-enforced:
 
 | Data                       | Roles granted access                                                        |
 | -------------------------- | --------------------------------------------------------------------------- |
-| Private photos             | Reporter (own), Admin (review only - enforcement investigation in Phase 07) |
+| Private photos             | Reporter (own), Admin during review, and Admin during an open flagged-listing investigation |
 | Hidden verification detail | Reporter (own) only - Admin still **never** sees this                       |
 | All public report fields   | Reporter (own), Admin                                                       |
 | Withdrawal reason          | Reporter (own), Admin - enforced in Phase 01; regression only in this phase |
@@ -137,15 +137,12 @@ Admin email (not in-app): new submission waiting in moderation queue (Resend out
 
 ## 7. Out of scope
 
-Explicitly deferred to later phases:
+Shipped in later phases:
 
-- Listing expiry warning and auto-expiry -> Phase 06
-- Rejected report 30-day deletion job -> Phase 06
-- Admin takedown and ban -> Phase 07
-- Abuse report queue -> Phase 07
-- Reporter withdraw while `Published` -> Phase 06
-
-Shipped in later phases: public browse (Phase 03), claims and My Reports `claim_in_progress` tab (Phase 04).
+- Public browse (Phase 03)
+- Claims and the My Reports `claim_in_progress` tab (Phase 04)
+- Listing expiry, rejected-report deletion, and reporter withdraw while `Published` (Phase 06)
+- Admin takedown, ban, and the abuse queue (Phase 07)
 
 ---
 
@@ -159,13 +156,9 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [x] **Resubmission cap:** after the 3rd resubmission is rejected, further resubmission of that report is refused with a clear message
 - [x] **Category change on resubmission:** changing a report's category to one with `photosPrivate` makes its existing photos private, and changing to one without makes them public
 - [x] **No editing outside `Rejected`:** content edit attempts are refused while the report is `Pending Review`, `Published`, `Claim In Progress`, or terminal (including reward flag/amount)
-- [x] **Rejected retention:** `ModerationAction` persists now; 30-day report+photo deletion job deferred to Phase 06
+- [x] **Rejected retention:** `ModerationAction` persists; 30-day report and photo deletion shipped in Phase 06 (`RejectedReportCleanup`)
 
-**Deferred within v1:**
-
-- [ ] **Listing expiry warning** -> Phase 06
-- [ ] **Listing auto-expiry** -> Phase 06
-- [ ] **No expiry while in review** -> Phase 06 (verify `Pending Review`/`Rejected` never expire by design)
+**Shipped in Phase 06** (acceptance checked in [06-lifecycle-retention.md](./06-lifecycle-retention.md) §8): listing expiry warning, listing auto-expiry, and no expiry while a report is in review.
 
 ---
 

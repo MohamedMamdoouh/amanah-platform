@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-Activate real-time in-app chat via SignalR for approved claims, with text and photo attachments, safety banner, and message rate limits. Implement mutual Confirm Resolved flow (irrevocable confirmations) and claim cancellation before resolution. Add **remaining** in-app notification event types (the notification center and moderation events shipped in [Phase 02](./02-admin-moderation.md)) including `NewChatMessage` with view-suppression. Chat threads become read-only on cancellation or resolution; 30-day deletion is deferred to Phase 06.
+Activate real-time in-app chat via SignalR for approved claims, with text and photo attachments, safety banner, and message rate limits. Implement mutual Confirm Resolved flow (irrevocable confirmations) and claim cancellation before resolution. Add **remaining** in-app notification event types (the notification center and moderation events shipped in [Phase 02](./02-admin-moderation.md)) including `NewChatMessage` with view-suppression. Chat threads become read-only on cancellation or resolution. Thirty-day deletion shipped in Phase 06.
 
 ---
 
@@ -21,7 +21,7 @@ Activate real-time in-app chat via SignalR for approved claims, with text and ph
 | Section 5.7 | Full in-app notification events |
 | Section 7.3 | Safety banner and safety page |
 | Section 7.5 | Chat message rate limits |
-| Section 15.5 | Resolution and chat acceptance criteria (retention deletion deferred) |
+| Section 15.5 | Resolution and chat acceptance criteria (chat retention shipped in Phase 06) |
 | Section 15.9 | Notifications acceptance criteria |
 | Section 16 | SignalR for real-time chat |
 | Section 20.1 | Notification payload contract |
@@ -96,7 +96,7 @@ Activate real-time in-app chat via SignalR for approved claims, with text and ph
 
 ## 5. Permissions (Section 9)
 
-Server-enforce these matrix rows before marking this phase done:
+These rows are server-enforced:
 
 | Data | Approved claimant | Reporter | Admin |
 | ---- | ----------------- | -------- | ----- |
@@ -126,9 +126,7 @@ Claim/report notification types from Phases 02–04 (`ReportApproved`, `ReportRe
 
 ## 7. Out of scope
 
-Explicitly deferred to later phases:
-
-- Report-from-chat abuse shortcut UI -> Phase 07 (enforcement notifications shipped)
+Shipped in Phase 07: the report-from-chat flag shortcut on `/my/chats/{threadId}`.
 
 ---
 
@@ -142,9 +140,7 @@ From [SPEC.md Section 15.5](./SPEC.md#155-resolution-and-chat).
 - [x] **Cancellation path:** cancelling before mutual confirmation sets the claim to `Cancelled`, returns the report to `Published`, notifies the counterparty, and makes the chat read-only immediately
 - [x] **Chat reachability:** both parties can still open a read-only thread from My Chats while it exists, even though the report's public URL is unavailable
 
-**Deferred within v1:**
-
-- [ ] **Chat retention (30-day delete)** -> Phase 06
+**Shipped in Phase 06** ([06-lifecycle-retention.md](./06-lifecycle-retention.md) §8): chat retention deletes a read-only thread 30 days after it becomes read-only.
 
 From [SPEC.md Section 15.9](./SPEC.md#159-notifications).
 
@@ -167,7 +163,7 @@ From [SPEC.md Section 15.9](./SPEC.md#159-notifications).
 - [x] Irrevocable confirm: confirmer cannot cancel
 - [x] Cancel before confirm: report -> `Published`, chat read-only
 - [x] `NewChatMessage` suppressed while viewing thread
-- [x] Chat rate limits (10/min, 60/hour)
+- [x] Chat rate limit (10/min). The 60/hour policy is configured; see known gaps below
 - [x] Non-participant cannot access thread
 
 ### Manual smoke checklist
@@ -186,4 +182,4 @@ From [SPEC.md Section 15.9](./SPEC.md#159-notifications).
 
 ### Phase exit gate
 
-Phase 05 code and automated tests are complete. Remaining manual smoke is QA before Phase 06.
+Phase 05 code and automated tests are complete. Remaining manual smoke is QA before production. Phase 06 shipped chat retention.

@@ -85,7 +85,7 @@ Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (l
 
 ## 5. Permissions (Section 9)
 
-Server-enforce these matrix rows before marking this phase done:
+These rows are server-enforced:
 
 | Data                                | Public visitor                    | Logged-in user | Reporter (own) | Admin        |
 | ----------------------------------- | --------------------------------- | -------------- | -------------- | ------------ |
@@ -115,12 +115,12 @@ URL access by status (Section 4.4):
 
 ## 7. Out of scope
 
-Explicitly deferred to later phases:
+Shipped in later phases, or still out of v1:
 
-- Chat and messaging -> Phase 05 (shipped)
-- Abuse flagging UI -> Phase 07
-- Social link previews -> out of scope v1 (Section 10)
-- Map/GPS location -> out of scope v1 (Section 10)
+- Chat and messaging — shipped in Phase 05
+- Abuse flagging UI — shipped in Phase 07 (`/lost/{id}`, `/found/{id}`, and the chat header)
+- Social link previews — out of scope for v1 (Section 10)
+- Map/GPS location — out of scope for v1 (Section 10)
 
 ---
 

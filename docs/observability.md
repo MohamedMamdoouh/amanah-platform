@@ -6,7 +6,7 @@ Amanah uses **Render-native, $0 observability**: structured JSON logs to stdout,
 
 ## Log format
 
-In **production**, the API emits **JSON logs** to stdout (Render log explorer). In development, logs remain human-readable.
+In **Production** (`ASPNETCORE_ENVIRONMENT=Production`), the API emits **JSON logs** to stdout (Render log explorer). In Development, logs remain human-readable. Staging does not switch on JSON logging.
 
 Every request gets a correlation ID:
 
@@ -59,12 +59,14 @@ Metrics are emitted as structured log lines (`event: metric`) in Render log expl
 | `http.server.request.errors` | counter | HTTP 5xx responses |
 | `rate_limit.rejected` | counter | Rate limiter rejection |
 | `report.submitted` | counter | Report created successfully |
-| `sms.send.completed` | counter | OTP SMS sent |
-| `sms.send.failed` | counter | OTP SMS send failed |
+| `sms.send.completed` | counter | OTP SMS accepted by Unimtx (`UnimtxSmsSender` only; Development `ConsoleSmsSender` does not emit this) |
+| `sms.send.failed` | counter | OTP SMS send failed (Unimtx path) |
 | `otp.outbox.backlog` | gauge | Pending OTP SMS outbox messages each poll |
 | `email.admin_alert.outbox.backlog` | gauge | Pending admin alert email outbox messages each poll |
+| `upload.photo.completed` | counter | Claim photo or chat attachment stored |
+| `upload.photo.failed` | counter | Claim photo or chat attachment storage failed |
 
-`upload.photo.completed` / `upload.photo.failed` are defined in `AppMetrics` but not yet instrumented at call sites.
+Report photos on `POST /api/v1/reports` do not emit `upload.photo.*`. `report.submitted` still records a successful report create.
 
 ---
 
@@ -73,7 +75,7 @@ Metrics are emitted as structured log lines (`event: metric`) in Render log expl
 | Endpoint | Purpose |
 | -------- | ------- |
 | `GET /health` | **Liveness** — process is up (always 200) |
-| `GET /health/ready` | **Readiness** — database + R2 (when configured); returns **503** when unhealthy |
+| `GET /health/ready` | **Readiness** — database connectivity, plus R2 when `Bucket__*` is set. Returns **503** when unhealthy. An unset bucket is reported healthy (`In-memory storage`) so local dev can pass readiness; production must set the bucket variables. |
 
 Readiness returns JSON:
 
@@ -87,7 +89,7 @@ The keepalive workflow pings `/health`. Use `/health/ready` for deeper deploy ve
 
 ## Alerting
 
-[`.github/workflows/keepalive.yml`](../.github/workflows/keepalive.yml) runs every 10 minutes and pings `GET /health`. If the check fails, the workflow exits with an error.
+[`.github/workflows/keepalive.yml`](../.github/workflows/keepalive.yml) runs every 10 minutes and pings `GET /health` on the `KEEPALIVE_URL` set in that workflow (`https://amanah-egh5.onrender.com`). If the check fails, the workflow exits with an error. Change `KEEPALIVE_URL` in the workflow when the public origin changes.
 
 **Email alerts (GitHub):** no extra secrets or third-party services. Enable notifications so GitHub emails you when the workflow fails:
 
