@@ -1,5 +1,6 @@
 using Amanah.Api.Models.Common;
 using Amanah.Api.Options;
+using Amanah.Api.Services.External.Email;
 using Microsoft.Extensions.Options;
 
 namespace Amanah.Api.Services.External;
