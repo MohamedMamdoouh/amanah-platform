@@ -42,40 +42,80 @@
       >
         {{ "footer.support" | translate }}
       </a>
-      @if (auth.isLoggedIn()) {
-        <a
-          routerLink="/my/reports"
-          class="header__link"
-          routerLinkActive="header__link--active"
-        >
-          {{ "nav.my_reports" | translate }}
-        </a>
-        <a
-          routerLink="/my/claims"
-          class="header__link"
-          routerLinkActive="header__link--active"
-        >
-          {{ "nav.my_claims" | translate }}
-        </a>
-        <a
-          routerLink="/my/chats"
-          class="header__link"
-          routerLinkActive="header__link--active"
-        >
-          {{ "nav.my_chats" | translate }}
-        </a>
-        <a
-          routerLink="/settings/account"
-          class="header__link"
-          routerLinkActive="header__link--active"
-        >
-          {{ "nav.account_settings" | translate }}
-        </a>
-      }
     </nav>
 
     <div class="header__actions">
       @if (auth.isLoggedIn()) {
+        <div class="header__user-menu">
+          <button
+            type="button"
+            class="header__user-trigger"
+            [attr.aria-expanded]="userMenuOpen()"
+            aria-haspopup="menu"
+            [attr.aria-label]="'nav.my_menu' | translate"
+            (click)="toggleUserMenu($event)"
+          >
+            <span class="header__user-name">{{
+              auth.currentUser()?.displayName
+            }}</span>
+            <app-icon
+              class="header__user-chevron"
+              [class.header__user-chevron--open]="userMenuOpen()"
+              name="chevron"
+              size="sm"
+            />
+          </button>
+          @if (userMenuOpen()) {
+            <div class="header__user-panel" role="menu" (click)="$event.stopPropagation()">
+              <a
+                role="menuitem"
+                routerLink="/my/reports"
+                class="header__user-link"
+                routerLinkActive="header__user-link--active"
+                (click)="closeUserMenu()"
+              >
+                {{ "nav.my_reports" | translate }}
+              </a>
+              <a
+                role="menuitem"
+                routerLink="/my/claims"
+                class="header__user-link"
+                routerLinkActive="header__user-link--active"
+                (click)="closeUserMenu()"
+              >
+                {{ "nav.my_claims" | translate }}
+              </a>
+              <a
+                role="menuitem"
+                routerLink="/my/chats"
+                class="header__user-link"
+                routerLinkActive="header__user-link--active"
+                (click)="closeUserMenu()"
+              >
+                {{ "nav.my_chats" | translate }}
+              </a>
+              <a
+                role="menuitem"
+                routerLink="/settings/account"
+                class="header__user-link"
+                routerLinkActive="header__user-link--active"
+                (click)="closeUserMenu()"
+              >
+                {{ "nav.account_settings" | translate }}
+              </a>
+              @if (auth.isAdmin()) {
+                <a
+                  role="menuitem"
+                  routerLink="/admin/moderation"
+                  class="header__user-link"
+                  (click)="closeUserMenu()"
+                >
+                  {{ "nav.admin" | translate }}
+                </a>
+              }
+            </div>
+          }
+        </div>
         <a
           routerLink="/notifications"
           class="header__bell"
@@ -88,14 +128,6 @@
             }}</app-badge>
           }
         </a>
-        @if (auth.isAdmin()) {
-          <a
-            routerLink="/admin/moderation"
-            class="header__link header__link--compact"
-          >
-            {{ "nav.admin" | translate }}
-          </a>
-        }
         <app-button
           variant="ghost"
           size="sm"

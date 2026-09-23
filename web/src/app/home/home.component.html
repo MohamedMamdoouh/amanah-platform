@@ -1,90 +1,204 @@
-<section class="hero" aria-labelledby="hero-title">
-  <div class="hero__grid">
-    <div class="hero__content animate-fade-up">
-      <h1 id="hero-title" class="hero__title">
-        {{ "home.title" | translate }}
-      </h1>
-      <p class="hero__subtitle">{{ "home.subtitle" | translate }}</p>
-      <div class="hero__actions">
-        <app-button
-          class="hero__cta"
-          variant="outline"
-          [routerLink]="'/browse'"
-        >
-          <app-icon name="search" size="sm" />
-          {{ "home.cta_browse" | translate }}
-        </app-button>
-        <app-button
-          class="hero__cta"
-          variant="primary"
-          [routerLink]="'/report/lost'"
-        >
-          <app-icon name="lost" size="sm" />
-          {{ "home.cta_report_lost" | translate }}
-        </app-button>
-        <app-button
-          class="hero__cta"
-          variant="outline"
-          [routerLink]="'/report/found'"
-        >
-          <app-icon name="found" size="sm" />
-          {{ "home.cta_report_found" | translate }}
-        </app-button>
+<article class="home">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero__grid">
+      <div class="hero__content animate-fade-up">
+        <p class="hero__eyebrow">{{ "home.eyebrow" | translate }}</p>
+        <h1 id="hero-title" class="hero__title">
+          {{ "home.title" | translate }}
+        </h1>
+        <p class="hero__subtitle">{{ "home.subtitle" | translate }}</p>
+        <div class="hero__actions">
+          <app-button
+            class="hero__cta"
+            variant="secondary"
+            [routerLink]="'/browse'"
+          >
+            <app-icon name="search" size="sm" />
+            {{ "home.cta_browse" | translate }}
+          </app-button>
+          <app-button
+            class="hero__cta"
+            variant="primary"
+            [routerLink]="'/report/lost'"
+          >
+            <app-icon name="lost" size="sm" />
+            {{ "home.cta_report_lost" | translate }}
+          </app-button>
+          <app-button
+            class="hero__cta"
+            variant="info"
+            [routerLink]="'/report/found'"
+          >
+            <app-icon name="found" size="sm" />
+            {{ "home.cta_report_found" | translate }}
+          </app-button>
+        </div>
+      </div>
+
+      <div class="hero__visual" aria-hidden="true">
+        <figure class="hero-scene animate-fade-up animate-fade-up--delay">
+          <div class="hero-scene__halo"></div>
+          <app-logo-mark class="hero-scene__logo" [size]="200" />
+        </figure>
       </div>
     </div>
+  </section>
 
-    <div class="hero__visual" aria-hidden="true">
-      <figure class="hero-scene animate-fade-up animate-fade-up--delay">
-        <div class="hero-scene__halo"></div>
-        <app-logo-mark class="hero-scene__logo" [size]="200" />
-      </figure>
-    </div>
-  </div>
-</section>
+  <section class="home-section home-about" aria-labelledby="about-title">
+    <header class="home-section__head">
+      <p class="home-section__eyebrow">{{ "home.about_eyebrow" | translate }}</p>
+      <h2 id="about-title" class="home-section__title">
+        {{ "home.about_title" | translate }}
+      </h2>
+      <p class="home-section__lead">{{ "home.about_lead" | translate }}</p>
+    </header>
 
-<section class="features" aria-labelledby="features-title">
-  <h2 id="features-title" class="sr-only">
-    {{ "home.aside_label" | translate }}
-  </h2>
-  <ul class="features__grid">
-    <li>
-      <article class="feature-card">
-        <span class="feature-card__icon" aria-hidden="true">
-          <app-icon name="shield" size="lg" />
-        </span>
-        <h3 class="feature-card__title">
-          {{ "home.principle_moderation" | translate }}
-        </h3>
-        <p class="feature-card__desc">
-          {{ "home.principle_moderation_desc" | translate }}
-        </p>
-      </article>
-    </li>
-    <li>
-      <article class="feature-card">
-        <span class="feature-card__icon" aria-hidden="true">
-          <app-icon name="check" size="lg" />
-        </span>
-        <h3 class="feature-card__title">
-          {{ "home.principle_verify" | translate }}
-        </h3>
-        <p class="feature-card__desc">
-          {{ "home.principle_verify_desc" | translate }}
-        </p>
-      </article>
-    </li>
-    <li>
-      <article class="feature-card">
-        <span class="feature-card__icon" aria-hidden="true">
-          <app-icon name="chat" size="lg" />
-        </span>
-        <h3 class="feature-card__title">
-          {{ "home.principle_chat" | translate }}
-        </h3>
-        <p class="feature-card__desc">
-          {{ "home.principle_chat_desc" | translate }}
-        </p>
-      </article>
-    </li>
-  </ul>
-</section>
+    <ul class="home-paths">
+      <li>
+        <article class="home-path home-path--lost">
+          <span class="home-path__icon" aria-hidden="true">
+            <app-icon name="lost" size="lg" />
+          </span>
+          <h3 class="home-path__title">{{ "home.path_lost_title" | translate }}</h3>
+          <p class="home-path__desc">{{ "home.path_lost_desc" | translate }}</p>
+        </article>
+      </li>
+      <li>
+        <article class="home-path home-path--found">
+          <span class="home-path__icon" aria-hidden="true">
+            <app-icon name="found" size="lg" />
+          </span>
+          <h3 class="home-path__title">{{ "home.path_found_title" | translate }}</h3>
+          <p class="home-path__desc">{{ "home.path_found_desc" | translate }}</p>
+        </article>
+      </li>
+    </ul>
+  </section>
+
+  <section class="home-section home-steps" aria-labelledby="steps-title">
+    <header class="home-section__head">
+      <p class="home-section__eyebrow">{{ "home.steps_eyebrow" | translate }}</p>
+      <h2 id="steps-title" class="home-section__title">
+        {{ "home.steps_title" | translate }}
+      </h2>
+      <p class="home-section__lead">{{ "home.steps_lead" | translate }}</p>
+    </header>
+
+    <ol class="home-steps__list">
+      <li class="home-step">
+        <span class="home-step__num" aria-hidden="true">1</span>
+        <h3 class="home-step__title">{{ "home.step_1_title" | translate }}</h3>
+        <p class="home-step__desc">{{ "home.step_1_desc" | translate }}</p>
+      </li>
+      <li class="home-step">
+        <span class="home-step__num" aria-hidden="true">2</span>
+        <h3 class="home-step__title">{{ "home.step_2_title" | translate }}</h3>
+        <p class="home-step__desc">{{ "home.step_2_desc" | translate }}</p>
+      </li>
+      <li class="home-step">
+        <span class="home-step__num" aria-hidden="true">3</span>
+        <h3 class="home-step__title">{{ "home.step_3_title" | translate }}</h3>
+        <p class="home-step__desc">{{ "home.step_3_desc" | translate }}</p>
+      </li>
+      <li class="home-step">
+        <span class="home-step__num" aria-hidden="true">4</span>
+        <h3 class="home-step__title">{{ "home.step_4_title" | translate }}</h3>
+        <p class="home-step__desc">{{ "home.step_4_desc" | translate }}</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="features" aria-labelledby="features-title">
+    <header class="home-section__head home-section__head--center">
+      <p class="home-section__eyebrow">{{ "home.trust_eyebrow" | translate }}</p>
+      <h2 id="features-title" class="home-section__title">
+        {{ "home.aside_label" | translate }}
+      </h2>
+    </header>
+    <ul class="features__grid">
+      <li>
+        <article class="feature-card">
+          <span class="feature-card__icon" aria-hidden="true">
+            <app-icon name="shield" size="lg" />
+          </span>
+          <h3 class="feature-card__title">
+            {{ "home.principle_moderation" | translate }}
+          </h3>
+          <p class="feature-card__desc">
+            {{ "home.principle_moderation_desc" | translate }}
+          </p>
+        </article>
+      </li>
+      <li>
+        <article class="feature-card">
+          <span class="feature-card__icon" aria-hidden="true">
+            <app-icon name="check" size="lg" />
+          </span>
+          <h3 class="feature-card__title">
+            {{ "home.principle_verify" | translate }}
+          </h3>
+          <p class="feature-card__desc">
+            {{ "home.principle_verify_desc" | translate }}
+          </p>
+        </article>
+      </li>
+      <li>
+        <article class="feature-card">
+          <span class="feature-card__icon" aria-hidden="true">
+            <app-icon name="chat" size="lg" />
+          </span>
+          <h3 class="feature-card__title">
+            {{ "home.principle_chat" | translate }}
+          </h3>
+          <p class="feature-card__desc">
+            {{ "home.principle_chat_desc" | translate }}
+          </p>
+        </article>
+      </li>
+    </ul>
+  </section>
+
+  <section class="home-section home-more" aria-labelledby="links-title">
+    <header class="home-section__head">
+      <h2 id="links-title" class="home-section__title">
+        {{ "home.links_title" | translate }}
+      </h2>
+      <p class="home-section__lead">{{ "home.links_lead" | translate }}</p>
+    </header>
+
+    <ul class="home-more__grid">
+      <li>
+        <a class="home-more__card" routerLink="/safety">
+          <span class="home-more__icon" aria-hidden="true">
+            <app-icon name="shield" size="lg" />
+          </span>
+          <span class="home-more__text">
+            <span class="home-more__card-title">{{
+              "home.safety_card_action" | translate
+            }}</span>
+            <span class="home-more__card-desc">{{
+              "home.safety_card" | translate
+            }}</span>
+          </span>
+          <app-icon class="home-more__chevron" name="chevron" size="sm" />
+        </a>
+      </li>
+      <li>
+        <a class="home-more__card" routerLink="/support">
+          <span class="home-more__icon" aria-hidden="true">
+            <app-icon name="chat" size="lg" />
+          </span>
+          <span class="home-more__text">
+            <span class="home-more__card-title">{{
+              "home.support_card_action" | translate
+            }}</span>
+            <span class="home-more__card-desc">{{
+              "home.support_card" | translate
+            }}</span>
+          </span>
+          <app-icon class="home-more__chevron" name="chevron" size="sm" />
+        </a>
+      </li>
+    </ul>
+  </section>
+</article>

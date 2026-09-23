@@ -41,6 +41,24 @@
     box-shadow var(--transition-fast);
 }
 
+select.form-input,
+select.form-select {
+  appearance: none;
+  padding-inline-end: calc(var(--space-md) + 1.25rem);
+  background-color: var(--color-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%235c6769' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-md) center;
+  cursor: pointer;
+}
+
+[dir='rtl'] select.form-input,
+[dir='rtl'] select.form-select {
+  padding-inline-end: var(--space-md);
+  padding-inline-start: calc(var(--space-md) + 1.25rem);
+  background-position: left var(--space-md) center;
+}
+
 .form-textarea {
   min-height: 6rem;
   resize: vertical;

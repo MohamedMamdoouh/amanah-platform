@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { ButtonComponent } from '../shared/ui/button/button.component';
@@ -8,7 +9,13 @@ import { LogoMarkComponent } from '../shared/ui/logo-mark/logo-mark.component';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [TranslateModule, ButtonComponent, IconComponent, LogoMarkComponent],
+  imports: [
+    TranslateModule,
+    RouterLink,
+    ButtonComponent,
+    IconComponent,
+    LogoMarkComponent,
+  ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })

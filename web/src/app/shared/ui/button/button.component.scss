@@ -108,6 +108,18 @@
   opacity: 0.9;
 }
 
+.btn--info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border-color: var(--color-info);
+}
+
+.btn--info:hover:not(:disabled):not(.btn--disabled) {
+  background: color-mix(in srgb, var(--color-info-bg) 65%, var(--color-info) 35%);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+
 .btn:disabled,
 .btn--disabled {
   opacity: 0.6;

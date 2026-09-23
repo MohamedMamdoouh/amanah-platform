@@ -22,6 +22,10 @@
   gap: var(--space-md);
 }
 
+.auth-form__channel {
+  margin-bottom: calc(-1 * var(--space-xs));
+}
+
 .auth-form__checkbox {
   display: flex;
   align-items: flex-start;

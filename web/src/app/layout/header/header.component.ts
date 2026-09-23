@@ -1,4 +1,11 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -30,8 +37,27 @@ export class HeaderComponent implements OnInit {
   readonly notifications = inject(NotificationService);
   readonly loggingOut = signal(false);
   readonly mobileNavOpen = signal(false);
+  readonly userMenuOpen = signal(false);
 
   private readonly router = inject(Router);
+  private readonly host = inject(ElementRef<HTMLElement>);
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.userMenuOpen()) {
+      return;
+    }
+
+    const target = event.target;
+    if (target instanceof Node && !this.host.nativeElement.contains(target)) {
+      this.userMenuOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.userMenuOpen.set(false);
+  }
 
   ngOnInit(): void {
     void this.notifications.refreshUnreadCount();
@@ -45,6 +71,15 @@ export class HeaderComponent implements OnInit {
     this.mobileNavOpen.set(false);
   }
 
+  toggleUserMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.userMenuOpen.update((open) => !open);
+  }
+
+  closeUserMenu(): void {
+    this.userMenuOpen.set(false);
+  }
+
   async logout(): Promise<void> {
     if (this.loggingOut()) {
       return;
@@ -52,6 +87,7 @@ export class HeaderComponent implements OnInit {
 
     this.loggingOut.set(true);
     this.closeMobileNav();
+    this.closeUserMenu();
     try {
       await firstValueFrom(this.auth.logout());
     } catch {

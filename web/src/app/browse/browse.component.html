@@ -1,4 +1,4 @@
-<section class="browse page-container" aria-labelledby="browse-title">
+<section class="browse page-container--wide" aria-labelledby="browse-title">
   <app-page-header
     [title]="'browse.title' | translate"
     [intro]="'browse.intro' | translate"
@@ -18,10 +18,8 @@
       />
     </app-form-field>
 
-    <div
-      class="browse__filters"
-      [attr.aria-label]="'browse.filters_label' | translate"
-    >
+    <fieldset class="browse__filters">
+      <legend class="sr-only">{{ "browse.filters_label" | translate }}</legend>
       <label class="form-field browse__filter">
         <span class="form-label">{{
           "browse.filter_category" | translate
@@ -80,8 +78,9 @@
           "browse.filter_date_from" | translate
         }}</span>
         <input
-          class="form-input"
+          class="form-input browse__date"
           type="date"
+          dir="ltr"
           [value]="filters().dateFrom"
           (change)="onFilterChange('dateFrom', $any($event.target).value)"
         />
@@ -92,13 +91,14 @@
           "browse.filter_date_to" | translate
         }}</span>
         <input
-          class="form-input"
+          class="form-input browse__date"
           type="date"
+          dir="ltr"
           [value]="filters().dateTo"
           (change)="onFilterChange('dateTo', $any($event.target).value)"
         />
       </label>
-    </div>
+    </fieldset>
   </div>
 
   @if (loading()) {
