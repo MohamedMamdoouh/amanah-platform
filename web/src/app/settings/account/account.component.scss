@@ -7,6 +7,58 @@
   box-shadow: var(--shadow-card);
 }
 
+.account-settings__section-title {
+  margin: 0 0 var(--space-md);
+  font-family: var(--font-display);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.account-settings__identifiers {
+  margin: 0 0 var(--space-lg);
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.account-settings__identifiers > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.account-settings__identifiers dt {
+  margin: 0;
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.account-settings__identifiers dd {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  text-align: end;
+}
+
+.account-settings__link-form {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.account-settings__link-form > app-form-field,
+.account-settings__link-form > app-turnstile-widget,
+.account-settings__link-form > app-button {
+  display: block;
+}
+
+.account-settings__link-form > app-button {
+  justify-self: start;
+}
+
 .account-settings__warning {
   margin: 0 0 var(--space-lg);
   color: var(--color-text-muted);

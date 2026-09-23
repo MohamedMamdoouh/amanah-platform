@@ -1,11 +1,12 @@
+.moderation-queue > app-form-field {
+  display: block;
+  margin-bottom: var(--space-lg);
+}
+
 .moderation-queue__list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   gap: var(--space-sm);
-}
-
-.moderation-queue__search {
-  margin-bottom: var(--space-lg);
 }

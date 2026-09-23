@@ -33,8 +33,19 @@ export type IconName =
     >
       @switch (name()) {
         @case ('search') {
-          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
-          <path d="M20 20L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <circle
+            cx="11"
+            cy="11"
+            r="7"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M20 20L16 16"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
         }
         @case ('location') {
           <path
@@ -42,11 +53,30 @@ export type IconName =
             stroke="currentColor"
             stroke-width="2"
           />
-          <circle cx="12" cy="9.5" r="2" stroke="currentColor" stroke-width="2" />
+          <circle
+            cx="12"
+            cy="9.5"
+            r="2"
+            stroke="currentColor"
+            stroke-width="2"
+          />
         }
         @case ('calendar') {
-          <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2" />
-          <path d="M3 9H21M8 3V7M16 3V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <rect
+            x="3"
+            y="5"
+            width="18"
+            height="16"
+            rx="2"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M3 9H21M8 3V7M16 3V7"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
         }
         @case ('shield') {
           <path
@@ -57,7 +87,13 @@ export type IconName =
           />
         }
         @case ('check') {
-          <path d="M5 12L10 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path
+            d="M5 12L10 17L19 7"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         }
         @case ('chat') {
           <path
@@ -74,29 +110,97 @@ export type IconName =
             stroke-width="2"
             stroke-linejoin="round"
           />
-          <path d="M10 19C10 20 11 21 12 21C13 21 14 20 14 19" stroke="currentColor" stroke-width="2" />
+          <path
+            d="M10 19C10 20 11 21 12 21C13 21 14 20 14 19"
+            stroke="currentColor"
+            stroke-width="2"
+          />
         }
         @case ('camera') {
-          <rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2" />
-          <circle cx="12" cy="13" r="3" stroke="currentColor" stroke-width="2" />
-          <path d="M8 6L9.5 4H14.5L16 6" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          <rect
+            x="3"
+            y="6"
+            width="18"
+            height="14"
+            rx="2"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <circle
+            cx="12"
+            cy="13"
+            r="3"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M8 6L9.5 4H14.5L16 6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
         }
         @case ('chevron') {
-          <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path
+            d="M9 6L15 12L9 18"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         }
         @case ('lost') {
-          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
-          <path d="M20 20L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <circle
+            cx="12"
+            cy="12"
+            r="8"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1.3 1-1.3 1.9"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <path
+            d="M11.7 16.5h.01"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
         }
         @case ('found') {
-          <rect x="4" y="7" width="16" height="12" rx="2" stroke="currentColor" stroke-width="2" />
-          <path d="M8 7V5C8 4 9 3 12 3C15 3 16 4 16 5V7" stroke="currentColor" stroke-width="2" />
+          <rect
+            x="4"
+            y="7"
+            width="16"
+            height="12"
+            rx="2"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M8 7V5C8 4 9 3 12 3C15 3 16 4 16 5V7"
+            stroke="currentColor"
+            stroke-width="2"
+          />
         }
         @case ('menu') {
-          <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <path
+            d="M4 7H20M4 12H20M4 17H20"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
         }
         @case ('close') {
-          <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <path
+            d="M6 6L18 18M18 6L6 18"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
         }
       }
     </svg>

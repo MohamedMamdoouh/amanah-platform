@@ -17,7 +17,10 @@ import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
-import { StepItem, StepperComponent } from '../../shared/ui/stepper/stepper.component';
+import {
+  StepItem,
+  StepperComponent,
+} from '../../shared/ui/stepper/stepper.component';
 import { TabItem, TabsComponent } from '../../shared/ui/tabs/tabs.component';
 import { AuthService } from '../auth.service';
 import {
@@ -34,7 +37,7 @@ const PASSWORD_MIN_LENGTH = 8;
 
 function identifierValidators(channel: AuthIdentifierChannel): ValidatorFn[] {
   if (channel === 'phone') {
-    return [Validators.required, Validators.pattern(/^\+?\d{11}$/)];
+    return [Validators.required, Validators.pattern(/^\d{11}$/)];
   }
 
   return [Validators.required, Validators.email];

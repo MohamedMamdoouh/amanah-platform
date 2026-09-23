@@ -2,7 +2,6 @@
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero__grid">
       <div class="hero__content animate-fade-up">
-        <p class="hero__eyebrow">{{ "home.eyebrow" | translate }}</p>
         <h1 id="hero-title" class="hero__title">
           {{ "home.title" | translate }}
         </h1>
@@ -46,7 +45,6 @@
 
   <section class="home-section home-about" aria-labelledby="about-title">
     <header class="home-section__head">
-      <p class="home-section__eyebrow">{{ "home.about_eyebrow" | translate }}</p>
       <h2 id="about-title" class="home-section__title">
         {{ "home.about_title" | translate }}
       </h2>
@@ -59,7 +57,9 @@
           <span class="home-path__icon" aria-hidden="true">
             <app-icon name="lost" size="lg" />
           </span>
-          <h3 class="home-path__title">{{ "home.path_lost_title" | translate }}</h3>
+          <h3 class="home-path__title">
+            {{ "home.path_lost_title" | translate }}
+          </h3>
           <p class="home-path__desc">{{ "home.path_lost_desc" | translate }}</p>
         </article>
       </li>
@@ -68,8 +68,12 @@
           <span class="home-path__icon" aria-hidden="true">
             <app-icon name="found" size="lg" />
           </span>
-          <h3 class="home-path__title">{{ "home.path_found_title" | translate }}</h3>
-          <p class="home-path__desc">{{ "home.path_found_desc" | translate }}</p>
+          <h3 class="home-path__title">
+            {{ "home.path_found_title" | translate }}
+          </h3>
+          <p class="home-path__desc">
+            {{ "home.path_found_desc" | translate }}
+          </p>
         </article>
       </li>
     </ul>
@@ -77,7 +81,6 @@
 
   <section class="home-section home-steps" aria-labelledby="steps-title">
     <header class="home-section__head">
-      <p class="home-section__eyebrow">{{ "home.steps_eyebrow" | translate }}</p>
       <h2 id="steps-title" class="home-section__title">
         {{ "home.steps_title" | translate }}
       </h2>
@@ -110,7 +113,6 @@
 
   <section class="features" aria-labelledby="features-title">
     <header class="home-section__head home-section__head--center">
-      <p class="home-section__eyebrow">{{ "home.trust_eyebrow" | translate }}</p>
       <h2 id="features-title" class="home-section__title">
         {{ "home.aside_label" | translate }}
       </h2>
@@ -154,50 +156,6 @@
             {{ "home.principle_chat_desc" | translate }}
           </p>
         </article>
-      </li>
-    </ul>
-  </section>
-
-  <section class="home-section home-more" aria-labelledby="links-title">
-    <header class="home-section__head">
-      <h2 id="links-title" class="home-section__title">
-        {{ "home.links_title" | translate }}
-      </h2>
-      <p class="home-section__lead">{{ "home.links_lead" | translate }}</p>
-    </header>
-
-    <ul class="home-more__grid">
-      <li>
-        <a class="home-more__card" routerLink="/safety">
-          <span class="home-more__icon" aria-hidden="true">
-            <app-icon name="shield" size="lg" />
-          </span>
-          <span class="home-more__text">
-            <span class="home-more__card-title">{{
-              "home.safety_card_action" | translate
-            }}</span>
-            <span class="home-more__card-desc">{{
-              "home.safety_card" | translate
-            }}</span>
-          </span>
-          <app-icon class="home-more__chevron" name="chevron" size="sm" />
-        </a>
-      </li>
-      <li>
-        <a class="home-more__card" routerLink="/support">
-          <span class="home-more__icon" aria-hidden="true">
-            <app-icon name="chat" size="lg" />
-          </span>
-          <span class="home-more__text">
-            <span class="home-more__card-title">{{
-              "home.support_card_action" | translate
-            }}</span>
-            <span class="home-more__card-desc">{{
-              "home.support_card" | translate
-            }}</span>
-          </span>
-          <app-icon class="home-more__chevron" name="chevron" size="sm" />
-        </a>
       </li>
     </ul>
   </section>

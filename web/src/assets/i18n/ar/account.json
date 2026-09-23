@@ -7,7 +7,7 @@
   "account.identifiers.not_set": "غير مضاف",
   "account.identifiers.link_label": "أضف رقم موبايل أو بريد إلكتروني",
   "account.identifiers.link_phone": "رقم الموبايل للربط",
-  "account.identifiers.link_email": "البريد الإلكتروني للربط",
+  "account.identifiers.link_email": "إضافة بريد إلكتروني",
   "account.identifiers.send_code": "إرسال كود التأكيد",
   "account.identifiers.verify": "تأكيد وربط",
   "account.loading": "جاري تحميل حالة الحساب...",

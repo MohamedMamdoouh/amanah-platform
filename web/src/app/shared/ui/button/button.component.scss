@@ -17,6 +17,7 @@
 :host(.btn--block) .btn {
   flex: 1;
   width: 100%;
+  justify-content: center;
 }
 
 .btn {
@@ -115,7 +116,11 @@
 }
 
 .btn--info:hover:not(:disabled):not(.btn--disabled) {
-  background: color-mix(in srgb, var(--color-info-bg) 65%, var(--color-info) 35%);
+  background: color-mix(
+    in srgb,
+    var(--color-info-bg) 65%,
+    var(--color-info) 35%
+  );
   border-color: var(--color-info);
   color: var(--color-info);
 }

@@ -235,7 +235,7 @@ export class AccountComponent implements OnInit {
     control.clearValidators();
     control.addValidators(
       channel === 'phone'
-        ? [Validators.required, Validators.pattern(/^\+?\d{11}$/)]
+        ? [Validators.required, Validators.pattern(/^\d{11}$/)]
         : [Validators.required, Validators.email],
     );
     control.updateValueAndValidity();
