@@ -20,7 +20,7 @@ public sealed class AdminUsersController(
 {
     [HttpGet]
     [EndpointName(nameof(SearchUsers))]
-    [EndpointSummary("Search users. Requires searchBy=name (display name fragment) or searchBy=phone (Egyptian mobile; normalized to E.164 server-side).")]
+    [EndpointSummary("Search users. Requires searchBy=name (display name fragment), searchBy=phone (Egyptian mobile; normalized to E.164 server-side), or searchBy=email.")]
     [ProducesResponseType(typeof(AdminUserListResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]

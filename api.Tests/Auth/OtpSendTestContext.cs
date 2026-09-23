@@ -1,8 +1,10 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Amanah.Api.Auth;
+using Amanah.Api.Models.Common;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
+using Amanah.Contracts.Requests.Auth;
 using Amanah.Contracts.Responses.Auth;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Services.External;
@@ -19,11 +21,13 @@ public sealed class OtpSendTestContext : IAsyncDisposable
     public OtpSendTestContext(
         HttpClient client,
         RecordingSmsSender smsSender,
+        RecordingOtpEmailSender emailSender,
         FakeCaptchaVerifier captchaVerifier,
         AsyncServiceScope scope)
     {
         Client = client;
         SmsSender = smsSender;
+        EmailSender = emailSender;
         CaptchaVerifier = captchaVerifier;
         _scope = scope;
         DbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -34,6 +38,8 @@ public sealed class OtpSendTestContext : IAsyncDisposable
 
     public RecordingSmsSender SmsSender { get; }
 
+    public RecordingOtpEmailSender EmailSender { get; }
+
     public FakeCaptchaVerifier CaptchaVerifier { get; }
 
     public AppDbContext DbContext { get; }
@@ -43,33 +49,40 @@ public sealed class OtpSendTestContext : IAsyncDisposable
     public OtpSmsOutboxDispatcher Dispatcher =>
         _scope.ServiceProvider.GetRequiredService<OtpSmsOutboxDispatcher>();
 
+    public OtpEmailOutboxDispatcher EmailDispatcher =>
+        _scope.ServiceProvider.GetRequiredService<OtpEmailOutboxDispatcher>();
+
     public async Task<HttpResponseMessage> SendOtpAsync(
-        string phone,
+        string identifier,
         string purpose = OtpPurposes.Signup,
-        string captchaToken = "valid-token")
+        string captchaToken = "valid-token",
+        string channel = AuthIdentifierChannels.Phone)
     {
         return await Client.PostAsJsonAsync("/api/v1/auth/otp/send", new
         {
-            phone,
+            channel,
+            identifier,
             captchaToken,
             purpose,
         });
     }
 
     public async Task<(HttpResponseMessage Response, VerifyOtpResponse? Body)> VerifyOtpAsync(
-        string phone,
+        string identifier,
         string code,
-        string purpose = OtpPurposes.Signup)
+        string purpose = OtpPurposes.Signup,
+        string channel = AuthIdentifierChannels.Phone)
     {
         var response = await Client.PostAsJsonAsync("/api/v1/auth/otp/verify", new
         {
-            phone,
+            channel,
+            identifier,
             code,
             purpose,
         });
 
         VerifyOtpResponse? body = response.IsSuccessStatusCode
-            ? await response.Content.ReadFromJsonAsync<VerifyOtpResponse>()
+            ? await response.Content.ReadFromJsonAsync<VerifyOtpResponse>(ApiJson.SerializerOptions)
             : null;
 
         return (response, body);
@@ -79,6 +92,7 @@ public sealed class OtpSendTestContext : IAsyncDisposable
         string phone,
         string purpose = OtpPurposes.Signup)
     {
+        var initialCount = SmsSender.SentMessages.Count;
         var response = await SendOtpAsync(phone, purpose);
         if (response.StatusCode != System.Net.HttpStatusCode.NoContent)
         {
@@ -86,7 +100,7 @@ public sealed class OtpSendTestContext : IAsyncDisposable
                 $"OTP send failed with status {response.StatusCode}.");
         }
 
-        await WaitForSmsCountAsync(1);
+        await WaitForSmsCountAsync(initialCount + 1);
         return SmsSender.SentMessages[^1].Code;
     }
 
@@ -112,12 +126,14 @@ public sealed class OtpSendTestContext : IAsyncDisposable
     }
 
     public async Task<(HttpResponseMessage Response, AuthSessionResponse? Body)> LoginAsync(
-        string phone,
-        string password = TestAuthHelpers.DefaultPassword)
+        string identifier,
+        string password = TestAuthHelpers.DefaultPassword,
+        string channel = AuthIdentifierChannels.Phone)
     {
         var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new
         {
-            phone,
+            channel,
+            identifier,
             password,
         });
 
@@ -242,6 +258,45 @@ public sealed class OtpSendTestContext : IAsyncDisposable
         Assert.NotNull(ExtractRefreshToken(response));
     }
 
+    public async Task<string> SendOtpAndGetEmailCodeAsync(
+        string email,
+        string purpose = OtpPurposes.Signup)
+    {
+        var initialCount = EmailSender.SentMessages.Count;
+        var response = await SendOtpAsync(
+            email,
+            purpose,
+            channel: AuthIdentifierChannels.Email);
+        if (response.StatusCode != System.Net.HttpStatusCode.NoContent)
+        {
+            throw new InvalidOperationException(
+                $"OTP send failed with status {response.StatusCode}.");
+        }
+
+        await WaitForEmailCountAsync(initialCount + 1);
+        return EmailSender.SentMessages[^1].Code;
+    }
+
+    public async Task WaitForEmailCountAsync(int expectedCount, TimeSpan? timeout = null)
+    {
+        timeout ??= TimeSpan.FromSeconds(5);
+        var deadline = DateTime.UtcNow.Add(timeout.Value);
+
+        while (DateTime.UtcNow < deadline)
+        {
+            if (EmailSender.SentMessages.Count == expectedCount)
+            {
+                return;
+            }
+
+            await DispatchPendingEmailOutboxMessagesAsync();
+            await Task.Delay(100);
+        }
+
+        throw new TimeoutException(
+            $"Expected {expectedCount} email message(s), but found {EmailSender.SentMessages.Count}.");
+    }
+
     public async Task WaitForSmsCountAsync(int expectedCount, TimeSpan? timeout = null)
     {
         timeout ??= TimeSpan.FromSeconds(5);
@@ -292,6 +347,20 @@ public sealed class OtpSendTestContext : IAsyncDisposable
 
         throw new TimeoutException(
             $"Expected outbox status {expectedStatus}, but found {actualStatus}.");
+    }
+
+    private async Task DispatchPendingEmailOutboxMessagesAsync()
+    {
+        DbContext.ChangeTracker.Clear();
+        var pendingIds = await DbContext.OtpEmailOutboxMessages
+            .Where(message => message.Status == OtpSmsOutboxStatus.Pending)
+            .Select(message => message.Id)
+            .ToListAsync();
+
+        foreach (var outboxId in pendingIds)
+        {
+            await EmailDispatcher.DispatchAsync(outboxId);
+        }
     }
 
     private async Task DispatchPendingOutboxMessagesAsync()

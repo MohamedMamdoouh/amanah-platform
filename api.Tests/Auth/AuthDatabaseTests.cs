@@ -69,7 +69,8 @@ public class AuthDatabaseTests(ApiWebApplicationFactory factory) : IClassFixture
             var now = DateTimeOffset.UtcNow;
             context.OtpCodes.Add(new OtpCode
             {
-                Phone = user.NormalizedPhone,
+                Destination = user.NormalizedPhone!,
+                Channel = AuthIdentifierChannel.Phone,
                 CodeHash = "otp-hash",
                 ExpiresAt = now.AddMinutes(10),
                 CreatedAt = now,
@@ -85,7 +86,8 @@ public class AuthDatabaseTests(ApiWebApplicationFactory factory) : IClassFixture
 
             await context.SaveChangesAsync();
 
-            var otpCode = await context.OtpCodes.SingleAsync(code => code.Phone == user.NormalizedPhone);
+            var otpCode = await context.OtpCodes.SingleAsync(
+                code => code.Destination == user.NormalizedPhone && code.Channel == AuthIdentifierChannel.Phone);
             var refreshToken = await context.RefreshTokens.SingleAsync(token => token.UserId == user.Id);
 
             Assert.Equal("otp-hash", otpCode.CodeHash);

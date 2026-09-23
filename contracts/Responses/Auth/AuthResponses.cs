@@ -2,7 +2,7 @@ namespace Amanah.Contracts.Responses.Auth;
 
 public sealed class VerifyOtpResponse
 {
-    public required string Status { get; init; }
+    public required VerifyOtpStatus Status { get; init; }
 
     public string? SignupToken { get; init; }
 
@@ -24,7 +24,9 @@ public sealed class UserProfileResponse
 
     public required string Role { get; init; }
 
-    public required string Phone { get; init; }
+    public string? Phone { get; init; }
+
+    public string? Email { get; init; }
 
     public bool RequiresAccountReactivation { get; init; }
 }

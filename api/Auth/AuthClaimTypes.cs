@@ -12,5 +12,7 @@ public static class AuthClaimTypes
 
     public const string Purpose = "purpose";
 
-    public const string Phone = "phone";
+    public const string Channel = "channel";
+
+    public const string Identifier = "identifier";
 }

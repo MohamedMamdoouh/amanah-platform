@@ -12,11 +12,17 @@ public sealed class OtpCodeConfiguration : IEntityTypeConfiguration<OtpCode>
 
         builder.ConfigureGuidId();
 
-        builder.Property(otpCode => otpCode.Phone)
-            .HasMaxLength(16)
+        builder.Property(otpCode => otpCode.Destination)
+            .HasMaxLength(254)
             .IsRequired();
 
-        builder.HasIndex(otpCode => otpCode.Phone);
+        builder.Property(otpCode => otpCode.Channel)
+            .HasMaxLength(8)
+            .HasConversion<string>()
+            .IsRequired();
+
+        builder.HasIndex(otpCode => new { otpCode.Destination, otpCode.Channel })
+            .IsUnique();
 
         builder.Property(otpCode => otpCode.CodeHash)
             .HasMaxLength(128)

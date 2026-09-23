@@ -36,6 +36,16 @@
       >
         {{ "admin.users.mode_phone" | translate }}
       </button>
+      <button
+        type="button"
+        class="tabs__tab"
+        role="tab"
+        [class.tabs__tab--active]="searchMode() === 'email'"
+        [attr.aria-selected]="searchMode() === 'email'"
+        (click)="selectMode('email')"
+      >
+        {{ "admin.users.mode_email" | translate }}
+      </button>
     </nav>
   </div>
 
@@ -54,7 +64,7 @@
         [ariaLabel]="'admin.users.name_label' | translate"
       />
     </app-form-field>
-  } @else {
+  } @else if (searchMode() === "phone") {
     <form class="users-lookup__phone-form" (submit)="onPhoneEnter($event)">
       <app-form-field
         class="users-lookup__field"
@@ -75,6 +85,32 @@
       <app-button
         type="submit"
         [disabled]="phoneControl.invalid || searchLoading()"
+        [loading]="searchLoading()"
+      >
+        {{ "admin.users.search_button" | translate }}
+      </app-button>
+    </form>
+  } @else if (searchMode() === "email") {
+    <form class="users-lookup__phone-form" (submit)="onEmailEnter($event)">
+      <app-form-field
+        class="users-lookup__field"
+        [label]="'admin.users.email_label' | translate"
+        htmlFor="users-email-search"
+        [error]="fieldError('query')"
+      >
+        <input
+          id="users-email-search"
+          class="users-lookup__phone-input"
+          type="email"
+          inputmode="email"
+          autocomplete="off"
+          [formControl]="emailControl"
+          [placeholder]="'admin.users.email_placeholder' | translate"
+        />
+      </app-form-field>
+      <app-button
+        type="submit"
+        [disabled]="emailControl.invalid || searchLoading()"
         [loading]="searchLoading()"
       >
         {{ "admin.users.search_button" | translate }}

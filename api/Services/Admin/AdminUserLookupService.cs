@@ -24,7 +24,7 @@ public sealed class AdminUserLookupService(AppDbContext dbContext)
                 "Search mode is required.",
                 errors: new Dictionary<string, string[]>
                 {
-                    ["searchBy"] = ["Choose name or phone search."],
+                    ["searchBy"] = ["Choose name, phone, or email search."],
                 });
         }
 
@@ -55,6 +55,21 @@ public sealed class AdminUserLookupService(AppDbContext dbContext)
             }
 
             usersQuery = usersQuery.Where(user => user.NormalizedPhone == normalizedPhone);
+        }
+        else if (string.Equals(searchBy, AdminUserSearchBy.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            if (!EmailNormalizer.TryNormalize(trimmed, out var normalizedEmail))
+            {
+                return ResultError.BadRequest(
+                    "Email address format is invalid.",
+                    ErrorCodes.InvalidEmail,
+                    errors: new Dictionary<string, string[]>
+                    {
+                        ["query"] = ["Email address format is invalid."],
+                    });
+            }
+
+            usersQuery = usersQuery.Where(user => user.NormalizedEmail == normalizedEmail);
         }
         else
         {
@@ -99,6 +114,7 @@ public sealed class AdminUserLookupService(AppDbContext dbContext)
             Id = user.Id,
             DisplayName = user.DisplayName ?? string.Empty,
             NormalizedPhone = user.NormalizedPhone,
+            NormalizedEmail = user.NormalizedEmail,
             Role = user.Role.ToString(),
             IsBanned = user.IsBanned,
             BanReason = user.BanReason,

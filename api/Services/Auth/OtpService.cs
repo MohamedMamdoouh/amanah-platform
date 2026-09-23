@@ -13,131 +13,80 @@ using Microsoft.Extensions.Options;
 
 namespace Amanah.Api.Services.Auth;
 
-// This class sends and verifies SMS OTP codes for signup and password reset.
 public sealed class OtpService(
     AppDbContext dbContext,
     ICaptchaVerifier captchaVerifier,
     IDataProtectionProvider dataProtectionProvider,
     HandoffTokenService handoffTokenService,
     IOptions<OtpOptions> options,
+    IOptions<EmailOptions> emailOptions,
+    IHostEnvironment hostEnvironment,
     TimeProvider timeProvider)
 {
+    private const string InvalidIdentifierMessage =
+        "The phone number or email format is not accepted.";
+
     public async Task<Result> SendAsync(
-        string phone,
+        string channel,
+        string identifier,
         string captchaToken,
         string purpose,
         CancellationToken cancellationToken = default)
     {
-        // Reject input that cannot be normalized to E.164 (e.g. invalid Egyptian mobile).
-        if (!PhoneNormalizer.TryNormalize(phone, out var normalizedPhone))
+        if (!AuthIdentifierNormalizer.TryResolve(channel, identifier, out var authIdentifier))
         {
             return ResultError.BadRequest(
-                "The phone number format is not accepted.",
-                ErrorCodes.InvalidPhone);
+                InvalidIdentifierMessage,
+                ErrorCodes.FieldIdentifierInvalid);
         }
 
-        // Purpose-specific guards run before captcha/SMS work to avoid leaking account state via timing.
-        var userExists = await dbContext.Users
-            .AsNoTracking()
-            .AnyAsync(user => user.NormalizedPhone == normalizedPhone, cancellationToken);
+        if (authIdentifier.Channel == AuthIdentifierChannel.Email
+            && !hostEnvironment.IsDevelopment()
+            && !emailOptions.Value.IsConfigured)
+        {
+            return ResultError.ServiceUnavailable(
+                "Email verification is temporarily unavailable. Try again later or use your phone number.",
+                ErrorCodes.EmailUnavailable);
+        }
 
-        // Signup OTP is only for new phones; existing users must sign in with password.
+        var userExists = await UserIdentifierQueries.ForIdentifier(
+                dbContext.Users.AsNoTracking(),
+                authIdentifier)
+            .AnyAsync(cancellationToken);
+
         if (purpose == OtpPurposes.Signup && userExists)
         {
             return ResultError.Conflict(
-                "An account already exists for this phone number. Sign in instead.",
+                AccountExistsMessage(authIdentifier),
                 ErrorCodes.AccountExists);
         }
 
-        // Password-reset OTP for unknown phones returns 204 without SMS to prevent account enumeration.
         if (purpose == OtpPurposes.PasswordReset && !userExists)
         {
             return Result.Ok();
         }
 
-        // Block automated abuse before any OTP work or DB writes.
         var captchaResult = await captchaVerifier.VerifyAsync(captchaToken, cancellationToken);
         if (!captchaResult.IsSuccess)
         {
             return captchaResult;
         }
 
-        var now = timeProvider.GetUtcNow();
-        var code = RandomNumberGenerator.GetInt32(100_000, 1_000_000).ToString();
-
-        // Verification row: store only a hash; plaintext exists only in memory until outbox dispatch.
-        var otpCode = new OtpCode
-        {
-            Phone = normalizedPhone,
-            CodeHash = OtpHasher.Hash(code),
-            ExpiresAt = now.AddMinutes(options.Value.CodeLifetimeMinutes),
-            AttemptCount = 0,
-            CreatedAt = now,
-        };
-
-        // Outbox row: encrypted payload for the background worker; Id becomes the SMS idempotency key.
-        var outboxMessage = new OtpSmsOutboxMessage
-        {
-            OtpCode = otpCode,
-            Phone = normalizedPhone,
-            ProtectedPayload = OtpSmsOutboxPayload.Protect(dataProtectionProvider, code),
-            Status = OtpSmsOutboxStatus.Pending,
-            CreatedAt = now,
-        };
-
-        // Atomic enqueue: limits, supersede old codes, and insert new rows commit together or not at all.
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-
-        // Serialize concurrent send requests for the same phone (limits + replace logic).
-        await dbContext.Database.ExecuteSqlAsync(
-            $"SELECT pg_advisory_xact_lock(hashtext({normalizedPhone}))",
-            cancellationToken);
-
-        // Cooldown / hourly / daily limits count prior Sent outbox rows for this phone.
-        var limitsResult = await EnforceSendLimitsAsync(normalizedPhone, now, cancellationToken);
-        if (!limitsResult.IsSuccess)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            return limitsResult;
-        }
-
-        // A new send invalidates any previous code still waiting to be verified.
-        await dbContext.OtpCodes
-            .Where(existing => existing.Phone == normalizedPhone)
-            .ExecuteDeleteAsync(cancellationToken);
-
-        // If the user requests another code before the worker sends the previous one, mark that
-        // older Pending outbox row Failed so the worker skips it and only dispatches this new code.
-        await dbContext.OtpSmsOutboxMessages
-            .Where(message => message.Phone == normalizedPhone
-                && message.Status == OtpSmsOutboxStatus.Pending)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(message => message.Status, OtpSmsOutboxStatus.Failed)
-                    .SetProperty(message => message.ProcessedAt, now),
-                cancellationToken);
-
-        dbContext.OtpCodes.Add(otpCode);
-        dbContext.OtpSmsOutboxMessages.Add(outboxMessage);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
-        // Caller gets 204 here; OtpSmsOutboxProcessor sends the SMS asynchronously.
-        return Result.Ok();
+        return await EnqueueOtpAsync(authIdentifier, cancellationToken);
     }
 
-    // This method verifies an SMS OTP code for signup or password reset.
     public async Task<Result<VerifyOtpResponse>> VerifyAsync(
-        string phone,
+        string channel,
+        string identifier,
         string code,
         string purpose,
         CancellationToken cancellationToken = default)
     {
-        if (!PhoneNormalizer.TryNormalize(phone, out var normalizedPhone))
+        if (!AuthIdentifierNormalizer.TryResolve(channel, identifier, out var authIdentifier))
         {
             return ResultError.BadRequest(
-                "The phone number format is not accepted.",
-                ErrorCodes.InvalidPhone);
+                InvalidIdentifierMessage,
+                ErrorCodes.FieldIdentifierInvalid);
         }
 
         if (!OtpCodeNormalizer.TryNormalize(code, out var normalizedCode))
@@ -149,16 +98,18 @@ public sealed class OtpService(
 
         var now = timeProvider.GetUtcNow();
         var maxAttempts = options.Value.MaxVerificationAttempts;
+        var lockKey = $"{authIdentifier.Channel}:{authIdentifier.NormalizedValue}";
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        // Serialize concurrent verify requests for the same phone (attempt counting + consume).
         await dbContext.Database.ExecuteSqlAsync(
-            $"SELECT pg_advisory_xact_lock(hashtext({normalizedPhone}))",
+            $"SELECT pg_advisory_xact_lock(hashtext({lockKey}))",
             cancellationToken);
 
         var otpCode = await dbContext.OtpCodes
-            .Where(existing => existing.Phone == normalizedPhone)
+            .Where(existing =>
+                existing.Destination == authIdentifier.NormalizedValue
+                && existing.Channel == authIdentifier.Channel)
             .OrderByDescending(existing => existing.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -209,35 +160,32 @@ public sealed class OtpService(
                 ErrorCodes.InvalidOtp);
         }
 
-        // Single-use: a verified code is consumed immediately and cannot be replayed.
         dbContext.OtpCodes.Remove(otpCode);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        // Issue a short-lived handoff token so the next step (register or reset) can prove OTP success.
-        var userExists = await dbContext.Users
-            .AsNoTracking()
-            .AnyAsync(user => user.NormalizedPhone == normalizedPhone, cancellationToken);
+        var userExists = await UserIdentifierQueries.ForIdentifier(
+                dbContext.Users.AsNoTracking(),
+                authIdentifier)
+            .AnyAsync(cancellationToken);
 
         if (purpose == OtpPurposes.Signup)
         {
-            // Race guard: account may have been created between send and verify.
             if (userExists)
             {
                 return ResultError.Conflict(
-                    "An account already exists for this phone number. Sign in instead.",
+                    AccountExistsMessage(authIdentifier),
                     ErrorCodes.AccountExists);
             }
 
             return new VerifyOtpResponse
             {
-                Status = "signup_ready",
-                SignupToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Signup),
+                Status = VerifyOtpStatus.SignupReady,
+                SignupToken = handoffTokenService.Issue(authIdentifier, AuthTokenPurposes.Signup),
                 ResetToken = null,
             };
         }
 
-        // Password reset: phone must belong to an existing account.
         if (!userExists)
         {
             return ResultError.BadRequest(
@@ -247,36 +195,291 @@ public sealed class OtpService(
 
         return new VerifyOtpResponse
         {
-            Status = "reset_ready",
+            Status = VerifyOtpStatus.ResetReady,
             SignupToken = null,
-            ResetToken = handoffTokenService.Issue(normalizedPhone, AuthTokenPurposes.Reset),
+            ResetToken = handoffTokenService.Issue(authIdentifier, AuthTokenPurposes.Reset),
         };
     }
 
+    internal async Task<Result> SendForLinkAsync(
+        User user,
+        string channel,
+        string identifier,
+        string captchaToken,
+        CancellationToken cancellationToken = default)
+    {
+        if (!AuthIdentifierNormalizer.TryResolve(channel, identifier, out var authIdentifier))
+        {
+            return ResultError.BadRequest(
+                InvalidIdentifierMessage,
+                ErrorCodes.FieldIdentifierInvalid);
+        }
+
+        if (authIdentifier.Channel == AuthIdentifierChannel.Phone && user.NormalizedPhone is not null)
+        {
+            return ResultError.Conflict(
+                "A phone number is already linked to this account.",
+                ErrorCodes.Conflict);
+        }
+
+        if (authIdentifier.Channel == AuthIdentifierChannel.Email && user.NormalizedEmail is not null)
+        {
+            return ResultError.Conflict(
+                "An email address is already linked to this account.",
+                ErrorCodes.Conflict);
+        }
+
+        if (authIdentifier.Channel == AuthIdentifierChannel.Email
+            && !hostEnvironment.IsDevelopment()
+            && !emailOptions.Value.IsConfigured)
+        {
+            return ResultError.ServiceUnavailable(
+                "Email verification is temporarily unavailable. Try again later.",
+                ErrorCodes.EmailUnavailable);
+        }
+
+        if (await UserIdentifierQueries.ForIdentifier(
+                    dbContext.Users.AsNoTracking(),
+                    authIdentifier)
+                .AnyAsync(cancellationToken))
+        {
+            return ResultError.Conflict(
+                IdentifierTakenMessage(authIdentifier),
+                ErrorCodes.Conflict);
+        }
+
+        var captchaResult = await captchaVerifier.VerifyAsync(captchaToken, cancellationToken);
+        if (!captchaResult.IsSuccess)
+        {
+            return captchaResult;
+        }
+
+        return await EnqueueOtpAsync(authIdentifier, cancellationToken);
+    }
+
+    internal async Task<Result> VerifyForLinkAsync(
+        User user,
+        string channel,
+        string identifier,
+        string code,
+        CancellationToken cancellationToken = default)
+    {
+        if (!AuthIdentifierNormalizer.TryResolve(channel, identifier, out var authIdentifier))
+        {
+            return ResultError.BadRequest(
+                InvalidIdentifierMessage,
+                ErrorCodes.FieldIdentifierInvalid);
+        }
+
+        if (authIdentifier.Channel == AuthIdentifierChannel.Phone && user.NormalizedPhone is not null)
+        {
+            return ResultError.Conflict(
+                "A phone number is already linked to this account.",
+                ErrorCodes.Conflict);
+        }
+
+        if (authIdentifier.Channel == AuthIdentifierChannel.Email && user.NormalizedEmail is not null)
+        {
+            return ResultError.Conflict(
+                "An email address is already linked to this account.",
+                ErrorCodes.Conflict);
+        }
+
+        if (!OtpCodeNormalizer.TryNormalize(code, out var normalizedCode))
+        {
+            return ResultError.BadRequest(
+                "The OTP code format is not accepted.",
+                ErrorCodes.InvalidOtp);
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var maxAttempts = options.Value.MaxVerificationAttempts;
+        var lockKey = $"{authIdentifier.Channel}:{authIdentifier.NormalizedValue}";
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        await dbContext.Database.ExecuteSqlAsync(
+            $"SELECT pg_advisory_xact_lock(hashtext({lockKey}))",
+            cancellationToken);
+
+        var otpCode = await dbContext.OtpCodes
+            .Where(existing =>
+                existing.Destination == authIdentifier.NormalizedValue
+                && existing.Channel == authIdentifier.Channel)
+            .OrderByDescending(existing => existing.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (otpCode is null || otpCode.ExpiresAt < now || otpCode.AttemptCount >= maxAttempts)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ResultError.BadRequest(
+                "The OTP code has expired. Please request a new code.",
+                ErrorCodes.OtpExpired);
+        }
+
+        if (!OtpHasher.Verify(normalizedCode, otpCode.CodeHash))
+        {
+            otpCode.AttemptCount++;
+            if (otpCode.AttemptCount >= maxAttempts)
+            {
+                dbContext.OtpCodes.Remove(otpCode);
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return ResultError.BadRequest(
+                otpCode.AttemptCount >= maxAttempts
+                    ? "The OTP code is no longer valid. Please request a new code."
+                    : "The OTP code is incorrect.",
+                otpCode.AttemptCount >= maxAttempts ? ErrorCodes.OtpVoid : ErrorCodes.InvalidOtp);
+        }
+
+        if (await UserIdentifierQueries.ForIdentifier(
+                    dbContext.Users.AsNoTracking(),
+                    authIdentifier)
+                .AnyAsync(cancellationToken))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ResultError.Conflict(
+                IdentifierTakenMessage(authIdentifier),
+                ErrorCodes.Conflict);
+        }
+
+        dbContext.OtpCodes.Remove(otpCode);
+
+        if (authIdentifier.Channel == AuthIdentifierChannel.Phone)
+        {
+            user.NormalizedPhone = authIdentifier.NormalizedValue;
+        }
+        else
+        {
+            user.NormalizedEmail = authIdentifier.NormalizedValue;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return Result.Ok();
+    }
+
+    private async Task<Result> EnqueueOtpAsync(
+        AuthIdentifier authIdentifier,
+        CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        var code = RandomNumberGenerator.GetInt32(100_000, 1_000_000).ToString();
+        var destination = authIdentifier.NormalizedValue;
+
+        var otpCode = new OtpCode
+        {
+            Destination = destination,
+            Channel = authIdentifier.Channel,
+            CodeHash = OtpHasher.Hash(code),
+            ExpiresAt = now.AddMinutes(options.Value.CodeLifetimeMinutes),
+            AttemptCount = 0,
+            CreatedAt = now,
+        };
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var lockKey = $"{authIdentifier.Channel}:{destination}";
+        await dbContext.Database.ExecuteSqlAsync(
+            $"SELECT pg_advisory_xact_lock(hashtext({lockKey}))",
+            cancellationToken);
+
+        var limitsResult = await EnforceSendLimitsAsync(authIdentifier, now, cancellationToken);
+        if (!limitsResult.IsSuccess)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return limitsResult;
+        }
+
+        await dbContext.OtpCodes
+            .Where(existing =>
+                existing.Destination == destination
+                && existing.Channel == authIdentifier.Channel)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (authIdentifier.Channel == AuthIdentifierChannel.Phone)
+        {
+            await dbContext.OtpSmsOutboxMessages
+                .Where(message => message.Phone == destination
+                    && message.Status == OtpSmsOutboxStatus.Pending)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(message => message.Status, OtpSmsOutboxStatus.Failed)
+                        .SetProperty(message => message.ProcessedAt, now),
+                    cancellationToken);
+
+            var outboxMessage = new OtpSmsOutboxMessage
+            {
+                OtpCode = otpCode,
+                Phone = destination,
+                ProtectedPayload = OtpSmsOutboxPayload.Protect(dataProtectionProvider, code),
+                Status = OtpSmsOutboxStatus.Pending,
+                CreatedAt = now,
+            };
+
+            dbContext.OtpCodes.Add(otpCode);
+            dbContext.OtpSmsOutboxMessages.Add(outboxMessage);
+        }
+        else
+        {
+            await dbContext.OtpEmailOutboxMessages
+                .Where(message => message.Email == destination
+                    && message.Status == OtpSmsOutboxStatus.Pending)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(message => message.Status, OtpSmsOutboxStatus.Failed)
+                        .SetProperty(message => message.ProcessedAt, now),
+                    cancellationToken);
+
+            var outboxMessage = new OtpEmailOutboxMessage
+            {
+                OtpCode = otpCode,
+                Email = destination,
+                ProtectedPayload = OtpEmailOutboxPayload.Protect(dataProtectionProvider, code),
+                Status = OtpSmsOutboxStatus.Pending,
+                CreatedAt = now,
+            };
+
+            dbContext.OtpCodes.Add(otpCode);
+            dbContext.OtpEmailOutboxMessages.Add(outboxMessage);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return Result.Ok();
+    }
+
     private async Task<Result> EnforceSendLimitsAsync(
-        string normalizedPhone,
+        AuthIdentifier authIdentifier,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        // Count only successfully delivered SMS (Sent), not Pending/Failed.
-        var sentTimes = await dbContext.OtpSmsOutboxMessages
-            .AsNoTracking()
-            .Where(message => message.Phone == normalizedPhone
-                && message.Status == OtpSmsOutboxStatus.Sent
-                && message.ProcessedAt != null)
-            .OrderByDescending(message => message.ProcessedAt)
-            .Select(message => message.ProcessedAt!.Value)
-            .ToListAsync(cancellationToken);
+        var sentTimes = authIdentifier.Channel == AuthIdentifierChannel.Phone
+            ? await dbContext.OtpSmsOutboxMessages
+                .AsNoTracking()
+                .Where(message => message.Phone == authIdentifier.NormalizedValue
+                    && message.Status == OtpSmsOutboxStatus.Sent
+                    && message.ProcessedAt != null)
+                .OrderByDescending(message => message.ProcessedAt)
+                .Select(message => message.ProcessedAt!.Value)
+                .ToListAsync(cancellationToken)
+            : await dbContext.OtpEmailOutboxMessages
+                .AsNoTracking()
+                .Where(message => message.Email == authIdentifier.NormalizedValue
+                    && message.Status == OtpSmsOutboxStatus.Sent
+                    && message.ProcessedAt != null)
+                .OrderByDescending(message => message.ProcessedAt)
+                .Select(message => message.ProcessedAt!.Value)
+                .ToListAsync(cancellationToken);
 
-        // First-ever send for this phone: no prior Sent rows, skip all limit checks.
         if (sentTimes.Count == 0)
         {
             return Result.Ok();
         }
 
         var otpOptions = options.Value;
-
-        // Cooldown: block rapid resends until CooldownSeconds after the most recent successful SMS.
         var lastSentAt = sentTimes[0];
         var cooldownEndsAt = lastSentAt.AddSeconds(otpOptions.CooldownSeconds);
 
@@ -289,13 +492,11 @@ public sealed class OtpService(
                 now);
         }
 
-        // Hourly cap: rolling 60-minute window from now, not calendar hour.
         var hourlyWindowStart = now.AddHours(-1);
         var hourlySends = sentTimes.Count(sentAt => sentAt >= hourlyWindowStart);
 
         if (hourlySends >= otpOptions.HourlySendLimit)
         {
-            // Retry when the oldest send in the window falls outside the last hour.
             var oldestInWindow = sentTimes
                 .Where(sentAt => sentAt >= hourlyWindowStart)
                 .MinBy(sentAt => sentAt);
@@ -308,7 +509,6 @@ public sealed class OtpService(
                 now);
         }
 
-        // Daily cap: calendar day in Africa/Cairo (product timezone), not UTC midnight.
         var cairoDayStart = CairoTime.CairoDayStartUtc(now);
         var dailySends = sentTimes.Count(sentAt => sentAt >= cairoDayStart);
 
@@ -325,7 +525,16 @@ public sealed class OtpService(
         return Result.Ok();
     }
 
-    // 429 with Retry-After derived from when the blocked limit window ends.
+    private static string AccountExistsMessage(AuthIdentifier identifier) =>
+        identifier.Channel == AuthIdentifierChannel.Email
+            ? "An account already exists for this email address. Sign in instead."
+            : "An account already exists for this phone number. Sign in instead.";
+
+    private static string IdentifierTakenMessage(AuthIdentifier identifier) =>
+        identifier.Channel == AuthIdentifierChannel.Email
+            ? "This email address is already linked to another account."
+            : "This phone number is already linked to another account.";
+
     private static ResultError RateLimitError(
         string code,
         string message,

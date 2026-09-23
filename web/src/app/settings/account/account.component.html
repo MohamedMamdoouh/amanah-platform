@@ -1,4 +1,7 @@
-<section class="account-settings page-container" aria-labelledby="account-settings-title">
+<section
+  class="account-settings page-container"
+  aria-labelledby="account-settings-title"
+>
   <app-page-header
     [title]="'account.title' | translate"
     [intro]="'account.intro' | translate"
@@ -9,68 +12,178 @@
   } @else if (loadError()) {
     <app-alert variant="error">{{ loadError() }}</app-alert>
   } @else {
+    @if (identifiers(); as linkedIdentifiers) {
+      <div class="account-settings__panel">
+        <h2 class="account-settings__section-title">
+          {{ "account.identifiers.title" | translate }}
+        </h2>
+        <dl class="account-settings__identifiers">
+          <div>
+            <dt>{{ "account.identifiers.phone" | translate }}</dt>
+            <dd dir="ltr">
+              {{
+                linkedIdentifiers.phone ??
+                  ("account.identifiers.not_set" | translate)
+              }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ "account.identifiers.email" | translate }}</dt>
+            <dd dir="ltr">
+              {{
+                linkedIdentifiers.email ??
+                  ("account.identifiers.not_set" | translate)
+              }}
+            </dd>
+          </div>
+        </dl>
+
+        @if (canLinkIdentifier()) {
+          @if (linkStep() === "idle") {
+            <form
+              class="account-settings__link-form"
+              [formGroup]="linkForm"
+              (ngSubmit)="submitLinkSend()"
+            >
+              <app-form-field
+                [label]="
+                  (linkChannel() === 'email'
+                    ? 'account.identifiers.link_email'
+                    : 'account.identifiers.link_phone'
+                  ) | translate
+                "
+                [required]="true"
+                htmlFor="link-identifier"
+              >
+                <input
+                  id="link-identifier"
+                  [type]="linkChannel() === 'email' ? 'email' : 'tel'"
+                  class="form-input"
+                  formControlName="identifier"
+                  [autocomplete]="linkChannel() === 'email' ? 'email' : 'tel'"
+                  dir="ltr"
+                />
+              </app-form-field>
+              <app-turnstile-widget
+                #linkTurnstile
+                (tokenResolved)="onLinkCaptchaToken($event)"
+                (tokenExpired)="onLinkCaptchaExpired()"
+              />
+              <app-button
+                type="submit"
+                variant="secondary"
+                [loading]="linkSubmitting()"
+                [disabled]="linkForm.invalid || !linkCaptchaToken()"
+              >
+                {{ "account.identifiers.send_code" | translate }}
+              </app-button>
+            </form>
+          } @else {
+            <form
+              class="account-settings__link-form"
+              [formGroup]="otpForm"
+              (ngSubmit)="submitLinkVerify()"
+            >
+              <app-form-field
+                [label]="'auth.login.otp_label' | translate"
+                [required]="true"
+                htmlFor="link-otp"
+              >
+                <input
+                  id="link-otp"
+                  type="text"
+                  class="form-input form-input--otp"
+                  formControlName="code"
+                  inputmode="numeric"
+                  maxlength="6"
+                  autocomplete="one-time-code"
+                  dir="ltr"
+                />
+              </app-form-field>
+              <app-button
+                type="submit"
+                variant="secondary"
+                [loading]="linkSubmitting()"
+                [disabled]="otpForm.invalid"
+              >
+                {{ "account.identifiers.verify" | translate }}
+              </app-button>
+            </form>
+          }
+        }
+
+        @if (linkError()) {
+          <app-alert variant="error">{{ linkError() }}</app-alert>
+        }
+      </div>
+    }
+
     @if (status(); as deactivationStatus) {
-    <div class="account-settings__panel">
-      <p class="account-settings__warning">
-        {{ 'account.warning' | translate }}
-      </p>
+      <div class="account-settings__panel">
+        <p class="account-settings__warning">
+          {{ "account.warning" | translate }}
+        </p>
 
-      @if (translatedBlockers().length > 0) {
-        <div class="account-settings__blockers" role="status">
-          <h2 class="account-settings__blockers-title">
-            {{ 'account.blockers_title' | translate }}
-          </h2>
-          <ul class="account-settings__blockers-list">
-            @for (blocker of translatedBlockers(); track blocker) {
-              <li>{{ blocker }}</li>
-            }
-          </ul>
+        @if (translatedBlockers().length > 0) {
+          <div class="account-settings__blockers" role="status">
+            <h2 class="account-settings__blockers-title">
+              {{ "account.blockers_title" | translate }}
+            </h2>
+            <ul class="account-settings__blockers-list">
+              @for (blocker of translatedBlockers(); track blocker) {
+                <li>{{ blocker }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div class="account-settings__actions cluster">
+          <app-button
+            variant="secondary"
+            [loading]="loggingOutEverywhere()"
+            [disabled]="loggingOutEverywhere() || deactivating()"
+            (clicked)="logoutEverywhere()"
+          >
+            {{ "account.logout_everywhere_button" | translate }}
+          </app-button>
+          <app-button
+            variant="danger"
+            [disabled]="
+              !deactivationStatus.canDeactivate ||
+              deactivating() ||
+              loggingOutEverywhere()
+            "
+            (clicked)="openConfirmDialog()"
+          >
+            {{ "account.deactivate_button" | translate }}
+          </app-button>
         </div>
-      }
 
-      <div class="account-settings__actions cluster">
-        <app-button
-          variant="secondary"
-          [loading]="loggingOutEverywhere()"
-          [disabled]="loggingOutEverywhere() || deactivating()"
-          (clicked)="logoutEverywhere()"
-        >
-          {{ 'account.logout_everywhere_button' | translate }}
-        </app-button>
-        <app-button
-          variant="danger"
-          [disabled]="!deactivationStatus.canDeactivate || deactivating() || loggingOutEverywhere()"
-          (clicked)="openConfirmDialog()"
-        >
-          {{ 'account.deactivate_button' | translate }}
-        </app-button>
+        @if (logoutEverywhereError()) {
+          <app-alert variant="error">{{ logoutEverywhereError() }}</app-alert>
+        }
       </div>
 
-      @if (logoutEverywhereError()) {
-        <app-alert variant="error">{{ logoutEverywhereError() }}</app-alert>
-      }
-    </div>
+      @if (showConfirmDialog()) {
+        <app-confirm-dialog
+          titleId="deactivate-account-title"
+          [title]="'account.confirm_title' | translate"
+          [intro]="'account.confirm_intro' | translate"
+          [cancelLabel]="'account.confirm_cancel' | translate"
+          [confirmLabel]="'account.confirm_submit' | translate"
+          confirmVariant="danger"
+          [loading]="deactivating()"
+          [disabled]="deactivating()"
+          (cancelled)="closeConfirmDialog()"
+          (confirmed)="confirmDeactivate()"
+        />
 
-    @if (showConfirmDialog()) {
-      <app-confirm-dialog
-        titleId="deactivate-account-title"
-        [title]="'account.confirm_title' | translate"
-        [intro]="'account.confirm_intro' | translate"
-        [cancelLabel]="'account.confirm_cancel' | translate"
-        [confirmLabel]="'account.confirm_submit' | translate"
-        confirmVariant="danger"
-        [loading]="deactivating()"
-        [disabled]="deactivating()"
-        (cancelled)="closeConfirmDialog()"
-        (confirmed)="confirmDeactivate()"
-      />
-
-      @if (deactivateError()) {
-        <app-alert variant="error" class="account-settings__deactivate-error">
-          {{ deactivateError() }}
-        </app-alert>
+        @if (deactivateError()) {
+          <app-alert variant="error" class="account-settings__deactivate-error">
+            {{ deactivateError() }}
+          </app-alert>
+        }
       }
-    }
     }
   }
 </section>

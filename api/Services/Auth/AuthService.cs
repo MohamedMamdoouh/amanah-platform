@@ -24,19 +24,20 @@ public sealed class AuthService(
         if (!handoffTokenService.TryValidate(
                 request.SignupToken,
                 AuthTokenPurposes.Signup,
-                out var normalizedPhone))
+                out var identity))
         {
             return ResultError.BadRequest(
                 "The signup token is invalid or has expired.",
                 ErrorCodes.HandoffTokenInvalid);
         }
 
-        if (await dbContext.Users.AnyAsync(
-                user => user.NormalizedPhone == normalizedPhone,
-                cancellationToken))
+        if (await UserIdentifierQueries.ForIdentifier(dbContext.Users.AsNoTracking(), identity)
+                .AnyAsync(cancellationToken))
         {
             return ResultError.Conflict(
-                "An account already exists for this phone number.",
+                identity.Channel == AuthIdentifierChannel.Email
+                    ? "An account already exists for this email address."
+                    : "An account already exists for this phone number.",
                 ErrorCodes.Conflict);
         }
 
@@ -45,12 +46,21 @@ public sealed class AuthService(
 
         var user = new User
         {
-            NormalizedPhone = normalizedPhone,
             DisplayName = displayName,
             Role = UserRole.User,
             CreatedAt = now,
             PasswordHash = string.Empty,
         };
+
+        if (identity.Channel == AuthIdentifierChannel.Phone)
+        {
+            user.NormalizedPhone = identity.NormalizedValue;
+        }
+        else
+        {
+            user.NormalizedEmail = identity.NormalizedValue;
+        }
+
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
         dbContext.Users.Add(user);
@@ -63,21 +73,21 @@ public sealed class AuthService(
         LoginRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!PhoneNormalizer.TryNormalize(request.Phone, out var normalizedPhone))
+        if (!AuthIdentifierNormalizer.TryResolve(request.Channel, request.Identifier, out var identity))
         {
             return ResultError.BadRequest(
-                "The phone number format is not accepted.",
-                ErrorCodes.InvalidPhone);
+                "The sign-in details are incorrect.",
+                ErrorCodes.InvalidCredentials);
         }
 
-        var user = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.NormalizedPhone == normalizedPhone, cancellationToken);
+        var user = await UserIdentifierQueries.ForIdentifier(dbContext.Users, identity)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (user is null
             || !passwordHasher.VerifyPassword(user, request.Password, user.PasswordHash))
         {
             return ResultError.BadRequest(
-                "Phone number or password is incorrect.",
+                "The sign-in details are incorrect.",
                 ErrorCodes.InvalidCredentials);
         }
 
@@ -97,15 +107,15 @@ public sealed class AuthService(
         if (!handoffTokenService.TryValidate(
                 request.ResetToken,
                 AuthTokenPurposes.Reset,
-                out var normalizedPhone))
+                out var identity))
         {
             return ResultError.BadRequest(
                 "The reset token is invalid or has expired.",
                 ErrorCodes.HandoffTokenInvalid);
         }
 
-        var user = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.NormalizedPhone == normalizedPhone, cancellationToken);
+        var user = await UserIdentifierQueries.ForIdentifier(dbContext.Users, identity)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (user is null)
         {
@@ -228,6 +238,7 @@ public sealed class AuthService(
             DisplayName = user.DisplayName ?? string.Empty,
             Role = user.Role.ToString(),
             Phone = user.NormalizedPhone,
+            Email = user.NormalizedEmail,
             RequiresAccountReactivation = user.DeactivatedAt is not null,
         };
 

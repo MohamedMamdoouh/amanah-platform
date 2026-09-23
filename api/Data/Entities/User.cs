@@ -4,7 +4,9 @@ public class User : IEntity
 {
     public Guid Id { get; set; }
 
-    public required string NormalizedPhone { get; set; }
+    public string? NormalizedPhone { get; set; }
+
+    public string? NormalizedEmail { get; set; }
 
     public required string PasswordHash { get; set; }
 

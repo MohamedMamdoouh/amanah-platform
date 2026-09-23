@@ -33,7 +33,8 @@ public sealed class AuthController(
         CancellationToken cancellationToken)
     {
         var result = await otpService.SendAsync(
-            request.Phone,
+            request.Channel,
+            request.Identifier,
             request.CaptchaToken,
             request.Purpose,
             cancellationToken);
@@ -52,7 +53,8 @@ public sealed class AuthController(
         CancellationToken cancellationToken)
     {
         var result = await otpService.VerifyAsync(
-            request.Phone,
+            request.Channel,
+            request.Identifier,
             request.Code,
             request.Purpose,
             cancellationToken);
@@ -83,7 +85,7 @@ public sealed class AuthController(
     [HttpPost("login")]
     [EnableRateLimiting("auth-login")]
     [EndpointName(nameof(Login))]
-    [EndpointSummary("Sign in with phone number and password.")]
+    [EndpointSummary("Sign in with phone number or email and password.")]
     [ProducesResponseType(typeof(AuthSessionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status403Forbidden)]

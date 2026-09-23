@@ -9,6 +9,7 @@ public static class ApiJson
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
     };
 
     public static readonly JsonSerializerOptions SnakeCaseSerializerOptions = new()

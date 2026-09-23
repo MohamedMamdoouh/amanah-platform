@@ -72,7 +72,8 @@ public class HousekeepingJobsTests(HousekeepingJobsWebApplicationFactory factory
             new OtpCode
             {
                 Id = staleId,
-                Phone = "+201011111111",
+                Destination = "+201011111111",
+                Channel = AuthIdentifierChannel.Phone,
                 CodeHash = "stale-hash",
                 ExpiresAt = now.AddHours(-25),
                 CreatedAt = now.AddHours(-26),
@@ -80,7 +81,8 @@ public class HousekeepingJobsTests(HousekeepingJobsWebApplicationFactory factory
             new OtpCode
             {
                 Id = freshId,
-                Phone = "+201022222222",
+                Destination = "+201022222222",
+                Channel = AuthIdentifierChannel.Phone,
                 CodeHash = "fresh-hash",
                 ExpiresAt = now.AddHours(-23),
                 CreatedAt = now.AddHours(-24),

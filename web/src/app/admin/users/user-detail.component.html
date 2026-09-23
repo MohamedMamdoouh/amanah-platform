@@ -36,7 +36,11 @@
         </div>
         <div>
           <dt>{{ "admin.users.field_phone" | translate }}</dt>
-          <dd>{{ detail.normalizedPhone }}</dd>
+          <dd dir="ltr">{{ detail.normalizedPhone ?? "—" }}</dd>
+        </div>
+        <div>
+          <dt>{{ "admin.users.field_email" | translate }}</dt>
+          <dd dir="ltr">{{ detail.normalizedEmail ?? "—" }}</dd>
         </div>
         <div>
           <dt>{{ "admin.users.field_role" | translate }}</dt>

@@ -154,6 +154,19 @@ public sealed class RetentionService(
             .ExecuteDeleteAsync(cancellationToken);
     }
 
+    public async Task<int> ProcessOtpEmailOutboxCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var threshold = timeProvider.GetUtcNow().AddDays(-lifecycleOptions.Value.RetentionDays);
+
+        return await dbContext.OtpEmailOutboxMessages
+            .Where(message =>
+                (message.Status == OtpSmsOutboxStatus.Sent
+                    || message.Status == OtpSmsOutboxStatus.Failed)
+                && message.ProcessedAt != null
+                && message.ProcessedAt <= threshold)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     public async Task<int> ProcessAdminAlertEmailOutboxCleanupAsync(CancellationToken cancellationToken = default)
     {
         var threshold = timeProvider.GetUtcNow().AddDays(-lifecycleOptions.Value.RetentionDays);

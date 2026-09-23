@@ -50,6 +50,22 @@ public sealed class OtpSmsOutboxCleanupJob(
     }
 }
 
+public sealed class OtpEmailOutboxCleanupJob(
+    RetentionService retentionService,
+    ILogger<OtpEmailOutboxCleanupJob> logger) : ILifecycleJob
+{
+    public string Name => "OtpEmailOutboxCleanup";
+
+    public async Task ExecuteAsync(CancellationToken cancellationToken)
+    {
+        var deletedCount = await retentionService.ProcessOtpEmailOutboxCleanupAsync(cancellationToken);
+
+        logger.LogInformation(
+            "OTP email outbox cleanup job removed {DeletedCount} processed row(s).",
+            deletedCount);
+    }
+}
+
 public sealed class AdminAlertEmailOutboxCleanupJob(
     RetentionService retentionService,
     ILogger<AdminAlertEmailOutboxCleanupJob> logger) : ILifecycleJob

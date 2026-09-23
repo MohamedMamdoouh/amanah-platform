@@ -16,6 +16,8 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
 
     public RecordingSmsSender SmsSender { get; } = new();
 
+    public RecordingOtpEmailSender OtpEmailSender { get; } = new();
+
     public RecordingAdminAlertEmailSender AdminAlertEmailSender { get; } = new();
 
     public FakeCaptchaVerifier CaptchaVerifier { get; } = new();
@@ -68,9 +70,11 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<ISmsSender>();
+            services.RemoveAll<IOtpEmailSender>();
             services.RemoveAll<ICaptchaVerifier>();
             services.RemoveAll<IAdminAlertEmailSender>();
             services.AddSingleton<ISmsSender>(SmsSender);
+            services.AddSingleton<IOtpEmailSender>(OtpEmailSender);
             services.AddSingleton<ICaptchaVerifier>(CaptchaVerifier);
             services.AddSingleton<IAdminAlertEmailSender>(AdminAlertEmailSender);
         });
@@ -83,6 +87,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
         SmsSender.SentMessages.Clear();
         SmsSender.ShouldThrow = false;
         SmsSender.ShouldTimeout = false;
+        OtpEmailSender.SentMessages.Clear();
         AdminAlertEmailSender.SentAlerts.Clear();
         AdminAlertEmailSender.ShouldThrow = false;
         AdminAlertEmailSender.FailureStatusCode = null;

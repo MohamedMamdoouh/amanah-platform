@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Amanah.Api.Filters;
 using Amanah.Api.Middleware;
 using Amanah.Api.Options;
@@ -50,6 +51,8 @@ public static class DependencyInjection
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.Converters.Add(
+                    new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
             });
 
         services.Configure<ApiBehaviorOptions>(options =>

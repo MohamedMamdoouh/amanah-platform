@@ -9,6 +9,8 @@ public static class ErrorCodes
 {
     public const string ValidationFailed = "validation.failed";
     public const string InvalidPhone = "auth.invalid_phone";
+    public const string InvalidEmail = "auth.invalid_email";
+    public const string EmailUnavailable = "service.email_unavailable";
     public const string CaptchaFailed = "auth.captcha_failed";
     public const string InvalidOtp = "auth.invalid_otp";
     public const string OtpExpired = "auth.otp_expired";
@@ -34,6 +36,9 @@ public static class ErrorCodes
 
     public const string FieldPhoneRequired = "field.phone.required";
     public const string FieldPhoneInvalid = "field.phone.invalid";
+    public const string FieldIdentifierRequired = "field.identifier.required";
+    public const string FieldIdentifierInvalid = "field.identifier.invalid";
+    public const string FieldEmailInvalid = "field.email.invalid";
     public const string FieldDisplayNameRequired = "field.display_name.required";
     public const string FieldDisplayNameInvalid = "field.display_name.invalid";
     public const string FieldAcceptTermsRequired = "field.accept_terms.required";

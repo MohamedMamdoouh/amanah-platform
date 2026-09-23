@@ -1,13 +1,13 @@
 <section class="auth-card page-container" aria-labelledby="login-title">
   <header class="auth-card__header">
-    @if (mode() !== 'forgot') {
+    @if (mode() !== "forgot") {
       <app-tabs
         [tabs]="authTabs()"
         [activeId]="mode()"
         (tabChange)="onTabChange($event)"
       />
     }
-    @if (mode() !== 'signin') {
+    @if (mode() !== "signin") {
       <app-stepper [steps]="authSteps()" [currentStep]="currentStepIndex()" />
     }
     <h1 id="login-title" class="auth-card__title">
@@ -25,22 +25,50 @@
       [formGroup]="signInForm"
       (ngSubmit)="submitSignIn()"
     >
-      <app-form-field
-        [label]="'auth.login.phone_label' | translate"
-        [error]="fieldError('phone')"
-        [required]="true"
-        htmlFor="signin-phone"
-      >
-        <input
-          id="signin-phone"
-          type="tel"
-          formControlName="phone"
-          class="form-input"
-          inputmode="tel"
-          autocomplete="tel"
-          dir="ltr"
+      <div class="auth-form__channel">
+        <app-tabs
+          [tabs]="identifierChannelTabs()"
+          [activeId]="identifierChannel()"
+          [ariaLabel]="'auth.login.channel_aria' | translate"
+          (tabChange)="onIdentifierChannelChange($event)"
         />
-      </app-form-field>
+      </div>
+
+      @if (identifierChannel() === "phone") {
+        <app-form-field
+          [label]="'auth.login.phone_label' | translate"
+          [error]="fieldError('identifier')"
+          [required]="true"
+          htmlFor="signin-identifier"
+        >
+          <input
+            id="signin-identifier"
+            type="tel"
+            formControlName="identifier"
+            class="form-input"
+            inputmode="numeric"
+            autocomplete="tel"
+            dir="ltr"
+            maxlength="12"
+          />
+        </app-form-field>
+      } @else {
+        <app-form-field
+          [label]="'auth.login.email_label' | translate"
+          [error]="fieldError('identifier')"
+          [required]="true"
+          htmlFor="signin-identifier-email"
+        >
+          <input
+            id="signin-identifier-email"
+            type="email"
+            formControlName="identifier"
+            class="form-input"
+            autocomplete="email"
+            dir="ltr"
+          />
+        </app-form-field>
+      }
 
       <app-form-field
         [label]="'auth.login.password_label' | translate"
@@ -78,22 +106,50 @@
           [formGroup]="phoneForm"
           (ngSubmit)="submitPhone()"
         >
-          <app-form-field
-            [label]="'auth.login.phone_label' | translate"
-            [error]="fieldError('phone')"
-            [required]="true"
-            htmlFor="auth-phone"
-          >
-            <input
-              id="auth-phone"
-              type="tel"
-              formControlName="phone"
-              class="form-input"
-              inputmode="tel"
-              autocomplete="tel"
-              dir="ltr"
+          <div class="auth-form__channel">
+            <app-tabs
+              [tabs]="identifierChannelTabs()"
+              [activeId]="identifierChannel()"
+              [ariaLabel]="'auth.login.channel_aria' | translate"
+              (tabChange)="onIdentifierChannelChange($event)"
             />
-          </app-form-field>
+          </div>
+
+          @if (identifierChannel() === "phone") {
+            <app-form-field
+              [label]="'auth.login.phone_label' | translate"
+              [error]="fieldError('identifier')"
+              [required]="true"
+              htmlFor="auth-identifier"
+            >
+              <input
+                id="auth-identifier"
+                type="tel"
+                formControlName="identifier"
+                class="form-input"
+                inputmode="numeric"
+                autocomplete="tel"
+                dir="ltr"
+                maxlength="12"
+              />
+            </app-form-field>
+          } @else {
+            <app-form-field
+              [label]="'auth.login.email_label' | translate"
+              [error]="fieldError('identifier')"
+              [required]="true"
+              htmlFor="auth-identifier-email"
+            >
+              <input
+                id="auth-identifier-email"
+                type="email"
+                formControlName="identifier"
+                class="form-input"
+                autocomplete="email"
+                dir="ltr"
+              />
+            </app-form-field>
+          }
 
           <app-turnstile-widget
             #turnstile
@@ -118,7 +174,11 @@
           </app-button>
 
           @if (mode() === "forgot") {
-            <app-button type="button" variant="ghost" (clicked)="setMode('signin')">
+            <app-button
+              type="button"
+              variant="ghost"
+              (clicked)="setMode('signin')"
+            >
               {{ "auth.login.back_to_signin" | translate }}
             </app-button>
           }
@@ -254,9 +314,12 @@
             <input type="checkbox" formControlName="acceptTerms" />
             <span>
               {{ "auth.login.accept_terms" | translate }}
-              <a routerLink="/terms" target="_blank" rel="noopener noreferrer">{{
-                "footer.terms" | translate
-              }}</a>
+              <a
+                routerLink="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ "footer.terms" | translate }}</a
+              >
               ·
               <a
                 routerLink="/privacy"
@@ -319,7 +382,9 @@
               class="form-input"
               autocomplete="new-password"
             />
-            @if (resetForm.controls.confirmPassword.hasError("passwordMismatch")) {
+            @if (
+              resetForm.controls.confirmPassword.hasError("passwordMismatch")
+            ) {
               <span class="form-error" role="alert">{{
                 "auth.login.password_mismatch" | translate
               }}</span>

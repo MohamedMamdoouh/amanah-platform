@@ -59,11 +59,16 @@ export class UsersLookupComponent {
   readonly searchError = signal<string | null>(null);
   readonly fieldErrors = signal<Record<string, string[]>>({});
   readonly phoneSearchAttempted = signal(false);
+  readonly emailSearchAttempted = signal(false);
 
   readonly nameControl = new FormControl('', { nonNullable: true });
   readonly phoneControl = new FormControl('', {
     nonNullable: true,
     validators: [Validators.required, Validators.minLength(10)],
+  });
+  readonly emailControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.email],
   });
 
   constructor() {
@@ -91,7 +96,9 @@ export class UsersLookupComponent {
     this.clearSearchState();
     this.nameControl.setValue('', { emitEvent: false });
     this.phoneControl.setValue('', { emitEvent: false });
+    this.emailControl.setValue('', { emitEvent: false });
     this.phoneSearchAttempted.set(false);
+    this.emailSearchAttempted.set(false);
   }
 
   submitPhoneSearch(): void {
@@ -113,6 +120,25 @@ export class UsersLookupComponent {
     this.submitPhoneSearch();
   }
 
+  submitEmailSearch(): void {
+    if (this.searchMode() !== 'email') {
+      return;
+    }
+
+    this.emailControl.markAsTouched();
+    if (this.emailControl.invalid) {
+      return;
+    }
+
+    this.emailSearchAttempted.set(true);
+    void firstValueFrom(this.searchRequest('email', this.emailControl.value.trim()));
+  }
+
+  onEmailEnter(event: Event): void {
+    event.preventDefault();
+    this.submitEmailSearch();
+  }
+
   fieldError(field: string): string | null {
     const messages = this.fieldErrors()[field];
     return messages?.[0] ?? null;
@@ -126,6 +152,10 @@ export class UsersLookupComponent {
 
     if (mode === 'phone') {
       return this.phoneSearchAttempted();
+    }
+
+    if (mode === 'email') {
+      return this.emailSearchAttempted();
     }
 
     return false;

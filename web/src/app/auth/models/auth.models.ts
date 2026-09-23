@@ -2,7 +2,8 @@ export interface UserProfile {
   id: string;
   displayName: string;
   role: string;
-  phone: string;
+  phone: string | null;
+  email: string | null;
   requiresAccountReactivation?: boolean;
 }
 
@@ -15,20 +16,29 @@ export type OtpPurpose = 'signup' | 'password_reset';
 
 export type AuthMode = 'signin' | 'signup' | 'forgot';
 
+export type AuthIdentifierChannel = 'phone' | 'email';
+
+export enum VerifyOtpStatus {
+  SignupReady = 'signupReady',
+  ResetReady = 'resetReady',
+}
+
 export interface VerifyOtpResult {
-  status: 'signup_ready' | 'reset_ready';
+  status: VerifyOtpStatus;
   signupToken?: string;
   resetToken?: string;
 }
 
 export interface SendOtpRequest {
-  phone: string;
+  channel: AuthIdentifierChannel;
+  identifier: string;
   captchaToken: string;
   purpose: OtpPurpose;
 }
 
 export interface VerifyOtpRequest {
-  phone: string;
+  channel: AuthIdentifierChannel;
+  identifier: string;
   code: string;
   purpose: OtpPurpose;
 }
@@ -41,7 +51,8 @@ export interface RegisterRequest {
 }
 
 export interface LoginRequest {
-  phone: string;
+  channel: AuthIdentifierChannel;
+  identifier: string;
   password: string;
 }
 

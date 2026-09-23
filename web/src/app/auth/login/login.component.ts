@@ -3,8 +3,10 @@ import { Component, inject, OnDestroy, signal, viewChild } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
+  FormGroup,
   ReactiveFormsModule,
   ValidationErrors,
+  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -18,12 +20,25 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
 import { StepItem, StepperComponent } from '../../shared/ui/stepper/stepper.component';
 import { TabItem, TabsComponent } from '../../shared/ui/tabs/tabs.component';
 import { AuthService } from '../auth.service';
-import { AuthMode, OtpPurpose } from '../models/auth.models';
+import {
+  AuthIdentifierChannel,
+  AuthMode,
+  OtpPurpose,
+  VerifyOtpStatus,
+} from '../models/auth.models';
 import { TurnstileWidgetComponent } from '../turnstile-widget/turnstile-widget.component';
 
 type AuthStep = 'phone' | 'otp' | 'register' | 'reset';
 
 const PASSWORD_MIN_LENGTH = 8;
+
+function identifierValidators(channel: AuthIdentifierChannel): ValidatorFn[] {
+  if (channel === 'phone') {
+    return [Validators.required, Validators.pattern(/^\+?\d{11}$/)];
+  }
+
+  return [Validators.required, Validators.email];
+}
 
 function passwordsMatch(control: AbstractControl): ValidationErrors | null {
   const password = control.parent?.get('password')?.value;
@@ -69,19 +84,21 @@ export class LoginComponent implements OnDestroy {
   readonly fieldErrors = signal<Record<string, string[]>>({});
   readonly captchaToken = signal<string | null>(null);
   readonly resendCooldown = signal(0);
+  readonly identifierChannel = signal<AuthIdentifierChannel>('phone');
 
-  private phone = '';
+  private identifier = '';
+  private otpChannel: AuthIdentifierChannel = 'phone';
   private signupToken: string | null = null;
   private resetToken: string | null = null;
   private cooldownTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly signInForm = this.fb.nonNullable.group({
-    phone: ['', [Validators.required, Validators.minLength(10)]],
+    identifier: ['', identifierValidators('phone')],
     password: ['', [Validators.required]],
   });
 
   readonly phoneForm = this.fb.nonNullable.group({
-    phone: ['', [Validators.required, Validators.minLength(10)]],
+    identifier: ['', identifierValidators('phone')],
   });
 
   readonly otpForm = this.fb.nonNullable.group({
@@ -122,11 +139,48 @@ export class LoginComponent implements OnDestroy {
     this.mode.set(mode);
     this.step.set('phone');
     this.clearErrors();
-    this.phone = '';
+    this.identifier = '';
+    this.otpChannel = 'phone';
     this.signupToken = null;
     this.resetToken = null;
+    this.identifierChannel.set('phone');
+    this.applyIdentifierValidators(this.signInForm, 'phone');
+    this.applyIdentifierValidators(this.phoneForm, 'phone');
+    this.signInForm.controls.identifier.setValue('');
+    this.phoneForm.controls.identifier.setValue('');
     this.captchaToken.set(null);
     this.turnstile()?.reset();
+  }
+
+  identifierChannelTabs(): TabItem[] {
+    return [
+      {
+        id: 'phone',
+        label: this.translate.instant('auth.login.channel_phone'),
+      },
+      {
+        id: 'email',
+        label: this.translate.instant('auth.login.channel_email'),
+      },
+    ];
+  }
+
+  onIdentifierChannelChange(id: string): void {
+    const channel = id as AuthIdentifierChannel;
+    if (channel === this.identifierChannel()) {
+      return;
+    }
+
+    this.identifierChannel.set(channel);
+    this.applyIdentifierValidators(this.signInForm, channel);
+    this.applyIdentifierValidators(this.phoneForm, channel);
+    this.signInForm.controls.identifier.setValue('');
+    this.phoneForm.controls.identifier.setValue('');
+    this.clearErrors();
+
+    if (this.mode() !== 'signin') {
+      this.refreshCaptcha();
+    }
   }
 
   titleKey(): string {
@@ -198,7 +252,8 @@ export class LoginComponent implements OnDestroy {
     try {
       await firstValueFrom(
         this.auth.login({
-          phone: this.signInForm.controls.phone.value.trim(),
+          channel: this.identifierChannel(),
+          identifier: this.signInForm.controls.identifier.value.trim(),
           password: this.signInForm.controls.password.value,
         }),
       );
@@ -216,7 +271,8 @@ export class LoginComponent implements OnDestroy {
 
     this.clearErrors();
     this.submitting.set(true);
-    this.phone = this.phoneForm.controls.phone.value.trim();
+    this.identifier = this.phoneForm.controls.identifier.value.trim();
+    this.otpChannel = this.identifierChannel();
 
     try {
       await this.sendOtp();
@@ -237,13 +293,14 @@ export class LoginComponent implements OnDestroy {
     try {
       const result = await firstValueFrom(
         this.auth.verifyOtp({
-          phone: this.phone,
+          channel: this.otpChannel,
+          identifier: this.identifier,
           code: this.otpForm.controls.code.value.trim(),
           purpose: this.otpPurpose(),
         }),
       );
 
-      if (result.status === 'signup_ready') {
+      if (result.status === VerifyOtpStatus.SignupReady) {
         this.signupToken = result.signupToken ?? null;
         this.submitting.set(false);
         this.step.set('register');
@@ -333,7 +390,8 @@ export class LoginComponent implements OnDestroy {
   private async sendOtp(): Promise<void> {
     await firstValueFrom(
       this.auth.sendOtp({
-        phone: this.phone,
+        channel: this.otpChannel,
+        identifier: this.identifier,
         captchaToken: this.captchaToken()!,
         purpose: this.otpPurpose(),
       }),
@@ -350,6 +408,16 @@ export class LoginComponent implements OnDestroy {
   private refreshCaptcha(): void {
     this.captchaToken.set(null);
     this.turnstile()?.reset();
+  }
+
+  private applyIdentifierValidators(
+    form: FormGroup,
+    channel: AuthIdentifierChannel,
+  ): void {
+    const control = form.controls['identifier'];
+    control.clearValidators();
+    control.setValidators(identifierValidators(channel));
+    control.updateValueAndValidity();
   }
 
   private handleError(error: unknown, onHandled?: () => void): void {

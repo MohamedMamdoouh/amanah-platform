@@ -19,7 +19,7 @@ public class AuthValidationTests(ApiWebApplicationFactory factory) : IClassFixtu
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
-        Assert.Contains("Phone number is required.", error?.Errors?["phone"] ?? []);
+        Assert.Contains("Phone number is required.", error?.Errors?["identifier"] ?? []);
     }
 
     [Fact]
@@ -93,6 +93,7 @@ public class AuthValidationTests(ApiWebApplicationFactory factory) : IClassFixtu
         return new OtpSendTestContext(
             client,
             factory.SmsSender,
+            factory.OtpEmailSender,
             factory.CaptchaVerifier,
             scope);
     }

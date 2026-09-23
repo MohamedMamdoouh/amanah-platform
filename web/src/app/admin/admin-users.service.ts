@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 
-export type AdminUserSearchBy = 'name' | 'phone';
+export type AdminUserSearchBy = 'name' | 'phone' | 'email';
 
 export interface AdminUserSummary {
   id: string;
@@ -18,7 +18,8 @@ export interface AdminUserListResponse {
 export interface AdminUserDetail {
   id: string;
   displayName: string;
-  normalizedPhone: string;
+  normalizedPhone: string | null;
+  normalizedEmail: string | null;
   role: string;
   isBanned: boolean;
   banReason: string | null;

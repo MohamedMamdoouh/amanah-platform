@@ -4,6 +4,7 @@ using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Services.Auth;
 using Amanah.Contracts.Errors;
+using Amanah.Contracts.Responses.Auth;
 using Amanah.Api.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,15 +22,16 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         var (response, body) = await context.VerifyOtpAsync("01012345678", code);
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("signup_ready", body?.Status);
+        Assert.Equal(VerifyOtpStatus.SignupReady, body?.Status);
         Assert.NotNull(body?.SignupToken);
         Assert.Null(body?.ResetToken);
         Assert.Equal(0, await context.DbContext.OtpCodes.CountAsync());
 
         using var scope = factory.Services.CreateScope();
         var tokenService = scope.ServiceProvider.GetRequiredService<HandoffTokenService>();
-        Assert.True(tokenService.TryValidate(body!.SignupToken!, AuthTokenPurposes.Signup, out var phone));
-        Assert.Equal("+201012345678", phone);
+        Assert.True(tokenService.TryValidate(body!.SignupToken!, AuthTokenPurposes.Signup, out var identity));
+        Assert.Equal("+201012345678", identity.NormalizedValue);
+        Assert.Equal(AuthIdentifierChannel.Phone, identity.Channel);
     }
 
     [Fact]
@@ -44,7 +46,8 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         var now = DateTimeOffset.UtcNow;
         context.DbContext.OtpCodes.Add(new OtpCode
         {
-            Phone = "+201012345678",
+            Destination = "+201012345678",
+            Channel = AuthIdentifierChannel.Phone,
             CodeHash = OtpHasher.Hash("123456"),
             ExpiresAt = now.AddMinutes(10),
             AttemptCount = 0,
@@ -76,14 +79,14 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
             OtpPurposes.PasswordReset);
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("reset_ready", body?.Status);
+        Assert.Equal(VerifyOtpStatus.ResetReady, body?.Status);
         Assert.Null(body?.SignupToken);
         Assert.NotNull(body?.ResetToken);
 
         using var scope = factory.Services.CreateScope();
         var tokenService = scope.ServiceProvider.GetRequiredService<HandoffTokenService>();
-        Assert.True(tokenService.TryValidate(body!.ResetToken!, AuthTokenPurposes.Reset, out var phone));
-        Assert.Equal("+201012345678", phone);
+        Assert.True(tokenService.TryValidate(body!.ResetToken!, AuthTokenPurposes.Reset, out var identity));
+        Assert.Equal("+201012345678", identity.NormalizedValue);
     }
 
     [Fact]
@@ -196,7 +199,7 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         var (response, body) = await context.VerifyOtpAsync("01012345678", arabicCode);
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("signup_ready", body?.Status);
+        Assert.Equal(VerifyOtpStatus.SignupReady, body?.Status);
     }
 
     private static async Task<(HttpResponseMessage Response, ApiError? Error)> VerifyWithErrorAsync(
@@ -222,12 +225,14 @@ public class OtpVerifyTests(ApiWebApplicationFactory factory) : IClassFixture<Ap
         await setupContext.Database.MigrateAsync();
         await setupContext.OtpCodes.ExecuteDeleteAsync();
         await setupContext.OtpSmsOutboxMessages.ExecuteDeleteAsync();
+        await setupContext.OtpEmailOutboxMessages.ExecuteDeleteAsync();
         await setupContext.Users.ExecuteDeleteAsync();
 
         var scope = factory.Services.CreateAsyncScope();
         return new OtpSendTestContext(
             factory.CreateClient(),
             factory.SmsSender,
+            factory.OtpEmailSender,
             factory.CaptchaVerifier,
             scope);
     }

@@ -1,5 +1,6 @@
 using Amanah.Api.Auth;
 using Amanah.Api.Options;
+using Amanah.Api.Services.Account;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Services.External;
 
@@ -48,22 +49,36 @@ public static class AuthServiceExtensions
         services.AddDataProtection();
         services.AddSingleton<RefreshTokenCookieManager>();
         services.AddScoped<OtpSmsOutboxDispatcher>();
+        services.AddScoped<OtpEmailOutboxDispatcher>();
+        services.AddScoped<AccountIdentifierService>();
         services.AddScoped<HandoffTokenService>();
         services.AddSingleton<UserPasswordHasher>();
         services.AddScoped<TokenService>();
         services.AddScoped<AuthService>();
         services.AddScoped<OtpService>();
         services.AddHostedService<OtpSmsOutboxProcessor>();
+        services.AddHostedService<OtpEmailOutboxProcessor>();
 
         if (environment.IsDevelopment())
         {
             services.AddSingleton<ISmsSender, ConsoleSmsSender>();
+            services.AddSingleton<IOtpEmailSender, ConsoleOtpEmailSender>();
             services.AddSingleton<ICaptchaVerifier, FakeCaptchaVerifier>();
         }
         else
         {
             services.AddHttpClient<ICaptchaVerifier, TurnstileCaptchaVerifier>();
             services.AddHttpClient<ISmsSender, UnimtxSmsSender>();
+
+            var emailOptions = configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>();
+            if (emailOptions?.IsConfigured == true)
+            {
+                services.AddHttpClient<IOtpEmailSender, ResendOtpEmailSender>();
+            }
+            else
+            {
+                services.AddSingleton<IOtpEmailSender, NullOtpEmailSender>();
+            }
         }
 
         return services;

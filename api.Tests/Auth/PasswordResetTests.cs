@@ -124,6 +124,7 @@ public class PasswordResetTests(ApiWebApplicationFactory factory) : IClassFixtur
         await using var context = await CreateContextAsync();
 
         await context.RegisterNewUserAsync();
+        context.SmsSender.SentMessages.Clear();
 
         var response = await context.SendOtpAsync("01012345678", OtpPurposes.Signup);
         var error = await HttpTestHelpers.ReadErrorAsync(response);
@@ -176,6 +177,7 @@ public class PasswordResetTests(ApiWebApplicationFactory factory) : IClassFixtur
         return new OtpSendTestContext(
             client,
             factory.SmsSender,
+            factory.OtpEmailSender,
             factory.CaptchaVerifier,
             scope);
     }

@@ -112,6 +112,7 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
     await using var authContext = new OtpSendTestContext(
       client,
       factory.SmsSender,
+      factory.OtpEmailSender,
       factory.CaptchaVerifier,
       factory.Services.CreateAsyncScope());
 
@@ -153,6 +154,7 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
     await using var authContext = new OtpSendTestContext(
       client,
       factory.SmsSender,
+      factory.OtpEmailSender,
       factory.CaptchaVerifier,
       factory.Services.CreateAsyncScope());
 

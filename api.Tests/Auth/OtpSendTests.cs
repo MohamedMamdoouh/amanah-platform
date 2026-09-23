@@ -1,6 +1,6 @@
 using Amanah.Api.Data;
-
 using Amanah.Api.Data.Entities;
+using Amanah.Api.Services.Auth;
 
 using Amanah.Contracts.Errors;
 
@@ -42,7 +42,8 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
 
 
 
-        var otpCount = await context.DbContext.OtpCodes.CountAsync(code => code.Phone == "+201012345678");
+        var otpCount = await context.DbContext.OtpCodes.CountAsync(
+            code => code.Destination == "+201012345678" && code.Channel == AuthIdentifierChannel.Phone);
 
         Assert.Equal(1, otpCount);
 
@@ -68,7 +69,9 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ErrorCodes.ValidationFailed, error?.Code);
-        Assert.Contains("Phone number format is not valid.", error?.Errors?["phone"] ?? []);
+        Assert.Contains(
+            "Phone number format is not valid.",
+            error?.Errors?["identifier"] ?? []);
 
         Assert.Empty(context.SmsSender.SentMessages);
 
@@ -453,13 +456,10 @@ public class OtpSendTests(ApiWebApplicationFactory factory) : IClassFixture<ApiW
         var scope = factory.Services.CreateAsyncScope();
 
         return new OtpSendTestContext(
-
             factory.CreateClient(),
-
             factory.SmsSender,
-
+            factory.OtpEmailSender,
             factory.CaptchaVerifier,
-
             scope);
 
     }

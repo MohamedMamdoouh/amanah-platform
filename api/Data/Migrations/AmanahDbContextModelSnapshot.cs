@@ -487,6 +487,11 @@ namespace Amanah.Api.Data.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
                     b.Property<string>("CodeHash")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -495,19 +500,67 @@ namespace Amanah.Api.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Phone")
+                    b.HasKey("Id");
+
+                    b.HasIndex("Destination", "Channel")
+                        .IsUnique();
+
+                    b.ToTable("otp_codes", (string)null);
+                });
+
+            modelBuilder.Entity("Amanah.Api.Data.Entities.OtpEmailOutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("OtpCodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProtectedPayload")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Phone");
+                    b.HasIndex("OtpCodeId");
 
-                    b.ToTable("otp_codes", (string)null);
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.HasIndex("Email", "Status", "ProcessedAt");
+
+                    b.ToTable("otp_email_outbox", (string)null);
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.OtpSmsOutboxMessage", b =>
@@ -827,8 +880,11 @@ namespace Amanah.Api.Data.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
                     b.Property<string>("NormalizedPhone")
-                        .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
@@ -844,10 +900,16 @@ namespace Amanah.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique();
+
                     b.HasIndex("NormalizedPhone")
                         .IsUnique();
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("users", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_users_at_least_one_identifier", "\"NormalizedPhone\" IS NOT NULL OR \"NormalizedEmail\" IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.AbuseReport", b =>
@@ -1018,6 +1080,16 @@ namespace Amanah.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Amanah.Api.Data.Entities.OtpEmailOutboxMessage", b =>
+                {
+                    b.HasOne("Amanah.Api.Data.Entities.OtpCode", "OtpCode")
+                        .WithMany()
+                        .HasForeignKey("OtpCodeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("OtpCode");
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.OtpSmsOutboxMessage", b =>

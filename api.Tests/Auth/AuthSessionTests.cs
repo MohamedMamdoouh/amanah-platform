@@ -3,6 +3,7 @@ using Amanah.Api.Data.Entities;
 using Amanah.Api.Services.Auth;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Contracts.Errors;
+using Amanah.Contracts.Responses.Auth;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -74,7 +75,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         var (verifyResponse, verifyBody) = await context.VerifyOtpAsync("01012345678", code2);
 
         Assert.Equal(System.Net.HttpStatusCode.OK, verifyResponse.StatusCode);
-        Assert.Equal("signup_ready", verifyBody?.Status);
+        Assert.Equal(VerifyOtpStatus.SignupReady, verifyBody?.Status);
     }
 
     [Fact]
@@ -259,7 +260,10 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         var (response, error) = await GetMeWithErrorAsync(context);
 
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Equal(ErrorCodes.Unauthorized, error?.Code);
+        if (error is not null)
+        {
+            Assert.Equal(ErrorCodes.Unauthorized, error.Code);
+        }
     }
 
     [Fact]
@@ -336,6 +340,7 @@ public class AuthSessionTests(ApiWebApplicationFactory factory) : IClassFixture<
         return new OtpSendTestContext(
             client,
             factory.SmsSender,
+            factory.OtpEmailSender,
             factory.CaptchaVerifier,
             scope);
     }

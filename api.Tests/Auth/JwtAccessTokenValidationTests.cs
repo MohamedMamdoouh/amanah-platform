@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Amanah.Api.Auth;
+using Amanah.Contracts.Requests.Auth;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Amanah.Api.Tests.Auth;
@@ -60,7 +61,8 @@ public class JwtAccessTokenValidationTests
         var now = DateTime.UtcNow;
         var jwt = new JwtSecurityToken(
             claims: [
-                new Claim(AuthClaimTypes.Phone, "+201012345678"),
+                new Claim(AuthClaimTypes.Channel, AuthIdentifierChannels.Phone),
+                new Claim(AuthClaimTypes.Identifier, "+201012345678"),
                 new Claim(AuthClaimTypes.Purpose, "signup"),
             ],
             notBefore: now,

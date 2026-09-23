@@ -80,6 +80,7 @@ public sealed class ReportTestContext : IAsyncDisposable
         var authContext = new OtpSendTestContext(
             client,
             factory.SmsSender,
+            factory.OtpEmailSender,
             factory.CaptchaVerifier,
             scope);
 

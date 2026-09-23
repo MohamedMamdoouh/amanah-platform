@@ -2,7 +2,9 @@ namespace Amanah.Contracts.Requests.Auth;
 
 public sealed class SendOtpRequest
 {
-    public string Phone { get; init; } = string.Empty;
+    public string Channel { get; init; } = string.Empty;
+
+    public string Identifier { get; init; } = string.Empty;
 
     public string CaptchaToken { get; init; } = string.Empty;
 
@@ -11,7 +13,9 @@ public sealed class SendOtpRequest
 
 public sealed class VerifyOtpRequest
 {
-    public string Phone { get; init; } = string.Empty;
+    public string Channel { get; init; } = string.Empty;
+
+    public string Identifier { get; init; } = string.Empty;
 
     public string Code { get; init; } = string.Empty;
 
@@ -31,7 +35,9 @@ public sealed class RegisterRequest
 
 public sealed class LoginRequest
 {
-    public string Phone { get; init; } = string.Empty;
+    public string Channel { get; init; } = string.Empty;
+
+    public string Identifier { get; init; } = string.Empty;
 
     public string Password { get; init; } = string.Empty;
 }

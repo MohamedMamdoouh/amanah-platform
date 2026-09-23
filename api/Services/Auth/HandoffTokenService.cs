@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Amanah.Api.Auth;
 using Amanah.Api.Options;
+using Amanah.Contracts.Requests.Auth;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -14,7 +15,7 @@ public sealed class HandoffTokenService(
 {
     private readonly JwtOptions _options = options.Value;
 
-    public string Issue(string normalizedPhone, string purpose)
+    public string Issue(AuthIdentifier identity, string purpose)
     {
         var signingKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_options.HandoffTokenSigningKey));
@@ -23,7 +24,8 @@ public sealed class HandoffTokenService(
 
         var token = new JwtSecurityToken(
             claims: [
-                new Claim(AuthClaimTypes.Phone, normalizedPhone),
+                new Claim(AuthClaimTypes.Channel, ChannelToClaim(identity.Channel)),
+                new Claim(AuthClaimTypes.Identifier, identity.NormalizedValue),
                 new Claim(AuthClaimTypes.Purpose, purpose),
             ],
             notBefore: now.UtcDateTime,
@@ -33,9 +35,9 @@ public sealed class HandoffTokenService(
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public bool TryValidate(string token, string expectedPurpose, out string normalizedPhone)
+    public bool TryValidate(string token, string expectedPurpose, out AuthIdentifier identity)
     {
-        normalizedPhone = string.Empty;
+        identity = default;
 
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -62,14 +64,21 @@ public sealed class HandoffTokenService(
                 out _);
 
             var purpose = principal.FindFirstValue(AuthClaimTypes.Purpose);
-            var phone = principal.FindFirstValue(AuthClaimTypes.Phone);
-
-            if (purpose != expectedPurpose || string.IsNullOrEmpty(phone))
+            if (purpose != expectedPurpose)
             {
                 return false;
             }
 
-            normalizedPhone = phone;
+            var channelClaim = principal.FindFirstValue(AuthClaimTypes.Channel);
+            var identifier = principal.FindFirstValue(AuthClaimTypes.Identifier);
+
+            if (string.IsNullOrEmpty(identifier)
+                || !AuthIdentifierNormalizer.TryParseChannel(channelClaim, out var channel))
+            {
+                return false;
+            }
+
+            identity = new AuthIdentifier(channel, identifier);
             return true;
         }
         catch (Exception)
@@ -77,4 +86,12 @@ public sealed class HandoffTokenService(
             return false;
         }
     }
+
+    private static string ChannelToClaim(AuthIdentifierChannel channel) =>
+        channel switch
+        {
+            AuthIdentifierChannel.Phone => AuthIdentifierChannels.Phone,
+            AuthIdentifierChannel.Email => AuthIdentifierChannels.Email,
+            _ => throw new ArgumentOutOfRangeException(nameof(channel)),
+        };
 }

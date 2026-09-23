@@ -11,6 +11,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<OtpSmsOutboxMessage> OtpSmsOutboxMessages => Set<OtpSmsOutboxMessage>();
 
+    public DbSet<OtpEmailOutboxMessage> OtpEmailOutboxMessages => Set<OtpEmailOutboxMessage>();
+
     public DbSet<AdminAlertEmailOutboxMessage> AdminAlertEmailOutboxMessages => Set<AdminAlertEmailOutboxMessage>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();

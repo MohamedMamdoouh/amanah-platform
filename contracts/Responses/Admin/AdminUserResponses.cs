@@ -18,7 +18,9 @@ public sealed class AdminUserDetailResponse
 
     public required string DisplayName { get; init; }
 
-    public required string NormalizedPhone { get; init; }
+    public string? NormalizedPhone { get; init; }
+
+    public string? NormalizedEmail { get; init; }
 
     public required string Role { get; init; }
 
