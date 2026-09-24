@@ -1,8 +1,8 @@
 :root {
-  --color-bg: #f7f4ef;
+  --color-bg: #e7efee;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
-  --color-surface-muted: #f0ebe3;
+  --color-surface-muted: #dce8e6;
   --color-text: #1a282b;
   --color-text-muted: #5c6769;
   --color-primary: #086060;
@@ -12,7 +12,7 @@
   --color-accent-hover: var(--color-primary-hover);
   --color-on-accent: #ffffff;
   --color-warm: #e0b890;
-  --color-border: #d5dfdb;
+  --color-border: #c5d4d1;
   --color-focus: var(--color-primary);
 
   --color-error: #8b1e1e;
@@ -23,7 +23,7 @@
   --color-warning-bg: #fdf4e6;
   --color-info: #1a4d6d;
   --color-info-bg: #e8f2f8;
-  --color-highlight: #faf6f0;
+  --color-highlight: #f1f6f5;
 
   --font-display: 'Tajawal', 'Segoe UI', sans-serif;
   --font-hero: 'Cairo', var(--font-display);
@@ -55,10 +55,10 @@
   --radius-lg: 1rem;
   --radius-full: 999px;
 
-  --shadow-sm: 0 1px 4px rgba(26, 40, 43, 0.04);
-  --shadow-md: 0 4px 16px rgba(26, 40, 43, 0.06);
-  --shadow-soft: 0 8px 32px rgba(26, 40, 43, 0.05);
-  --shadow-card: 0 2px 12px rgba(8, 96, 96, 0.08);
+  --shadow-sm: 0 1px 4px rgba(8, 96, 96, 0.05);
+  --shadow-md: 0 4px 16px rgba(8, 96, 96, 0.07);
+  --shadow-soft: 0 8px 32px rgba(8, 96, 96, 0.08);
+  --shadow-card: 0 2px 12px rgba(8, 96, 96, 0.09);
 
   --transition-fast: 150ms ease;
   --transition-base: 250ms ease;

@@ -2,7 +2,18 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
+  background:
+    radial-gradient(
+      ellipse 90% 55% at 50% -15%,
+      rgba(8, 96, 96, 0.07),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 100% 100%,
+      rgba(8, 96, 96, 0.04),
+      transparent 55%
+    ),
+    var(--color-bg);
 }
 
 .shell__main {
