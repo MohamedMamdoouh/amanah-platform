@@ -42,6 +42,11 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+button:disabled,
+button[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
 img {
   max-width: 100%;
   height: auto;

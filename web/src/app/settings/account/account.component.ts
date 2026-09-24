@@ -57,6 +57,7 @@ export class AccountComponent implements OnInit {
   readonly loggingOutEverywhere = signal(false);
   readonly logoutEverywhereError = signal<string | null>(null);
   readonly linkStep = signal<'idle' | 'otp'>('idle');
+  readonly showLinkForm = signal(false);
   readonly linkSubmitting = signal(false);
   readonly linkError = signal<string | null>(null);
   readonly linkCaptchaToken = signal<string | null>(null);
@@ -98,6 +99,18 @@ export class AccountComponent implements OnInit {
 
   onLinkCaptchaExpired(): void {
     this.linkCaptchaToken.set(null);
+  }
+
+  openLinkForm(): void {
+    this.linkError.set(null);
+    this.showLinkForm.set(true);
+  }
+
+  closeLinkForm(): void {
+    this.showLinkForm.set(false);
+    this.linkForm.reset();
+    this.linkError.set(null);
+    this.resetLinkCaptcha();
   }
 
   async submitLinkSend(): Promise<void> {
@@ -151,6 +164,7 @@ export class AccountComponent implements OnInit {
       );
       this.identifiers.set(updated);
       this.linkStep.set('idle');
+      this.showLinkForm.set(false);
       this.linkForm.reset();
       this.otpForm.reset();
       await firstValueFrom(this.auth.fetchCurrentUser());

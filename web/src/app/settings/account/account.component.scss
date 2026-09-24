@@ -55,8 +55,10 @@
   display: block;
 }
 
-.account-settings__link-form > app-button {
-  justify-self: start;
+.account-settings__link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
 }
 
 .account-settings__warning {

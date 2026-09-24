@@ -19,7 +19,8 @@ public static class DependencyInjection
         services.AddApiCaching(configuration);
         services.AddCatalogServices();
         services.AddCategoryAdminServices();
-        services.AddEmailServices(configuration);
+        services.AddEmailServices(configuration, environment);
+        services.AddSupportServices();
         services.AddReportServices();
         services.AddClaimServices();
         services.AddResolutionServices();

@@ -129,9 +129,8 @@
 .btn--disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
-.btn--loading {
+.btn:disabled.btn--loading {
   cursor: wait;
 }

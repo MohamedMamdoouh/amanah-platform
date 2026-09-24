@@ -8,7 +8,8 @@ public static class EmailServiceExtensions
 {
     public static IServiceCollection AddEmailServices(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
         services.AddScoped<AdminAlertEmailOutboxDispatcher>();
@@ -22,6 +23,19 @@ public static class EmailServiceExtensions
         else
         {
             services.AddSingleton<IAdminAlertEmailSender, NullAdminAlertEmailSender>();
+        }
+
+        if (environment.IsDevelopment())
+        {
+            services.AddSingleton<ISupportEmailSender, ConsoleSupportEmailSender>();
+        }
+        else if (emailOptions?.IsConfigured == true)
+        {
+            services.AddHttpClient<ISupportEmailSender, ResendSupportEmailSender>();
+        }
+        else
+        {
+            services.AddSingleton<ISupportEmailSender, NullSupportEmailSender>();
         }
 
         return services;

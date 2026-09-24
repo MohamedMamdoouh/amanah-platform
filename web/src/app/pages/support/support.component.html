@@ -9,11 +9,107 @@
       <div class="info-card__icon" aria-hidden="true">
         <app-icon name="chat" size="lg" />
       </div>
-      <h2>{{ 'pages.support.email.title' | translate }}</h2>
-      <a class="info-card__email" href="mailto:mohamed.mail.apps@gmail.com">
-        {{ 'pages.support.email.address' | translate }}
-      </a>
-      <p>{{ 'pages.support.email.body' | translate }}</p>
+      <h2>{{ 'pages.support.form.title' | translate }}</h2>
+      <p>{{ 'pages.support.form.lead' | translate }}</p>
+
+      @if (submitted()) {
+        <app-alert variant="success">
+          {{ 'pages.support.form.success' | translate }}
+        </app-alert>
+        <div class="support-form__actions">
+          <app-button type="button" variant="primary" (clicked)="sendAnother()">
+            {{ 'pages.support.form.send_another' | translate }}
+          </app-button>
+        </div>
+      } @else if (!showSupportForm()) {
+        <app-button type="button" variant="secondary" (clicked)="openSupportForm()">
+          {{ 'pages.support.form.open' | translate }}
+        </app-button>
+      } @else {
+        @if (summaryError()) {
+          <app-alert variant="error">{{ summaryError() }}</app-alert>
+        }
+
+        <form class="support-form" [formGroup]="form" (ngSubmit)="submit()">
+          <app-form-field
+            [label]="'pages.support.form.display_name_label' | translate"
+            [error]="fieldError('displayName')"
+            [required]="true"
+            htmlFor="support-display-name"
+          >
+            <input
+              id="support-display-name"
+              type="text"
+              formControlName="displayName"
+              class="form-input"
+              autocomplete="name"
+              maxlength="40"
+            />
+          </app-form-field>
+
+          <app-form-field
+            [label]="'pages.support.form.reply_email_label' | translate"
+            [hint]="'pages.support.form.reply_email_hint' | translate"
+            [error]="fieldError('replyEmail')"
+            [required]="true"
+            htmlFor="support-reply-email"
+          >
+            <input
+              id="support-reply-email"
+              type="email"
+              formControlName="replyEmail"
+              class="form-input"
+              autocomplete="email"
+              dir="ltr"
+            />
+          </app-form-field>
+
+          <app-form-field
+            [label]="'pages.support.form.message_label' | translate"
+            [error]="fieldError('message')"
+            [required]="true"
+            htmlFor="support-message"
+          >
+            <textarea
+              id="support-message"
+              formControlName="message"
+              class="form-textarea"
+              rows="5"
+              maxlength="2000"
+            ></textarea>
+          </app-form-field>
+
+          <p class="support-form__privacy">
+            {{ 'pages.support.form.privacy_note' | translate }}
+          </p>
+
+          <app-turnstile-widget
+            #turnstile
+            (tokenResolved)="onCaptchaToken($event)"
+            (tokenExpired)="onCaptchaExpired()"
+            (tokenErrored)="onCaptchaErrored()"
+          />
+
+          <div class="support-form__actions cluster">
+            <app-button
+              type="submit"
+              variant="primary"
+              [disabled]="form.invalid || !captchaToken()"
+              [loading]="submitting()"
+            >
+              {{ 'pages.support.form.submit' | translate }}
+            </app-button>
+            <app-button
+              type="button"
+              variant="ghost"
+              [disabled]="submitting()"
+              (clicked)="closeSupportForm()"
+            >
+              {{ 'pages.support.form.cancel' | translate }}
+            </app-button>
+          </div>
+        </form>
+      }
     </section>
 
     <section class="info-card">

@@ -1,0 +1,21 @@
+.support-form {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.support-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.support-form__privacy {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-base);
+  color: var(--color-text-muted);
+}
+
+.support-form > app-turnstile-widget {
+  justify-self: start;
+}

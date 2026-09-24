@@ -40,44 +40,69 @@
 
         @if (canLinkIdentifier()) {
           @if (linkStep() === "idle") {
-            <form
-              class="account-settings__link-form"
-              [formGroup]="linkForm"
-              (ngSubmit)="submitLinkSend()"
-            >
-              <app-form-field
-                [label]="
-                  (linkChannel() === 'email'
-                    ? 'account.identifiers.link_email'
-                    : 'account.identifiers.link_phone'
-                  ) | translate
-                "
-                [required]="true"
-                htmlFor="link-identifier"
-              >
-                <input
-                  id="link-identifier"
-                  [type]="linkChannel() === 'email' ? 'email' : 'tel'"
-                  class="form-input"
-                  formControlName="identifier"
-                  [autocomplete]="linkChannel() === 'email' ? 'email' : 'tel'"
-                  dir="ltr"
-                />
-              </app-form-field>
-              <app-turnstile-widget
-                #linkTurnstile
-                (tokenResolved)="onLinkCaptchaToken($event)"
-                (tokenExpired)="onLinkCaptchaExpired()"
-              />
+            @if (!showLinkForm()) {
               <app-button
-                type="submit"
+                type="button"
                 variant="secondary"
-                [loading]="linkSubmitting()"
-                [disabled]="linkForm.invalid || !linkCaptchaToken()"
+                (clicked)="openLinkForm()"
               >
-                {{ "account.identifiers.send_code" | translate }}
+                {{
+                  (linkChannel() === "email"
+                    ? "account.identifiers.link_email"
+                    : "account.identifiers.link_phone"
+                  ) | translate
+                }}
               </app-button>
-            </form>
+            } @else {
+              <form
+                class="account-settings__link-form"
+                [formGroup]="linkForm"
+                (ngSubmit)="submitLinkSend()"
+              >
+                <app-form-field
+                  [label]="
+                    (linkChannel() === 'email'
+                      ? 'account.identifiers.link_email'
+                      : 'account.identifiers.link_phone'
+                    ) | translate
+                  "
+                  [required]="true"
+                  htmlFor="link-identifier"
+                >
+                  <input
+                    id="link-identifier"
+                    [type]="linkChannel() === 'email' ? 'email' : 'tel'"
+                    class="form-input"
+                    formControlName="identifier"
+                    [autocomplete]="linkChannel() === 'email' ? 'email' : 'tel'"
+                    dir="ltr"
+                  />
+                </app-form-field>
+                <app-turnstile-widget
+                  #linkTurnstile
+                  (tokenResolved)="onLinkCaptchaToken($event)"
+                  (tokenExpired)="onLinkCaptchaExpired()"
+                />
+                <div class="account-settings__link-actions cluster">
+                  <app-button
+                    type="submit"
+                    variant="secondary"
+                    [loading]="linkSubmitting()"
+                    [disabled]="linkForm.invalid || !linkCaptchaToken()"
+                  >
+                    {{ "account.identifiers.send_code" | translate }}
+                  </app-button>
+                  <app-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="linkSubmitting()"
+                    (clicked)="closeLinkForm()"
+                  >
+                    {{ "account.identifiers.cancel_link" | translate }}
+                  </app-button>
+                </div>
+              </form>
+            }
           } @else {
             <form
               class="account-settings__link-form"

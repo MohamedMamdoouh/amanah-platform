@@ -53,6 +53,10 @@ public static class ErrorCodes
     public const string FieldRefreshTokenRequired = "field.refresh_token.required";
     public const string FieldOtpCodeRequired = "field.otp_code.required";
     public const string FieldOtpCodeInvalid = "field.otp_code.invalid";
+    public const string FieldReplyEmailRequired = "field.reply_email.required";
+    public const string FieldReplyEmailInvalid = "field.reply_email.invalid";
+    public const string FieldSupportMessageRequired = "field.support_message.required";
+    public const string FieldSupportMessageInvalid = "field.support_message.invalid";
 
     public const string ReportDailyQuota = "report.daily_quota";
     public const string ReportOpenCap = "report.open_cap";
