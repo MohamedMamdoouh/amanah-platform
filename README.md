@@ -242,6 +242,7 @@ Cors__AllowedOrigins__0=https://your-origin.example
 | `Turnstile__SecretKey` | Yes | Turnstile server secret (must match the widget site key) |
 | `ADMIN_PHONE` / `ADMIN_PASSWORD` | Yes | Bootstrap admin |
 | `Bucket__Endpoint`, `Bucket__AccessKey`, `Bucket__SecretKey`, `Bucket__Name` | Yes* | Cloudflare R2 |
+| `Bucket__PublicBaseUrl` | No | Public `r2.dev`/custom domain for thumbnails; else API uses 12h presigned URLs |
 | `Email__ApiKey`, `Email__FromAddress`, `Email__FromName`, `Email__AdminAlertTo` | Optional | Brevo admin alerts |
 | `SEED_USER_PHONE`, `SEED_USER_PASSWORD` | No | Optional staging user; omit in production |
 

@@ -71,8 +71,16 @@ public sealed class R2BucketStorage(
 
     public string GetPublicUrl(string key)
     {
-        var endpoint = _options.Endpoint!.TrimEnd('/');
-        return $"{endpoint}/{_options.Name}/{key}";
+        if (!string.IsNullOrWhiteSpace(_options.PublicBaseUrl))
+        {
+            var baseUrl = _options.PublicBaseUrl.TrimEnd('/');
+            var objectKey = key.TrimStart('/');
+            return $"{baseUrl}/{objectKey}";
+        }
+
+        // The S3 API host (*.r2.cloudflarestorage.com) is not readable in browsers.
+        // Without a public bucket domain, sign a GET so <img src> works.
+        return GetPreSignedUrl(key, TimeSpan.FromHours(12)).ToString();
     }
 
     public Uri GetPreSignedUrl(string key, TimeSpan expiry)

@@ -66,6 +66,7 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 | `Bucket__AccessKey` | Yes* | R2 access key ID |
 | `Bucket__SecretKey` | Yes* | R2 secret access key |
 | `Bucket__Name` | Yes* | Bucket name (e.g. `amanah-media`) |
+| `Bucket__PublicBaseUrl` | No | Optional public origin for thumbnails (`https://pub-….r2.dev` or custom domain) |
 | `Email__ApiKey` | Optional pre-staging | Brevo API key |
 | `Email__FromAddress` | Optional pre-staging | Verified sender |
 | `Email__AdminAlertTo` | Optional pre-staging | Admin inbox for moderation alerts |
@@ -115,9 +116,11 @@ Each job emits one **Information** completion log with its outcome (for example 
 | `Bucket__AccessKey` | R2 access key ID |
 | `Bucket__SecretKey` | R2 secret access key |
 | `Bucket__Name` | Bucket name (e.g. `amanah-media`) |
+| `Bucket__PublicBaseUrl` | Optional. Public bucket URL (`https://pub-….r2.dev` or custom domain). When unset, public thumbnails use 12-hour presigned URLs (the S3 API host is not browser-readable). |
 
 Photos are stored under `public/` or `private/` prefixes based on category `photosPrivate`. Report photos are uploaded with `POST /api/v1/reports` (multipart) and written directly to the report prefix on submit. Claim photos use `private/claims/{claimId}/…`, uploaded in the same multipart request as `POST /api/v1/reports/{id}/claims`, and served via short-lived presigned URLs (`GET /api/v1/uploads/claim-photo/{claimId}/url`).
 
+**Public thumbnails:** browse/list responses embed `thumbnailUrl` from `GetPublicUrl`. Prefer enabling R2 public access and setting `Bucket__PublicBaseUrl` to the `r2.dev` or custom domain (object key only, no bucket name in the path). Without it, the API signs temporary GET URLs so images still load.
 **Orphaned objects:** report submit runs compensating storage delete when `SaveChangesAsync` fails after photo promotion. The daily `OrphanedStorageCleanup` lifecycle job deletes unreferenced keys under report photo prefixes (backstop for partial failures). See [specs/06-lifecycle-retention.md](../specs/06-lifecycle-retention.md#orphaned-storage-cleanup) and `OrphanedStorageTests`.
 
 ---

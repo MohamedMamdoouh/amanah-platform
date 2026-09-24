@@ -12,6 +12,8 @@ public sealed class BucketOptions
 
     public string? Name { get; init; }
 
+    public string? PublicBaseUrl { get; init; }
+
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(Endpoint)
         && !string.IsNullOrWhiteSpace(AccessKey)
