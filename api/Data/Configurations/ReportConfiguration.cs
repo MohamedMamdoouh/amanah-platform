@@ -36,10 +36,6 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
             .HasConversion<string>()
             .IsRequired();
 
-        builder.Property(report => report.HiddenDetail)
-            .HasMaxLength(500)
-            .IsRequired();
-
         builder.Property(report => report.WithdrawalReason)
             .HasMaxLength(500);
 

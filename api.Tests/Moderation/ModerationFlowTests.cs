@@ -112,24 +112,6 @@ public class ModerationFlowTests(ApiWebApplicationFactory factory) : IClassFixtu
     }
 
     [Fact]
-    public async Task Admin_moderation_detail_omits_hidden_detail()
-    {
-        await using var context = await ReportTestContext.CreateAsync(factory);
-        var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
-        Assert.NotNull(created);
-
-        await HttpTestHelpers.LoginAsAdminAsync(context);
-
-        var response = await context.Client.GetAsync(
-            $"/api/v1/admin/moderation/reports/{created.Id}");
-        var body = await response.Content.ReadFromJsonAsync<ReportDetailResponse>();
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(body);
-        Assert.Null(body.HiddenDetail);
-    }
-
-    [Fact]
     public async Task Moderation_action_survives_report_deletion()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);

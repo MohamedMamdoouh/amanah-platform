@@ -13,7 +13,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiErrorBody, ApiErrorService } from '../../i18n/api-error.service';
+import { ApiErrorService } from '../../i18n/api-error.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -226,9 +226,43 @@ export class LoginComponent implements OnDestroy {
     }
   }
 
-  fieldError(name: string): string | null {
-    const errors = this.fieldErrors()[name];
-    return errors?.[0] ?? null;
+  fieldError(name: string, form?: FormGroup): string | null {
+    const apiError = this.fieldErrors()[name]?.[0];
+    if (apiError) {
+      return apiError;
+    }
+
+    if (!form) {
+      return null;
+    }
+
+    const control = form.get(name);
+    if (!control || (!control.touched && !control.dirty)) {
+      return null;
+    }
+
+    if (control.hasError('required')) {
+      if (name === 'password') {
+        return this.translate.instant('error.field.password.required');
+      }
+      if (name === 'identifier' && this.identifierChannel() === 'email') {
+        return this.translate.instant('error.field.email.required');
+      }
+      return this.translate.instant('error.field.phone.required');
+    }
+
+    if (control.hasError('pattern') || control.hasError('email')) {
+      if (name === 'identifier' && this.identifierChannel() === 'email') {
+        return this.translate.instant('error.field.email.invalid');
+      }
+      return this.translate.instant('error.field.phone.invalid');
+    }
+
+    if (control.hasError('minlength') && name === 'password') {
+      return this.translate.instant('error.field.password.too_short');
+    }
+
+    return null;
   }
 
   onCaptchaToken(token: string): void {
@@ -246,6 +280,7 @@ export class LoginComponent implements OnDestroy {
 
   async submitSignIn(): Promise<void> {
     if (this.signInForm.invalid) {
+      this.signInForm.markAllAsTouched();
       return;
     }
 
@@ -269,6 +304,12 @@ export class LoginComponent implements OnDestroy {
 
   async submitPhone(): Promise<void> {
     if (this.phoneForm.invalid || !this.captchaToken()) {
+      this.phoneForm.markAllAsTouched();
+      if (!this.captchaToken()) {
+        this.summaryError.set(
+          this.translate.instant('error.field.captcha_token.required'),
+        );
+      }
       return;
     }
 
@@ -287,6 +328,7 @@ export class LoginComponent implements OnDestroy {
 
   async submitOtp(): Promise<void> {
     if (this.otpForm.invalid) {
+      this.otpForm.markAllAsTouched();
       return;
     }
 
@@ -335,6 +377,7 @@ export class LoginComponent implements OnDestroy {
 
   async submitRegister(): Promise<void> {
     if (this.registerForm.invalid || !this.signupToken) {
+      this.registerForm.markAllAsTouched();
       return;
     }
 
@@ -359,6 +402,7 @@ export class LoginComponent implements OnDestroy {
 
   async submitReset(): Promise<void> {
     if (this.resetForm.invalid || !this.resetToken) {
+      this.resetForm.markAllAsTouched();
       return;
     }
 
@@ -425,54 +469,25 @@ export class LoginComponent implements OnDestroy {
 
   private handleError(error: unknown, onHandled?: () => void): void {
     this.submitting.set(false);
+    this.summaryError.set(this.apiErrors.messageFromHttpError(error));
+    this.fieldErrors.set(this.apiErrors.formErrorsFromHttpError(error));
 
-    try {
-      if (!(error instanceof HttpErrorResponse)) {
-        this.summaryError.set(this.unexpectedError());
-        return;
-      }
-
-      const apiError = this.parseApiError(error);
-      if (!apiError) {
-        this.summaryError.set(this.unexpectedError());
-        return;
-      }
-
-      this.summaryError.set(this.apiErrors.summary(apiError));
-      this.fieldErrors.set(this.apiErrors.fieldErrors(apiError));
-
+    if (error instanceof HttpErrorResponse && error.status === 429) {
       const retryAfter = error.headers.get('Retry-After');
-      if (error.status === 429 && retryAfter) {
+      if (retryAfter) {
         const seconds = Number.parseInt(retryAfter, 10);
         if (!Number.isNaN(seconds)) {
           this.startResendCooldown(seconds);
         }
       }
-    } finally {
-      onHandled?.();
-    }
-  }
-
-  private parseApiError(error: HttpErrorResponse): ApiErrorBody | null {
-    if (
-      error.error &&
-      typeof error.error === 'object' &&
-      'code' in error.error &&
-      'message' in error.error
-    ) {
-      return error.error as ApiErrorBody;
     }
 
-    return null;
+    onHandled?.();
   }
 
   private clearErrors(): void {
     this.summaryError.set(null);
     this.fieldErrors.set({});
-  }
-
-  private unexpectedError(): string {
-    return this.translate.instant('error.internal.error');
   }
 
   private async navigateAfterAuth(): Promise<void> {

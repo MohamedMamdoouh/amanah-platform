@@ -66,7 +66,6 @@ export class ReportFormComponent implements OnInit {
   readonly governorates = signal<{ code: string; sortOrder: number }[]>([]);
   readonly selectedCategory = signal<Category | null>(null);
   readonly selectedPhotos = signal<File[]>([]);
-
   readonly today = this.formatDate(new Date());
 
   readonly form = this.fb.nonNullable.group({
@@ -89,14 +88,6 @@ export class ReportFormComponent implements OnInit {
     heldLocation: ['', Validators.maxLength(120)],
     hasReward: [false],
     rewardAmount: [null as number | null],
-    hiddenDetail: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(10),
-        Validators.maxLength(500),
-      ],
-    ],
     categoryFields: this.fb.group({}),
   });
 

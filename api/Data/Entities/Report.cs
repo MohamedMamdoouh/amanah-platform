@@ -34,8 +34,6 @@ public class Report : IEntity
 
     public int? RewardAmount { get; set; }
 
-    public required string HiddenDetail { get; set; }
-
     public string? WithdrawalReason { get; set; }
 
     public int ResubmissionCount { get; set; }

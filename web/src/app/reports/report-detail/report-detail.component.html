@@ -154,18 +154,6 @@
             }
           }
 
-          <section class="report-detail__private">
-            <h2>{{ "reports.form.hidden_detail_title" | translate }}</h2>
-            <p class="report-detail__hint">{{ "reports.form.hidden_detail_privacy" | translate }}</p>
-            <label class="report-detail__field">
-              <span class="report-detail__label">{{ "reports.form.hidden_detail" | translate }}</span>
-              <textarea class="report-detail__input" rows="3" formControlName="hiddenDetail"></textarea>
-              @if (fieldError("hiddenDetail")) {
-                <span class="report-detail__field-error" role="alert">{{ fieldError("hiddenDetail") }}</span>
-              }
-            </label>
-          </section>
-
           @if (photos().length > 0) {
             <section class="report-detail__photos" [attr.aria-label]="'reports.form.photos_title' | translate">
               <h2>{{ "reports.resubmit.existing_photos" | translate }}</h2>
@@ -255,12 +243,6 @@
           <div>
             <dt>{{ "reports.form.reward_amount" | translate }}</dt>
             <dd>{{ detail.rewardAmount }}</dd>
-          </div>
-        }
-        @if (detail.hiddenDetail) {
-          <div class="report-detail__private">
-            <dt>{{ "reports.form.hidden_detail" | translate }}</dt>
-            <dd>{{ detail.hiddenDetail }}</dd>
           </div>
         }
       </dl>

@@ -11,7 +11,6 @@ public static class TestReportHelpers
         DateOnly? dateLostOrFound = null,
         string? title = null,
         string? description = null,
-        string? hiddenDetail = null,
         string? areaText = "Ramses station platform 2",
         string? heldLocation = null,
         bool hasReward = false,
@@ -29,7 +28,6 @@ public static class TestReportHelpers
             HeldLocation = heldLocation,
             HasReward = hasReward,
             RewardAmount = rewardAmount,
-            HiddenDetail = hiddenDetail ?? "Contains a photo of my family inside.",
             CategoryFields = categoryFields ?? new Dictionary<string, string>
             {
                 ["brand_model"] = "iPhone 14",
@@ -54,7 +52,6 @@ public static class TestReportHelpers
             AreaText = "Ramses station platform 2",
             HeldLocation = heldLocation,
             HasReward = false,
-            HiddenDetail = "Contains a photo of a family inside.",
             CategoryFields = new Dictionary<string, string>
             {
                 ["brand_model"] = "iPhone 14",
@@ -68,7 +65,6 @@ public static class TestReportHelpers
         DateOnly? dateLostOrFound = null,
         string? title = null,
         string? description = null,
-        string? hiddenDetail = null,
         string? areaText = "Ramses station platform 2",
         string? heldLocation = null,
         bool hasReward = false,
@@ -85,7 +81,6 @@ public static class TestReportHelpers
             HeldLocation = heldLocation,
             HasReward = hasReward,
             RewardAmount = rewardAmount,
-            HiddenDetail = hiddenDetail ?? "Contains a photo of my family inside.",
             CategoryFields = categoryFields ?? new Dictionary<string, string>
             {
                 ["brand_model"] = "iPhone 14",

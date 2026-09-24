@@ -26,7 +26,6 @@ export interface CreateReportRequest {
   heldLocation?: string | null;
   hasReward: boolean;
   rewardAmount?: number | null;
-  hiddenDetail: string;
   categoryFields: Record<string, string>;
 }
 
@@ -40,7 +39,6 @@ export interface UpdateReportRequest {
   heldLocation?: string | null;
   hasReward: boolean;
   rewardAmount?: number | null;
-  hiddenDetail: string;
   categoryFields: Record<string, string>;
 }
 
@@ -77,7 +75,6 @@ export interface ReportDetail extends ReportSummary {
   areaText?: string | null;
   heldLocation?: string | null;
   categoryFields: Record<string, string>;
-  hiddenDetail?: string | null;
   withdrawalReason?: string | null;
   rejectionReasonCode?: string | null;
   rejectionNote?: string | null;

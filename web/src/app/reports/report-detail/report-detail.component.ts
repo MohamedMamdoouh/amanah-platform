@@ -116,7 +116,6 @@ export class ReportDetailComponent implements OnInit {
     heldLocation: ['', Validators.maxLength(120)],
     hasReward: [false],
     rewardAmount: [null as number | null],
-    hiddenDetail: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
     categoryFields: this.fb.group({}),
   });
 
@@ -432,7 +431,6 @@ export class ReportDetailComponent implements OnInit {
       heldLocation: report.heldLocation ?? '',
       hasReward: report.hasReward,
       rewardAmount: report.rewardAmount ?? null,
-      hiddenDetail: report.hiddenDetail ?? '',
     });
 
     this.updateRewardValidators(report.hasReward);

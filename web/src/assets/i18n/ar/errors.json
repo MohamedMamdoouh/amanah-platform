@@ -22,6 +22,8 @@
   "error.internal.error": "حدث خطأ غير متوقع، حاول مجددًا.",
   "error.field.phone.required": "يرجى كتابة رقم الموبايل.",
   "error.field.phone.invalid": "رقم الموبايل غير صحيح.",
+  "error.field.email.required": "يرجى كتابة البريد الإلكتروني.",
+  "error.field.email.invalid": "صيغة البريد غير صحيحة.",
   "error.field.display_name.required": "يرجى كتابة الاسم الظاهر.",
   "error.field.display_name.invalid": "يجب أن يكون الاسم الظاهر بين 3 و 40 حرفًا، بأسماء أو أرقام فقط.",
   "error.field.accept_terms.required": "يلزم الموافقة على الشروط والأحكام وسياسة الخصوصية.",

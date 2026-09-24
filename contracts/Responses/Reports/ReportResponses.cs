@@ -63,8 +63,6 @@ public sealed class ReportDetailResponse
 
     public IReadOnlyDictionary<string, string> CategoryFields { get; init; } = new Dictionary<string, string>();
 
-    public string? HiddenDetail { get; init; }
-
     public string? WithdrawalReason { get; init; }
 
     public string? RejectionReasonCode { get; init; }

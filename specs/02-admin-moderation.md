@@ -115,7 +115,6 @@ These rows are server-enforced:
 | Data                       | Roles granted access                                                        |
 | -------------------------- | --------------------------------------------------------------------------- |
 | Private photos             | Reporter (own), Admin during review, and Admin during an open flagged-listing investigation |
-| Hidden verification detail | Reporter (own) only - Admin still **never** sees this                       |
 | All public report fields   | Reporter (own), Admin                                                       |
 | Withdrawal reason          | Reporter (own), Admin - enforced in Phase 01; regression only in this phase |
 | ModerationAction audit     | Admin only (no read API - writes only; vacuously enforced)                  |
@@ -171,7 +170,7 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [x] Resubmit: quota not consumed, open-cap exempt, contact block re-run, max 3 resubmissions (`ReportResubmitTests`)
 - [x] Category change re-derives photo privacy
 - [x] Edit refused outside `Rejected`
-- [x] Admin can view private photos; cannot access hidden verification detail
+- [x] Admin can view private photos during review
 - [x] `ModerationAction` record created and survives report deletion
 - [x] Admin email outbox: enqueue on submit/resubmit, dispatch, transient vs permanent failure (`ReportAdminAlertEmailTests`)
 - [x] Notification center: unread until opened/marked read

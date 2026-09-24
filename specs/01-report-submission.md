@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-Enable logged-in users to submit lost and found item reports with full field validation, category-specific fields, photo uploads, contact-info blocking, submission quotas, and the hidden verification detail. Reports are created in `Pending Review` status. Reporters can view their submissions in My Reports and withdraw while pending. The normalized search column is populated on every create and rejected-report update so Phase 03 browse can read it without a backfill.
+Enable logged-in users to submit lost and found item reports with full field validation, category-specific fields, photo uploads, contact-info blocking, and submission quotas. Reports are created in `Pending Review` status. Reporters can view their submissions in My Reports and withdraw while pending. The normalized search column is populated on every create and rejected-report update so Phase 03 browse can read it without a backfill.
 
 ---
 
@@ -20,11 +20,11 @@ Enable logged-in users to submit lost and found item reports with full field val
 | Section 4.1.3       | Contact-info block                                                        |
 | Section 4.1.6-4.1.7 | Submission quota and concurrent open-report cap                           |
 | Section 4.8         | My Reports (Pending Review tab; Rejected/Published tabs added in Phase 02) |
-| Section 5.2         | Report categories and fields, hidden verification detail, `photosPrivate` |
+| Section 5.2         | Report categories and fields, `photosPrivate`                             |
 | Section 5.3         | Location (governorate + area)                                             |
 | Section 5.4         | Reward flag                                                               |
 | Section 7.5         | Photo upload rate limits                                                  |
-| Section 9           | Reporter permissions, hidden detail, private photos                       |
+| Section 9           | Reporter permissions, private photos                                      |
 | Section 15.1        | Report submission acceptance criteria                                     |
 | Section 16          | Search column write (denormalized normalized text)                        |
 | Section 19          | Uploads and media processing                                              |
@@ -114,7 +114,6 @@ These rows are server-enforced:
 | Title, description, category fields | Reporter (own), Admin                                                                                                    |
 | Public photos                       | Reporter (own), Admin                                                                                                    |
 | Private photos (`photosPrivate`)    | Reporter (own), Admin (review only)                                                                                      |
-| Hidden verification detail          | Reporter (own) only - **never Admin**                                                                                    |
 | Reward amount, item-held location   | Reporter (own), Admin                                                                                                    |
 | Display name of reporter            | Reporter (own), Admin                                                                                                    |
 | Phone numbers                       | Own user, Admin                                                                                                          |
@@ -150,10 +149,9 @@ Shipped in later phases:
 
 From [SPEC.md Section 15.1](./SPEC.md#151-report-submission-and-validation).
 
-- [x] **Valid submission creates a pending report:** given a logged-in user with remaining quota, when they submit all required fields including the hidden verification detail, then a report is created with status `Pending Review`
+- [x] **Valid submission creates a pending report:** given a logged-in user with remaining quota, when they submit all required fields, then a report is created with status `Pending Review`
 - [x] **Date bounds:** a date lost/found in the future, or more than 12 months before today in Africa/Cairo time, is rejected with field-level validation. Today's local date is always accepted
-- [x] **Hidden-detail format:** the hidden verification detail is private text of 10-500 characters, and is required
-- [x] **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held location, public category fields, and claim text - and is accepted in the hidden verification detail and in chat messages
+- [x] **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held location, public category fields, and claim text - and is accepted in chat messages
 - [x] **Category fields:** required category fields are validated per the active category's field definitions (Section 5.2), including seed defaults for the seven seeded categories (text 2-80 chars; `first name on document` 2-40 letters/spaces)
 - [x] **Submission quota:** at 3 new reports in the current Africa/Cairo day, the next submission is rejected with clear quota messaging
 - [x] **Open-report cap:** at 5 reports in `Pending Review`, `Published`, or `Claim In Progress`, the next new submission is rejected with clear cap messaging; resubmitting a `Rejected` report still succeeds (verified in Phase 02 `ReportResubmitTests`)
@@ -177,10 +175,9 @@ From [SPEC.md Section 15.1](./SPEC.md#151-report-submission-and-validation).
 
 - [x] Valid lost and found submissions with all required fields
 - [x] Date validation (future, > 12 months, today accepted)
-- [x] Contact-info block on all scoped fields; hidden detail exempt
+- [x] Contact-info block on all scoped fields
 - [x] Category field validation per seed definitions
 - [x] Daily quota (3/day) and open-report cap (5)
-- [x] Hidden detail never returned to admin API
 - [x] Private photos: pre-signed URL only for reporter/admin
 - [x] Upload rate limits (5/min, 20/hour)
 - [x] Search column written correctly with Arabic normalization

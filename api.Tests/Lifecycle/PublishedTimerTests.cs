@@ -165,7 +165,6 @@ public class PublishedTimerTests(ApiWebApplicationFactory factory) : IClassFixtu
             DateLostOrFound = DateOnly.FromDateTime(startedAt.UtcDateTime),
             GovernorateId = Guid.NewGuid(),
             Status = ReportStatus.Published,
-            HiddenDetail = "Hidden",
             PublishedAt = startedAt,
             PublishedTimerResumedAt = startedAt,
             PublishedSecondsElapsed = 3_600,
@@ -192,7 +191,6 @@ public class PublishedTimerTests(ApiWebApplicationFactory factory) : IClassFixtu
             DateLostOrFound = DateOnly.FromDateTime(DateTime.UtcNow),
             GovernorateId = Guid.NewGuid(),
             Status = ReportStatus.ClaimInProgress,
-            HiddenDetail = "Hidden",
             PublishedSecondsElapsed = 1_800,
             PublishedTimerResumedAt = null,
         };

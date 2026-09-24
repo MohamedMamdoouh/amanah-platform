@@ -78,7 +78,7 @@ Query parameters for browse: `q` (keyword), `category`, `governorate`, `type` (l
 
 - Arabic normalization for query: alef variants, `ى` -> `ي`, `ة` -> `ه`, strip tatweel/diacritics, collapse whitespace, lowercase
 - All-terms AND matching via `ILIKE '%term%'` per normalized term
-- Status-based response filtering: strip private photos, hidden detail, reporter phone
+- Status-based response filtering: strip private photos, reporter phone
 - `Claim In Progress` label on listing and detail; claim CTA prompts login when logged out, shows claim form on `Published` reports when logged in (Phase 04), disabled on `Claim In Progress`
 
 ---
@@ -92,7 +92,6 @@ These rows are server-enforced:
 | Title, description, category fields | yes (Published/Claim In Progress) | yes            | yes            | yes          |
 | Public photos                       | yes                               | yes            | yes            | yes          |
 | Private photos                      | -                                 | -              | yes (own)      | yes (review) |
-| Hidden verification detail          | -                                 | -              | yes (own)      | -            |
 | Reward, held location               | yes                               | yes            | yes            | yes          |
 | Display name of reporter            | yes                               | yes            | own            | yes          |
 | Phone numbers                       | -                                 | own            | own            | yes          |
@@ -154,7 +153,7 @@ From [SPEC.md Section 15.3](./SPEC.md#153-browse-search-visibility-and-urls).
 - [x] Filters combine with keyword (AND)
 - [x] Pagination and sort order
 - [x] URL status routing (not-found, permanently-unavailable)
-- [x] Private photos and hidden detail never in public API responses
+- [x] Private photos never in public API responses
 - [x] Wrong-type URL (`/lost/{id}` for found report) -> not-found
 
 ### Manual smoke checklist

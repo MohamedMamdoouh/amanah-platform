@@ -37,7 +37,8 @@
       @if (identifierChannel() === "phone") {
         <app-form-field
           [label]="'auth.login.phone_label' | translate"
-          [error]="fieldError('identifier')"
+          [hint]="'auth.login.phone_hint' | translate"
+          [error]="fieldError('identifier', signInForm)"
           [required]="true"
           htmlFor="signin-identifier"
         >
@@ -55,7 +56,7 @@
       } @else {
         <app-form-field
           [label]="'auth.login.email_label' | translate"
-          [error]="fieldError('identifier')"
+          [error]="fieldError('identifier', signInForm)"
           [required]="true"
           htmlFor="signin-identifier-email"
         >
@@ -72,7 +73,7 @@
 
       <app-form-field
         [label]="'auth.login.password_label' | translate"
-        [error]="fieldError('password')"
+        [error]="fieldError('password', signInForm)"
         [required]="true"
         htmlFor="signin-password"
       >
@@ -88,7 +89,6 @@
       <app-button
         type="submit"
         variant="primary"
-        [disabled]="signInForm.invalid"
         [loading]="submitting()"
       >
         {{ "auth.login.signin_submit" | translate }}
@@ -118,7 +118,8 @@
           @if (identifierChannel() === "phone") {
             <app-form-field
               [label]="'auth.login.phone_label' | translate"
-              [error]="fieldError('identifier')"
+              [hint]="'auth.login.phone_hint' | translate"
+              [error]="fieldError('identifier', phoneForm)"
               [required]="true"
               htmlFor="auth-identifier"
             >
@@ -136,7 +137,7 @@
           } @else {
             <app-form-field
               [label]="'auth.login.email_label' | translate"
-              [error]="fieldError('identifier')"
+              [error]="fieldError('identifier', phoneForm)"
               [required]="true"
               htmlFor="auth-identifier-email"
             >

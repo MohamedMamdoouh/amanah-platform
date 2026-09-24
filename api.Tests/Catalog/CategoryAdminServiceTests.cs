@@ -101,7 +101,6 @@ public class CategoryAdminServiceTests
             Description = "A description long enough to satisfy the report schema.",
             DateLostOrFound = new DateOnly(2026, 9, 1),
             GovernorateId = governorate.Id,
-            HiddenDetail = "hidden verification detail",
             Status = ReportStatus.PendingReview,
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow,

@@ -167,26 +167,6 @@ public class PublicDetailTests(ApiWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
-    public async Task Public_detail_excludes_hidden_detail()
-    {
-        await using var context = await ReportTestContext.CreateAsync(factory);
-        var client = BrowseTestHelpers.CreateAnonymousClient(factory);
-
-        var reportId = await BrowseTestHelpers.SubmitAndPublishAsync(
-            context,
-            TestReportHelpers.BuildValidLostRequest(
-                title: "Published hidden detail item",
-                hiddenDetail: "Secret verification detail must not leak."));
-
-        var response = await client.GetAsync($"/api/v1/reports/{reportId}/public");
-        var json = await response.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.DoesNotContain("hiddenDetail", json, StringComparison.Ordinal);
-        Assert.DoesNotContain("Secret verification detail must not leak.", json, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public async Task Public_detail_returns_public_photo_urls_for_public_categories()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);

@@ -116,7 +116,6 @@ public static class BrowseTestHelpers
             GovernorateId = governorate.Id,
             AreaText = options.AreaText,
             HeldLocation = options.HeldLocation,
-            HiddenDetail = options.HiddenDetail,
             Status = options.Status,
             HasReward = options.HasReward,
             RewardAmount = options.RewardAmount,
@@ -190,8 +189,6 @@ public static class BrowseTestHelpers
         public string? AreaText { get; init; } = "Ramses station platform 2";
 
         public string? HeldLocation { get; init; }
-
-        public string HiddenDetail { get; init; } = "Contains a photo of my family inside.";
 
         public DateTimeOffset? PublishedAt { get; init; }
 

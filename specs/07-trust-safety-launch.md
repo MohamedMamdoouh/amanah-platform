@@ -133,7 +133,6 @@ From [SPEC.md Section 15.6](./SPEC.md#156-abuse-and-enforcement).
 From [SPEC.md Section 15.8](./SPEC.md#158-privacy-and-permissions).
 
 - [x] **Private photos (`photosPrivate`):** never exposed on public listing or to claimants - reporter and admin only
-- [x] **Hidden verification detail:** reporter only - never claimant, public, or admin
 - [x] **Claim text and photos:** claimant + reporter; admin only during flagged-listing investigation
 - [x] **Chat access:** two parties only; admin during flagged-listing investigation
 - [x] **Phone numbers:** never returned to another user

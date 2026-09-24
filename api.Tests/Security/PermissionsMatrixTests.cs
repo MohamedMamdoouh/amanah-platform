@@ -80,13 +80,12 @@ public class PermissionsMatrixTests(ApiWebApplicationFactory factory) : IClassFi
     }
 
     [Fact]
-    public async Task Logged_in_stranger_public_detail_omits_hidden_detail_and_private_photo_urls()
+    public async Task Logged_in_stranger_public_detail_omits_private_photo_urls()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var (_, created) = await context.SubmitReportAsync(
             TestReportHelpers.BuildValidLostRequest(
                 title: "Matrix public detail",
-                hiddenDetail: "Secret matrix hidden detail text.",
                 categoryCode: "documents-ids",
                 categoryFields: new Dictionary<string, string>
                 {
@@ -103,13 +102,10 @@ public class PermissionsMatrixTests(ApiWebApplicationFactory factory) : IClassFi
         ClaimTestHelpers.Authenticate(context.Client, strangerSession.AccessToken);
 
         var response = await context.Client.GetAsync($"/api/v1/reports/{reportId}/public");
-        var json = await response.Content.ReadAsStringAsync();
         var body = await response.Content.ReadFromJsonAsync<PublicReportDetailResponse>();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
-        Assert.DoesNotContain("hiddenDetail", json, StringComparison.Ordinal);
-        Assert.DoesNotContain("Secret matrix hidden detail text.", json, StringComparison.Ordinal);
         Assert.NotEmpty(body.Photos);
         Assert.Null(body.Photos[0].ThumbnailUrl);
     }

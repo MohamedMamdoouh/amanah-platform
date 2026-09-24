@@ -7,7 +7,13 @@ import { AuthService } from '../auth/auth.service';
 import { environment } from '../../environments/environment';
 
 function isAuthEndpoint(url: string): boolean {
-  return url.includes('/auth/otp/') || url.includes('/auth/refresh');
+  return (
+    url.includes('/auth/otp/') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/login') ||
+    url.includes('/auth/register') ||
+    url.includes('/auth/password/')
+  );
 }
 
 function isApiRequest(url: string): boolean {

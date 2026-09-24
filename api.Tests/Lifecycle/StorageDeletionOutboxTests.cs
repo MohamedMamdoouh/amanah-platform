@@ -174,7 +174,6 @@ public class StorageDeletionOutboxTests(ApiWebApplicationFactory factory) : ICla
             DateLostOrFound = DateOnly.FromDateTime(DateTime.UtcNow),
             GovernorateId = governorate.Id,
             Status = ReportStatus.Published,
-            HiddenDetail = "Hidden detail text",
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow,
         };

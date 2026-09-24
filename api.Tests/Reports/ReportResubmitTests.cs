@@ -76,7 +76,6 @@ public class ReportResubmitTests(ApiWebApplicationFactory factory) : IClassFixtu
                 Description = "Open report description with enough length for validation.",
                 DateLostOrFound = DateOnly.FromDateTime(now.UtcDateTime),
                 Status = ReportStatus.PendingReview,
-                HiddenDetail = "Hidden verification detail with enough length.",
                 CreatedAt = now.AddMinutes(-i),
                 UpdatedAt = now.AddMinutes(-i),
             });
@@ -93,7 +92,6 @@ public class ReportResubmitTests(ApiWebApplicationFactory factory) : IClassFixtu
             Description = "Rejected report description with enough length for validation.",
             DateLostOrFound = DateOnly.FromDateTime(now.UtcDateTime),
             Status = ReportStatus.Rejected,
-            HiddenDetail = "Hidden verification detail with enough length.",
             ResubmissionCount = 0,
             CreatedAt = now.AddMinutes(-10),
             UpdatedAt = now.AddMinutes(-1),

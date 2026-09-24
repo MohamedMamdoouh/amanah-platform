@@ -57,6 +57,7 @@
   "auth.login.mode_signin": "دخول",
   "auth.login.mode_signup": "إنشاء حساب جديد",
   "auth.login.phone_label": "رقم الموبايل",
+  "auth.login.phone_hint": "مثال: 01012345678",
   "auth.login.email_label": "البريد الإلكتروني",
   "auth.login.channel_aria": "طريقة الدخول",
   "auth.login.channel_phone": "موبايل",

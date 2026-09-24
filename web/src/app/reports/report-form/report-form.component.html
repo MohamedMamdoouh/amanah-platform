@@ -186,9 +186,6 @@
             class="form-input"
             maxlength="120"
           />
-          <span class="form-hint">{{
-            "reports.form.area_hint" | translate
-          }}</span>
           @if (fieldError("areaText")) {
             <span class="form-error" role="alert">{{
               fieldError("areaText")
@@ -233,34 +230,6 @@
           }
         </div>
 
-        <div class="form-section form-section--inset">
-          <h2 class="form-section__title">
-            {{ "reports.form.hidden_detail_title" | translate }}
-          </h2>
-          <p class="report-form__privacy">
-            {{ "reports.form.hidden_detail_privacy" | translate }}
-          </p>
-          <label class="form-field">
-            <span class="form-label">{{
-              "reports.form.hidden_detail" | translate
-            }}</span>
-            <textarea
-              formControlName="hiddenDetail"
-              class="form-textarea"
-              rows="3"
-              maxlength="500"
-            ></textarea>
-            <span class="form-hint">{{
-              "reports.form.hidden_detail_hint" | translate
-            }}</span>
-            @if (fieldError("hiddenDetail")) {
-              <span class="form-error" role="alert">{{
-                fieldError("hiddenDetail")
-              }}</span>
-            }
-          </label>
-        </div>
-
         <div class="form-section">
           <label class="report-form__checkbox">
             <input type="checkbox" formControlName="hasReward" />
@@ -294,7 +263,6 @@
         <app-button
           type="submit"
           variant="primary"
-          [disabled]="form.invalid"
           [loading]="submitting()"
         >
           @if (submitting()) {

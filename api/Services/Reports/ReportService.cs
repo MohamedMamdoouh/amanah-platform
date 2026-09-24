@@ -110,7 +110,6 @@ public sealed class ReportService(
                 reportType == ReportType.Found,
                 normalized.Title,
                 normalized.Description,
-                normalized.HiddenDetail,
                 normalized.AreaText,
                 normalized.HasReward,
                 normalized.RewardAmount,
@@ -191,7 +190,6 @@ public sealed class ReportService(
             Status = ReportStatus.PendingReview,
             HasReward = normalized.HasReward,
             RewardAmount = normalized.HasReward ? normalized.RewardAmount : null,
-            HiddenDetail = normalized.HiddenDetail,
             ResubmissionCount = 0,
             CreatedAt = now,
             UpdatedAt = now,
@@ -358,9 +356,7 @@ public sealed class ReportService(
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        return isReporter
-            ? ToReporterDetail(report, latestRejection)
-            : ToAdminDetail(report, latestRejection);
+        return ToDetail(report, latestRejection);
     }
 
     public async Task<Result> WithdrawAsync(
@@ -436,7 +432,6 @@ public sealed class ReportService(
         report.HeldLocation = report.Type == ReportType.Found ? normalized.HeldLocation : null;
         report.HasReward = normalized.HasReward;
         report.RewardAmount = normalized.HasReward ? normalized.RewardAmount : null;
-        report.HiddenDetail = normalized.HiddenDetail;
         report.UpdatedAt = now;
 
         ReplaceCategoryFields(report, category, normalized);
@@ -602,7 +597,6 @@ public sealed class ReportService(
                 reportType == ReportType.Found,
                 normalized.Title,
                 normalized.Description,
-                normalized.HiddenDetail,
                 normalized.AreaText,
                 normalized.HasReward,
                 normalized.RewardAmount,
@@ -653,7 +647,6 @@ public sealed class ReportService(
             HeldLocation = report.HeldLocation,
             HasReward = report.HasReward,
             RewardAmount = report.RewardAmount,
-            HiddenDetail = report.HiddenDetail,
             CategoryFields = categoryFields,
         };
     }
@@ -710,7 +703,6 @@ public sealed class ReportService(
                 : TextNormalizer.Normalize(request.HeldLocation),
             HasReward = request.HasReward,
             RewardAmount = request.RewardAmount,
-            HiddenDetail = TextNormalizer.Normalize(request.HiddenDetail),
             CategoryFields = categoryFields,
         };
     }
@@ -753,7 +745,6 @@ public sealed class ReportService(
                 : TextNormalizer.Normalize(request.HeldLocation),
             HasReward = request.HasReward,
             RewardAmount = request.RewardAmount,
-            HiddenDetail = TextNormalizer.Normalize(request.HiddenDetail),
             CategoryFields = categoryFields,
         };
     }
@@ -795,15 +786,8 @@ public sealed class ReportService(
             RewardAmount = report.RewardAmount,
         };
 
-    private ReportDetailResponse ToReporterDetail(Report report, ModerationAction? latestRejection) =>
-        BuildDetail(report, includeHiddenDetail: true, latestRejection);
-
-    private ReportDetailResponse ToAdminDetail(Report report, ModerationAction? latestRejection) =>
-        BuildDetail(report, includeHiddenDetail: false, latestRejection);
-
-    private ReportDetailResponse BuildDetail(
+    private ReportDetailResponse ToDetail(
         Report report,
-        bool includeHiddenDetail,
         ModerationAction? latestRejection) =>
         new()
         {
@@ -823,7 +807,6 @@ public sealed class ReportService(
             CategoryFields = report.CategoryFields
                 .OrderBy(field => field.FieldKey)
                 .ToDictionary(field => field.FieldKey, field => field.Value),
-            HiddenDetail = includeHiddenDetail ? report.HiddenDetail : null,
             WithdrawalReason = report.Status == ReportStatus.Withdrawn
                 ? report.WithdrawalReason
                 : null,
@@ -993,8 +976,6 @@ public sealed class ReportService(
         public bool HasReward { get; init; }
 
         public int? RewardAmount { get; init; }
-
-        public required string HiddenDetail { get; init; }
 
         public Dictionary<string, string> CategoryFields { get; init; } = [];
     }

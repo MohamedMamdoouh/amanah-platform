@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Contracts.Errors;
 
@@ -7,7 +6,7 @@ namespace Amanah.Api.Tests.Reports;
 public class ReportAccessTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
     [Fact]
-    public async Task Get_own_pending_report_includes_hidden_detail()
+    public async Task Get_own_pending_report_returns_detail()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
         var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
@@ -16,28 +15,9 @@ public class ReportAccessTests(ApiWebApplicationFactory factory) : IClassFixture
         var (response, body) = await context.GetReportAsync(created.Id);
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(body?.HiddenDetail);
-        Assert.Contains("family", body.HiddenDetail, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task Get_pending_report_as_admin_omits_hidden_detail()
-    {
-        await using var context = await ReportTestContext.CreateAsync(factory);
-        var (_, created) = await context.SubmitReportAsync(TestReportHelpers.BuildValidLostRequest());
-        Assert.NotNull(created);
-
-        var (loginResponse, adminSession) = await context.Auth.LoginAsync("01011111111", "AdminPass123");
-        Assert.Equal(System.Net.HttpStatusCode.OK, loginResponse.StatusCode);
-        Assert.NotNull(adminSession);
-
-        context.Client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", adminSession.AccessToken);
-
-        var (response, body) = await context.GetReportAsync(created.Id);
-
-        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.Null(body?.HiddenDetail);
+        Assert.NotNull(body);
+        Assert.Equal(created.Id, body.Id);
+        Assert.Equal("Lost black iPhone", body.Title);
     }
 
     [Fact]

@@ -116,7 +116,6 @@ public static class ReportContentValidator
 {
     public const string TitleField = "title";
     public const string DescriptionField = "description";
-    public const string HiddenDetailField = "hiddenDetail";
     public const string AreaTextField = "areaText";
     public const string RewardAmountField = "rewardAmount";
     public const string HeldLocationField = "heldLocation";
@@ -125,8 +124,6 @@ public static class ReportContentValidator
     private const int TitleMaxLength = 80;
     private const int DescriptionMinLength = 20;
     private const int DescriptionMaxLength = 1000;
-    private const int HiddenDetailMinLength = 10;
-    private const int HiddenDetailMaxLength = 500;
     private const int AreaTextMaxLength = 120;
     private const int RewardMinAmount = 50;
     private const int RewardMaxAmount = 50_000;
@@ -136,7 +133,6 @@ public static class ReportContentValidator
         bool isFoundReport,
         string title,
         string description,
-        string hiddenDetail,
         string? areaText,
         bool hasReward,
         int? rewardAmount,
@@ -146,7 +142,6 @@ public static class ReportContentValidator
 
         ValidateTitle(title, errors);
         ValidateDescription(description, errors);
-        ValidateHiddenDetail(hiddenDetail, errors);
         ValidateAreaText(areaText, errors);
         ValidateReward(hasReward, rewardAmount, errors);
         ValidateHeldLocation(isFoundReport, heldLocation, errors);
@@ -191,26 +186,6 @@ public static class ReportContentValidator
         if (description.Length > DescriptionMaxLength)
         {
             ValidationErrors.Add(errors, DescriptionField, $"Description must be at most {DescriptionMaxLength} characters.");
-        }
-    }
-
-    private static void ValidateHiddenDetail(string hiddenDetail, Dictionary<string, string[]> errors)
-    {
-        if (hiddenDetail.Length == 0)
-        {
-            ValidationErrors.Add(errors, HiddenDetailField, "Hidden verification detail is required.");
-            return;
-        }
-
-        if (hiddenDetail.Length < HiddenDetailMinLength)
-        {
-            ValidationErrors.Add(errors, HiddenDetailField, $"Hidden verification detail must be at least {HiddenDetailMinLength} characters.");
-            return;
-        }
-
-        if (hiddenDetail.Length > HiddenDetailMaxLength)
-        {
-            ValidationErrors.Add(errors, HiddenDetailField, $"Hidden verification detail must be at most {HiddenDetailMaxLength} characters.");
         }
     }
 

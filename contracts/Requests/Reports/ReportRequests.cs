@@ -22,8 +22,6 @@ public sealed class CreateReportRequest
 
     public int? RewardAmount { get; init; }
 
-    public string HiddenDetail { get; init; } = string.Empty;
-
     public Dictionary<string, string> CategoryFields { get; init; } = [];
 }
 
@@ -46,8 +44,6 @@ public sealed class UpdateReportRequest
     public bool HasReward { get; init; }
 
     public int? RewardAmount { get; init; }
-
-    public string HiddenDetail { get; init; } = string.Empty;
 
     public Dictionary<string, string> CategoryFields { get; init; } = [];
 }

@@ -19,8 +19,7 @@ public class CreateReportRequestJsonTests
               "dateLostOrFound": "2026-09-05",
               "governorateCode": "cairo",
               "hasReward": true,
-              "rewardAmount": 250,
-              "hiddenDetail": "Contains a photo of my family inside."
+              "rewardAmount": 250
             }
             """);
 
@@ -41,8 +40,7 @@ public class CreateReportRequestJsonTests
               "dateLostOrFound": "2026-09-05",
               "governorateCode": "cairo",
               "hasReward": true,
-              "rewardAmount": "250",
-              "hiddenDetail": "Contains a photo of my family inside."
+              "rewardAmount": "250"
             }
             """));
     }

@@ -93,14 +93,13 @@ Build a **real product** (not just a portfolio demo) that real people across Egy
 - **Location:** governorate (required dropdown) + free-text area/landmark (optional, max 120 chars; e.g. "Ramses station, platform 2").
 - **Photos:** optional, 0-5, max 5 MB each. Visibility is category-driven, not user-controlled (5.2). Uploaded photos have location/device metadata removed; users see optimized thumbnails.
 - Optional **reward offered** flag with amount in EGP (5.4).
-- **One hidden verification detail (required)** - a private text fact (10-500 characters), never shown to anyone but the reporter. Used in the claim flow (6).
 
 1. **Contact-info block.** Submission is rejected with field-level validation if contact info is detected in any public text field - `title`, `description`, `area/landmark`, found-item held-location detail, and all public category text fields - or in claim text (6.2). Blocking patterns are:
 
 - URL-like text (`http://`, `https://`, `www.`), or explicit social domains (`facebook.com`, `instagram.com`, `t.me`, `telegram.me`, `wa.me`, `whatsapp.com`).
 - Phone-like sequences that normalize to **10 or more digits** (Arabic-Indic and Western digits are normalized to Western digits, and whitespace/dashes/dots/parentheses are stripped, before counting).
 
-This is a hard block with no override - the user must remove the flagged text to submit. It re-runs on every resubmission (4.3). It does **not** apply to the hidden verification detail or to chat messages (5.6). Admin review remains a backstop for anything that slips through. See risk table (section 13) for rationale. All user-entered text fields are normalized by trimming leading/trailing spaces and collapsing repeated internal spaces before validation and storage.
+This is a hard block with no override - the user must remove the flagged text to submit. It re-runs on every resubmission (4.3). It does **not** apply to chat messages (5.6). Admin review remains a backstop for anything that slips through. See risk table (section 13) for rationale. All user-entered text fields are normalized by trimming leading/trailing spaces and collapsing repeated internal spaces before validation and storage.
 
 1. Report is submitted with status **Pending Review**. The confirmation screen says review is **"usually within a day"** (internal SLA: 24 hours - not a guaranteed promise).
 2. No draft saving in v1 - submission is a single session.
@@ -235,14 +234,6 @@ Categories and their field definitions are **admin-managed** (5.5). Seven catego
 - The seeded Documents/IDs category uses `photosPrivate`. Its public identifying signal is document type plus first name on the document, which lets an owner recognize their own document without exposing a full identity.
 - No raw ID-number field exists, and a raw ID/document number typed into any text field is grounds for rejection (5.5 reason 8). The contact-info block stops most of these; the rejection reason covers shorter identifiers that slip through.
 
-**Hidden verification detail (required on every report):**
-
-- Exactly one per report: private text, **10-500 characters**.
-- Visible **only to the reporter**. Never shown to claimants, the public, or the admin.
-- **Rationale:** this is the reporter's private proof question - like a security answer. Admin moderates public content quality; ownership verification stays between reporter and claimant. Showing it to admin would expand PII access and undermine reporter trust.
-- Claims use one model for all reports: the claimant describes the item (6.2) and the reporter compares that description manually against the report details and this hidden detail.
-- Editable only from `Rejected` (4.3.4); not while `Pending Review`, `Published`, or terminal (4.3.6-4.3.7).
-
 ### 5.3 Location
 
 - **Governorate** (required): dropdown from a fixed list of all 27 Egyptian governorates.
@@ -279,7 +270,6 @@ Categories and their field definitions are **admin-managed** (5.5). Seven catego
   - Private photos: during report review and enforcement investigations only.
   - Claim text and claim photos: during flagged-listing abuse or enforcement investigations only.
   - Chat threads: only when investigating a listing that has been flagged for abuse (7.1). Chat is not proactively monitored.
-  - Hidden verification details: never (see rationale in 5.2).
 - All moderation decisions (approve, reject, takedown, ban, unban) are recorded for audit, and those records survive deletion of the underlying report.
 
 ### 5.6 Messaging
@@ -330,7 +320,7 @@ Categories and their field definitions are **admin-managed** (5.5). Seven catego
 - Basic Terms of Service and Privacy Policy - reasonable diligence for v1 under Egypt's Personal Data Protection Law context.
 - **PDPL cross-border transfer:** infrastructure may be hosted outside Egypt. Accepted as a known legal gap for v1; hosting location disclosed in the Privacy Policy. Full legal review deferred.
 - **PDPL data rights:** self-serve deactivation is implemented (5.1). Correction and access rights are not: display names cannot be changed, phone numbers cannot be changed, and there is no data export in v1. This gap is accepted and disclosed in the Privacy Policy alongside the hosting disclosure.
-- Minimal PII retention (section 12). Private photos and hidden verification details are access-controlled as defined in sections 5.2 and 9.
+- Minimal PII retention (section 12). Private photos are access-controlled as defined in sections 5.2 and 9.
 
 ---
 
@@ -354,7 +344,7 @@ Categories and their field definitions are **admin-managed** (5.5). Seven catego
 ### 6.3 Manual review by reporter
 
 - Each claim submission creates a `Pending` claim record and notifies the reporter.
-- The reporter approves or rejects manually - there is no automatic matching.
+- The reporter approves or rejects manually by comparing the claim description against the report details - there is no automatic matching.
 - **Reporter timeout:** a `Pending` claim is **auto-withdrawn** after **10 days** from `submittedAt` without reporter action. Status → `Withdrawn`; no attempt consumed; report stays `Published`. Reporter and claimant are notified in-app (`ClaimAutoWithdrawn`).
 - **Claimant withdrawal:** the claimant may withdraw their own `Pending` claim at any time before the reporter decides. The claim becomes `Withdrawn`, no attempt is consumed, and the reporter is notified.
 
@@ -485,7 +475,6 @@ What each role can see for a given report:
 | Title, description, category fields         | ✓              | ✓              | ✓                | ✓                 | ✓              | ✓                                      |
 | Public photos                               | ✓              | ✓              | ✓                | ✓                 | ✓              | ✓                                      |
 | Private photos (`photosPrivate` categories) |                |                |                  |                   | ✓              | ✓ (review/enforcement only)            |
-| Hidden verification detail                  |                |                |                  |                   | ✓              |                                        |
 | Reward amount, item-held location           | ✓              | ✓              | ✓                | ✓                 | ✓              | ✓                                      |
 | Display name of reporter                    | ✓              | ✓              | ✓                | ✓                 | own            | ✓                                      |
 | Display name of claimant                    |                |                | own              | own               | ✓              | ✓                                      |
@@ -565,9 +554,8 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Notification
 
 | Risk                                                            | Mitigation                                                                                                                                                              |
 | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| False claims / theft of found items                             | Manual claim review before chat unlocks + required hidden verification detail + optional claim photo (one max - keeps reporter review lightweight)                      |
+| False claims / theft of found items                             | Manual claim review before chat unlocks + optional claim photo (one max - keeps reporter review lightweight); reporter compares the claim description against report details |
 | False negatives (real owner rejected)                           | Up to 3 attempts per user/report; accepted no-appeal trade-off in v1                                                                                                    |
-| Weak hidden verification details                                | Reporter's own interest plus a minimum length; no longer admin-reviewed, accepted in exchange for the reporter's privacy                                                |
 | Reporter never reviews claims                                   | Action-required in-app notifications + claim visibility in My Reports; **10-day auto-withdraw** of pending claims (6.3)                                                 |
 | Reunions never confirmed, so the primary metric undercounts     | Confirmation prompts in chat + counterparty-confirmed notification + optional withdrawal reasons (4.7)                                                                  |
 | Spam / fake accounts                                            | Phone OTP + bot check + admin review + daily quotas                                                                                                                     |
@@ -604,10 +592,9 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 ### 15.1 Report submission and validation
 
-- **Valid submission creates a pending report:** given a logged-in user with remaining quota, when they submit all required fields including the hidden verification detail, then a report is created with status `Pending Review`.
+- **Valid submission creates a pending report:** given a logged-in user with remaining quota, when they submit all required fields, then a report is created with status `Pending Review`.
 - **Date bounds:** a date lost/found in the future, or more than 12 months before today in Africa/Cairo time, is rejected with field-level validation. Today's local date is always accepted.
-- **Hidden-detail format:** the hidden verification detail is private text of 10-500 characters, and is required.
-- **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held-location detail, public category fields, and claim text - and is accepted in the hidden verification detail and in chat messages.
+- **Contact info is blocked in scoped fields:** URL/social-domain text or a phone-like sequence of 10+ digits after normalization is rejected with field-level validation in title, description, area, held-location detail, public category fields, and claim text - and is accepted in chat messages.
 - **Category fields:** required category fields are validated per the active category's field definitions (5.2), including seed defaults (text 2-80 chars; `first name on document` 2-40 letters/spaces).
 - **Submission quota:** at 3 new reports in the current Africa/Cairo day, the next submission is rejected with clear quota messaging.
 - **Open-report cap:** at 5 reports in `Pending Review`, `Published`, or `Claim In Progress`, the next new submission is rejected with clear cap messaging; resubmitting a `Rejected` report still succeeds.
@@ -682,7 +669,6 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 ### 15.8 Privacy and permissions
 
 - **Private photos (`photosPrivate`):** categories with `photosPrivate` never expose photos on a public listing or to claimants - only the reporter and admin (during review/enforcement).
-- **Hidden verification detail:** it is returned only to its reporter, and never to a claimant, the public, or the admin.
 - **Claim text and photos:** visible to their own claimant and the reporter at all times, and to the admin only while a flagged-listing investigation is open.
 - **Chat access:** only the two parties can read a thread, plus the admin during a flagged-listing investigation.
 - **Phone numbers:** never returned to another user in any surface.
@@ -735,7 +721,7 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 | `Category`                | code (English key), sort order, `photosPrivate` flag, active flag                                                                                                                                                                                                                                                                         |
 | `CategoryFieldDefinition` | category ref, field key (snake_case), type (`text`), min/max length, optional `textFormat` preset (e.g. `letters_and_spaces`), required flag, sort order                                                                                                                                                                                   |
 | `Governorate`             | code (English key), sort order                                                                                                                                                                                                                                                                                                            |
-| `Report`                  | type (Lost/Found), category, title, description, date lost/found, governorate, area text, item-held location (found), status, reward flag/amount, hidden-detail text, withdrawal reason, resubmission count, normalized search text, published-at, published-seconds-elapsed, published-timer-resumed-at, expiry-warning-sent, timestamps |
+| `Report`                  | type (Lost/Found), category, title, description, date lost/found, governorate, area text, item-held location (found), status, reward flag/amount, withdrawal reason, resubmission count, normalized search text, published-at, published-seconds-elapsed, published-timer-resumed-at, expiry-warning-sent, timestamps |
 | `CategoryField`           | report ref, field key, value                                                                                                                                                                                                                                                                                                              |
 | `ReportPhoto`             | report ref, storage key, content type, size, thumbnail ref, sort order                                                                                                                                                                                                                                                                    |
 | `Claim`                   | report ref, claimant user, status (`Pending`/`Approved`/`Rejected`/`Withdrawn`/`Cancelled`), submitted answer, optional photo, submitted-at, decision reason, reviewer decision, reviewed-at, cancelled-by, attempt number, counts-as-attempt flag                                                                                        |
@@ -752,7 +738,6 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 Implementation notes:
 
 - Categories and field definitions are seeded at deploy and admin-editable thereafter (section 5.2). Photo visibility is derived from the category's `photosPrivate` flag and re-derived on resubmission (section 4.3).
-- Hidden verification detail is on `Report` and is never returned except to its reporter (sections 5.2 and 9).
 - `ModerationAction` survives report deletion (section 12) with a nullable report reference.
 - `Claim.counts-as-attempt` is persisted per claim (section 6.4).
 - Infrastructure outbox rows (not user-facing entities): `OtpSmsOutboxMessage`, `AdminAlertEmailOutboxMessage`, `StorageDeletionOutboxMessage`.

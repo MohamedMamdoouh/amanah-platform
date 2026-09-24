@@ -125,7 +125,7 @@ Constants defined in `ErrorCodes` and not emitted by current validators: `field.
 | `report.open_cap` | 429 | 5 open reports (`pending_review`, `published`, `claim_in_progress`) | No — summary only |
 | `report.contact_info` | — | Reserved; contact-info violations use `validation.failed` with per-field messages | Yes |
 
-Report create/validation also returns `validation.failed` (400) with field keys: `type`, `categoryCode`, `title`, `description`, `dateLostOrFound`, `governorateCode`, `areaText`, `heldLocation`, `hiddenDetail`, `rewardAmount`, category field keys, and `photos[n]`.
+Report create/validation also returns `validation.failed` (400) with field keys: `type`, `categoryCode`, `title`, `description`, `dateLostOrFound`, `governorateCode`, `areaText`, `heldLocation`, `rewardAmount`, category field keys, and `photos[n]`.
 
 ### Upload (`upload.*`)
 
@@ -193,7 +193,7 @@ Claim notifications: `NewClaimSubmitted`, `ClaimApproved`, `ClaimRejected`, `Cla
 
 `GET /api/v1/uploads/report-photo/{photoId}/url` for private category photos: reporter always; admin on `Pending Review` / `Rejected` for moderation, or on `Published` / `Claim In Progress` only during an open investigation (same error when blocked).
 
-Admin report detail (`GET /api/v1/reports/{id}` or moderation detail) omits hidden verification detail. Non-reporters (admin) may load detail only for statuses in the server allowlist (`pending_review`, `rejected`, `withdrawn`).
+Non-reporters (admin) may load detail only for statuses in the server allowlist (`pending_review`, `rejected`, `withdrawn`).
 
 ---
 

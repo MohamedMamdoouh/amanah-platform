@@ -318,7 +318,6 @@ public class HousekeepingJobsTests(HousekeepingJobsWebApplicationFactory factory
             DateLostOrFound = DateOnly.FromDateTime(DateTime.UtcNow),
             GovernorateId = governorate.Id,
             Status = ReportStatus.PendingReview,
-            HiddenDetail = "Hidden detail text",
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow,
         });

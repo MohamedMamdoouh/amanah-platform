@@ -82,19 +82,6 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
     }
 
     [Fact]
-    public async Task Create_allows_contact_info_in_hidden_detail()
-    {
-        await using var context = await ReportTestContext.CreateAsync(factory);
-        var request = TestReportHelpers.BuildValidLostRequest(
-            hiddenDetail: "My backup number is 01012345678 inside.");
-
-        var (response, body) = await context.SubmitReportAsync(request);
-
-        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(body);
-    }
-
-    [Fact]
     public async Task Create_rejects_missing_required_category_field()
     {
         await using var context = await ReportTestContext.CreateAsync(factory);
@@ -152,7 +139,6 @@ public class ReportSubmissionTests(ApiWebApplicationFactory factory) : IClassFix
                 Description = "Detailed description of an existing open report.",
                 DateLostOrFound = CairoTime.TodayInCairo(),
                 Status = ReportStatus.Published,
-                HiddenDetail = "Hidden verification detail for testing purposes.",
                 CreatedAt = yesterday.AddHours(i + 1),
                 UpdatedAt = yesterday.AddHours(i + 1),
             });

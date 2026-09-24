@@ -77,7 +77,6 @@ interface ReportFormValue {
   heldLocation: string;
   hasReward: boolean;
   rewardAmount: number | null;
-  hiddenDetail: string;
   categoryFields: Record<string, unknown>;
 }
 
@@ -98,7 +97,6 @@ export function buildCreateReportRequest(
     rewardAmount: value.hasReward
       ? parseRewardAmount(value.rewardAmount)
       : null,
-    hiddenDetail: value.hiddenDetail.trim(),
     categoryFields: trimCategoryFields(value.categoryFields),
   };
 }
