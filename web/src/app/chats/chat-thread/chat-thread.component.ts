@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import {
   AfterViewChecked,
   Component,
@@ -10,6 +9,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AppDatePipe } from '../../i18n/app-date.pipe';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -50,9 +50,9 @@ const ALLOWED_ATTACHMENT_TYPES = new Set([
   selector: 'app-chat-thread',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     ButtonComponent,
-    DatePipe,
     FlagListingDialogComponent,
     FormsModule,
     IconComponent,

@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { AppDatePipe } from '../i18n/app-date.pipe';
 import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -15,9 +15,9 @@ import { PageHeaderComponent } from '../shared/ui/page-header/page-header.compon
   selector: 'app-notifications',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     ButtonComponent,
-    DatePipe,
     EmptyStateComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,

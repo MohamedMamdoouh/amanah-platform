@@ -1,5 +1,9 @@
 .turnstile__container {
-  min-height: 4rem;
+  line-height: 0;
+}
+
+.turnstile__container :is(iframe, .cf-turnstile) {
+  vertical-align: top;
 }
 
 .turnstile__dev-note {

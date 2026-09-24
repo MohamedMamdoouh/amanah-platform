@@ -16,6 +16,11 @@
   color: var(--color-text-muted);
 }
 
+.support-form > .support-form__privacy {
+  margin: 0;
+}
+
 .support-form > app-turnstile-widget {
   justify-self: start;
+  margin: 0;
 }

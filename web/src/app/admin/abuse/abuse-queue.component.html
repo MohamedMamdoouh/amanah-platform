@@ -22,10 +22,10 @@
         <li>
           <app-listing-card
             [title]="item.reportTitle"
-            [typeLabel]="domainLabels.reportType(item.reportType)"
+            [reportType]="item.reportType"
             [subtitle]="queueSubtitle(item)"
-            [date]="(item.createdAt | date: 'medium') ?? ''"
-            [badgeLabel]="domainLabels.reportStatus(item.reportStatus)"
+            [date]="(item.createdAt | appDate: 'medium') ?? ''"
+            [badgeLabel]="domainLabels.reportBadgeLabel(item.reportStatus, 'mine')"
             [badgeVariant]="
               domainLabels.reportBadgeVariant(item.reportStatus, 'mine')
             "

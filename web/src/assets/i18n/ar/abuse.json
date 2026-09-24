@@ -9,6 +9,7 @@
   "abuse.flag.button": "الإبلاغ عن هذا البلاغ",
   "abuse.flag.chat_button": "إرسال بلاغ",
   "abuse.flag.view_button": "عرض البلاغ المفتوح",
+  "abuse.flag.validation_summary": "يرجى اختيار سبب الإبلاغ قبل الإرسال.",
   "abuse.flag.owner_note": "لا يمكنك الإبلاغ عن بلاغ أضفته بنفسك.",
   "abuse.flag.login_required": "ادخل لحسابك للإبلاغ عن أي مخالفة.",
   "abuse.flag.existing_title": "بلاغك تحت المراجعة",

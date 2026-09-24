@@ -9,8 +9,8 @@
     }
     <div class="listing-card__body">
       <div class="listing-card__header">
-        @if (typeLabel()) {
-          <span class="listing-card__type label-caps">{{ typeLabel() }}</span>
+        @if (reportType(); as type) {
+          <app-report-type-mark [type]="type" />
         }
         @if (badgeLabel()) {
           <app-badge [variant]="badgeVariant()">{{ badgeLabel() }}</app-badge>
@@ -49,8 +49,8 @@
     }
     <div class="listing-card__body">
       <div class="listing-card__header">
-        @if (typeLabel()) {
-          <span class="listing-card__type label-caps">{{ typeLabel() }}</span>
+        @if (reportType(); as type) {
+          <app-report-type-mark [type]="type" />
         }
         @if (badgeLabel()) {
           <app-badge [variant]="badgeVariant()">{{ badgeLabel() }}</app-badge>

@@ -24,9 +24,9 @@
         <li class="my-claims__item">
           <app-listing-card
             [title]="claim.reportTitle"
-            [typeLabel]="domainLabels.reportType(claim.reportType)"
+            [reportType]="claim.reportType"
             [subtitle]="claim.reporterDisplayName"
-            [date]="(claim.submittedAt | date: 'medium') ?? ''"
+            [date]="(claim.submittedAt | appDate: 'medium') ?? ''"
             [badgeLabel]="domainLabels.claimStatus(claim.status)"
             [badgeVariant]="domainLabels.claimBadgeVariant(claim.status)"
             [routerLink]="reportLink(claim)"

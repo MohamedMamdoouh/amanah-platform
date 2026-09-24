@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { AppDatePipe } from '../../i18n/app-date.pipe';
 import {
   Component,
   DestroyRef,
@@ -28,11 +28,14 @@ import {
   showResolutionActions,
 } from '../../claims/resolution/resolution.helpers';
 import { ApiErrorService } from '../../i18n/api-error.service';
+import { clientControlError } from '../../i18n/form-validation';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
 import { DomainLabelService } from '../../i18n/domain-label.service';
 import { CardComponent } from '../../shared/ui/card/card.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { PhotoLightboxComponent } from '../../shared/ui/photo-lightbox/photo-lightbox.component';
+import { ReportTypeMarkComponent } from '../../shared/ui/report-type-mark/report-type-mark.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import {
   DisplayPhoto,
@@ -55,16 +58,18 @@ import {
   selector: 'app-report-detail',
   standalone: true,
   imports: [
+    AppDatePipe,
     CardComponent,
-    DatePipe,
     LoadingIndicatorComponent,
     PageHeaderComponent,
+    PhotoLightboxComponent,
     ReactiveFormsModule,
     SpinnerComponent,
     TranslateModule,
     PhotoUploadComponent,
     ClaimResolutionActionsComponent,
     ReportClaimsSectionComponent,
+    ReportTypeMarkComponent,
   ],
   templateUrl: './report-detail.component.html',
   styleUrl: './report-detail.component.scss',
@@ -87,6 +92,7 @@ export class ReportDetailComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly report = signal<ReportDetail | null>(null);
   readonly photos = signal<DisplayPhoto[]>([]);
+  readonly lightboxUrl = signal<string | null>(null);
   readonly showWithdraw = signal(false);
   readonly withdrawing = signal(false);
   readonly withdrawError = signal<string | null>(null);
@@ -254,8 +260,12 @@ export class ReportDetailComponent implements OnInit {
   }
 
   fieldError(name: string): string | null {
-    const errors = this.fieldErrors()[name];
-    return errors?.[0] ?? null;
+    const apiError = this.fieldErrors()[name]?.[0];
+    if (apiError) {
+      return apiError;
+    }
+
+    return clientControlError(this.editForm.get(name), this.translate);
   }
 
   categoryFieldError(fieldKey: string): string | null {
@@ -279,6 +289,14 @@ export class ReportDetailComponent implements OnInit {
 
   onPhotosChange(photos: File[]): void {
     this.selectedPhotos.set(photos);
+  }
+
+  openPhoto(url: string): void {
+    this.lightboxUrl.set(url);
+  }
+
+  closePhoto(): void {
+    this.lightboxUrl.set(null);
   }
 
   openWithdraw(): void {
@@ -322,6 +340,9 @@ export class ReportDetailComponent implements OnInit {
     const report = this.report();
     if (!report || this.editForm.invalid || this.resubmitting()) {
       this.editForm.markAllAsTouched();
+      this.resubmitError.set(
+        this.translate.instant('common.form.validation_summary'),
+      );
       return;
     }
 

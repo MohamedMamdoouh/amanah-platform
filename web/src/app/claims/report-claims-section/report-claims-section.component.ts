@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import {
   Component,
   inject,
@@ -8,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { AppDatePipe } from '../../i18n/app-date.pipe';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiErrorService } from '../../i18n/api-error.service';
@@ -31,11 +31,11 @@ interface ClaimPhotoState {
   selector: 'app-report-claims-section',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     BadgeComponent,
     ButtonComponent,
     ConfirmDialogComponent,
-    DatePipe,
     LoadingIndicatorComponent,
     SpinnerComponent,
     TranslateModule,

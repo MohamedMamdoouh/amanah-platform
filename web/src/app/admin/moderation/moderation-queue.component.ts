@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { AppDatePipe } from '../../i18n/app-date.pipe';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -24,9 +24,9 @@ import {
   selector: 'app-moderation-queue',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     BadgeComponent,
-    DatePipe,
     EmptyStateComponent,
     FormFieldComponent,
     ListingCardComponent,
@@ -63,10 +63,6 @@ export class ModerationQueueComponent implements OnInit {
 
   categoryLabel(code: string): string {
     return this.catalogLabels.category(code);
-  }
-
-  typeLabel(type: string): string {
-    return this.translate.instant(`reports.type.${type}`);
   }
 
   statusLabel(status: string): string {

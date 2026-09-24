@@ -1,0 +1,23 @@
+<div
+  class="photo-lightbox"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="'reports.photos.lightbox_label' | translate"
+  (click)="onBackdropClick($event)"
+>
+  <button
+    type="button"
+    class="photo-lightbox__close"
+    [attr.aria-label]="'reports.photos.lightbox_close' | translate"
+    (click)="closed.emit()"
+  >
+    <app-icon name="close" size="md" />
+  </button>
+
+  <img
+    class="photo-lightbox__image"
+    [src]="src()"
+    alt=""
+    (click)="$event.stopPropagation()"
+  />
+</div>

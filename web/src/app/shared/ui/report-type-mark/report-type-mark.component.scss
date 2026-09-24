@@ -1,0 +1,31 @@
+.report-type-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.2rem 0.55rem 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.report-type-mark__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.report-type-mark--lost {
+  color: #6b3f12;
+  background: color-mix(in srgb, var(--color-warm) 38%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-warm) 55%, var(--color-border));
+}
+
+.report-type-mark--found {
+  color: var(--color-primary);
+  background: var(--color-accent-soft);
+  border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+}

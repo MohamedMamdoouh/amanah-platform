@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { AppDatePipe } from '../../i18n/app-date.pipe';
 import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -26,9 +26,9 @@ type MyReportsTab =
   selector: 'app-my-reports',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     ButtonComponent,
-    DatePipe,
     EmptyStateComponent,
     ListingCardComponent,
     LoadingIndicatorComponent,

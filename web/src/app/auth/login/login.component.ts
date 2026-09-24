@@ -281,6 +281,9 @@ export class LoginComponent implements OnDestroy {
   async submitSignIn(): Promise<void> {
     if (this.signInForm.invalid) {
       this.signInForm.markAllAsTouched();
+      this.summaryError.set(
+        this.translate.instant('common.form.validation_summary'),
+      );
       return;
     }
 
@@ -309,6 +312,10 @@ export class LoginComponent implements OnDestroy {
         this.summaryError.set(
           this.translate.instant('error.field.captcha_token.required'),
         );
+      } else {
+        this.summaryError.set(
+          this.translate.instant('common.form.validation_summary'),
+        );
       }
       return;
     }
@@ -329,6 +336,9 @@ export class LoginComponent implements OnDestroy {
   async submitOtp(): Promise<void> {
     if (this.otpForm.invalid) {
       this.otpForm.markAllAsTouched();
+      this.summaryError.set(
+        this.translate.instant('common.form.validation_summary'),
+      );
       return;
     }
 
@@ -378,6 +388,9 @@ export class LoginComponent implements OnDestroy {
   async submitRegister(): Promise<void> {
     if (this.registerForm.invalid || !this.signupToken) {
       this.registerForm.markAllAsTouched();
+      this.summaryError.set(
+        this.translate.instant('common.form.validation_summary'),
+      );
       return;
     }
 
@@ -403,6 +416,9 @@ export class LoginComponent implements OnDestroy {
   async submitReset(): Promise<void> {
     if (this.resetForm.invalid || !this.resetToken) {
       this.resetForm.markAllAsTouched();
+      this.summaryError.set(
+        this.translate.instant('common.form.validation_summary'),
+      );
       return;
     }
 

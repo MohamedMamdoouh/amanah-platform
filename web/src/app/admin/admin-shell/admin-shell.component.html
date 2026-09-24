@@ -1,36 +1,47 @@
 <section class="admin-shell page-container--wide" aria-labelledby="admin-title">
   <header class="admin-shell__header">
     <h1 id="admin-title" class="admin-shell__title">
-      {{ 'admin.title' | translate }}
+      {{ "admin.title" | translate }}
     </h1>
-    <nav class="admin-shell__nav tabs" [attr.aria-label]="'admin.title' | translate">
+    <nav
+      class="admin-shell__routes"
+      [attr.aria-label]="'admin.title' | translate"
+    >
       <a
         routerLink="/admin/moderation"
-        routerLinkActive="tabs__tab--active"
-        class="tabs__tab"
+        routerLinkActive="admin-shell__route--active"
+        class="admin-shell__route"
       >
-        {{ 'admin.nav.moderation' | translate }}
+        <span class="admin-shell__route-label">{{
+          "admin.nav.moderation" | translate
+        }}</span>
       </a>
       <a
         routerLink="/admin/abuse"
-        routerLinkActive="tabs__tab--active"
-        class="tabs__tab"
+        routerLinkActive="admin-shell__route--active"
+        class="admin-shell__route"
       >
-        {{ 'admin.nav.abuse' | translate }}
+        <span class="admin-shell__route-label">{{
+          "admin.nav.abuse" | translate
+        }}</span>
       </a>
       <a
         routerLink="/admin/users"
-        routerLinkActive="tabs__tab--active"
-        class="tabs__tab"
+        routerLinkActive="admin-shell__route--active"
+        class="admin-shell__route"
       >
-        {{ 'admin.nav.users' | translate }}
+        <span class="admin-shell__route-label">{{
+          "admin.nav.users" | translate
+        }}</span>
       </a>
       <a
         routerLink="/admin/categories"
-        routerLinkActive="tabs__tab--active"
-        class="tabs__tab"
+        routerLinkActive="admin-shell__route--active"
+        class="admin-shell__route"
       >
-        {{ 'admin.nav.categories' | translate }}
+        <span class="admin-shell__route-label">{{
+          "admin.nav.categories" | translate
+        }}</span>
       </a>
     </nav>
   </header>

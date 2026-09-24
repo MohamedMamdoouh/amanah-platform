@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { AppDatePipe } from '../../i18n/app-date.pipe';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -20,12 +20,12 @@ import { AdminUserDetail, AdminUsersService } from '../admin-users.service';
   selector: 'app-user-detail',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     BadgeComponent,
     ButtonComponent,
     CardComponent,
     ConfirmDialogComponent,
-    DatePipe,
     FormFieldComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,

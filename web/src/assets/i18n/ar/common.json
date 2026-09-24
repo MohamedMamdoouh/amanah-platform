@@ -1,6 +1,13 @@
 {
   "app.name": "أمانة",
   "common.loading": "جاري التحميل...",
+  "common.form.validation_summary": "يرجى إكمال الحقول المطلوبة قبل الإرسال.",
+  "common.form.field_required": "هذا الحقل مطلوب.",
+  "common.form.field_email": "أدخل بريدًا إلكترونيًا صحيحًا.",
+  "common.form.field_min_length": "أدخل {{min}} حروف على الأقل.",
+  "common.form.field_max_length": "لا يزيد عن {{max}} حرفًا.",
+  "common.form.field_min": "أقل قيمة مسموحة هي {{min}}.",
+  "common.form.field_max": "أعلى قيمة مسموحة هي {{max}}.",
   "meta.title": "Amanah",
   "meta.description": "منصة مصرية تجمع بين من فقد شيئًا ومن وجده — بأمان وثقة.",
   "home.welcome": "أهلًا بك في أمانة.",

@@ -85,7 +85,7 @@
                   message.senderDisplayName
                 }}</span>
                 <time class="chat-thread__time" [dateTime]="message.sentAt">
-                  {{ message.sentAt | date: "short" }}
+                  {{ message.sentAt | appDate: "short" }}
                 </time>
               </header>
 

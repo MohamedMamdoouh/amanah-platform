@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { AppDatePipe } from '../../i18n/app-date.pipe';
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -24,6 +24,7 @@ import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.com
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { ReportTypeMarkComponent } from '../../shared/ui/report-type-mark/report-type-mark.component';
 import { TabItem, TabsComponent } from '../../shared/ui/tabs/tabs.component';
 import {
   AbuseReportDetail,
@@ -42,17 +43,18 @@ const BAN_REASON_MIN_LENGTH = 3;
   selector: 'app-abuse-detail',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     BadgeComponent,
     ButtonComponent,
     CardComponent,
     ConfirmDialogComponent,
-    DatePipe,
     EmptyStateComponent,
     FormFieldComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,
     ReactiveFormsModule,
+    ReportTypeMarkComponent,
     RouterLink,
     TabsComponent,
     TranslateModule,

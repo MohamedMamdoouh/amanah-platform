@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, input, output, signal } from '@angular/core';
+import { AppDatePipe } from '../i18n/app-date.pipe';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -20,9 +20,9 @@ const NOTE_MAX_LENGTH = 500;
   selector: 'app-flag-listing-dialog',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     ButtonComponent,
-    DatePipe,
     FormFieldComponent,
     ReactiveFormsModule,
     TranslateModule,
@@ -109,12 +109,18 @@ export class FlagListingDialogComponent {
 
     this.form.markAllAsTouched();
     if (this.form.invalid) {
+      this.summaryError.set(
+        this.translate.instant('abuse.flag.validation_summary'),
+      );
       return;
     }
 
     const { reason, note } = this.form.getRawValue();
     const selectedReason = ABUSE_FLAG_REASONS.find((code) => code === reason);
     if (!selectedReason) {
+      this.summaryError.set(
+        this.translate.instant('abuse.flag.validation_summary'),
+      );
       return;
     }
 

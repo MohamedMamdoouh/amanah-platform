@@ -13,87 +13,145 @@
       [backLabel]="'browse.detail.back' | translate"
       [title]="detail.title"
       [intro]="
-        domainLabels.reportType(detail.type) +
-        ' · ' +
-        domainLabels.reportStatus(detail.status) +
-        (detail.publishedAt
-          ? ' · ' + (detail.publishedAt | date: 'medium')
-          : '')
+        (detail.status !== 'published'
+          ? domainLabels.reportStatus(detail.status) + ' · '
+          : '') +
+        (detail.publishedAt ? (detail.publishedAt | appDate: 'medium') : '')
       "
     >
-      <app-badge [variant]="domainLabels.reportBadgeVariant(detail.status, 'browse')">
-        {{ domainLabels.reportStatus(detail.status) }}
-      </app-badge>
+      <app-report-type-mark [type]="detail.type" />
+      @if (domainLabels.reportBadgeLabel(detail.status, 'browse'); as badge) {
+        <app-badge [variant]="domainLabels.reportBadgeVariant(detail.status, 'browse')">
+          {{ badge }}
+        </app-badge>
+      }
     </app-page-header>
 
     @if (displayPhotos().length > 0) {
       <section
         class="public-report-detail__photos"
-        [attr.aria-label]="'reports.form.photos_title' | translate"
+        [attr.aria-label]="'reports.photos.title' | translate"
       >
-        <h2>{{ "reports.form.photos_title" | translate }}</h2>
+        <h2>{{ "reports.photos.title" | translate }}</h2>
         <div class="public-report-detail__photo-grid">
           @for (photo of displayPhotos(); track photo.id) {
-            <img [src]="photo.url" alt="" class="public-report-detail__photo" />
+            <button
+              type="button"
+              class="public-report-detail__photo-button"
+              [attr.aria-label]="'reports.photos.open_full' | translate"
+              (click)="openPhoto(photo.url)"
+            >
+              <img
+                [src]="photo.url"
+                alt=""
+                class="public-report-detail__photo"
+              />
+            </button>
           }
         </div>
       </section>
     }
 
-    <app-card variant="flat" padding="md">
-      <dl class="public-report-detail__fields">
-        <div>
-          <dt>{{ "reports.detail.category" | translate }}</dt>
-          <dd>{{ categoryLabel(detail.categoryCode) }}</dd>
+    @if (lightboxUrl(); as url) {
+      <app-photo-lightbox [src]="url" (closed)="closePhoto()" />
+    }
+
+    <article class="public-report-detail__dossier">
+      <div class="public-report-detail__dossier-facts">
+        <div class="public-report-detail__fact">
+          <span class="public-report-detail__fact-label">{{
+            "reports.detail.category" | translate
+          }}</span>
+          <span class="public-report-detail__fact-value">{{
+            categoryLabel(detail.categoryCode)
+          }}</span>
         </div>
-        <div>
-          <dt>{{ "reports.detail.governorate" | translate }}</dt>
-          <dd>{{ governorateLabel(detail.governorateCode) }}</dd>
+        <div class="public-report-detail__fact">
+          <span class="public-report-detail__fact-label">{{
+            "reports.detail.governorate" | translate
+          }}</span>
+          <span class="public-report-detail__fact-value">{{
+            governorateLabel(detail.governorateCode)
+          }}</span>
         </div>
-        <div>
-          <dt>
+        <div class="public-report-detail__fact">
+          <span class="public-report-detail__fact-label">
             @if (isFound()) {
               {{ "reports.form.date_found" | translate }}
             } @else {
               {{ "reports.form.date_lost" | translate }}
             }
-          </dt>
-          <dd>{{ detail.dateLostOrFound }}</dd>
+          </span>
+          <span class="public-report-detail__fact-value">{{
+            detail.dateLostOrFound | appDate: "mediumDate"
+          }}</span>
         </div>
         @if (detail.areaText) {
-          <div>
-            <dt>{{ "reports.form.area" | translate }}</dt>
-            <dd>{{ detail.areaText }}</dd>
+          <div class="public-report-detail__fact">
+            <span class="public-report-detail__fact-label">{{
+              "reports.form.area" | translate
+            }}</span>
+            <span class="public-report-detail__fact-value">{{
+              detail.areaText
+            }}</span>
           </div>
         }
         @if (detail.heldLocation) {
-          <div>
-            <dt>{{ "reports.form.held_location" | translate }}</dt>
-            <dd>{{ detail.heldLocation }}</dd>
+          <div class="public-report-detail__fact public-report-detail__fact--wide">
+            <span class="public-report-detail__fact-label">{{
+              "reports.form.held_location" | translate
+            }}</span>
+            <span class="public-report-detail__fact-value">{{
+              detail.heldLocation
+            }}</span>
           </div>
         }
-        <div>
-          <dt>{{ "reports.form.description" | translate }}</dt>
-          <dd>{{ detail.description }}</dd>
-        </div>
-        @for (entry of categoryFieldEntries(); track entry[0]) {
-          <div>
-            <dt>{{ fieldLabel(entry[0]) }}</dt>
-            <dd>{{ entry[1] }}</dd>
-          </div>
-        }
-        @if (detail.hasReward && detail.rewardAmount) {
-          <div>
-            <dt>{{ "reports.form.reward_amount" | translate }}</dt>
-            <dd>{{ detail.rewardAmount }}</dd>
-          </div>
-        }
-        <div>
-          <dt>{{ "browse.detail.reporter" | translate }}</dt>
-          <dd>{{ detail.reporterDisplayName }}</dd>
-        </div>
-      </dl>
-    </app-card>
+      </div>
+
+      <section
+        class="public-report-detail__dossier-story"
+        [attr.aria-label]="'reports.form.description' | translate"
+      >
+        <h3 class="public-report-detail__dossier-story-label">
+          {{ "reports.form.description" | translate }}
+        </h3>
+        <p class="public-report-detail__dossier-story-text">
+          {{ detail.description }}
+        </p>
+      </section>
+
+      @if (categoryFieldEntries().length > 0) {
+        <dl class="public-report-detail__dossier-specs">
+          @for (entry of categoryFieldEntries(); track entry[0]) {
+            <div class="public-report-detail__spec">
+              <dt>{{ fieldLabel(entry[0]) }}</dt>
+              <dd>{{ entry[1] }}</dd>
+            </div>
+          }
+        </dl>
+      }
+
+      @if (detail.hasReward && detail.rewardAmount) {
+        <aside class="public-report-detail__dossier-reward">
+          <span class="public-report-detail__dossier-reward-label">{{
+            "reports.form.reward_amount" | translate
+          }}</span>
+          <span class="public-report-detail__dossier-reward-value"
+            >{{ detail.rewardAmount }}
+            <span class="public-report-detail__dossier-reward-unit">ج.م</span></span
+          >
+        </aside>
+      }
+
+      <footer class="public-report-detail__dossier-reporter">
+        <span class="public-report-detail__dossier-reporter-label">{{
+          "browse.detail.reporter" | translate
+        }}</span>
+        <span class="public-report-detail__dossier-reporter-name">{{
+          detail.reporterDisplayName
+        }}</span>
+      </footer>
+    </article>
 
     <section
       class="public-report-detail__actions"
@@ -108,6 +166,15 @@
           [reportId]="detail.id"
           [reportType]="detail.type"
         />
+      } @else if (isListingOwner()) {
+        <aside class="public-report-detail__owner-gate" role="note">
+          <span class="public-report-detail__owner-gate-icon" aria-hidden="true">
+            <app-icon name="shield" size="md" />
+          </span>
+          <p class="public-report-detail__owner-gate-text">
+            {{ "browse.detail.claim_own_note" | translate }}
+          </p>
+        </aside>
       } @else {
         <div class="public-report-detail__action-buttons">
           <app-button
@@ -134,7 +201,16 @@
         </app-button>
       </div>
       @if (messageHint(); as messageNote) {
-        <p class="public-report-detail__action-note">{{ messageNote }}</p>
+        <aside
+          class="public-report-detail__chat-gate"
+          [class.public-report-detail__chat-gate--awaiting]="isMessageAwaitingApproval()"
+          role="note"
+        >
+          <span class="public-report-detail__chat-gate-icon" aria-hidden="true">
+            <app-icon name="chat" size="md" />
+          </span>
+          <p class="public-report-detail__chat-gate-text">{{ messageNote }}</p>
+        </aside>
       }
     </section>
 
@@ -143,21 +219,33 @@
         class="public-report-detail__flag"
         aria-labelledby="public-report-flag-title"
       >
-        <h2 id="public-report-flag-title">
-          {{ "abuse.flag.section_title" | translate }}
-        </h2>
-        <p class="public-report-detail__flag-intro">
-          {{ "abuse.flag.section_intro" | translate }}
-        </p>
+        <div class="public-report-detail__flag-head">
+          <span class="public-report-detail__flag-icon" aria-hidden="true">
+            <app-icon name="shield" size="md" />
+          </span>
+          <div class="public-report-detail__flag-copy">
+            <h2 id="public-report-flag-title">
+              {{ "abuse.flag.section_title" | translate }}
+            </h2>
+            <p class="public-report-detail__flag-intro">
+              {{ "abuse.flag.section_intro" | translate }}
+            </p>
+          </div>
+        </div>
 
         @if (flagSuccessMessage(); as successMessage) {
           <app-alert variant="success">{{ successMessage }}</app-alert>
         }
 
         @if (isListingOwner()) {
-          <p class="public-report-detail__action-note">
-            {{ "abuse.flag.owner_note" | translate }}
-          </p>
+          <aside class="public-report-detail__owner-gate" role="note">
+            <span class="public-report-detail__owner-gate-icon" aria-hidden="true">
+              <app-icon name="shield" size="md" />
+            </span>
+            <p class="public-report-detail__owner-gate-text">
+              {{ "abuse.flag.owner_note" | translate }}
+            </p>
+          </aside>
         } @else if (showOpenFlagSummary()) {
           @if (openFlag(); as flag) {
             <app-card variant="flat" padding="md">
@@ -184,7 +272,7 @@
                 }
                 <div>
                   <dt>{{ "abuse.flag.submitted_at_label" | translate }}</dt>
-                  <dd>{{ flag.createdAt | date: "medium" }}</dd>
+                  <dd>{{ flag.createdAt | appDate: "medium" }}</dd>
                 </div>
               </dl>
               <div class="public-report-detail__action-buttons">
@@ -195,7 +283,7 @@
             </app-card>
           }
         } @else if (showFlagAction()) {
-          <div class="public-report-detail__action-buttons">
+          <div class="public-report-detail__action-buttons public-report-detail__action-buttons--flush">
             <app-button variant="outline" (clicked)="onFlagClick()">
               {{ "abuse.flag.button" | translate }}
             </app-button>

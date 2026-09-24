@@ -35,10 +35,10 @@
         <li>
           <app-listing-card
             [title]="report.title"
-            [typeLabel]="domainLabels.reportType(report.type)"
+            [reportType]="report.type"
             [subtitle]="categoryLabel(report.categoryCode) + ' · ' + governorateLabel(report.governorateCode)"
-            [date]="(report.createdAt | date: 'medium') ?? ''"
-            [badgeLabel]="domainLabels.reportStatus(report.status)"
+            [date]="(report.createdAt | appDate: 'medium') ?? ''"
+            [badgeLabel]="domainLabels.reportBadgeLabel(report.status, 'mine')"
             [badgeVariant]="domainLabels.reportBadgeVariant(report.status, 'mine')"
             [routerLink]="['/my/reports', report.id]"
             [actionLabel]="'reports.confirmation.view_detail' | translate"

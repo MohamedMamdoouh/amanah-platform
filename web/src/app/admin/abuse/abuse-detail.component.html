@@ -55,7 +55,7 @@
         </div>
         <div>
           <dt>{{ "admin.abuse.detail.created_at" | translate }}</dt>
-          <dd>{{ item.createdAt | date: "medium" }}</dd>
+          <dd>{{ item.createdAt | appDate: "medium" }}</dd>
         </div>
         @if (item.resolutionOutcome) {
           <div>
@@ -66,7 +66,7 @@
         @if (item.resolvedAt) {
           <div>
             <dt>{{ "admin.abuse.detail.resolved_at" | translate }}</dt>
-            <dd>{{ item.resolvedAt | date: "medium" }}</dd>
+            <dd>{{ item.resolvedAt | appDate: "medium" }}</dd>
           </div>
         }
       </dl>
@@ -98,7 +98,7 @@
         </div>
         <div>
           <dt>{{ "admin.abuse.detail.listing_type" | translate }}</dt>
-          <dd>{{ domainLabels.reportType(item.listing.type) }}</dd>
+          <dd><app-report-type-mark [type]="item.listing.type" /></dd>
         </div>
         <div>
           <dt>{{ "admin.abuse.detail.listing_status" | translate }}</dt>
@@ -107,7 +107,7 @@
         @if (item.listing.publishedAt) {
           <div>
             <dt>{{ "admin.abuse.detail.published_at" | translate }}</dt>
-            <dd>{{ item.listing.publishedAt | date: "medium" }}</dd>
+            <dd>{{ item.listing.publishedAt | appDate: "medium" }}</dd>
           </div>
         }
       </dl>
@@ -208,7 +208,7 @@
                                     message.senderDisplayName
                                   }}</span>
                                   <time [attr.datetime]="message.sentAt">
-                                    {{ message.sentAt | date: "short" }}
+                                    {{ message.sentAt | appDate: "short" }}
                                   </time>
                                 </header>
                                 @if (message.attachmentId) {
@@ -276,7 +276,7 @@
                                   | translate
                               }}
                             </dt>
-                            <dd>{{ claim.submittedAt | date: "medium" }}</dd>
+                            <dd>{{ claim.submittedAt | appDate: "medium" }}</dd>
                           </div>
                           <div>
                             <dt>

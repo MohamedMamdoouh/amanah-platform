@@ -161,6 +161,7 @@ export class CategoriesAdminComponent implements OnInit {
   async submitAddCategory(): Promise<void> {
     if (this.addCategoryForm.invalid) {
       this.addCategoryForm.markAllAsTouched();
+      this.error.set(this.translate.instant('common.form.validation_summary'));
       return;
     }
 
@@ -181,6 +182,7 @@ export class CategoriesAdminComponent implements OnInit {
   async submitEditCategory(categoryId: string): Promise<void> {
     if (this.editCategoryForm.invalid) {
       this.editCategoryForm.markAllAsTouched();
+      this.error.set(this.translate.instant('common.form.validation_summary'));
       return;
     }
 
@@ -202,6 +204,7 @@ export class CategoriesAdminComponent implements OnInit {
     const request = this.buildFieldRequest(this.addFieldForm.getRawValue());
     if (!request) {
       this.addFieldForm.markAllAsTouched();
+      this.error.set(this.translate.instant('common.form.validation_summary'));
       return;
     }
 
@@ -216,6 +219,7 @@ export class CategoriesAdminComponent implements OnInit {
     const request = this.buildFieldRequest(this.editFieldForm.getRawValue());
     if (!request) {
       this.editFieldForm.markAllAsTouched();
+      this.error.set(this.translate.instant('common.form.validation_summary'));
       return;
     }
 

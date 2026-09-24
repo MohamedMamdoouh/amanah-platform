@@ -111,39 +111,21 @@
   } @else if (items().length === 0) {
     <app-empty-state [title]="'browse.empty' | translate" />
   } @else {
-    @if (totalCount() > 0) {
-      <p class="browse__summary">
-        {{
-          "browse.results_count"
-            | translate
-              : {
-                  count: totalCount(),
-                  page: currentPage(),
-                  pages: totalPages(),
-                }
-        }}
-      </p>
-    }
-
     <ul class="browse__list">
       @for (report of items(); track report.id) {
         <li>
           <app-listing-card
             [title]="report.title"
-            [typeLabel]="domainLabels.reportType(report.type)"
+            [reportType]="report.type"
             [subtitle]="
               categoryLabel(report.categoryCode) +
               ' · ' +
               governorateLabel(report.governorateCode)
             "
             [location]="report.areaText ?? null"
-            [date]="(report.publishedAt | date: 'medium') ?? ''"
+            [date]="(report.publishedAt | appDate: 'medium') ?? ''"
             [imageUrl]="report.thumbnailUrl ?? null"
-            [badgeLabel]="
-              report.status === 'claim_in_progress'
-                ? domainLabels.reportStatus(report.status)
-                : null
-            "
+            [badgeLabel]="domainLabels.reportBadgeLabel(report.status, 'browse')"
             [badgeVariant]="domainLabels.reportBadgeVariant(report.status, 'browse')"
             [routerLink]="detailRoute(report)"
             [actionLabel]="'browse.view_detail' | translate"
@@ -152,23 +134,39 @@
       }
     </ul>
 
-    @if (totalPages() > 1) {
-      <nav
-        class="browse__pagination"
-        [attr.aria-label]="'browse.pagination_label' | translate"
-      >
-        @for (page of pageNumbers(); track page) {
-          <button
-            type="button"
-            class="browse__page"
-            [class.browse__page--active]="page === currentPage()"
-            [attr.aria-current]="page === currentPage() ? 'page' : null"
-            (click)="goToPage(page)"
-          >
-            {{ page }}
-          </button>
-        }
-      </nav>
-    }
+    <footer class="browse__footer">
+      @if (totalCount() > 0) {
+        <p class="browse__summary">
+          {{
+            "browse.results_count"
+              | translate
+                : {
+                    count: totalCount(),
+                    page: currentPage(),
+                    pages: totalPages(),
+                  }
+          }}
+        </p>
+      }
+
+      @if (totalPages() > 1) {
+        <nav
+          class="browse__pagination"
+          [attr.aria-label]="'browse.pagination_label' | translate"
+        >
+          @for (page of pageNumbers(); track page) {
+            <button
+              type="button"
+              class="browse__page"
+              [class.browse__page--active]="page === currentPage()"
+              [attr.aria-current]="page === currentPage() ? 'page' : null"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+        </nav>
+      }
+    </footer>
   }
 </section>

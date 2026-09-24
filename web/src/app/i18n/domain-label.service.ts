@@ -18,6 +18,21 @@ export class DomainLabelService {
     return this.translate.instant(`reports.status.${status}`);
   }
 
+  reportBadgeLabel(
+    status: string,
+    context: ReportBadgeContext = 'browse',
+  ): string | null {
+    if (status === 'published') {
+      return null;
+    }
+
+    if (context === 'browse' && status !== 'claim_in_progress') {
+      return null;
+    }
+
+    return this.reportStatus(status);
+  }
+
   reportBadgeVariant(
     status: string,
     context: ReportBadgeContext = 'browse',

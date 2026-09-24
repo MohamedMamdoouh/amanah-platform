@@ -46,6 +46,7 @@ export class ClaimFormComponent {
   readonly summaryError = signal<string | null>(null);
   readonly fieldErrors = signal<Record<string, string[]>>({});
   readonly selectedPhoto = signal<File | null>(null);
+  readonly showPhotoUpload = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     submittedAnswer: [
@@ -74,6 +75,10 @@ export class ClaimFormComponent {
 
   onPhotoChange(photos: File[]): void {
     this.selectedPhoto.set(photos[0] ?? null);
+  }
+
+  revealPhotoUpload(): void {
+    this.showPhotoUpload.set(true);
   }
 
   fieldError(name: string): string | null {
@@ -109,6 +114,9 @@ export class ClaimFormComponent {
   async submit(): Promise<void> {
     if (this.form.invalid || this.submitting()) {
       this.form.markAllAsTouched();
+      this.summaryError.set(
+        this.translate.instant('claims.form.validation_summary'),
+      );
       return;
     }
 
@@ -133,6 +141,7 @@ export class ClaimFormComponent {
       this.fieldErrors.set(errors);
 
       if (errors['photo']) {
+        this.showPhotoUpload.set(true);
         this.selectedPhoto.set(null);
         this.photoUpload()?.clear();
       }

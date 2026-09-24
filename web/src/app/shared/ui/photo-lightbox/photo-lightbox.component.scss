@@ -1,0 +1,47 @@
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: rgb(26 40 43 / 0.88);
+}
+
+.photo-lightbox__close {
+  position: absolute;
+  top: var(--space-md);
+  inset-inline-end: var(--space-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  padding: 0;
+  color: #ffffff;
+  background: rgb(0 0 0 / 0.35);
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.photo-lightbox__close:hover,
+.photo-lightbox__close:focus-visible {
+  background: rgb(0 0 0 / 0.55);
+}
+
+.photo-lightbox__close:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.photo-lightbox__image {
+  max-width: min(96vw, 56rem);
+  max-height: min(88vh, 56rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+}

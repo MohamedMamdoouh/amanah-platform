@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { AppDatePipe } from '../i18n/app-date.pipe';
 import {
   takeUntilDestroyed,
   toObservable,
@@ -44,8 +44,8 @@ type BrowseFilterKey = Exclude<keyof typeof EMPTY_BROWSE_FILTERS, 'q' | 'page'>;
   selector: 'app-browse',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
-    DatePipe,
     EmptyStateComponent,
     FormFieldComponent,
     ListingCardComponent,

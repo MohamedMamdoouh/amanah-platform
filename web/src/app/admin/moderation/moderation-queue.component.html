@@ -39,9 +39,9 @@
           <li>
             <app-listing-card
               [title]="item.title"
-              [typeLabel]="typeLabel(item.type)"
+              [reportType]="item.type"
               [subtitle]="categoryLabel(item.categoryCode)"
-              [date]="(item.createdAt | date: 'medium') ?? ''"
+              [date]="(item.createdAt | appDate: 'medium') ?? ''"
               [badgeLabel]="statusLabel(item.status)"
               [badgeVariant]="'pending'"
               [routerLink]="['/admin/moderation', item.id]"
@@ -59,9 +59,9 @@
         <li>
           <app-listing-card
             [title]="item.title"
-            [typeLabel]="typeLabel(item.type)"
+            [reportType]="item.type"
             [subtitle]="categoryLabel(item.categoryCode)"
-            [date]="(item.createdAt | date: 'medium') ?? ''"
+            [date]="(item.createdAt | appDate: 'medium') ?? ''"
             [routerLink]="['/admin/moderation', item.id]"
             [actionLabel]="'admin.moderation.review' | translate"
           />

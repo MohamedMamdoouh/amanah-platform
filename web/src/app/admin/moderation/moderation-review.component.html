@@ -9,9 +9,9 @@
       [backLink]="'/admin/moderation'"
       [backLabel]="'admin.moderation.back' | translate"
       [title]="detail.title"
-      [intro]="(detail.createdAt | date: 'medium') ?? ''"
+      [intro]="(detail.createdAt | appDate: 'medium') ?? ''"
     >
-      <span class="label-caps">{{ domainLabels.reportType(detail.type) }}</span>
+      <app-report-type-mark [type]="detail.type" />
     </app-page-header>
 
     <app-card variant="flat" padding="md">
@@ -32,7 +32,7 @@
             {{ "reports.form.date_lost" | translate }}
           }
         </dt>
-        <dd>{{ detail.dateLostOrFound }}</dd>
+        <dd>{{ detail.dateLostOrFound | appDate: "mediumDate" }}</dd>
       </div>
       @if (detail.areaText) {
         <div>
@@ -71,7 +71,7 @@
         aria-labelledby="moderation-photos-title"
       >
         <h2 id="moderation-photos-title">
-          {{ "reports.form.photos_title" | translate }}
+          {{ "reports.photos.title" | translate }}
         </h2>
         <ul class="moderation-review__photo-list">
           @for (photo of photos(); track photo.id) {
@@ -82,16 +82,27 @@
                   {{ "reports.detail.photo_loading" | translate }}
                 </span>
               } @else if (photo.url) {
-                <img
-                  [src]="photo.url"
-                  alt=""
-                  class="moderation-review__photo"
-                />
+                <button
+                  type="button"
+                  class="moderation-review__photo-button"
+                  [attr.aria-label]="'reports.photos.open_full' | translate"
+                  (click)="openPhoto(photo.url)"
+                >
+                  <img
+                    [src]="photo.url"
+                    alt=""
+                    class="moderation-review__photo"
+                  />
+                </button>
               }
             </li>
           }
         </ul>
       </section>
+    }
+
+    @if (lightboxUrl(); as url) {
+      <app-photo-lightbox [src]="url" (closed)="closePhoto()" />
     }
 
     @if (actionError()) {

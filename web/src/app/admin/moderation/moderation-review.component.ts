@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { AppDatePipe } from '../../i18n/app-date.pipe';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -14,6 +14,8 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CardComponent } from '../../shared/ui/card/card.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { PhotoLightboxComponent } from '../../shared/ui/photo-lightbox/photo-lightbox.component';
+import { ReportTypeMarkComponent } from '../../shared/ui/report-type-mark/report-type-mark.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import { ReportDetail } from '../../reports/models/report.models';
 import {
@@ -39,13 +41,15 @@ const REJECTION_REASON_CODES = [
   selector: 'app-moderation-review',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     ButtonComponent,
     CardComponent,
-    DatePipe,
     LoadingIndicatorComponent,
     PageHeaderComponent,
+    PhotoLightboxComponent,
     ReactiveFormsModule,
+    ReportTypeMarkComponent,
     SpinnerComponent,
     TranslateModule,
   ],
@@ -67,6 +71,7 @@ export class ModerationReviewComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly report = signal<ReportDetail | null>(null);
   readonly photos = signal<DisplayPhoto[]>([]);
+  readonly lightboxUrl = signal<string | null>(null);
   readonly showReject = signal(false);
   readonly actionError = signal<string | null>(null);
   readonly approving = signal(false);
@@ -97,6 +102,14 @@ export class ModerationReviewComponent implements OnInit {
 
   governorateLabel(code: string): string {
     return this.catalogLabels.governorate(code);
+  }
+
+  openPhoto(url: string): void {
+    this.lightboxUrl.set(url);
+  }
+
+  closePhoto(): void {
+    this.lightboxUrl.set(null);
   }
 
   fieldLabel(fieldKey: string): string {

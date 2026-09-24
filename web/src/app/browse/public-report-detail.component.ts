@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { AppDatePipe } from '../i18n/app-date.pipe';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -28,8 +28,11 @@ import { AlertComponent } from '../shared/ui/alert/alert.component';
 import { BadgeComponent } from '../shared/ui/badge/badge.component';
 import { ButtonComponent } from '../shared/ui/button/button.component';
 import { CardComponent } from '../shared/ui/card/card.component';
+import { IconComponent } from '../shared/ui/icon/icon.component';
 import { LoadingIndicatorComponent } from '../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../shared/ui/page-header/page-header.component';
+import { PhotoLightboxComponent } from '../shared/ui/photo-lightbox/photo-lightbox.component';
+import { ReportTypeMarkComponent } from '../shared/ui/report-type-mark/report-type-mark.component';
 import { BrowseService, mapBrowseError } from './browse.service';
 import { PublicReportDetail } from './models/browse.models';
 
@@ -37,16 +40,19 @@ import { PublicReportDetail } from './models/browse.models';
   selector: 'app-public-report-detail',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     BadgeComponent,
     ButtonComponent,
     CardComponent,
     ClaimFormComponent,
     ClaimResolutionActionsComponent,
-    DatePipe,
     FlagListingDialogComponent,
+    IconComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,
+    PhotoLightboxComponent,
+    ReportTypeMarkComponent,
     TranslateModule,
   ],
   templateUrl: './public-report-detail.component.html',
@@ -73,6 +79,7 @@ export class PublicReportDetailComponent implements OnInit {
   readonly openFlag = signal<FlagListingResponse | null>(null);
   readonly flagDialogOpen = signal(false);
   readonly flagSuccessMessage = signal<string | null>(null);
+  readonly lightboxUrl = signal<string | null>(null);
 
   readonly displayPhotos = computed(() => {
     const detail = this.report();
@@ -98,6 +105,14 @@ export class PublicReportDetailComponent implements OnInit {
     }
 
     void this.loadReport(id, type);
+  }
+
+  openPhoto(url: string): void {
+    this.lightboxUrl.set(url);
+  }
+
+  closePhoto(): void {
+    this.lightboxUrl.set(null);
   }
 
   categoryLabel(code: string): string {
@@ -189,6 +204,10 @@ export class PublicReportDetailComponent implements OnInit {
     return this.auth.isLoggedIn() && this.chatThreadId() === null;
   }
 
+  isMessageAwaitingApproval(): boolean {
+    return this.auth.isLoggedIn() && this.chatThreadId() === null;
+  }
+
   claimHint(): string | null {
     if (this.isClaimInProgress()) {
       return this.translate.instant('browse.detail.claim_in_progress_note');
@@ -210,7 +229,7 @@ export class PublicReportDetailComponent implements OnInit {
       return null;
     }
 
-    return this.translate.instant('browse.detail.message_coming_soon');
+    return this.translate.instant('browse.detail.message_after_approval');
   }
 
   onClaimClick(): void {

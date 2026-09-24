@@ -34,5 +34,9 @@
 }
 
 .page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
   margin-top: var(--space-md);
 }

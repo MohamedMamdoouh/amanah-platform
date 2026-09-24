@@ -11,6 +11,10 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
 import { TurnstileWidgetComponent } from '../../auth/turnstile-widget/turnstile-widget.component';
 import { ApiErrorService } from '../../i18n/api-error.service';
+import {
+  clientControlError,
+  validationSummaryMessage,
+} from '../../i18n/form-validation';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -74,8 +78,12 @@ export class SupportComponent {
   }
 
   fieldError(name: string): string | null {
-    const errors = this.fieldErrors()[name];
-    return errors?.[0] ?? null;
+    const apiError = this.fieldErrors()[name]?.[0];
+    if (apiError) {
+      return apiError;
+    }
+
+    return clientControlError(this.form.get(name), this.translate);
   }
 
   onCaptchaToken(token: string): void {
@@ -116,6 +124,11 @@ export class SupportComponent {
   async submit(): Promise<void> {
     if (this.form.invalid || !this.captchaToken()) {
       this.form.markAllAsTouched();
+      this.summaryError.set(
+        !this.captchaToken()
+          ? this.translate.instant('error.auth.captcha_failed')
+          : validationSummaryMessage(this.translate),
+      );
       return;
     }
 

@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { AppDatePipe } from '../../i18n/app-date.pipe';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -16,9 +16,9 @@ import { AbuseQueueItem, AdminAbuseService } from '../admin-abuse.service';
   selector: 'app-abuse-queue',
   standalone: true,
   imports: [
+    AppDatePipe,
     AlertComponent,
     BadgeComponent,
-    DatePipe,
     EmptyStateComponent,
     ListingCardComponent,
     LoadingIndicatorComponent,

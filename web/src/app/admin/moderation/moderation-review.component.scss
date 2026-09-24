@@ -77,7 +77,23 @@
   gap: var(--space-sm);
 }
 
+.moderation-review__photo-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+  border-radius: var(--radius-sm);
+}
+
+.moderation-review__photo-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .moderation-review__photo {
+  display: block;
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;

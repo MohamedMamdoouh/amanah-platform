@@ -3,11 +3,12 @@ import { RouterLink } from '@angular/router';
 
 import { BadgeComponent, BadgeVariant } from '../badge/badge.component';
 import { IconComponent } from '../icon/icon.component';
+import { ReportTypeMarkComponent } from '../report-type-mark/report-type-mark.component';
 
 @Component({
   selector: 'app-listing-card',
   standalone: true,
-  imports: [RouterLink, BadgeComponent, IconComponent],
+  imports: [RouterLink, BadgeComponent, IconComponent, ReportTypeMarkComponent],
   templateUrl: './listing-card.component.html',
   styleUrl: './listing-card.component.scss',
 })
@@ -16,7 +17,7 @@ export class ListingCardComponent {
   readonly subtitle = input<string | null>(null);
   readonly location = input<string | null>(null);
   readonly date = input<string | null>(null);
-  readonly typeLabel = input<string | null>(null);
+  readonly reportType = input<string | null>(null);
   readonly badgeLabel = input<string | null>(null);
   readonly badgeVariant = input<BadgeVariant>('neutral');
   readonly imageUrl = input<string | null>(null);

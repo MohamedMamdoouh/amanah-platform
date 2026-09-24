@@ -20,9 +20,9 @@
         <li class="my-chats__item">
           <app-listing-card
             [title]="thread.reportTitle"
-            [typeLabel]="domainLabels.reportType(thread.reportType)"
+            [reportType]="thread.reportType"
             [subtitle]="thread.counterpartyDisplayName"
-            [date]="(threadDate(thread) | date: 'medium') ?? ''"
+            [date]="(threadDate(thread) | appDate: 'medium') ?? ''"
             [badgeLabel]="statusLabel(thread)"
             [badgeVariant]="statusBadgeVariant(thread)"
             [routerLink]="threadLink(thread)"

@@ -18,9 +18,9 @@
       <span class="form-label">{{ promptKey() | translate }}</span>
       <textarea
         formControlName="submittedAnswer"
-        class="form-textarea"
+        class="form-textarea claim-form__answer"
         [class.form-textarea--error]="fieldError('submittedAnswer')"
-        rows="5"
+        rows="3"
         [attr.aria-describedby]="'claim-answer-hint'"
       ></textarea>
       <p id="claim-answer-hint" class="form-hint">
@@ -33,19 +33,30 @@
       }
     </label>
 
-    <div class="form-field">
-      <span class="form-label">{{ "claims.form.photo_title" | translate }}</span>
-      <app-photo-upload
+    @if (showPhotoUpload()) {
+      <div class="form-field">
+        <span class="form-label">{{ "claims.form.photo_title" | translate }}</span>
+        <app-photo-upload
+          [disabled]="submitting()"
+          [maxPhotos]="1"
+          hintKey="claims.form.photo_hint"
+          (photosChange)="onPhotoChange($event)"
+        />
+        <p class="form-hint">{{ "claims.form.photo_privacy_note" | translate }}</p>
+        @if (photoFieldError()) {
+          <span class="form-error" role="alert">{{ photoFieldError() }}</span>
+        }
+      </div>
+    } @else {
+      <app-button
+        type="button"
+        variant="outline"
         [disabled]="submitting()"
-        [maxPhotos]="1"
-        hintKey="claims.form.photo_hint"
-        (photosChange)="onPhotoChange($event)"
-      />
-      <p class="form-hint">{{ "claims.form.photo_privacy_note" | translate }}</p>
-      @if (photoFieldError()) {
-        <span class="form-error" role="alert">{{ photoFieldError() }}</span>
-      }
-    </div>
+        (clicked)="revealPhotoUpload()"
+      >
+        {{ "claims.form.photo_add_button" | translate }}
+      </app-button>
+    }
 
     <app-button
       type="submit"

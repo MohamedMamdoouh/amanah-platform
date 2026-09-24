@@ -61,9 +61,13 @@
   margin: 0;
 }
 
+.report-detail__photos {
+  margin-top: var(--space-md);
+}
+
 .report-detail__photos h2 {
   font-size: 1rem;
-  margin-bottom: var(--space-sm);
+  margin: 0 0 var(--space-sm);
 }
 
 .report-detail__photo-grid {
@@ -72,7 +76,21 @@
   gap: var(--space-sm);
 }
 
+.report-detail__photo-button {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+  border-radius: var(--radius-sm);
+}
+
+.report-detail__photo-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .report-detail__photo {
+  display: block;
   width: 5.5rem;
   height: 5.5rem;
   object-fit: cover;
@@ -94,7 +112,7 @@
 }
 
 .report-detail__actions {
-  margin-top: var(--space-lg);
+  margin-top: var(--space-md);
 }
 
 .report-detail__withdraw {
