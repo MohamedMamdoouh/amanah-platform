@@ -47,7 +47,7 @@
 
 - **Authentication** — Phone OTP signup, password sign-in, JWT access tokens with httpOnly refresh cookie rotation, password reset, logout everywhere
 - **Reports** — Lost and found submissions with category-specific fields, optional photos (EXIF strip, WebP), contact-info blocking, and quotas
-- **Moderation** — Admin FIFO queue (approve/reject), reporter resubmit for rejected reports, category and field CRUD, admin alert email (Resend)
+- **Moderation** — Admin FIFO queue (approve/reject), reporter resubmit for rejected reports, category and field CRUD, admin alert email (Brevo)
 - **Browse** — Public listing with search, filters, pagination, and status-aware detail pages (`/lost/{id}`, `/found/{id}`)
 - **Claims** — Submit and review ownership claims, presigned private claim photos, competing-claim handling, My Claims
 - **Chat & resolution** — SignalR live messaging with REST fallback, attachments, safety banner, confirm resolved / cancel claim
@@ -75,7 +75,7 @@ Behavioral detail: [specs/README.md](specs/README.md).
 | Real-time        | ASP.NET Core SignalR (`/hubs/chat`)                                        |
 | Media storage    | Cloudflare R2 (S3-compatible via AWSSDK.S3); in-memory fake when unset     |
 | SMS              | Unimtx (production); console sender in Development                         |
-| Email            | Resend (admin moderation alerts; no-op when unset)                         |
+| Email            | Brevo (admin moderation alerts; no-op when unset)                          |
 | Captcha          | Cloudflare Turnstile                                                       |
 | Caching          | `Microsoft.Extensions.Caching.Hybrid` (catalog/governorate TTLs)           |
 | Containerisation | Multi-stage Docker ([api/Dockerfile](api/Dockerfile))                      |
@@ -215,7 +215,7 @@ Key sections in [api/appsettings.json](api/appsettings.json):
   "Cors": { "AllowedOrigins": [] },
   "Bucket": { "Endpoint", "AccessKey", "SecretKey", "Name" },
   "Sms": { "ApiKey": "" },
-  "Email": { /* Resend + outbox */ },
+  "Email": { /* Brevo + outbox */ },
   "RateLimit": { "Policies": { /* otp-send, auth-login, photo-upload, chat-message, ... */ } }
 }
 ```
@@ -242,7 +242,7 @@ Cors__AllowedOrigins__0=https://your-origin.example
 | `Turnstile__SecretKey` | Yes | Turnstile server secret (must match the widget site key) |
 | `ADMIN_PHONE` / `ADMIN_PASSWORD` | Yes | Bootstrap admin |
 | `Bucket__Endpoint`, `Bucket__AccessKey`, `Bucket__SecretKey`, `Bucket__Name` | Yes* | Cloudflare R2 |
-| `Email__ApiKey`, `Email__FromAddress`, `Email__AdminAlertTo` | Optional | Resend admin alerts |
+| `Email__ApiKey`, `Email__FromAddress`, `Email__FromName`, `Email__AdminAlertTo` | Optional | Brevo admin alerts |
 | `SEED_USER_PHONE`, `SEED_USER_PASSWORD` | No | Optional staging user; omit in production |
 
 \*When `Bucket__Endpoint` is unset, the API uses in-memory storage (local dev and tests only).
@@ -465,7 +465,7 @@ interface ApiErrorBody {
 | PostgreSQL | Supabase |
 | Media | Cloudflare R2 |
 | SMS | Unimtx |
-| Email | Resend (optional until alerts are needed) |
+| Email | Brevo (optional until alerts are needed) |
 
 Render: health check `/health`, Dockerfile path `api/Dockerfile`, build context at repo root. No `render.yaml` — configure in the Render dashboard.
 

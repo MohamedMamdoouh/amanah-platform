@@ -67,27 +67,15 @@ public sealed class AdminAlertEmailOutboxDispatcher(
                 message.CategoryCode,
                 CancellationToken.None);
         }
-        catch (ResendApiException exception) when (exception.IsTransient)
+        catch (EmailApiException exception) when (exception.IsTransient)
         {
             await MarkAmbiguousAsync(message, exception.Message, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return false;
         }
-        catch (ResendApiException exception)
+        catch (EmailApiException exception)
         {
             await MarkFailedAsync(message, exception.Message, cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return false;
-        }
-        catch (HttpRequestException exception)
-        {
-            await MarkFailedAsync(message, exception.Message, cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return false;
-        }
-        catch (Exception exception) when (exception is TimeoutException or TaskCanceledException)
-        {
-            await MarkAmbiguousAsync(message, exception.Message, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return false;
         }

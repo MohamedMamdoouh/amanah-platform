@@ -19,14 +19,15 @@ public class SupportServiceTests
     {
         var emailOptions = Microsoft.Extensions.Options.Options.Create(new EmailOptions
         {
-            ApiKey = "re_test_key",
-            FromAddress = "Amanah <test@example.com>",
+            ApiKey = "xkeysib-test-key",
+            FromAddress = "test@example.com",
+            FromName = "Amanah",
             AdminAlertTo = "",
         });
-        var sender = new ResendSupportEmailSender(
+        var sender = new BrevoSupportEmailSender(
             new HttpClient(new StubHttpMessageHandler()),
             emailOptions,
-            NullLogger<ResendSupportEmailSender>.Instance);
+            NullLogger<BrevoSupportEmailSender>.Instance);
         var service = new SupportService(
             new SucceedingCaptchaVerifier(),
             sender,

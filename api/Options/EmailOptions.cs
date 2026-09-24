@@ -8,6 +8,8 @@ public sealed class EmailOptions
 
     public string? FromAddress { get; init; }
 
+    public string? FromName { get; init; }
+
     public string? AdminAlertTo { get; init; }
 
     public string? AppBaseUrl { get; init; }

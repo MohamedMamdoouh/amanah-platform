@@ -60,8 +60,9 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ApiAssemblyMarker>
                 ["RateLimit:Policies:chat-message-hourly:PermitLimit"] = "1000",
                 ["RateLimit:Policies:chat-message-hourly:WindowSeconds"] = "3600",
                 ["RateLimit:Policies:chat-message-hourly:PartitionBy"] = "userId",
-                ["Email:ApiKey"] = "re_test",
-                ["Email:FromAddress"] = "Amanah <test@example.com>",
+                ["Email:ApiKey"] = "xkeysib-test",
+                ["Email:FromAddress"] = "test@example.com",
+                ["Email:FromName"] = "Amanah",
                 ["Email:AdminAlertTo"] = "admin@example.com",
                 ["Email:OutboxPollIntervalSeconds"] = "1",
             });

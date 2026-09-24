@@ -18,7 +18,7 @@ public static class EmailServiceExtensions
         var emailOptions = configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>();
         if (emailOptions?.IsConfigured == true)
         {
-            services.AddHttpClient<IAdminAlertEmailSender, ResendAdminAlertEmailSender>();
+            services.AddHttpClient<IAdminAlertEmailSender, BrevoAdminAlertEmailSender>();
         }
         else
         {
@@ -31,7 +31,7 @@ public static class EmailServiceExtensions
         }
         else if (emailOptions?.IsConfigured == true)
         {
-            services.AddHttpClient<ISupportEmailSender, ResendSupportEmailSender>();
+            services.AddHttpClient<ISupportEmailSender, BrevoSupportEmailSender>();
         }
         else
         {

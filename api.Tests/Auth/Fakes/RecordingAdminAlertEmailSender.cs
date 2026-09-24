@@ -18,7 +18,7 @@ public sealed class RecordingAdminAlertEmailSender : IAdminAlertEmailSender
     {
         if (FailureStatusCode is int statusCode)
         {
-            throw new ResendApiException(statusCode, $"Email provider failed with HTTP {statusCode}.");
+            throw new EmailApiException(statusCode, $"Email provider failed with HTTP {statusCode}.");
         }
 
         if (ShouldThrow)

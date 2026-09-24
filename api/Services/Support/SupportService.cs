@@ -79,7 +79,7 @@ public sealed class SupportService(
                 message,
                 cancellationToken);
         }
-        catch (ResendApiException)
+        catch (EmailApiException)
         {
             return ResultError.ServiceUnavailable(
                 "Support messaging is temporarily unavailable. Try again later or email us directly.",

@@ -2,7 +2,7 @@ using Amanah.Api.Services.External;
 
 namespace Amanah.Api.Tests.External;
 
-public class ResendHttpStatusesTests
+public class EmailApiExceptionTests
 {
     [Theory]
     [InlineData(408)]
@@ -13,7 +13,7 @@ public class ResendHttpStatusesTests
     [InlineData(504)]
     public void Transient_status_codes_are_retried(int statusCode)
     {
-        var exception = new ResendApiException(statusCode, "test");
+        var exception = new EmailApiException(statusCode, "test");
         Assert.True(exception.IsTransient);
     }
 
@@ -25,7 +25,7 @@ public class ResendHttpStatusesTests
     [InlineData(422)]
     public void Permanent_client_errors_are_not_retried(int statusCode)
     {
-        var exception = new ResendApiException(statusCode, "test");
+        var exception = new EmailApiException(statusCode, "test");
         Assert.False(exception.IsTransient);
     }
 }

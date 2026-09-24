@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-Give the admin a FIFO moderation queue to approve or reject pending reports, with predefined rejection reasons and optional notes. Reporters receive in-app notifications on approval/rejection and can fix and resubmit rejected reports (up to 3 times). Admin can manage categories and field definitions. Admin receives transactional email alerts on new submissions (Resend via outbox). This phase introduces the in-app notification center.
+Give the admin a FIFO moderation queue to approve or reject pending reports, with predefined rejection reasons and optional notes. Reporters receive in-app notifications on approval/rejection and can fix and resubmit rejected reports (up to 3 times). Admin can manage categories and field definitions. Admin receives transactional email alerts on new submissions (Brevo via outbox). This phase introduces the in-app notification center.
 
 ---
 
@@ -40,7 +40,7 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 
 | Item                         | Status                                                                               |
 | ---------------------------- | ------------------------------------------------------------------------------------ |
-| Transactional email provider | **Done** — [Resend](https://resend.com/) via outbox + `ResendAdminAlertEmailSender` ([deployment.md](../docs/deployment.md)) |
+| Transactional email provider | **Done** — [Brevo](https://www.brevo.com/) via outbox + `BrevoAdminAlertEmailSender` ([deployment.md](../docs/deployment.md)) |
 
 ---
 
@@ -92,9 +92,9 @@ Give the admin a FIFO moderation queue to approve or reject pending reports, wit
 
 ### Infrastructure
 
-- **Resend** transactional email to admin on new report submission (outbox pattern: `AdminSubmissionAlertNotifier` enqueues; `AdminAlertEmailOutboxProcessor` dispatches)
+- **Brevo** transactional email to admin on new report submission (outbox pattern: `AdminSubmissionAlertNotifier` enqueues; `AdminAlertEmailOutboxProcessor` dispatches)
 - Branded HTML + plain-text templates (`AdminAlertEmailTemplates`)
-- Status-aware retry: transient Resend errors (429, 5xx) stay `Pending`; permanent 4xx → `Failed`
+- Status-aware retry: transient Brevo errors (429, 5xx) stay `Pending`; permanent 4xx → `Failed`
 - In-app notification center (source of truth for user events)
 - **Cache invalidation:** `ICacheService.RemoveAsync(CacheKeys.Categories)` on every admin category create/update
 - **Category translations:** new `code` / `fieldKey` values require matching entries in `web/src/assets/i18n/ar/categories.json` before public deploy (admin UI shows English keys)
@@ -130,7 +130,7 @@ These rows are server-enforced:
 | Report approved | Reporter  | this phase |
 | Report rejected | Reporter  | this phase |
 
-Admin email (not in-app): new submission waiting in moderation queue (Resend outbox).
+Admin email (not in-app): new submission waiting in moderation queue (Brevo outbox).
 
 ---
 
@@ -185,8 +185,8 @@ From [SPEC.md Section 15.2](./SPEC.md#152-moderation-rejection-and-resubmission)
 - [ ] Reporter edits and resubmits rejected report
 - [ ] Admin manages categories at `/admin/categories` (UI implemented; verify in staging)
 - [ ] Admin moderation search finds pending reports by keyword
-- [ ] Staging: Resend admin alert email received on submit and resubmit
+- [ ] Staging: Brevo admin alert email received on submit and resubmit
 
 ### Phase exit gate
 
-Automated criteria and deliverables are complete. Run manual smoke (especially Resend in staging) before treating Phase 02 as production-ready. Update this doc when manual smoke passes.
+Automated criteria and deliverables are complete. Run manual smoke (especially Brevo in staging) before treating Phase 02 as production-ready. Update this doc when manual smoke passes.

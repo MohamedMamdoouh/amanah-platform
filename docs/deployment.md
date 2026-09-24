@@ -8,7 +8,7 @@ Production runs on a **$0/month MVP stack** (pre-launch). SMS is pay-as-you-go o
 | PostgreSQL             | Supabase      | Primary database            |
 | Media storage          | Cloudflare R2 | Report photos               |
 | SMS (OTP)              | Unimtx        | Phone verification          |
-| Email (admin alerts)   | Resend        | Moderation-queue alerts     |
+| Email (admin alerts)   | Brevo         | Moderation-queue alerts     |
 
 One public origin serves both the app and `/api/v1/*`.
 
@@ -20,7 +20,7 @@ One public origin serves both the app and `/api/v1/*`.
 2. **Render** — deploy the Docker web service (see below)
 3. **Cloudflare R2** — create bucket and credentials for media
 4. **Unimtx** — create account, add credit, configure SMS API key
-5. **Resend** (optional until staging) — create account, verify domain (or use `onboarding@resend.dev`), configure admin alert email
+5. **Brevo** (optional until staging) — create account, verify sender domain, configure admin alert email
 6. **Keepalive** (optional) — scheduled ping to avoid free-tier spin-down
 
 Verify `/health`, `/health/ready`, the home page, sign-in/sign-up, report submission, and claim submit/review flows after deploy (see [specs/04-claims-verification.md](../specs/04-claims-verification.md) #9 manual smoke).
@@ -66,7 +66,7 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 | `Bucket__AccessKey` | Yes* | R2 access key ID |
 | `Bucket__SecretKey` | Yes* | R2 secret access key |
 | `Bucket__Name` | Yes* | Bucket name (e.g. `amanah-media`) |
-| `Email__ApiKey` | Optional pre-staging | Resend API key |
+| `Email__ApiKey` | Optional pre-staging | Brevo API key |
 | `Email__FromAddress` | Optional pre-staging | Verified sender |
 | `Email__AdminAlertTo` | Optional pre-staging | Admin inbox for moderation alerts |
 
@@ -122,14 +122,15 @@ Photos are stored under `public/` or `private/` prefixes based on category `phot
 
 ---
 
-## Resend (admin moderation alerts)
+## Brevo (admin moderation alerts)
 
 Admin receives one email when a report enters the moderation queue (new submit or resubmit). When `Email__ApiKey` is **unset**, the API uses a no-op sender (local dev and tests).
 
 | Variable | Purpose |
 | -------- | ------- |
-| `Email__ApiKey` | Resend API key (`re_...`) |
-| `Email__FromAddress` | Verified sender, e.g. `Amanah <alerts@yourdomain.com>` — use `onboarding@resend.dev` until domain verified |
+| `Email__ApiKey` | Brevo API key (`xkeysib-...`) |
+| `Email__FromAddress` | Verified sender email, e.g. `alerts@yourdomain.com` |
+| `Email__FromName` | Optional sender display name, e.g. `Amanah` |
 | `Email__AdminAlertTo` | Admin inbox (founder's email) |
 | `Email__AppBaseUrl` | Optional public app URL for review links (falls back to first `Cors__AllowedOrigins` entry) |
 | `Email__OutboxPollIntervalSeconds` | Background worker poll interval (default `30`) |
@@ -140,10 +141,10 @@ Alerts are written to an outbox table in the same database transaction as the re
 
 Setup:
 
-1. Create a free account at [resend.com](https://resend.com)
-2. Generate an API key
-3. For staging: send from `onboarding@resend.dev` (no DNS required)
-4. Before public launch: verify your domain in Resend and switch `Email__FromAddress` to `@yourdomain.com`
+1. Create a free account at [brevo.com](https://www.brevo.com)
+2. Generate an API key (SMTP & API → API keys)
+3. Add and verify a sender (or domain) in Brevo
+4. Before public launch: verify your domain in Brevo and switch `Email__FromAddress` to `@yourdomain.com`
 
 ---
 
@@ -175,7 +176,7 @@ Walk this on the staging or production service before public launch. Product cod
 - [ ] `Turnstile__SecretKey` set and `web/src/environments/environment.production.ts` `turnstileSiteKey` matches that widget
 - [ ] `Cors__AllowedOrigins__0` is the public origin; add the custom domain as another origin when DNS is live
 - [ ] Custom domain configured on Render (still open — see SPEC section 14)
-- [ ] Resend domain verified and `Email__FromAddress` uses that domain
+- [ ] Brevo domain verified and `Email__FromAddress` uses that domain
 - [ ] `KEEPALIVE_URL` in `.github/workflows/keepalive.yml` matches the public origin
 - [ ] `GET /health` returns 200 and `GET /health/ready` is healthy
 - [ ] Manual smoke from phase specs #9: [02](../specs/02-admin-moderation.md), [04](../specs/04-claims-verification.md), [05](../specs/05-chat-resolution-notifications.md), [06](../specs/06-lifecycle-retention.md)

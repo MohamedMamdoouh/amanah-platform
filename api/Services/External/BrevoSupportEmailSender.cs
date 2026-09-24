@@ -1,18 +1,14 @@
-using System.Net.Http.Headers;
-using Amanah.Api.Models.Common;
 using Amanah.Api.Options;
 using Amanah.Api.Services.External.Email;
 using Microsoft.Extensions.Options;
 
 namespace Amanah.Api.Services.External;
 
-public sealed class ResendSupportEmailSender(
+public sealed class BrevoSupportEmailSender(
     HttpClient httpClient,
     IOptions<EmailOptions> emailOptions,
-    ILogger<ResendSupportEmailSender> logger) : ISupportEmailSender
+    ILogger<BrevoSupportEmailSender> logger) : ISupportEmailSender
 {
-    private const string ApiUrl = "https://api.resend.com/emails";
-
     public async Task SendSupportMessageAsync(
         string normalizedReplyEmail,
         string displayName,
@@ -29,28 +25,26 @@ public sealed class ResendSupportEmailSender(
             || string.IsNullOrWhiteSpace(adminAlertTo))
         {
             logger.LogWarning("Support email not sent: Email configuration is incomplete.");
-            throw new ResendApiException(
+            throw new EmailApiException(
                 StatusCodes.Status503ServiceUnavailable,
                 "Support email configuration is incomplete.");
         }
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, ApiUrl);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        request.Content = JsonContent.Create(new ResendEmailRequest
-        {
-            From = fromAddress,
-            To = [adminAlertTo],
-            ReplyTo = normalizedReplyEmail,
-            Subject = SupportEmailTemplates.BuildSubject(displayName),
-            Text = SupportEmailTemplates.BuildPlainText(
+        using var request = BrevoTransactionalEmail.CreateRequest(
+            apiKey,
+            fromAddress,
+            options.FromName,
+            adminAlertTo,
+            SupportEmailTemplates.BuildSubject(displayName),
+            SupportEmailTemplates.BuildPlainText(
                 displayName,
                 normalizedReplyEmail,
                 message),
-            Html = SupportEmailTemplates.BuildHtml(
+            SupportEmailTemplates.BuildHtml(
                 displayName,
                 normalizedReplyEmail,
                 message),
-        }, options: ApiJson.SnakeCaseSerializerOptions);
+            replyToEmail: normalizedReplyEmail);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         if (response.IsSuccessStatusCode)
@@ -64,28 +58,13 @@ public sealed class ResendSupportEmailSender(
 
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
         logger.LogError(
-            "Resend support email failed for {ReplyEmail} (HTTP {StatusCode}): {ResponseBody}",
+            "Brevo support email failed for {ReplyEmail} (HTTP {StatusCode}): {ResponseBody}",
             normalizedReplyEmail,
             (int)response.StatusCode,
             responseBody);
 
-        throw new ResendApiException(
+        throw new EmailApiException(
             (int)response.StatusCode,
-            $"Resend support email failed with HTTP {(int)response.StatusCode}.");
-    }
-
-    private sealed class ResendEmailRequest
-    {
-        public required string From { get; init; }
-
-        public required IReadOnlyList<string> To { get; init; }
-
-        public required string ReplyTo { get; init; }
-
-        public required string Subject { get; init; }
-
-        public required string Text { get; init; }
-
-        public required string Html { get; init; }
+            $"Brevo support email failed with HTTP {(int)response.StatusCode}.");
     }
 }

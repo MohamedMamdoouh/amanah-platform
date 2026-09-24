@@ -73,7 +73,7 @@ public static class AuthServiceExtensions
             var emailOptions = configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>();
             if (emailOptions?.IsConfigured == true)
             {
-                services.AddHttpClient<IOtpEmailSender, ResendOtpEmailSender>();
+                services.AddHttpClient<IOtpEmailSender, BrevoOtpEmailSender>();
             }
             else
             {

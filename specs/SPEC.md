@@ -580,7 +580,7 @@ Entity-level schedule (implementation): `OtpCode`, `RefreshToken`, `Notification
 | OTP / SMS provider                            | **Done** - [Unimtx](https://www.unimtx.com/) via `UnimtxSmsSender` ([deployment.md](../docs/deployment.md))                                           |
 | API error contract appendix                   | **Resolved** - [00-api-conventions.md](./00-api-conventions.md)                                                                                       |
 | SignalR event/payload contract                | **Resolved** — [05-signalr-contract.md](./05-signalr-contract.md)                                                                                     |
-| Transactional email provider for admin alerts | **Done** — [Resend](https://resend.com/) via `ResendAdminAlertEmailSender` ([deployment.md](../docs/deployment.md))                                   |
+| Transactional email provider for admin alerts | **Done** — [Brevo](https://www.brevo.com/) via `BrevoAdminAlertEmailSender` ([deployment.md](../docs/deployment.md))                                   |
 | Orphaned R2 objects on failed report submit   | **Done** — compensating delete on report submit DB failure + daily `OrphanedStorageCleanup` job ([06-lifecycle-retention.md](./06-lifecycle-retention.md); tests in `OrphanedStorageTests`) |
 | Domain name                                   | **To be chosen** before launch                                                                                                                        |
 
@@ -795,7 +795,7 @@ Per section 7.5. On limit exceed: HTTP `429` with `Retry-After` header.
 - **Backups:** Supabase managed Postgres defaults.
 - **Monitoring:** Structured JSON logs to Render (correlation IDs, log-emitted metrics). Health: `GET /health` (liveness), `GET /health/ready` (DB + storage). Alerting: GitHub Actions keepalive + GitHub email on workflow failure. See [observability.md](../docs/observability.md).
 - **Caching:** `HybridCache` via `ICacheService` (Section 16). Config: `Cache:CategoriesTtlSeconds`, `Cache:GovernoratesTtlSeconds` in `appsettings.json`. No distributed cache is registered in v1.
-- **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: Resend via `admin_alert_email_outbox` (section 14).
+- **Transactional email:** admin moderation-queue alert only (section 5.7). Provider: Brevo via `admin_alert_email_outbox` (section 14).
 - **Budget:** ~$0/month infra for MVP testing (Render + Supabase free tiers); ~$5/month recommended before public launch for always-on API. SMS via Unimtx (pay-as-you-go, ~$0.135/SMS in Egypt).
 - **Domain:** section 14.
 - **Hosting:** Render (API + static frontend) + Supabase Postgres + Cloudflare R2, outside Egypt (section 5.8). See [deployment.md](../docs/deployment.md).

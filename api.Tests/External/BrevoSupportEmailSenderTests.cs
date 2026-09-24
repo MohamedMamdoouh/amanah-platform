@@ -2,38 +2,52 @@ using System.Net;
 using System.Text.Json;
 using Amanah.Api.Options;
 using Amanah.Api.Services.External;
+using Amanah.Api.Services.External.Email;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Amanah.Api.Tests.External;
 
-public class ResendSupportEmailSenderTests
+public class BrevoSupportEmailSenderTests
 {
-    private const string TestApiKey = "re_test_key";
-    private const string TestFrom = "Amanah <test@example.com>";
+    private const string TestApiKey = "xkeysib-test-key";
+    private const string TestFrom = "test@example.com";
+    private const string TestFromName = "Amanah";
     private const string TestAdmin = "admin@example.com";
     private const string TestReplyEmail = "user@example.com";
     private const string TestDisplayName = "Ahmad";
     private const string TestMessage = "I need help with a listing please.";
 
     [Fact]
-    public async Task SendSupportMessageAsync_sends_reply_to_field_resend_accepts()
+    public async Task SendSupportMessageAsync_sends_reply_to_field_brevo_accepts()
     {
+        HttpRequestMessage? capturedRequest = null;
         string? body = null;
         var handler = new StubHttpMessageHandler(async (request, cancellationToken) =>
         {
+            capturedRequest = request;
             body = await request.Content!.ReadAsStringAsync(cancellationToken);
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            return new HttpResponseMessage(HttpStatusCode.Created);
         });
 
         var sender = CreateSender(handler, TestAdmin);
 
         await sender.SendSupportMessageAsync(TestReplyEmail, TestDisplayName, TestMessage);
 
+        Assert.NotNull(capturedRequest);
+        Assert.Equal(BrevoTransactionalEmail.ApiUrl, capturedRequest!.RequestUri!.ToString());
+        Assert.True(capturedRequest.Headers.TryGetValues("api-key", out var apiKeyValues));
+        Assert.Equal(TestApiKey, Assert.Single(apiKeyValues));
+
         Assert.NotNull(body);
         using var document = JsonDocument.Parse(body);
-        Assert.Equal(TestReplyEmail, document.RootElement.GetProperty("reply_to").GetString());
-        Assert.False(document.RootElement.TryGetProperty("replyTo", out _));
-        Assert.Equal(TestAdmin, document.RootElement.GetProperty("to")[0].GetString());
+        var root = document.RootElement;
+        Assert.Equal(TestReplyEmail, root.GetProperty("replyTo").GetProperty("email").GetString());
+        Assert.False(root.TryGetProperty("reply_to", out _));
+        Assert.Equal(TestAdmin, root.GetProperty("to")[0].GetProperty("email").GetString());
+        Assert.Equal(TestFrom, root.GetProperty("sender").GetProperty("email").GetString());
+        Assert.Equal(TestFromName, root.GetProperty("sender").GetProperty("name").GetString());
+        Assert.True(root.TryGetProperty("htmlContent", out _));
+        Assert.True(root.TryGetProperty("textContent", out _));
     }
 
     [Fact]
@@ -48,26 +62,27 @@ public class ResendSupportEmailSenderTests
 
         var sender = CreateSender(handler, adminAlertTo: " ");
 
-        var exception = await Assert.ThrowsAsync<ResendApiException>(() =>
+        var exception = await Assert.ThrowsAsync<EmailApiException>(() =>
             sender.SendSupportMessageAsync(TestReplyEmail, TestDisplayName, TestMessage));
 
         Assert.Equal((int)HttpStatusCode.ServiceUnavailable, exception.StatusCodeValue);
         Assert.False(called);
     }
 
-    private static ResendSupportEmailSender CreateSender(HttpMessageHandler handler, string? adminAlertTo)
+    private static BrevoSupportEmailSender CreateSender(HttpMessageHandler handler, string? adminAlertTo)
     {
         var httpClient = new HttpClient(handler);
         var emailOptions = Microsoft.Extensions.Options.Options.Create(new EmailOptions
         {
             ApiKey = TestApiKey,
             FromAddress = TestFrom,
+            FromName = TestFromName,
             AdminAlertTo = adminAlertTo,
         });
-        return new ResendSupportEmailSender(
+        return new BrevoSupportEmailSender(
             httpClient,
             emailOptions,
-            NullLogger<ResendSupportEmailSender>.Instance);
+            NullLogger<BrevoSupportEmailSender>.Instance);
     }
 
     private sealed class StubHttpMessageHandler(
