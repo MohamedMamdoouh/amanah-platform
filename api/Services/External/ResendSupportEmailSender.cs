@@ -28,8 +28,10 @@ public sealed class ResendSupportEmailSender(
             || string.IsNullOrWhiteSpace(fromAddress)
             || string.IsNullOrWhiteSpace(adminAlertTo))
         {
-            logger.LogWarning("Support email skipped: Email configuration is incomplete.");
-            return;
+            logger.LogWarning("Support email not sent: Email configuration is incomplete.");
+            throw new ResendApiException(
+                StatusCodes.Status503ServiceUnavailable,
+                "Support email configuration is incomplete.");
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, ApiUrl);
@@ -48,7 +50,7 @@ public sealed class ResendSupportEmailSender(
                 displayName,
                 normalizedReplyEmail,
                 message),
-        }, options: ApiJson.SerializerOptions);
+        }, options: ApiJson.SnakeCaseSerializerOptions);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         if (response.IsSuccessStatusCode)
