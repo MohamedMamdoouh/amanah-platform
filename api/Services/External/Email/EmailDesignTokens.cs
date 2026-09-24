@@ -2,13 +2,13 @@ namespace Amanah.Api.Services.External.Email;
 
 internal static class EmailDesignTokens
 {
-    public const string Paper = "#f7f4ef";
+    public const string Paper = "#eef3f2";
     public const string Surface = "#ffffff";
     public const string Ink = "#1a282b";
     public const string Muted = "#5c6769";
     public const string Primary = "#086060";
     public const string Warm = "#e0b890";
-    public const string Border = "#d5dfdb";
+    public const string Border = "#c9d8d5";
     public const string AccentSoft = "#e8f2ed";
 
     public const string Info = "#1a4d6d";

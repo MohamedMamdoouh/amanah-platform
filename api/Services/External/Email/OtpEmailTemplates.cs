@@ -31,9 +31,9 @@ internal static class OtpEmailTemplates
 
     return EmailLayout.BuildDocument(
         title: BuildSubject(),
-        eyebrow: "أمانة",
         headline: "رمز التأكيد",
         bodyHtml: body,
-        footerHtml: "لا تشارك رمز التأكيد مع أي شخص. فريق أمانة لن يطلب منك هذا الرمز عبر الهاتف أو رسائل أخرى.");
+        footerHtml: "لا تشارك رمز التأكيد مع أي شخص. فريق أمانة لن يطلب منك هذا الرمز عبر الهاتف أو رسائل أخرى.",
+        eyebrow: "أمانة");
   }
 }

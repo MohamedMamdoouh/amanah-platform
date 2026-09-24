@@ -56,10 +56,10 @@ internal static class AdminAlertEmailTemplates
 
     return EmailLayout.BuildDocument(
         title: "تنبيه مراجعة — أمانة",
-        eyebrow: "أمانة",
         headline: "بلاغ جديد بانتظار المراجعة",
         bodyHtml: body,
-        footerHtml: "يستبعد هذا التنبيه عمدًا أرقام هواتف المبلغين وتفاصيل التحقق المخفية والصور.");
+        footerHtml: "يستبعد هذا التنبيه عمدًا أرقام هواتف المبلغين وتفاصيل التحقق المخفية والصور.",
+        eyebrow: "أمانة");
   }
 
   private static string GetTypeLabel(string reportType) =>

@@ -68,7 +68,7 @@
   "auth.login.otp_submit": "تأكيد",
   "auth.login.resend": "إعادة إرسال الكود",
   "auth.login.resend_wait": "إعادة الإرسال خلال {{seconds}} ثواني",
-  "auth.login.display_name_label": "الاسم الظاهر",
+  "auth.login.display_name_label": "الاسم",
   "auth.login.display_name_hint": "اكتب من 3 إلى 40 حرفًا",
   "auth.login.accept_terms": "أوافق على",
   "auth.login.register_submit": "إنشاء حساب",
