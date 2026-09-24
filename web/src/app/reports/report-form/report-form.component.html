@@ -48,7 +48,11 @@
           <span class="form-label">{{
             "reports.form.category" | translate
           }}</span>
-          <select formControlName="categoryCode" class="form-input">
+          <select
+            formControlName="categoryCode"
+            class="form-input"
+            [class.form-input--error]="isControlInvalid('categoryCode')"
+          >
             <option value="" disabled>
               {{ "reports.form.category_placeholder" | translate }}
             </option>
@@ -84,6 +88,9 @@
                   type="text"
                   class="form-input"
                   [formControlName]="definition.fieldKey"
+                  [class.form-input--error]="
+                    isControlInvalid('categoryFields.' + definition.fieldKey)
+                  "
                   [attr.minlength]="definition.minLength ?? null"
                   [attr.maxlength]="definition.maxLength ?? null"
                 />
@@ -109,7 +116,11 @@
             formControlName="title"
             class="form-input"
             maxlength="80"
+            [class.form-input--error]="isControlInvalid('title')"
           />
+          <span class="form-hint">{{
+            "reports.form.title_hint" | translate
+          }}</span>
           @if (fieldError("title")) {
             <span class="form-error" role="alert">{{
               fieldError("title")
@@ -126,7 +137,11 @@
             class="form-textarea"
             rows="4"
             maxlength="1000"
+            [class.form-textarea--error]="isControlInvalid('description')"
           ></textarea>
+          <span class="form-hint">{{
+            "reports.form.description_hint" | translate
+          }}</span>
           @if (fieldError("description")) {
             <span class="form-error" role="alert">{{
               fieldError("description")
@@ -147,6 +162,7 @@
             formControlName="dateLostOrFound"
             class="form-input"
             [max]="today"
+            [class.form-input--error]="isControlInvalid('dateLostOrFound')"
           />
           @if (fieldError("dateLostOrFound")) {
             <span class="form-error" role="alert">{{
@@ -159,7 +175,11 @@
           <span class="form-label">{{
             "reports.form.governorate" | translate
           }}</span>
-          <select formControlName="governorateCode" class="form-input">
+          <select
+            formControlName="governorateCode"
+            class="form-input"
+            [class.form-input--error]="isControlInvalid('governorateCode')"
+          >
             <option value="" disabled>
               {{ "reports.form.governorate_placeholder" | translate }}
             </option>
@@ -185,7 +205,11 @@
             formControlName="areaText"
             class="form-input"
             maxlength="120"
+            [class.form-input--error]="isControlInvalid('areaText')"
           />
+          <span class="form-hint">{{
+            "reports.form.area_hint" | translate
+          }}</span>
           @if (fieldError("areaText")) {
             <span class="form-error" role="alert">{{
               fieldError("areaText")
@@ -203,6 +227,7 @@
               formControlName="heldLocation"
               class="form-input"
               maxlength="120"
+              [class.form-input--error]="isControlInvalid('heldLocation')"
             />
             <span class="form-hint">{{
               "reports.form.held_location_hint" | translate
@@ -247,6 +272,7 @@
                 class="form-input"
                 min="50"
                 max="50000"
+                [class.form-input--error]="isControlInvalid('rewardAmount')"
               />
               <span class="form-hint">{{
                 "reports.form.reward_hint" | translate

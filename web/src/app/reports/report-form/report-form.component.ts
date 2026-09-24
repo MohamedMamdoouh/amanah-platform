@@ -132,8 +132,12 @@ export class ReportFormComponent implements OnInit {
   }
 
   fieldError(name: string): string | null {
-    const errors = this.fieldErrors()[name];
-    return errors?.[0] ?? null;
+    const apiError = this.fieldErrors()[name]?.[0];
+    if (apiError) {
+      return apiError;
+    }
+
+    return this.clientControlError(name);
   }
 
   categoryFieldError(fieldKey: string): string | null {
@@ -155,6 +159,11 @@ export class ReportFormComponent implements OnInit {
     }
 
     return null;
+  }
+
+  isControlInvalid(name: string): boolean {
+    const control = this.form.get(name);
+    return !!control && control.invalid && (control.touched || control.dirty);
   }
 
   categoryLabel(code: string): string {
@@ -182,6 +191,10 @@ export class ReportFormComponent implements OnInit {
   async submit(): Promise<void> {
     if (this.form.invalid || this.submitting()) {
       this.form.markAllAsTouched();
+      this.summaryError.set(
+        this.translate.instant('reports.form.validation_summary'),
+      );
+      this.scrollToSummary();
       return;
     }
 
@@ -202,9 +215,59 @@ export class ReportFormComponent implements OnInit {
     } catch (error) {
       this.summaryError.set(this.apiErrors.messageFromHttpError(error));
       this.fieldErrors.set(this.apiErrors.formErrorsFromHttpError(error));
+      this.scrollToSummary();
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  private clientControlError(path: string): string | null {
+    const control = this.form.get(path);
+    if (!control || (!control.touched && !control.dirty)) {
+      return null;
+    }
+
+    if (control.hasError('required')) {
+      return this.translate.instant('reports.form.field_required');
+    }
+
+    if (control.hasError('minlength')) {
+      const min = control.getError('minlength')?.requiredLength as
+        | number
+        | undefined;
+      return this.translate.instant('reports.form.field_min_length', {
+        min: min ?? '',
+      });
+    }
+
+    if (control.hasError('maxlength')) {
+      const max = control.getError('maxlength')?.requiredLength as
+        | number
+        | undefined;
+      return this.translate.instant('reports.form.field_max_length', {
+        max: max ?? '',
+      });
+    }
+
+    if (control.hasError('min')) {
+      const min = control.getError('min')?.min as number | undefined;
+      return this.translate.instant('reports.form.field_min', { min: min ?? '' });
+    }
+
+    if (control.hasError('max')) {
+      const max = control.getError('max')?.max as number | undefined;
+      return this.translate.instant('reports.form.field_max', { max: max ?? '' });
+    }
+
+    return null;
+  }
+
+  private scrollToSummary(): void {
+    queueMicrotask(() => {
+      document
+        .querySelector('.report-page app-alert, .report-form .form-error')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   }
 
   private async loadCatalog(): Promise<void> {
