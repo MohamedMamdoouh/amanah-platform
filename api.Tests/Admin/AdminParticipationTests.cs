@@ -1,8 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using Amanah.Api.Data.Entities;
-using Amanah.Api.Services.Admin;
-using Amanah.Api.Tests.Browse;
 using Amanah.Api.Tests.Chats;
 using Amanah.Api.Tests.Claims;
 using Amanah.Api.Tests.Infrastructure;
@@ -12,8 +9,6 @@ using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Abuse;
 using Amanah.Contracts.Requests.Chats;
 using Amanah.Contracts.Responses.Browse;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Amanah.Api.Tests.Admin;
 
@@ -141,129 +136,5 @@ public class AdminParticipationTests(ApiWebApplicationFactory factory) : IClassF
 
         Assert.Equal(HttpStatusCode.Forbidden, sendResponse.StatusCode);
         Assert.Equal(ErrorCodes.AdminParticipationForbidden, sendError?.Code);
-    }
-
-    [Fact]
-    public async Task Purge_removes_admin_participation_and_restores_others_report()
-    {
-        await using var context = await ReportTestContext.CreateAsync(factory);
-        var userReportId = await ClaimTestHelpers.PublishLostReportAsync(context);
-
-        var admin = await context.DbContext.Users
-            .SingleAsync(user => user.Role == UserRole.Admin);
-        var category = await context.DbContext.Categories.AsNoTracking().FirstAsync();
-        var governorate = await context.DbContext.Governorates.AsNoTracking().FirstAsync();
-        var now = DateTimeOffset.UtcNow;
-
-        var adminOwnedReport = new Report
-        {
-            Id = Guid.NewGuid(),
-            ReporterId = admin.Id,
-            Type = ReportType.Lost,
-            CategoryId = category.Id,
-            GovernorateId = governorate.Id,
-            Title = "Admin owned report to purge",
-            Description = "Should be hard-deleted by participation purge.",
-            DateLostOrFound = DateOnly.FromDateTime(now.UtcDateTime.AddDays(-1)),
-            Status = ReportStatus.Published,
-            PublishedAt = now,
-            NormalizedSearchText = "admin owned report to purge",
-            CreatedAt = now,
-            UpdatedAt = now,
-        };
-        context.DbContext.Reports.Add(adminOwnedReport);
-
-        var adminClaim = new Claim
-        {
-            Id = Guid.NewGuid(),
-            ReportId = userReportId,
-            ClaimantId = admin.Id,
-            Status = ClaimStatus.Pending,
-            SubmittedAnswer = ClaimTestHelpers.ValidAnswer,
-            SubmittedAt = now,
-            AttemptNumber = 1,
-            CountsAsFailure = false,
-        };
-        context.DbContext.Claims.Add(adminClaim);
-
-        var adminFlag = new AbuseReport
-        {
-            Id = Guid.NewGuid(),
-            AbuseReporterId = admin.Id,
-            ReportId = userReportId,
-            Reason = AbuseFlagReasons.Spam,
-            Status = AbuseReportStatus.Open,
-            CreatedAt = now,
-        };
-        context.DbContext.AbuseReports.Add(adminFlag);
-
-        context.DbContext.Notifications.Add(new Notification
-        {
-            Id = Guid.NewGuid(),
-            UserId = admin.Id,
-            Type = "NewClaimSubmitted",
-            PayloadJson = "{}",
-            IsRead = false,
-            CreatedAt = now,
-        });
-
-        await context.DbContext.SaveChangesAsync();
-
-        await using var purgeScope = factory.Services.CreateAsyncScope();
-        await purgeScope.ServiceProvider
-            .GetRequiredService<AdminParticipationPurgeService>()
-            .PurgeAsync();
-
-        context.DbContext.ChangeTracker.Clear();
-
-        Assert.False(await context.DbContext.Reports.AnyAsync(report => report.Id == adminOwnedReport.Id));
-        Assert.False(await context.DbContext.Claims.AnyAsync(claim => claim.ClaimantId == admin.Id));
-        Assert.False(await context.DbContext.AbuseReports.AnyAsync(
-            abuseReport => abuseReport.AbuseReporterId == admin.Id));
-        Assert.False(await context.DbContext.Notifications.AnyAsync(
-            notification => notification.UserId == admin.Id));
-
-        var userReport = await context.DbContext.Reports
-            .AsNoTracking()
-            .SingleAsync(report => report.Id == userReportId);
-        Assert.Equal(ReportStatus.Published, userReport.Status);
-    }
-
-    [Fact]
-    public async Task Purge_cancels_admin_approved_claim_and_restores_report()
-    {
-        await using var context = await ReportTestContext.CreateAsync(factory);
-        var reportId = await ClaimTestHelpers.PublishLostReportAsync(context);
-
-        var claimantSession = await ClaimTestHelpers.CreateAndLoginClaimantAsync(context);
-        ClaimTestHelpers.Authenticate(context.Client, claimantSession.AccessToken);
-        var (_, claimBody) = await ClaimTestHelpers.SubmitClaimAsync(context.Client, reportId);
-        Assert.NotNull(claimBody);
-
-        ClaimTestHelpers.Authenticate(context.Client, context.Session.AccessToken);
-        await ClaimTestHelpers.ApproveClaimAsync(context.Client, claimBody.Id);
-
-        var admin = await context.DbContext.Users
-            .SingleAsync(user => user.Role == UserRole.Admin);
-
-        var claim = await context.DbContext.Claims
-            .Include(existing => existing.ChatThread)
-            .SingleAsync(existing => existing.Id == claimBody.Id);
-        claim.ClaimantId = admin.Id;
-        await context.DbContext.SaveChangesAsync();
-
-        await using var purgeScope = factory.Services.CreateAsyncScope();
-        await purgeScope.ServiceProvider
-            .GetRequiredService<AdminParticipationPurgeService>()
-            .PurgeAsync();
-
-        context.DbContext.ChangeTracker.Clear();
-
-        Assert.False(await context.DbContext.Claims.AnyAsync(existing => existing.Id == claimBody.Id));
-
-        var report = await context.DbContext.Reports
-            .AsNoTracking()
-            .SingleAsync(existing => existing.Id == reportId);
-        Assert.Equal(ReportStatus.Published, report.Status);
     }
 }

@@ -1,4 +1,3 @@
-using Amanah.Api.Services.Admin;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Data.Seeds;
@@ -21,9 +20,6 @@ public sealed class DatabaseMigrationHostedService(
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await context.Database.MigrateAsync(cancellationToken);
         await scope.ServiceProvider.GetRequiredService<CatalogSeeder>().SeedAsync(cancellationToken);
-        await scope.ServiceProvider
-            .GetRequiredService<AdminParticipationPurgeService>()
-            .PurgeAsync(cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
