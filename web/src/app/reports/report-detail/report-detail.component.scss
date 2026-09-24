@@ -3,62 +3,11 @@
   margin: 0 auto;
 }
 
-.report-detail__back {
-  margin-bottom: var(--space-md);
-}
-
-.report-detail__back a {
-  color: var(--color-accent);
-  font-weight: 600;
-}
-
 .report-detail__error {
   padding: var(--space-sm) var(--space-md);
   color: var(--color-error);
   background: var(--color-error-bg);
   border-radius: var(--radius-sm);
-}
-
-.report-detail__header {
-  margin-bottom: var(--space-lg);
-}
-
-.report-detail__type {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-warm);
-  margin-bottom: var(--space-xs);
-}
-
-.report-detail__title {
-  font-size: 1.75rem;
-  font-weight: 800;
-  margin-bottom: var(--space-xs);
-}
-
-.report-detail__meta {
-  margin: 0;
-  color: var(--color-text-muted);
-}
-
-.report-detail__fields {
-  display: grid;
-  gap: var(--space-md);
-  margin: 0;
-}
-
-.report-detail__fields dt {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-xs);
-}
-
-.report-detail__fields dd {
-  margin: 0;
 }
 
 .report-detail__photos {
@@ -73,29 +22,23 @@
 .report-detail__photo-grid {
   display: flex;
   flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.report-detail__photo-item {
+  display: grid;
   gap: var(--space-sm);
-}
-
-.report-detail__photo-button {
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: zoom-in;
-  border-radius: var(--radius-sm);
-}
-
-.report-detail__photo-button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
+  justify-items: start;
 }
 
 .report-detail__photo {
   display: block;
-  width: 5.5rem;
-  height: 5.5rem;
+  width: 6.5rem;
+  height: 6.5rem;
   object-fit: cover;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
+  background: var(--color-bg);
 }
 
 .report-detail__photo-loading {
@@ -103,12 +46,13 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-xs);
-  width: 5.5rem;
-  height: 5.5rem;
+  width: 6.5rem;
+  height: 6.5rem;
   font-size: 0.75rem;
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+  background: var(--color-bg);
 }
 
 .report-detail__actions {

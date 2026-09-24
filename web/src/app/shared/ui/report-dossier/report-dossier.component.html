@@ -1,0 +1,130 @@
+<article class="report-dossier">
+  @if (hasPhotos()) {
+    <section
+      class="report-dossier__photos"
+      [attr.aria-label]="'reports.photos.title' | translate"
+    >
+      <h2>{{ "reports.photos.title" | translate }}</h2>
+      <div class="report-dossier__photo-grid">
+        @for (photo of photos(); track photo.id) {
+          <div class="report-dossier__photo-item">
+            @if (photo.url) {
+              <img
+                [src]="photo.url"
+                alt=""
+                class="report-dossier__photo"
+              />
+              <app-button
+                variant="secondary"
+                size="sm"
+                (clicked)="openPhoto(photo.url)"
+              >
+                {{ "reports.photos.lightbox_label" | translate }}
+              </app-button>
+            } @else if (photo.loading) {
+              <span class="report-dossier__photo-loading">
+                <app-spinner size="sm" />
+                {{ "reports.detail.photo_loading" | translate }}
+              </span>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <div class="report-dossier__facts">
+    <div class="report-dossier__fact">
+      <span class="report-dossier__fact-label">{{
+        "reports.detail.category" | translate
+      }}</span>
+      <span class="report-dossier__fact-value">{{
+        categoryLabel(report().categoryCode)
+      }}</span>
+    </div>
+    <div class="report-dossier__fact">
+      <span class="report-dossier__fact-label">{{
+        "reports.detail.governorate" | translate
+      }}</span>
+      <span class="report-dossier__fact-value">{{
+        governorateLabel(report().governorateCode)
+      }}</span>
+    </div>
+    <div class="report-dossier__fact">
+      <span class="report-dossier__fact-label">
+        @if (isFound()) {
+          {{ "reports.form.date_found" | translate }}
+        } @else {
+          {{ "reports.form.date_lost" | translate }}
+        }
+      </span>
+      <span class="report-dossier__fact-value">{{
+        report().dateLostOrFound | appDate: "mediumDate"
+      }}</span>
+    </div>
+    @if (report().areaText) {
+      <div class="report-dossier__fact">
+        <span class="report-dossier__fact-label">{{
+          "reports.form.area" | translate
+        }}</span>
+        <span class="report-dossier__fact-value">{{ report().areaText }}</span>
+      </div>
+    }
+    @if (report().heldLocation) {
+      <div class="report-dossier__fact report-dossier__fact--wide">
+        <span class="report-dossier__fact-label">{{
+          "reports.form.held_location" | translate
+        }}</span>
+        <span class="report-dossier__fact-value">{{
+          report().heldLocation
+        }}</span>
+      </div>
+    }
+  </div>
+
+  <section
+    class="report-dossier__story"
+    [attr.aria-label]="'reports.form.description' | translate"
+  >
+    <h3 class="report-dossier__story-label">
+      {{ "reports.form.description" | translate }}
+    </h3>
+    <p class="report-dossier__story-text">{{ report().description }}</p>
+  </section>
+
+  @if (categoryFieldEntries().length > 0) {
+    <dl class="report-dossier__specs">
+      @for (entry of categoryFieldEntries(); track entry[0]) {
+        <div class="report-dossier__spec">
+          <dt>{{ fieldLabel(entry[0]) }}</dt>
+          <dd>{{ entry[1] }}</dd>
+        </div>
+      }
+    </dl>
+  }
+
+  @if (report().hasReward && report().rewardAmount) {
+    <aside class="report-dossier__reward">
+      <span class="report-dossier__reward-label">{{
+        "reports.form.reward_amount" | translate
+      }}</span>
+      <span class="report-dossier__reward-value"
+        >{{ report().rewardAmount }}
+        <span class="report-dossier__reward-unit">ج.م</span></span
+      >
+    </aside>
+  }
+
+  @if (report().reporterDisplayName; as reporterName) {
+    <footer class="report-dossier__reporter">
+      <span class="report-dossier__reporter-label">{{
+        "browse.detail.reporter" | translate
+      }}</span>
+      <span class="report-dossier__reporter-name">{{ reporterName }}</span>
+    </footer>
+  }
+</article>
+
+@if (lightboxUrl(); as url) {
+  <app-photo-lightbox [src]="url" (closed)="closePhoto()" />
+}

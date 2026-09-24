@@ -7,16 +7,12 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiErrorService } from '../../i18n/api-error.service';
-import { CatalogLabelService } from '../../i18n/catalog-label.service';
-import { DomainLabelService } from '../../i18n/domain-label.service';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
-import { CardComponent } from '../../shared/ui/card/card.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
-import { PhotoLightboxComponent } from '../../shared/ui/photo-lightbox/photo-lightbox.component';
+import { ReportDossierComponent } from '../../shared/ui/report-dossier/report-dossier.component';
 import { ReportTypeMarkComponent } from '../../shared/ui/report-type-mark/report-type-mark.component';
-import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import { ReportDetail } from '../../reports/models/report.models';
 import {
   DisplayPhoto,
@@ -44,13 +40,11 @@ const REJECTION_REASON_CODES = [
     AppDatePipe,
     AlertComponent,
     ButtonComponent,
-    CardComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,
-    PhotoLightboxComponent,
     ReactiveFormsModule,
+    ReportDossierComponent,
     ReportTypeMarkComponent,
-    SpinnerComponent,
     TranslateModule,
   ],
   templateUrl: './moderation-review.component.html',
@@ -62,16 +56,13 @@ export class ModerationReviewComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly moderationService = inject(AdminModerationService);
   private readonly uploadService = inject(ReportPhotoUploadService);
-  private readonly catalogLabels = inject(CatalogLabelService);
   private readonly apiErrors = inject(ApiErrorService);
-  protected readonly domainLabels = inject(DomainLabelService);
   private readonly translate = inject(TranslateService);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly report = signal<ReportDetail | null>(null);
   readonly photos = signal<DisplayPhoto[]>([]);
-  readonly lightboxUrl = signal<string | null>(null);
   readonly showReject = signal(false);
   readonly actionError = signal<string | null>(null);
   readonly approving = signal(false);
@@ -96,42 +87,8 @@ export class ModerationReviewComponent implements OnInit {
     void this.loadReport(id);
   }
 
-  categoryLabel(code: string): string {
-    return this.catalogLabels.category(code);
-  }
-
-  governorateLabel(code: string): string {
-    return this.catalogLabels.governorate(code);
-  }
-
-  openPhoto(url: string): void {
-    this.lightboxUrl.set(url);
-  }
-
-  closePhoto(): void {
-    this.lightboxUrl.set(null);
-  }
-
-  fieldLabel(fieldKey: string): string {
-    const report = this.report();
-    if (!report) {
-      return fieldKey;
-    }
-    return this.catalogLabels.field(report.categoryCode, fieldKey);
-  }
-
   reasonLabel(code: string): string {
     return this.translate.instant(code);
-  }
-
-  categoryFieldEntries(): [string, string][] {
-    const report = this.report();
-    if (!report) {
-      return [];
-    }
-    return Object.entries(report.categoryFields).sort(([a], [b]) =>
-      a.localeCompare(b),
-    );
   }
 
   openReject(): void {

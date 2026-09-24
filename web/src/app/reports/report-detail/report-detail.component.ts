@@ -30,11 +30,11 @@ import {
 import { ApiErrorService } from '../../i18n/api-error.service';
 import { clientControlError } from '../../i18n/form-validation';
 import { CatalogLabelService } from '../../i18n/catalog-label.service';
-import { DomainLabelService } from '../../i18n/domain-label.service';
-import { CardComponent } from '../../shared/ui/card/card.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { LoadingIndicatorComponent } from '../../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { PhotoLightboxComponent } from '../../shared/ui/photo-lightbox/photo-lightbox.component';
+import { ReportDossierComponent } from '../../shared/ui/report-dossier/report-dossier.component';
 import { ReportTypeMarkComponent } from '../../shared/ui/report-type-mark/report-type-mark.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import {
@@ -59,11 +59,12 @@ import {
   standalone: true,
   imports: [
     AppDatePipe,
-    CardComponent,
+    ButtonComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,
     PhotoLightboxComponent,
     ReactiveFormsModule,
+    ReportDossierComponent,
     SpinnerComponent,
     TranslateModule,
     PhotoUploadComponent,
@@ -84,7 +85,6 @@ export class ReportDetailComponent implements OnInit {
   private readonly uploadService = inject(ReportPhotoUploadService);
   private readonly catalogLabels = inject(CatalogLabelService);
   private readonly apiErrors = inject(ApiErrorService);
-  protected readonly domainLabels = inject(DomainLabelService);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -180,14 +180,6 @@ export class ReportDetailComponent implements OnInit {
 
   withdrawalReasonLabel(reason: WithdrawalReason): string {
     return this.translate.instant(`reports.withdraw.reasons.${reason}`);
-  }
-
-  categoryFieldEntries(): [string, string][] {
-    const report = this.report();
-    if (!report) {
-      return [];
-    }
-    return Object.entries(report.categoryFields).sort(([a], [b]) => a.localeCompare(b));
   }
 
   canWithdraw(): boolean {

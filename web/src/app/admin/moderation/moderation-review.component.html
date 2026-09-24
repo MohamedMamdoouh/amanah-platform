@@ -14,96 +14,10 @@
       <app-report-type-mark [type]="detail.type" />
     </app-page-header>
 
-    <app-card variant="flat" padding="md">
-    <dl class="moderation-review__fields">
-      <div>
-        <dt>{{ "reports.detail.category" | translate }}</dt>
-        <dd>{{ categoryLabel(detail.categoryCode) }}</dd>
-      </div>
-      <div>
-        <dt>{{ "reports.detail.governorate" | translate }}</dt>
-        <dd>{{ governorateLabel(detail.governorateCode) }}</dd>
-      </div>
-      <div>
-        <dt>
-          @if (detail.type === "found") {
-            {{ "reports.form.date_found" | translate }}
-          } @else {
-            {{ "reports.form.date_lost" | translate }}
-          }
-        </dt>
-        <dd>{{ detail.dateLostOrFound | appDate: "mediumDate" }}</dd>
-      </div>
-      @if (detail.areaText) {
-        <div>
-          <dt>{{ "reports.form.area" | translate }}</dt>
-          <dd>{{ detail.areaText }}</dd>
-        </div>
-      }
-      @if (detail.heldLocation) {
-        <div>
-          <dt>{{ "reports.form.held_location" | translate }}</dt>
-          <dd>{{ detail.heldLocation }}</dd>
-        </div>
-      }
-      <div>
-        <dt>{{ "reports.form.description" | translate }}</dt>
-        <dd>{{ detail.description }}</dd>
-      </div>
-      @for (entry of categoryFieldEntries(); track entry[0]) {
-        <div>
-          <dt>{{ fieldLabel(entry[0]) }}</dt>
-          <dd>{{ entry[1] }}</dd>
-        </div>
-      }
-      @if (detail.hasReward && detail.rewardAmount) {
-        <div>
-          <dt>{{ "reports.form.reward_amount" | translate }}</dt>
-          <dd>{{ detail.rewardAmount }}</dd>
-        </div>
-      }
-    </dl>
-    </app-card>
-
-    @if (photos().length > 0) {
-      <section
-        class="moderation-review__photos"
-        aria-labelledby="moderation-photos-title"
-      >
-        <h2 id="moderation-photos-title">
-          {{ "reports.photos.title" | translate }}
-        </h2>
-        <ul class="moderation-review__photo-list">
-          @for (photo of photos(); track photo.id) {
-            <li>
-              @if (photo.loading) {
-                <span class="moderation-review__photo-loading">
-                  <app-spinner size="sm" />
-                  {{ "reports.detail.photo_loading" | translate }}
-                </span>
-              } @else if (photo.url) {
-                <button
-                  type="button"
-                  class="moderation-review__photo-button"
-                  [attr.aria-label]="'reports.photos.open_full' | translate"
-                  (click)="openPhoto(photo.url)"
-                >
-                  <img
-                    [src]="photo.url"
-                    alt=""
-                    class="moderation-review__photo"
-                  />
-                </button>
-              }
-            </li>
-          }
-        </ul>
-      </section>
-    }
-
-    @if (lightboxUrl(); as url) {
-      <app-photo-lightbox [src]="url" (closed)="closePhoto()" />
-    }
+    <app-report-dossier
+      [report]="detail"
+      [photos]="photos()"
+    />
 
     @if (actionError()) {
       <app-alert variant="error">{{ actionError() }}</app-alert>

@@ -40,8 +40,8 @@
 }
 
 .badge--lost {
-  color: #6b3f12;
-  background: color-mix(in srgb, var(--color-warm) 38%, var(--color-surface));
+  color: var(--color-info);
+  background: var(--color-info-bg);
 }
 
 .badge--found {

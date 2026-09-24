@@ -1,22 +1,58 @@
-import { formatDate, registerLocaleData } from '@angular/common';
-import localeArEg from '@angular/common/locales/ar-EG';
 import { Pipe, PipeTransform } from '@angular/core';
-
-registerLocaleData(localeArEg);
 
 export const APP_LOCALE = 'ar-EG';
 
 export const APP_TIMEZONE = 'Africa/Cairo';
 
-/** Eastern Arabic-Indic (٠-٩) and Extended Arabic-Indic (۰-۹) → Latin 0-9. */
-export function toLatinDigits(value: string): string {
-  return value.replace(/[٠-٩۰-۹]/g, (digit) => {
-    const code = digit.charCodeAt(0);
-    if (code >= 0x0660 && code <= 0x0669) {
-      return String(code - 0x0660);
-    }
-    return String(code - 0x06f0);
-  });
+const TIME_WITH_DAY_PERIOD: Intl.DateTimeFormatOptions = {
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+  dayPeriod: 'long',
+};
+
+/** Named formats → Intl options (Latin digits, Cairo TZ applied below). */
+const FORMAT_OPTIONS: Record<string, Intl.DateTimeFormatOptions> = {
+  short: {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    ...TIME_WITH_DAY_PERIOD,
+  },
+  medium: {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    ...TIME_WITH_DAY_PERIOD,
+  },
+  shortDate: {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  },
+  mediumDate: {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  },
+  shortTime: { ...TIME_WITH_DAY_PERIOD },
+  mediumTime: { ...TIME_WITH_DAY_PERIOD },
+};
+
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+function formatterFor(format: string): Intl.DateTimeFormat {
+  const key = FORMAT_OPTIONS[format] ? format : 'medium';
+  let formatter = formatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(APP_LOCALE, {
+      ...FORMAT_OPTIONS[key],
+      numberingSystem: 'latn',
+      timeZone: APP_TIMEZONE,
+    });
+    formatters.set(key, formatter);
+  }
+  return formatter;
 }
 
 @Pipe({
@@ -39,9 +75,7 @@ export class AppDatePipe implements PipeTransform {
           ? `${value}T12:00:00`
           : value;
 
-      return toLatinDigits(
-        formatDate(normalized, format, APP_LOCALE, APP_TIMEZONE),
-      );
+      return formatterFor(format).format(new Date(normalized));
     } catch {
       return null;
     }

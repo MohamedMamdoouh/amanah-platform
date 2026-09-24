@@ -19,9 +19,9 @@
 }
 
 .report-type-mark--lost {
-  color: #6b3f12;
-  background: color-mix(in srgb, var(--color-warm) 38%, var(--color-surface));
-  border-color: color-mix(in srgb, var(--color-warm) 55%, var(--color-border));
+  color: var(--color-info);
+  background: var(--color-info-bg);
+  border-color: color-mix(in srgb, var(--color-info) 22%, var(--color-border));
 }
 
 .report-type-mark--found {

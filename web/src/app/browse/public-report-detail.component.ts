@@ -20,7 +20,6 @@ import {
   loadReporterApprovedClaimId,
   showResolutionActions,
 } from '../claims/resolution/resolution.helpers';
-import { CatalogLabelService } from '../i18n/catalog-label.service';
 import { DomainLabelService } from '../i18n/domain-label.service';
 import { ReportType } from '../reports/models/report.models';
 import { ReportService } from '../reports/report.service';
@@ -31,8 +30,9 @@ import { CardComponent } from '../shared/ui/card/card.component';
 import { IconComponent } from '../shared/ui/icon/icon.component';
 import { LoadingIndicatorComponent } from '../shared/ui/loading-indicator/loading-indicator.component';
 import { PageHeaderComponent } from '../shared/ui/page-header/page-header.component';
-import { PhotoLightboxComponent } from '../shared/ui/photo-lightbox/photo-lightbox.component';
+import { ReportDossierComponent } from '../shared/ui/report-dossier/report-dossier.component';
 import { ReportTypeMarkComponent } from '../shared/ui/report-type-mark/report-type-mark.component';
+import { DisplayPhoto } from '../uploads/photo-loader.util';
 import { BrowseService, mapBrowseError } from './browse.service';
 import { PublicReportDetail } from './models/browse.models';
 
@@ -51,7 +51,7 @@ import { PublicReportDetail } from './models/browse.models';
     IconComponent,
     LoadingIndicatorComponent,
     PageHeaderComponent,
-    PhotoLightboxComponent,
+    ReportDossierComponent,
     ReportTypeMarkComponent,
     TranslateModule,
   ],
@@ -62,7 +62,6 @@ export class PublicReportDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly browseService = inject(BrowseService);
-  private readonly catalogLabels = inject(CatalogLabelService);
   protected readonly auth = inject(AuthService);
   private readonly claimService = inject(ClaimService);
   private readonly reportService = inject(ReportService);
@@ -79,9 +78,8 @@ export class PublicReportDetailComponent implements OnInit {
   readonly openFlag = signal<FlagListingResponse | null>(null);
   readonly flagDialogOpen = signal(false);
   readonly flagSuccessMessage = signal<string | null>(null);
-  readonly lightboxUrl = signal<string | null>(null);
 
-  readonly displayPhotos = computed(() => {
+  readonly displayPhotos = computed<DisplayPhoto[]>(() => {
     const detail = this.report();
     if (!detail) {
       return [];
@@ -92,6 +90,7 @@ export class PublicReportDetailComponent implements OnInit {
       .map((photo) => ({
         id: photo.id,
         url: photo.thumbnailUrl!,
+        loading: false,
       }));
   });
 
@@ -105,42 +104,6 @@ export class PublicReportDetailComponent implements OnInit {
     }
 
     void this.loadReport(id, type);
-  }
-
-  openPhoto(url: string): void {
-    this.lightboxUrl.set(url);
-  }
-
-  closePhoto(): void {
-    this.lightboxUrl.set(null);
-  }
-
-  categoryLabel(code: string): string {
-    return this.catalogLabels.category(code);
-  }
-
-  governorateLabel(code: string): string {
-    return this.catalogLabels.governorate(code);
-  }
-
-  fieldLabel(fieldKey: string): string {
-    const categoryCode = this.report()?.categoryCode ?? '';
-    return this.catalogLabels.field(categoryCode, fieldKey);
-  }
-
-  categoryFieldEntries(): [string, string][] {
-    const detail = this.report();
-    if (!detail) {
-      return [];
-    }
-
-    return Object.entries(detail.categoryFields).sort(([a], [b]) =>
-      a.localeCompare(b),
-    );
-  }
-
-  isFound(): boolean {
-    return this.report()?.type === 'found';
   }
 
   isClaimInProgress(): boolean {
