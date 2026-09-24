@@ -119,12 +119,13 @@ export class PublicReportDetailComponent implements OnInit {
   }
 
   showFlagSection(): boolean {
-    return this.isFlaggableListing();
+    return this.isFlaggableListing() && !this.auth.isAdmin();
   }
 
   showFlagAction(): boolean {
     return (
       this.isFlaggableListing() &&
+      !this.auth.isAdmin() &&
       !this.isListingOwner() &&
       !this.openFlag()
     );
@@ -133,6 +134,7 @@ export class PublicReportDetailComponent implements OnInit {
   showOpenFlagSummary(): boolean {
     return (
       this.auth.isLoggedIn() &&
+      !this.auth.isAdmin() &&
       !this.isListingOwner() &&
       this.openFlag() !== null
     );
@@ -151,6 +153,7 @@ export class PublicReportDetailComponent implements OnInit {
     return (
       this.isPublished() &&
       this.auth.isLoggedIn() &&
+      !this.auth.isAdmin() &&
       !this.isListingOwner()
     );
   }
@@ -256,7 +259,7 @@ export class PublicReportDetailComponent implements OnInit {
 
   showResolutionActions(): boolean {
     const detail = this.report();
-    if (!detail) {
+    if (!detail || this.auth.isAdmin()) {
       return false;
     }
 
@@ -307,7 +310,7 @@ export class PublicReportDetailComponent implements OnInit {
     this.isListingOwner.set(false);
     this.openFlag.set(null);
 
-    if (!this.auth.isLoggedIn()) {
+    if (!this.auth.isLoggedIn() || this.auth.isAdmin()) {
       return;
     }
 

@@ -67,33 +67,35 @@
           </button>
           @if (userMenuOpen()) {
             <div class="header__user-panel" role="menu" (click)="$event.stopPropagation()">
-              <a
-                role="menuitem"
-                routerLink="/my/reports"
-                class="header__user-link"
-                routerLinkActive="header__user-link--active"
-                (click)="closeUserMenu()"
-              >
-                {{ "nav.my_reports" | translate }}
-              </a>
-              <a
-                role="menuitem"
-                routerLink="/my/claims"
-                class="header__user-link"
-                routerLinkActive="header__user-link--active"
-                (click)="closeUserMenu()"
-              >
-                {{ "nav.my_claims" | translate }}
-              </a>
-              <a
-                role="menuitem"
-                routerLink="/my/chats"
-                class="header__user-link"
-                routerLinkActive="header__user-link--active"
-                (click)="closeUserMenu()"
-              >
-                {{ "nav.my_chats" | translate }}
-              </a>
+              @if (!auth.isAdmin()) {
+                <a
+                  role="menuitem"
+                  routerLink="/my/reports"
+                  class="header__user-link"
+                  routerLinkActive="header__user-link--active"
+                  (click)="closeUserMenu()"
+                >
+                  {{ "nav.my_reports" | translate }}
+                </a>
+                <a
+                  role="menuitem"
+                  routerLink="/my/claims"
+                  class="header__user-link"
+                  routerLinkActive="header__user-link--active"
+                  (click)="closeUserMenu()"
+                >
+                  {{ "nav.my_claims" | translate }}
+                </a>
+                <a
+                  role="menuitem"
+                  routerLink="/my/chats"
+                  class="header__user-link"
+                  routerLinkActive="header__user-link--active"
+                  (click)="closeUserMenu()"
+                >
+                  {{ "nav.my_chats" | translate }}
+                </a>
+              }
               <a
                 role="menuitem"
                 routerLink="/settings/account"
@@ -201,27 +203,29 @@
       <span class="header__drawer-user">{{
         auth.currentUser()?.displayName
       }}</span>
-      <a
-        routerLink="/my/reports"
-        class="header__drawer-link"
-        (click)="closeMobileNav()"
-      >
-        {{ "nav.my_reports" | translate }}
-      </a>
-      <a
-        routerLink="/my/claims"
-        class="header__drawer-link"
-        (click)="closeMobileNav()"
-      >
-        {{ "nav.my_claims" | translate }}
-      </a>
-      <a
-        routerLink="/my/chats"
-        class="header__drawer-link"
-        (click)="closeMobileNav()"
-      >
-        {{ "nav.my_chats" | translate }}
-      </a>
+      @if (!auth.isAdmin()) {
+        <a
+          routerLink="/my/reports"
+          class="header__drawer-link"
+          (click)="closeMobileNav()"
+        >
+          {{ "nav.my_reports" | translate }}
+        </a>
+        <a
+          routerLink="/my/claims"
+          class="header__drawer-link"
+          (click)="closeMobileNav()"
+        >
+          {{ "nav.my_claims" | translate }}
+        </a>
+        <a
+          routerLink="/my/chats"
+          class="header__drawer-link"
+          (click)="closeMobileNav()"
+        >
+          {{ "nav.my_chats" | translate }}
+        </a>
+      }
       <a
         routerLink="/settings/account"
         class="header__drawer-link"

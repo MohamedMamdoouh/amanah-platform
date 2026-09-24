@@ -81,6 +81,7 @@ public sealed class UploadsController(
         var result = await chatAttachmentAttachService.UploadAsync(
             threadId,
             userId,
+            User.GetUserRole(),
             photo,
             cancellationToken);
 

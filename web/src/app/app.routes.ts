@@ -12,6 +12,7 @@ import {
   authGuard,
   guestGuard,
   adminGuard,
+  nonAdminGuard,
   reactivationGuard,
 } from './auth/auth.guards';
 import { ReactivateAccountComponent } from './auth/reactivate-account/reactivate-account.component';
@@ -63,39 +64,39 @@ export const routes: Routes = [
       {
         path: 'report/lost',
         component: ReportFormComponent,
-        canActivate: [authGuard],
+        canActivate: [authGuard, nonAdminGuard],
         data: { type: 'lost' },
       },
       {
         path: 'report/found',
         component: ReportFormComponent,
-        canActivate: [authGuard],
+        canActivate: [authGuard, nonAdminGuard],
         data: { type: 'found' },
       },
       {
         path: 'my/claims',
         component: MyClaimsComponent,
-        canActivate: [authGuard],
+        canActivate: [authGuard, nonAdminGuard],
       },
       {
         path: 'my/chats',
         component: MyChatsComponent,
-        canActivate: [authGuard],
+        canActivate: [authGuard, nonAdminGuard],
       },
       {
         path: 'my/chats/:threadId',
         component: ChatThreadComponent,
-        canActivate: [authGuard],
+        canActivate: [authGuard, nonAdminGuard],
       },
       {
         path: 'my/reports',
         component: MyReportsComponent,
-        canActivate: [authGuard],
+        canActivate: [authGuard, nonAdminGuard],
       },
       {
         path: 'my/reports/:id',
         component: ReportDetailComponent,
-        canActivate: [authGuard],
+        canActivate: [authGuard, nonAdminGuard],
       },
       {
         path: 'notifications',

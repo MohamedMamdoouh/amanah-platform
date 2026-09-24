@@ -206,6 +206,7 @@ See section 6.
 - **Account deactivation:** self-serve, but **blocked** while the user has a report in `Claim In Progress` or holds an approved claim on someone else's report - the claim must be cancelled first (6.7). Once eligible: their reports in `Pending Review` or `Published` are withdrawn (closing any pending claims on them), their own `Pending` claims are withdrawn, and they are signed out immediately. Direct personal data is retained in the database. The user can **reactivate** by signing in again with the same phone number and confirming reactivation.
 - **Roles:** `User`, `Admin`.
 - **Admin bootstrap:** the initial admin account is provisioned at launch from `ADMIN_PHONE` + `ADMIN_PASSWORD` environment variables; no in-app admin promotion in v1.
+- **Admin is a non-participating moderator:** the Admin role cannot act as a normal user. Server returns **403** (`auth.admin_participation_forbidden`) for participation actions. Admin **may** browse public listings, use account settings (including deactivate), the notifications inbox, and static pages (support, safety, terms). Admin **must not** submit or edit/resubmit/withdraw reports, submit or decide claims, cancel claims, confirm resolution, send chat messages (or upload chat attachments for sending), or flag listings. Admin dashboard surfaces and investigation read access (5.5) are unchanged.
 
 ### 5.2 Report categories & fields
 
@@ -264,6 +265,7 @@ Categories and their field definitions are **admin-managed** (5.5). Seven catego
   8. Contains a raw ID/document number in a text field
 - An optional free-text note is shown to the reporter alongside the reason.
 - Admin cannot edit report content - only approve, reject, and take enforcement actions (7.2).
+- **Admin is non-participating** (5.1): Admin cannot submit lost/found reports, claims, chat as a participant, or flag listings. Participation mutations return **403**.
 - **Admin surfaces in v1:** moderation queue, abuse-report queue, user lookup (with ban and unban), and category & field management at `/admin/categories`. There is no admin tool for changing a user's phone number.
 - **Category management:** admins may add categories (English `code`, sort order, `photosPrivate` flag, active flag), edit sort order, deactivate categories, and define per-category **text** fields (`fieldKey`, min/max length, optional `textFormat` preset such as letters-and-spaces, required flag). Arabic labels for categories and fields are added in frontend translation files (`categories.json`) and deployed. Deactivated categories are hidden from new submissions; existing reports keep their category. Field-definition changes do not retroactively re-validate old reports. Categories referenced by reports cannot be deleted - only deactivated.
 - **Admin access to private data:**
@@ -391,7 +393,7 @@ When the reporter approves a claim:
 
 ### 7.1 User-facing reporting
 
-- **Report a listing:** any logged-in user except the listing owner can flag a publicly visible report (`Published` or `Claim In Progress`).
+- **Report a listing:** any logged-in **User** (not Admin) except the listing owner can flag a publicly visible report (`Published` or `Claim In Progress`). Admin cannot flag; use the abuse queue instead.
 - **Reasons (predefined):** Scam/Fraud, Spam, Illegal/Prohibited item, Harassment/Threat, Other. An optional free-text note may be included.
 - One open flag per user per listing. A duplicate flag on the same listing is refused with a clear message; existing flags cannot be edited.
 - Flagged listings remain visible until the admin explicitly takes action.
@@ -643,7 +645,8 @@ Verification checkpoints for Part I. Where a flow is fully defined above, the cr
 
 ### 15.6 Abuse and enforcement
 
-- **Flagging constraints:** a listing owner cannot flag their own listing, each user can have at most one open flag per listing, a duplicate flag is refused, and the reason must come from the predefined list.
+- **Flagging constraints:** a listing owner cannot flag their own listing, Admin cannot flag listings, each user can have at most one open flag per listing, a duplicate flag is refused, and the reason must come from the predefined list.
+- **Admin non-participation:** Admin receives **403** on report submit/edit/resubmit/withdraw, claim submit/approve/reject/withdraw/cancel, resolution confirm, chat send (and chat-attachment upload for sending), and listing flag. Admin may still browse public listings and use admin investigation reads while a flag is open.
 - **Abuse workflow:** an abuse report moves `Open` → `Resolved` with an outcome of no action taken, report taken down, or user banned, and the flagger is notified of the high-level outcome.
 - **Ban cleanup:** on ban the user is signed out everywhere, their `Pending Review` and `Published` reports are withdrawn, their pending claims are withdrawn, any approved claim they are part of is cancelled, a report of theirs in `Claim In Progress` ends as `Withdrawn`, impacted counterparties are notified, and a later sign-in attempt is refused with the ban reason.
 - **Unban:** an unbanned user can sign in again, and nothing withdrawn or cancelled by the ban is restored.

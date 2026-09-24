@@ -1,3 +1,4 @@
+using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Hubs;
@@ -24,8 +25,14 @@ public sealed class ResolutionService(
     public async Task<Result> ConfirmResolutionAsync(
         Guid claimId,
         Guid userId,
+        UserRole role,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var claim = await LoadClaimAsync(claimId, cancellationToken);
         if (claim is null)
         {
@@ -221,8 +228,14 @@ public sealed class ResolutionService(
     public async Task<Result> CancelAsync(
         Guid claimId,
         Guid userId,
+        UserRole role,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var claim = await LoadClaimAsync(claimId, cancellationToken);
         if (claim is null)
         {

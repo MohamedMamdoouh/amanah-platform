@@ -50,6 +50,17 @@ export const authGuard: CanActivateFn = (_route, state) => {
   return true;
 };
 
+export const nonAdminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  if (auth.isAdmin()) {
+    return router.createUrlTree(['/browse']);
+  }
+
+  return true;
+};
+
 export const reactivationGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);

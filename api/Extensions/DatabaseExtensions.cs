@@ -1,5 +1,6 @@
 using Amanah.Api.Data;
 using Amanah.Api.Data.Seeds;
+using Amanah.Api.Services.Admin;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amanah.Api.Extensions;
@@ -18,6 +19,7 @@ public static class DatabaseExtensions
             options.UseNpgsql(connectionString));
 
         services.AddScoped<CatalogSeeder>();
+        services.AddScoped<AdminParticipationPurgeService>();
         services.AddHostedService<DatabaseMigrationHostedService>();
 
         return services;

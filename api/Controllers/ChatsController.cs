@@ -71,7 +71,7 @@ public sealed class ChatsController(ChatService chatService) : ControllerBase
     {
         User.TryGetUserId(out var userId);
 
-        var result = await chatService.SendMessageAsync(threadId, userId, request, cancellationToken);
+        var result = await chatService.SendMessageAsync(threadId, userId, User.GetUserRole(), request, cancellationToken);
         if (!result.IsSuccess)
         {
             return result.ToActionResult();

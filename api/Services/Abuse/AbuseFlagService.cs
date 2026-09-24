@@ -1,3 +1,4 @@
+using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
@@ -15,9 +16,15 @@ public sealed class AbuseFlagService(AppDbContext dbContext, TimeProvider timePr
     public async Task<Result<FlagListingResponse>> CreateAsync(
         Guid reportId,
         Guid abuseReporterId,
+        UserRole role,
         FlagListingRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         if (!AbuseFlagReasons.All.Contains(request.Reason))
         {
             return ResultError.BadRequest(

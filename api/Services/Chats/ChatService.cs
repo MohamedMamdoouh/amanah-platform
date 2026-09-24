@@ -1,3 +1,4 @@
+using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Hubs;
@@ -149,9 +150,15 @@ public sealed class ChatService(
     public async Task<Result<ChatMessageResponse>> SendMessageAsync(
         Guid threadId,
         Guid userId,
+        UserRole role,
         SendMessageRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         ChatAttachment? attachment = null;
         if (request.AttachmentId is Guid attachmentId)
         {

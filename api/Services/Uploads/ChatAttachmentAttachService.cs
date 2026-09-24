@@ -1,3 +1,4 @@
+using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
@@ -19,9 +20,15 @@ public sealed class ChatAttachmentAttachService(
     public async Task<Result<ChatAttachmentUploadResponse>> UploadAsync(
         Guid threadId,
         Guid userId,
+        UserRole role,
         IFormFile photo,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var thread = await dbContext.ChatThreads
             .AsNoTracking()
             .Include(existingThread => existingThread.Claim)

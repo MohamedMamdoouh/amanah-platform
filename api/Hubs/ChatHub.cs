@@ -71,6 +71,7 @@ public sealed class ChatHub(ChatService chatService, ChatPresenceTracker presenc
         var result = await chatService.SendMessageAsync(
             parsedThreadId,
             userId,
+            Context.User!.GetUserRole(),
             new SendMessageRequest
             {
                 Body = body,

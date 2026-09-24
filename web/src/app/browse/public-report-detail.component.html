@@ -32,66 +32,68 @@
       [photos]="displayPhotos()"
     />
 
-    <section
-      class="public-report-detail__actions"
-      aria-labelledby="public-report-actions-title"
-    >
-      <h2 id="public-report-actions-title">
-        {{ "browse.detail.actions_title" | translate }}
-      </h2>
+    @if (!auth.isAdmin()) {
+      <section
+        class="public-report-detail__actions"
+        aria-labelledby="public-report-actions-title"
+      >
+        <h2 id="public-report-actions-title">
+          {{ "browse.detail.actions_title" | translate }}
+        </h2>
 
-      @if (showClaimForm()) {
-        <app-claim-form
-          [reportId]="detail.id"
-          [reportType]="detail.type"
-        />
-      } @else if (isListingOwner()) {
-        <aside class="public-report-detail__owner-gate" role="note">
-          <span class="public-report-detail__owner-gate-icon" aria-hidden="true">
-            <app-icon name="shield" size="md" />
-          </span>
-          <p class="public-report-detail__owner-gate-text">
-            {{ "browse.detail.claim_own_note" | translate }}
-          </p>
-        </aside>
-      } @else {
+        @if (showClaimForm()) {
+          <app-claim-form
+            [reportId]="detail.id"
+            [reportType]="detail.type"
+          />
+        } @else if (isListingOwner()) {
+          <aside class="public-report-detail__owner-gate" role="note">
+            <span class="public-report-detail__owner-gate-icon" aria-hidden="true">
+              <app-icon name="shield" size="md" />
+            </span>
+            <p class="public-report-detail__owner-gate-text">
+              {{ "browse.detail.claim_own_note" | translate }}
+            </p>
+          </aside>
+        } @else {
+          <div class="public-report-detail__action-buttons">
+            <app-button
+              variant="primary"
+              [disabled]="isClaimDisabled()"
+              (clicked)="onClaimClick()"
+            >
+              {{ "browse.detail.claim_button" | translate }}
+            </app-button>
+          </div>
+
+          @if (claimHint(); as claimNote) {
+            <p class="public-report-detail__action-note">{{ claimNote }}</p>
+          }
+        }
+
         <div class="public-report-detail__action-buttons">
           <app-button
-            variant="primary"
-            [disabled]="isClaimDisabled()"
-            (clicked)="onClaimClick()"
+            variant="secondary"
+            [disabled]="isMessageDisabled()"
+            (clicked)="onMessageClick()"
           >
-            {{ "browse.detail.claim_button" | translate }}
+            {{ "browse.detail.message_button" | translate }}
           </app-button>
         </div>
-
-        @if (claimHint(); as claimNote) {
-          <p class="public-report-detail__action-note">{{ claimNote }}</p>
+        @if (messageHint(); as messageNote) {
+          <aside
+            class="public-report-detail__chat-gate"
+            [class.public-report-detail__chat-gate--awaiting]="isMessageAwaitingApproval()"
+            role="note"
+          >
+            <span class="public-report-detail__chat-gate-icon" aria-hidden="true">
+              <app-icon name="chat" size="md" />
+            </span>
+            <p class="public-report-detail__chat-gate-text">{{ messageNote }}</p>
+          </aside>
         }
-      }
-
-      <div class="public-report-detail__action-buttons">
-        <app-button
-          variant="secondary"
-          [disabled]="isMessageDisabled()"
-          (clicked)="onMessageClick()"
-        >
-          {{ "browse.detail.message_button" | translate }}
-        </app-button>
-      </div>
-      @if (messageHint(); as messageNote) {
-        <aside
-          class="public-report-detail__chat-gate"
-          [class.public-report-detail__chat-gate--awaiting]="isMessageAwaitingApproval()"
-          role="note"
-        >
-          <span class="public-report-detail__chat-gate-icon" aria-hidden="true">
-            <app-icon name="chat" size="md" />
-          </span>
-          <p class="public-report-detail__chat-gate-text">{{ messageNote }}</p>
-        </aside>
-      }
-    </section>
+      </section>
+    }
 
     @if (showFlagSection()) {
       <section

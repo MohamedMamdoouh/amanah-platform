@@ -48,6 +48,7 @@ public sealed class ReportsController(
 
         var result = await reportService.CreateAsync(
             userId,
+            User.GetUserRole(),
             parsed.Value!.Request,
             parsed.Value.Photos,
             cancellationToken);
@@ -111,6 +112,7 @@ public sealed class ReportsController(
         var result = await reportService.UpdateAsync(
             id,
             userId,
+            User.GetUserRole(),
             parsed.Value!.Request,
             parsed.Value.Photos,
             cancellationToken);
@@ -131,7 +133,7 @@ public sealed class ReportsController(
     {
         User.TryGetUserId(out var userId);
 
-        var result = await reportService.ResubmitAsync(id, userId, cancellationToken);
+        var result = await reportService.ResubmitAsync(id, userId, User.GetUserRole(), cancellationToken);
         return result.ToActionResult();
     }
 
@@ -178,6 +180,7 @@ public sealed class ReportsController(
         var result = await claimService.SubmitAsync(
             id,
             userId,
+            User.GetUserRole(),
             parsed.Value!.Request,
             parsed.Value.Photo,
             cancellationToken);
@@ -199,7 +202,7 @@ public sealed class ReportsController(
     {
         User.TryGetUserId(out var userId);
 
-        var result = await reportService.WithdrawAsync(id, userId, request, cancellationToken);
+        var result = await reportService.WithdrawAsync(id, userId, User.GetUserRole(), request, cancellationToken);
         return result.ToActionResult();
     }
 
@@ -218,7 +221,7 @@ public sealed class ReportsController(
     {
         User.TryGetUserId(out var userId);
 
-        var result = await abuseFlagService.CreateAsync(id, userId, request, cancellationToken);
+        var result = await abuseFlagService.CreateAsync(id, userId, User.GetUserRole(), request, cancellationToken);
         return result.ToActionResult();
     }
 

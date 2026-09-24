@@ -15,22 +15,24 @@
             <app-icon name="search" size="sm" />
             {{ "home.cta_browse" | translate }}
           </app-button>
-          <app-button
-            class="hero__cta"
-            variant="primary"
-            [routerLink]="'/report/lost'"
-          >
-            <app-icon name="lost" size="sm" />
-            {{ "home.cta_report_lost" | translate }}
-          </app-button>
-          <app-button
-            class="hero__cta"
-            variant="info"
-            [routerLink]="'/report/found'"
-          >
-            <app-icon name="found" size="sm" />
-            {{ "home.cta_report_found" | translate }}
-          </app-button>
+          @if (!auth.isAdmin()) {
+            <app-button
+              class="hero__cta"
+              variant="primary"
+              [routerLink]="'/report/lost'"
+            >
+              <app-icon name="lost" size="sm" />
+              {{ "home.cta_report_lost" | translate }}
+            </app-button>
+            <app-button
+              class="hero__cta"
+              variant="info"
+              [routerLink]="'/report/found'"
+            >
+              <app-icon name="found" size="sm" />
+              {{ "home.cta_report_found" | translate }}
+            </app-button>
+          }
         </div>
       </div>
 

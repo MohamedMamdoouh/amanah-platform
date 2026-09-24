@@ -1,3 +1,4 @@
+using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
@@ -38,10 +39,16 @@ public sealed class ClaimService(
     public async Task<Result<SubmitClaimResponse>> SubmitAsync(
         Guid reportId,
         Guid claimantId,
+        UserRole role,
         SubmitClaimRequest request,
         IFormFile? photo,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var validationErrors = ClaimContentValidator.Validate(request.SubmittedAnswer);
         if (validationErrors is not null)
         {
@@ -229,8 +236,14 @@ public sealed class ClaimService(
     public async Task<Result> ApproveAsync(
         Guid claimId,
         Guid reporterId,
+        UserRole role,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var claim = await dbContext.Claims
             .Include(existingClaim => existingClaim.Report)
             .SingleOrDefaultAsync(existingClaim => existingClaim.Id == claimId, cancellationToken);
@@ -396,8 +409,14 @@ public sealed class ClaimService(
     public async Task<Result> RejectAsync(
         Guid claimId,
         Guid reporterId,
+        UserRole role,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var claimExists = await dbContext.Claims
             .AsNoTracking()
             .AnyAsync(
@@ -468,8 +487,14 @@ public sealed class ClaimService(
     public async Task<Result> WithdrawAsync(
         Guid claimId,
         Guid claimantId,
+        UserRole role,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var claimExists = await dbContext.Claims
             .AsNoTracking()
             .AnyAsync(

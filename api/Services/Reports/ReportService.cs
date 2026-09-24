@@ -1,3 +1,4 @@
+using Amanah.Api.Auth;
 using Amanah.Api.Data;
 using Amanah.Api.Data.Entities;
 using Amanah.Api.Models.Errors;
@@ -56,10 +57,16 @@ public sealed class ReportService(
 
     public async Task<Result<CreateReportResponse>> CreateAsync(
         Guid reporterId,
+        UserRole role,
         CreateReportRequest request,
         IReadOnlyList<IFormFile> photos,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var normalized = NormalizeRequest(request);
         if (!TryParseType(normalized.Type, out var reportType))
         {
@@ -362,9 +369,15 @@ public sealed class ReportService(
     public async Task<Result> WithdrawAsync(
         Guid reportId,
         Guid reporterId,
+        UserRole role,
         WithdrawReportRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var report = await dbContext.Reports
             .Include(report => report.Photos)
             .SingleOrDefaultAsync(
@@ -385,10 +398,16 @@ public sealed class ReportService(
     public async Task<Result> UpdateAsync(
         Guid reportId,
         Guid reporterId,
+        UserRole role,
         UpdateReportRequest request,
         IReadOnlyList<IFormFile> photos,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var report = await dbContext.Reports
             .Include(report => report.Category)
             .Include(report => report.CategoryFields)
@@ -495,8 +514,14 @@ public sealed class ReportService(
     public async Task<Result> ResubmitAsync(
         Guid reportId,
         Guid reporterId,
+        UserRole role,
         CancellationToken cancellationToken = default)
     {
+        if (AdminParticipation.ForbidIfAdmin(role) is { } forbidden)
+        {
+            return forbidden;
+        }
+
         var report = await dbContext.Reports
             .Include(report => report.Category)
             .Include(report => report.Governorate)

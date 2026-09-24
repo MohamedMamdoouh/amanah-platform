@@ -62,7 +62,7 @@ public sealed class ClaimsController(
     {
         User.TryGetUserId(out var reporterId);
 
-        var result = await claimService.ApproveAsync(id, reporterId, cancellationToken);
+        var result = await claimService.ApproveAsync(id, reporterId, User.GetUserRole(), cancellationToken);
         return result.ToActionResult();
     }
 
@@ -77,7 +77,7 @@ public sealed class ClaimsController(
     {
         User.TryGetUserId(out var reporterId);
 
-        var result = await claimService.RejectAsync(id, reporterId, cancellationToken);
+        var result = await claimService.RejectAsync(id, reporterId, User.GetUserRole(), cancellationToken);
         return result.ToActionResult();
     }
 
@@ -92,7 +92,7 @@ public sealed class ClaimsController(
     {
         User.TryGetUserId(out var claimantId);
 
-        var result = await claimService.WithdrawAsync(id, claimantId, cancellationToken);
+        var result = await claimService.WithdrawAsync(id, claimantId, User.GetUserRole(), cancellationToken);
         return result.ToActionResult();
     }
 
@@ -107,7 +107,7 @@ public sealed class ClaimsController(
     {
         User.TryGetUserId(out var userId);
 
-        var result = await resolutionService.ConfirmResolutionAsync(id, userId, cancellationToken);
+        var result = await resolutionService.ConfirmResolutionAsync(id, userId, User.GetUserRole(), cancellationToken);
         return result.ToActionResult();
     }
 
@@ -122,7 +122,7 @@ public sealed class ClaimsController(
     {
         User.TryGetUserId(out var userId);
 
-        var result = await resolutionService.CancelAsync(id, userId, cancellationToken);
+        var result = await resolutionService.CancelAsync(id, userId, User.GetUserRole(), cancellationToken);
         return result.ToActionResult();
     }
 }
