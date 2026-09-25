@@ -82,6 +82,7 @@ a.listing-card:hover {
   gap: var(--space-xs);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .listing-card__action {

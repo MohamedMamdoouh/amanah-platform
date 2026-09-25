@@ -9,11 +9,7 @@
         @for (photo of photos(); track photo.id) {
           <div class="report-dossier__photo-item">
             @if (photo.url) {
-              <img
-                [src]="photo.url"
-                alt=""
-                class="report-dossier__photo"
-              />
+              <img [src]="photo.url" alt="" class="report-dossier__photo" />
               <app-button
                 variant="secondary"
                 size="sm"

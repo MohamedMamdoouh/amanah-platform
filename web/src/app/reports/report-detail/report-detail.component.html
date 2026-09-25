@@ -326,13 +326,13 @@
         </p>
       } @else if (canWithdraw()) {
         <div class="report-detail__actions">
-          <button
-            type="button"
-            class="report-detail__withdraw"
-            (click)="openWithdraw()"
+          <app-button
+            class="btn--card"
+            variant="danger"
+            (clicked)="openWithdraw()"
           >
             {{ "reports.withdraw.button" | translate }}
-          </button>
+          </app-button>
         </div>
       }
 

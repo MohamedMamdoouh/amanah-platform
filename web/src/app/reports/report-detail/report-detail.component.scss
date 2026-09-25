@@ -59,17 +59,6 @@
   margin-top: var(--space-md);
 }
 
-.report-detail__withdraw {
-  padding: var(--space-sm) var(--space-lg);
-  font: inherit;
-  font-weight: 600;
-  color: var(--color-error);
-  background: var(--color-error-bg);
-  border: 1px solid #f5c2c2;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
 .report-detail__dialog {
   margin-top: var(--space-lg);
   padding: var(--space-lg);

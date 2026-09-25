@@ -20,6 +20,10 @@
   justify-content: center;
 }
 
+:host(.btn--card) .btn {
+  border-radius: var(--radius-lg);
+}
+
 .btn {
   display: inline-flex;
   flex-shrink: 0;

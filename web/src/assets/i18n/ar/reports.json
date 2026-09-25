@@ -25,7 +25,7 @@
   "reports.photos.lightbox_close": "إغلاق",
   "reports.photos.open_full": "عرض بالحجم الكامل",
   "reports.form.has_reward": "تحديد مكافأة لمن يجده",
-  "reports.form.reward_amount": "قيمة المكافأة (بالجنيه)",
+  "reports.form.reward_amount": "قيمة المكافأة",
   "reports.form.reward_hint": "من 50 إلى 50000 جنيه",
   "reports.form.submit": "إرسال البلاغ",
   "reports.form.submitting": "جاري الإرسال...",
