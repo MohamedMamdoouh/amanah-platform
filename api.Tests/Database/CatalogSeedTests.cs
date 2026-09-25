@@ -12,7 +12,8 @@ namespace Amanah.Api.Tests.Database;
 public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
   private const string AdminPhone = "+201011111111";
-  private const string SeedUserPhone = "+201022222222";
+  private const string User1Phone = "+201022222222";
+  private const string User2Phone = "+201033333333";
 
   [Fact]
   public async Task Full_schema_migration_applies_on_database_with_auth_migration()
@@ -123,18 +124,22 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
   }
 
   [Fact]
-  public async Task Seed_bootstraps_normal_user_from_seed_user_phone_and_password()
+  public async Task Seed_bootstraps_user1_and_user2_from_shared_password()
   {
     await RunWithSeededContextAsync(async context =>
     {
-      PhoneNormalizer.TryNormalize(SeedUserPhone, out var normalizedPhone);
+      PhoneNormalizer.TryNormalize(User1Phone, out var user1Phone);
+      PhoneNormalizer.TryNormalize(User2Phone, out var user2Phone);
 
-      var user = await context.Users
-        .SingleAsync(u => u.NormalizedPhone == normalizedPhone);
+      var user1 = await context.Users.SingleAsync(user => user.NormalizedPhone == user1Phone);
+      var user2 = await context.Users.SingleAsync(user => user.NormalizedPhone == user2Phone);
 
-      Assert.Equal(UserRole.User, user.Role);
-      Assert.Equal("User", user.DisplayName);
-      Assert.False(string.IsNullOrWhiteSpace(user.PasswordHash));
+      Assert.Equal(UserRole.User, user1.Role);
+      Assert.Equal("User1", user1.DisplayName);
+      Assert.Equal(UserRole.User, user2.Role);
+      Assert.Equal("User2", user2.DisplayName);
+      Assert.False(string.IsNullOrWhiteSpace(user1.PasswordHash));
+      Assert.False(string.IsNullOrWhiteSpace(user2.PasswordHash));
     });
   }
 
@@ -158,10 +163,15 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
       factory.CaptchaVerifier,
       factory.Services.CreateAsyncScope());
 
-    var (response, session) = await authContext.LoginAsync("01022222222", "UserPass123");
+    var (user1Response, user1Session) = await authContext.LoginAsync("01022222222", "UserPass123");
+    var (user2Response, user2Session) = await authContext.LoginAsync("01033333333", "UserPass123");
 
-    Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-    Assert.Equal("User", session?.User.Role);
+    Assert.Equal(System.Net.HttpStatusCode.OK, user1Response.StatusCode);
+    Assert.Equal("User", user1Session?.User.Role);
+    Assert.Equal("User1", user1Session?.User.DisplayName);
+    Assert.Equal(System.Net.HttpStatusCode.OK, user2Response.StatusCode);
+    Assert.Equal("User", user2Session?.User.Role);
+    Assert.Equal("User2", user2Session?.User.DisplayName);
   }
 
   [Fact]
@@ -190,8 +200,8 @@ public class CatalogSeedTests(ApiWebApplicationFactory factory) : IClassFixture<
     Assert.Equal(7, await context.Categories.CountAsync());
     Assert.Equal(27, await context.Governorates.CountAsync());
     Assert.Equal(1, await context.Users.CountAsync(user => user.Role == UserRole.Admin));
-    Assert.Equal(1, await context.Users.CountAsync(user => user.Role == UserRole.User));
-    Assert.Equal(2, await context.Users.CountAsync());
+    Assert.Equal(2, await context.Users.CountAsync(user => user.Role == UserRole.User));
+    Assert.Equal(3, await context.Users.CountAsync());
   }
 
   [Fact]

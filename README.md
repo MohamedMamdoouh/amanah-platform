@@ -140,7 +140,7 @@ cd amanah-platform
 
 ### Environment setup
 
-**Local development** — JWT keys, connection string, and bootstrap user keys are already in [api/appsettings.Development.json](api/appsettings.Development.json). Bootstrap admin and optional seed user are created from `ADMIN_PHONE`, `ADMIN_PASSWORD`, `SEED_USER_PHONE`, and `SEED_USER_PASSWORD` (do not use those keys in production).
+**Local development** — JWT keys, connection string, and bootstrap user keys are already in [api/appsettings.Development.json](api/appsettings.Development.json). Bootstrap accounts are created from `ADMIN_PHONE`, `ADMIN_PASSWORD`, `USER1_PHONE`, `USER2_PHONE`, and `USER_PASSWORD`.
 
 **Production / staging** — Set environment variables on the host (see [Configuration](#configuration)). Names and placeholders: [.env.example](.env.example). Full checklist: [docs/deployment.md](docs/deployment.md).
 
@@ -244,7 +244,7 @@ Cors__AllowedOrigins__0=https://your-origin.example
 | `Bucket__Endpoint`, `Bucket__AccessKey`, `Bucket__SecretKey`, `Bucket__Name` | Yes* | Cloudflare R2 |
 | `Bucket__PublicBaseUrl` | No | Public `r2.dev`/custom domain for thumbnails; else API uses 12h presigned URLs |
 | `Email__ApiKey`, `Email__FromAddress`, `Email__FromName`, `Email__AdminAlertTo` | Optional | Brevo admin alerts |
-| `SEED_USER_PHONE`, `SEED_USER_PASSWORD` | No | Optional staging user; omit in production |
+| `USER1_PHONE`, `USER2_PHONE`, `USER_PASSWORD` | No | Optional bootstrap users; both users share `USER_PASSWORD` |
 
 \*When `Bucket__Endpoint` is unset, the API uses in-memory storage (local dev and tests only).
 

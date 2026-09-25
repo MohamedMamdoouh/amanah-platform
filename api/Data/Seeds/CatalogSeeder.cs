@@ -22,10 +22,17 @@ public sealed class CatalogSeeder(
             promoteExistingUser: true,
             cancellationToken);
         await SeedBootstrapUserAsync(
-            "SEED_USER_PHONE",
-            "SEED_USER_PASSWORD",
+            "USER1_PHONE",
+            "USER_PASSWORD",
             UserRole.User,
-            "User",
+            "User1",
+            promoteExistingUser: false,
+            cancellationToken);
+        await SeedBootstrapUserAsync(
+            "USER2_PHONE",
+            "USER_PASSWORD",
+            UserRole.User,
+            "User2",
             promoteExistingUser: false,
             cancellationToken);
     }

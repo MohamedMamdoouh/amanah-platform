@@ -60,8 +60,9 @@ See `.env.example` for naming reference. Double-underscore maps to nested config
 | `Turnstile__SecretKey` | Yes | Cloudflare Turnstile server secret |
 | `ADMIN_PHONE` | Yes | Bootstrap admin phone (`+20...`) |
 | `ADMIN_PASSWORD` | Yes | Bootstrap admin password (≥8 chars) |
-| `SEED_USER_PHONE` | No | Optional bootstrap normal user for staging/dev (`+20...`); omit in production |
-| `SEED_USER_PASSWORD` | No | Optional bootstrap normal user password (≥8 chars); omit in production |
+| `USER1_PHONE` | No | Optional bootstrap user phone (`+20...`) |
+| `USER2_PHONE` | No | Optional second bootstrap user phone (`+20...`) |
+| `USER_PASSWORD` | No | Shared password for both bootstrap users (≥8 chars) |
 | `Bucket__Endpoint` | Yes* | R2 S3 API endpoint |
 | `Bucket__AccessKey` | Yes* | R2 access key ID |
 | `Bucket__SecretKey` | Yes* | R2 secret access key |
@@ -173,7 +174,7 @@ Walk this on the staging or production service before public launch. Product cod
 
 - [ ] `ASPNETCORE_ENVIRONMENT=Production` (JSON logs, SPA fallback, Unimtx, Turnstile)
 - [ ] `ConnectionStrings__Default` uses the Supabase **Session pooler**
-- [ ] JWT signing keys, `ADMIN_PHONE`, and `ADMIN_PASSWORD` set; `SEED_USER_PHONE` and `SEED_USER_PASSWORD` omitted
+- [ ] JWT signing keys, `ADMIN_PHONE`, and `ADMIN_PASSWORD` set; set `USER1_PHONE`, `USER2_PHONE`, and `USER_PASSWORD` when those accounts should exist
 - [ ] `Bucket__Endpoint`, `Bucket__AccessKey`, `Bucket__SecretKey`, and `Bucket__Name` set so `/health/ready` checks R2
 - [ ] `Sms__ApiKey` set and the Unimtx balance is funded
 - [ ] `Turnstile__SecretKey` set and `web/src/environments/environment.production.ts` `turnstileSiteKey` matches that widget
