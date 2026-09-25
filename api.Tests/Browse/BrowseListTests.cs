@@ -1,5 +1,6 @@
 using System.Net;
 using Amanah.Api.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 using Amanah.Api.Tests.Infrastructure;
 using Amanah.Api.Tests.Reports;
 
@@ -57,6 +58,43 @@ public class BrowseListTests(ApiWebApplicationFactory factory) : IClassFixture<A
         Assert.Contains(body.Items, item => item.Id == publishedId);
         Assert.Contains(body.Items, item => item.Id == claimId);
         Assert.Equal("claim_in_progress", body.Items.Single(item => item.Id == claimId).Status);
+    }
+
+    [Fact]
+    public async Task Browse_hides_the_signed_in_users_own_reports()
+    {
+        await using var context = await ReportTestContext.CreateAsync(factory);
+        var (otherSession, _) = await context.Auth.RegisterNewUserAsync("01098765432");
+
+        var ownId = await BrowseTestHelpers.SeedReportAsync(
+            context,
+            new BrowseTestHelpers.SeedReportOptions
+            {
+                Title = "Own published wallet",
+            });
+        var otherId = await BrowseTestHelpers.SeedReportAsync(
+            context,
+            new BrowseTestHelpers.SeedReportOptions
+            {
+                Title = "Someone else's published wallet",
+            });
+
+        var otherReport = await context.DbContext.Reports.SingleAsync(report => report.Id == otherId);
+        otherReport.ReporterId = otherSession.User.Id;
+        await context.DbContext.SaveChangesAsync();
+
+        var (anonymousResponse, anonymousBody) = await BrowseTestHelpers.GetBrowseAsync(
+            BrowseTestHelpers.CreateAnonymousClient(factory));
+        Assert.Equal(HttpStatusCode.OK, anonymousResponse.StatusCode);
+        Assert.NotNull(anonymousBody);
+        Assert.Contains(anonymousBody.Items, item => item.Id == ownId);
+        Assert.Contains(anonymousBody.Items, item => item.Id == otherId);
+
+        var (ownerResponse, ownerBody) = await BrowseTestHelpers.GetBrowseAsync(context.Client);
+        Assert.Equal(HttpStatusCode.OK, ownerResponse.StatusCode);
+        Assert.NotNull(ownerBody);
+        Assert.DoesNotContain(ownerBody.Items, item => item.Id == ownId);
+        Assert.Contains(ownerBody.Items, item => item.Id == otherId);
     }
 
     [Fact]

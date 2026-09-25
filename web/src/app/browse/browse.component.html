@@ -123,10 +123,14 @@
               governorateLabel(report.governorateCode)
             "
             [location]="report.areaText ?? null"
-            [date]="(report.publishedAt | appDate: 'medium') ?? ''"
+            [date]="(report.publishedAt | appDate) ?? ''"
             [imageUrl]="report.thumbnailUrl ?? null"
-            [badgeLabel]="domainLabels.reportBadgeLabel(report.status, 'browse')"
-            [badgeVariant]="domainLabels.reportBadgeVariant(report.status, 'browse')"
+            [badgeLabel]="
+              domainLabels.reportBadgeLabel(report.status, 'browse')
+            "
+            [badgeVariant]="
+              domainLabels.reportBadgeVariant(report.status, 'browse')
+            "
             [routerLink]="detailRoute(report)"
             [actionLabel]="'browse.view_detail' | translate"
           />

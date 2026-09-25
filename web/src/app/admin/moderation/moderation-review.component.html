@@ -9,7 +9,7 @@
       [backLink]="'/admin/moderation'"
       [backLabel]="'admin.moderation.back' | translate"
       [title]="detail.title"
-      [intro]="(detail.createdAt | appDate: 'medium') ?? ''"
+      [intro]="(detail.createdAt | appDate) ?? ''"
     >
       <app-report-type-mark [type]="detail.type" />
     </app-page-header>

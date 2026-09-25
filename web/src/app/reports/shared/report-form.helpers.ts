@@ -93,10 +93,11 @@ export function buildCreateReportRequest(
     governorateCode: value.governorateCode,
     areaText: value.areaText.trim() || null,
     heldLocation: reportType === 'found' ? value.heldLocation.trim() : null,
-    hasReward: value.hasReward,
-    rewardAmount: value.hasReward
-      ? parseRewardAmount(value.rewardAmount)
-      : null,
+    hasReward: reportType === 'lost' && value.hasReward,
+    rewardAmount:
+      reportType === 'lost' && value.hasReward
+        ? parseRewardAmount(value.rewardAmount)
+        : null,
     categoryFields: trimCategoryFields(value.categoryFields),
   };
 }

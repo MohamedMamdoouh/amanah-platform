@@ -16,21 +16,20 @@
         (detail.status !== 'published'
           ? domainLabels.reportStatus(detail.status) + ' · '
           : '') +
-        (detail.publishedAt ? (detail.publishedAt | appDate: 'medium') : '')
+        (detail.publishedAt ? (detail.publishedAt | appDate) : '')
       "
     >
       <app-report-type-mark [type]="detail.type" />
-      @if (domainLabels.reportBadgeLabel(detail.status, 'browse'); as badge) {
-        <app-badge [variant]="domainLabels.reportBadgeVariant(detail.status, 'browse')">
+      @if (domainLabels.reportBadgeLabel(detail.status, "browse"); as badge) {
+        <app-badge
+          [variant]="domainLabels.reportBadgeVariant(detail.status, 'browse')"
+        >
           {{ badge }}
         </app-badge>
       }
     </app-page-header>
 
-    <app-report-dossier
-      [report]="detail"
-      [photos]="displayPhotos()"
-    />
+    <app-report-dossier [report]="detail" [photos]="displayPhotos()" />
 
     @if (!auth.isAdmin()) {
       <section
@@ -41,21 +40,21 @@
           {{ "browse.detail.actions_title" | translate }}
         </h2>
 
-        @if (showClaimForm()) {
-          <app-claim-form
-            [reportId]="detail.id"
-            [reportType]="detail.type"
-          />
+        @if (showClaimForm() && claimFormOpen()) {
+          <app-claim-form [reportId]="detail.id" [reportType]="detail.type" />
         } @else if (isListingOwner()) {
           <aside class="public-report-detail__owner-gate" role="note">
-            <span class="public-report-detail__owner-gate-icon" aria-hidden="true">
+            <span
+              class="public-report-detail__owner-gate-icon"
+              aria-hidden="true"
+            >
               <app-icon name="shield" size="md" />
             </span>
             <p class="public-report-detail__owner-gate-text">
               {{ "browse.detail.claim_own_note" | translate }}
             </p>
           </aside>
-        } @else {
+        } @else if (!hasPendingClaim()) {
           <div class="public-report-detail__action-buttons">
             <app-button
               variant="primary"
@@ -83,13 +82,20 @@
         @if (messageHint(); as messageNote) {
           <aside
             class="public-report-detail__chat-gate"
-            [class.public-report-detail__chat-gate--awaiting]="isMessageAwaitingApproval()"
+            [class.public-report-detail__chat-gate--awaiting]="
+              isMessageAwaitingApproval()
+            "
             role="note"
           >
-            <span class="public-report-detail__chat-gate-icon" aria-hidden="true">
+            <span
+              class="public-report-detail__chat-gate-icon"
+              aria-hidden="true"
+            >
               <app-icon name="chat" size="md" />
             </span>
-            <p class="public-report-detail__chat-gate-text">{{ messageNote }}</p>
+            <p class="public-report-detail__chat-gate-text">
+              {{ messageNote }}
+            </p>
           </aside>
         }
       </section>
@@ -120,7 +126,10 @@
 
         @if (isListingOwner()) {
           <aside class="public-report-detail__owner-gate" role="note">
-            <span class="public-report-detail__owner-gate-icon" aria-hidden="true">
+            <span
+              class="public-report-detail__owner-gate-icon"
+              aria-hidden="true"
+            >
               <app-icon name="shield" size="md" />
             </span>
             <p class="public-report-detail__owner-gate-text">
@@ -153,7 +162,7 @@
                 }
                 <div>
                   <dt>{{ "abuse.flag.submitted_at_label" | translate }}</dt>
-                  <dd>{{ flag.createdAt | appDate: "medium" }}</dd>
+                  <dd>{{ flag.createdAt | appDate }}</dd>
                 </div>
               </dl>
               <div class="public-report-detail__action-buttons">
@@ -164,7 +173,9 @@
             </app-card>
           }
         } @else if (showFlagAction()) {
-          <div class="public-report-detail__action-buttons public-report-detail__action-buttons--flush">
+          <div
+            class="public-report-detail__action-buttons public-report-detail__action-buttons--flush"
+          >
             <app-button variant="outline" (clicked)="onFlagClick()">
               {{ "abuse.flag.button" | translate }}
             </app-button>

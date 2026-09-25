@@ -20,12 +20,12 @@
     <app-alert variant="error">{{ error() }}</app-alert>
   } @else if (reports().length === 0) {
     <app-empty-state [title]="emptyMessage()">
-      @if (activeTab() === 'pending_review') {
+      @if (activeTab() === "pending_review") {
         <app-button variant="primary" [routerLink]="'/report/lost'">
-          {{ 'reports.mine.report_lost' | translate }}
+          {{ "reports.mine.report_lost" | translate }}
         </app-button>
         <app-button variant="outline" [routerLink]="'/report/found'">
-          {{ 'reports.mine.report_found' | translate }}
+          {{ "reports.mine.report_found" | translate }}
         </app-button>
       }
     </app-empty-state>
@@ -36,10 +36,16 @@
           <app-listing-card
             [title]="report.title"
             [reportType]="report.type"
-            [subtitle]="categoryLabel(report.categoryCode) + ' · ' + governorateLabel(report.governorateCode)"
-            [date]="(report.createdAt | appDate: 'medium') ?? ''"
+            [subtitle]="
+              categoryLabel(report.categoryCode) +
+              ' · ' +
+              governorateLabel(report.governorateCode)
+            "
+            [date]="(report.createdAt | appDate) ?? ''"
             [badgeLabel]="domainLabels.reportBadgeLabel(report.status, 'mine')"
-            [badgeVariant]="domainLabels.reportBadgeVariant(report.status, 'mine')"
+            [badgeVariant]="
+              domainLabels.reportBadgeVariant(report.status, 'mine')
+            "
             [routerLink]="['/my/reports', report.id]"
             [actionLabel]="'reports.confirmation.view_detail' | translate"
           />

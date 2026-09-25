@@ -1,4 +1,7 @@
-<section class="report-detail page-container" aria-labelledby="report-detail-title">
+<section
+  class="report-detail page-container"
+  aria-labelledby="report-detail-title"
+>
   @if (loading()) {
     <app-loading-indicator [label]="'reports.detail.loading' | translate" />
   } @else if (error()) {
@@ -9,22 +12,29 @@
       [backLink]="'/my/reports'"
       [backLabel]="'reports.detail.back' | translate"
       [title]="detail.title"
-      [intro]="(detail.createdAt | appDate: 'medium') ?? ''"
+      [intro]="(detail.createdAt | appDate) ?? ''"
     >
       <app-report-type-mark [type]="detail.type" />
     </app-page-header>
 
     @if (canEdit()) {
       @if (detail.rejectionReasonCode || detail.rejectionNote) {
-        <section class="report-detail__rejection" aria-labelledby="rejection-title">
-          <h2 id="rejection-title">{{ "reports.resubmit.rejection_title" | translate }}</h2>
+        <section
+          class="report-detail__rejection"
+          aria-labelledby="rejection-title"
+        >
+          <h2 id="rejection-title">
+            {{ "reports.resubmit.rejection_title" | translate }}
+          </h2>
           @if (detail.rejectionReasonCode) {
             <p class="report-detail__rejection-reason">
               {{ rejectionReasonLabel(detail.rejectionReasonCode) }}
             </p>
           }
           @if (detail.rejectionNote) {
-            <p class="report-detail__rejection-note">{{ detail.rejectionNote }}</p>
+            <p class="report-detail__rejection-note">
+              {{ detail.rejectionNote }}
+            </p>
           }
         </section>
       }
@@ -36,28 +46,49 @@
       @if (catalogLoading()) {
         <app-loading-indicator [label]="'reports.form.loading' | translate" />
       } @else {
-        <form class="report-detail__edit-form" [formGroup]="editForm" (ngSubmit)="resubmit()">
-          <p class="report-detail__edit-intro">{{ "reports.resubmit.intro" | translate }}</p>
+        <form
+          class="report-detail__edit-form"
+          [formGroup]="editForm"
+          (ngSubmit)="resubmit()"
+        >
+          <p class="report-detail__edit-intro">
+            {{ "reports.resubmit.intro" | translate }}
+          </p>
 
           <label class="report-detail__field">
-            <span class="report-detail__label">{{ "reports.form.category" | translate }}</span>
+            <span class="report-detail__label">{{
+              "reports.form.category" | translate
+            }}</span>
             <select formControlName="categoryCode" class="report-detail__input">
-              <option value="" disabled>{{ "reports.form.category_placeholder" | translate }}</option>
+              <option value="" disabled>
+                {{ "reports.form.category_placeholder" | translate }}
+              </option>
               @for (category of categories(); track category.code) {
-                <option [value]="category.code">{{ categoryLabel(category.code) }}</option>
+                <option [value]="category.code">
+                  {{ categoryLabel(category.code) }}
+                </option>
               }
             </select>
             @if (fieldError("categoryCode")) {
-              <span class="report-detail__field-error" role="alert">{{ fieldError("categoryCode") }}</span>
+              <span class="report-detail__field-error" role="alert">{{
+                fieldError("categoryCode")
+              }}</span>
             }
           </label>
 
           @if (selectedCategory()) {
             <div formGroupName="categoryFields" class="report-detail__section">
-              <h2 class="report-detail__section-title">{{ "reports.form.category_fields" | translate }}</h2>
-              @for (definition of fieldDefinitions(); track definition.fieldKey) {
+              <h2 class="report-detail__section-title">
+                {{ "reports.form.category_fields" | translate }}
+              </h2>
+              @for (
+                definition of fieldDefinitions();
+                track definition.fieldKey
+              ) {
                 <label class="report-detail__field">
-                  <span class="report-detail__label">{{ fieldLabel(definition.fieldKey) }}</span>
+                  <span class="report-detail__label">{{
+                    fieldLabel(definition.fieldKey)
+                  }}</span>
                   <input
                     type="text"
                     class="report-detail__input"
@@ -77,18 +108,34 @@
           }
 
           <label class="report-detail__field">
-            <span class="report-detail__label">{{ "reports.form.title" | translate }}</span>
-            <input type="text" class="report-detail__input" formControlName="title" />
+            <span class="report-detail__label">{{
+              "reports.form.title" | translate
+            }}</span>
+            <input
+              type="text"
+              class="report-detail__input"
+              formControlName="title"
+            />
             @if (fieldError("title")) {
-              <span class="report-detail__field-error" role="alert">{{ fieldError("title") }}</span>
+              <span class="report-detail__field-error" role="alert">{{
+                fieldError("title")
+              }}</span>
             }
           </label>
 
           <label class="report-detail__field">
-            <span class="report-detail__label">{{ "reports.form.description" | translate }}</span>
-            <textarea class="report-detail__input" rows="4" formControlName="description"></textarea>
+            <span class="report-detail__label">{{
+              "reports.form.description" | translate
+            }}</span>
+            <textarea
+              class="report-detail__input"
+              rows="4"
+              formControlName="description"
+            ></textarea>
             @if (fieldError("description")) {
-              <span class="report-detail__field-error" role="alert">{{ fieldError("description") }}</span>
+              <span class="report-detail__field-error" role="alert">{{
+                fieldError("description")
+              }}</span>
             }
           </label>
 
@@ -100,39 +147,72 @@
                 {{ "reports.form.date_lost" | translate }}
               }
             </span>
-            <input type="date" class="report-detail__input" formControlName="dateLostOrFound" />
+            <input
+              type="date"
+              class="report-detail__input"
+              formControlName="dateLostOrFound"
+            />
             @if (fieldError("dateLostOrFound")) {
-              <span class="report-detail__field-error" role="alert">{{ fieldError("dateLostOrFound") }}</span>
+              <span class="report-detail__field-error" role="alert">{{
+                fieldError("dateLostOrFound")
+              }}</span>
             }
           </label>
 
           <label class="report-detail__field">
-            <span class="report-detail__label">{{ "reports.form.governorate" | translate }}</span>
-            <select formControlName="governorateCode" class="report-detail__input">
-              <option value="" disabled>{{ "reports.form.governorate_placeholder" | translate }}</option>
+            <span class="report-detail__label">{{
+              "reports.form.governorate" | translate
+            }}</span>
+            <select
+              formControlName="governorateCode"
+              class="report-detail__input"
+            >
+              <option value="" disabled>
+                {{ "reports.form.governorate_placeholder" | translate }}
+              </option>
               @for (governorate of governorates(); track governorate.code) {
-                <option [value]="governorate.code">{{ governorateLabel(governorate.code) }}</option>
+                <option [value]="governorate.code">
+                  {{ governorateLabel(governorate.code) }}
+                </option>
               }
             </select>
             @if (fieldError("governorateCode")) {
-              <span class="report-detail__field-error" role="alert">{{ fieldError("governorateCode") }}</span>
+              <span class="report-detail__field-error" role="alert">{{
+                fieldError("governorateCode")
+              }}</span>
             }
           </label>
 
           <label class="report-detail__field">
-            <span class="report-detail__label">{{ "reports.form.area" | translate }}</span>
-            <input type="text" class="report-detail__input" formControlName="areaText" />
+            <span class="report-detail__label">{{
+              "reports.form.area" | translate
+            }}</span>
+            <input
+              type="text"
+              class="report-detail__input"
+              formControlName="areaText"
+            />
             @if (fieldError("areaText")) {
-              <span class="report-detail__field-error" role="alert">{{ fieldError("areaText") }}</span>
+              <span class="report-detail__field-error" role="alert">{{
+                fieldError("areaText")
+              }}</span>
             }
           </label>
 
           @if (isFound()) {
             <label class="report-detail__field">
-              <span class="report-detail__label">{{ "reports.form.held_location" | translate }}</span>
-              <input type="text" class="report-detail__input" formControlName="heldLocation" />
+              <span class="report-detail__label">{{
+                "reports.form.held_location" | translate
+              }}</span>
+              <input
+                type="text"
+                class="report-detail__input"
+                formControlName="heldLocation"
+              />
               @if (fieldError("heldLocation")) {
-                <span class="report-detail__field-error" role="alert">{{ fieldError("heldLocation") }}</span>
+                <span class="report-detail__field-error" role="alert">{{
+                  fieldError("heldLocation")
+                }}</span>
               }
             </label>
           }
@@ -145,17 +225,28 @@
 
             @if (editForm.controls.hasReward.value) {
               <label class="report-detail__field">
-                <span class="report-detail__label">{{ "reports.form.reward_amount" | translate }}</span>
-                <input type="number" class="report-detail__input" formControlName="rewardAmount" />
+                <span class="report-detail__label">{{
+                  "reports.form.reward_amount" | translate
+                }}</span>
+                <input
+                  type="number"
+                  class="report-detail__input"
+                  formControlName="rewardAmount"
+                />
                 @if (fieldError("rewardAmount")) {
-                  <span class="report-detail__field-error" role="alert">{{ fieldError("rewardAmount") }}</span>
+                  <span class="report-detail__field-error" role="alert">{{
+                    fieldError("rewardAmount")
+                  }}</span>
                 }
               </label>
             }
           }
 
           @if (photos().length > 0) {
-            <section class="report-detail__photos" [attr.aria-label]="'reports.photos.title' | translate">
+            <section
+              class="report-detail__photos"
+              [attr.aria-label]="'reports.photos.title' | translate"
+            >
               <h2>{{ "reports.resubmit.existing_photos" | translate }}</h2>
               <div class="report-detail__photo-grid">
                 @for (photo of photos(); track photo.id) {
@@ -189,7 +280,9 @@
             <h2>{{ "reports.resubmit.add_photos" | translate }}</h2>
             <app-photo-upload (photosChange)="onPhotosChange($event)" />
             @if (photosFieldError()) {
-              <span class="report-detail__field-error" role="alert">{{ photosFieldError() }}</span>
+              <span class="report-detail__field-error" role="alert">{{
+                photosFieldError()
+              }}</span>
             }
           </section>
 
@@ -210,10 +303,7 @@
         </form>
       }
     } @else {
-      <app-report-dossier
-        [report]="detail"
-        [photos]="photos()"
-      />
+      <app-report-dossier [report]="detail" [photos]="photos()" />
 
       @if (showClaimsSection()) {
         <app-report-claims-section
@@ -252,11 +342,15 @@
           role="dialog"
           aria-labelledby="withdraw-title"
         >
-          <h2 id="withdraw-title">{{ "reports.withdraw.title" | translate }}</h2>
+          <h2 id="withdraw-title">
+            {{ "reports.withdraw.title" | translate }}
+          </h2>
           <p>{{ "reports.withdraw.intro" | translate }}</p>
 
           @if (withdrawError()) {
-            <p class="report-detail__error" role="alert">{{ withdrawError() }}</p>
+            <p class="report-detail__error" role="alert">
+              {{ withdrawError() }}
+            </p>
           }
 
           <form
@@ -270,7 +364,11 @@
               </legend>
               @for (reason of withdrawalReasons; track reason) {
                 <label class="report-detail__reason">
-                  <input type="radio" formControlName="reason" [value]="reason" />
+                  <input
+                    type="radio"
+                    formControlName="reason"
+                    [value]="reason"
+                  />
                   <span>{{ withdrawalReasonLabel(reason) }}</span>
                 </label>
               }

@@ -143,7 +143,7 @@ public static class ReportContentValidator
         ValidateTitle(title, errors);
         ValidateDescription(description, errors);
         ValidateAreaText(areaText, errors);
-        ValidateReward(hasReward, rewardAmount, errors);
+        ValidateReward(isFoundReport, hasReward, rewardAmount, errors);
         ValidateHeldLocation(isFoundReport, heldLocation, errors);
 
         return errors;
@@ -198,10 +198,24 @@ public static class ReportContentValidator
     }
 
     private static void ValidateReward(
+        bool isFoundReport,
         bool hasReward,
         int? rewardAmount,
         Dictionary<string, string[]> errors)
     {
+        if (isFoundReport)
+        {
+            if (hasReward || rewardAmount is not null)
+            {
+                ValidationErrors.Add(
+                    errors,
+                    RewardAmountField,
+                    "A reward can only be offered on lost reports.");
+            }
+
+            return;
+        }
+
         if (hasReward)
         {
             if (rewardAmount is not int amount)

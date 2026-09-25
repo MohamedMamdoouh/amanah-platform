@@ -1,4 +1,4 @@
-using Amanah.Api.Models.Errors;
+using Amanah.Api.Auth;
 using Amanah.Api.Services.Browse;
 using Amanah.Contracts.Errors;
 using Amanah.Contracts.Requests.Browse;
@@ -24,7 +24,8 @@ public sealed class PublicReportsController(BrowseService browseService) : Contr
         [FromQuery] BrowseReportsQuery query,
         CancellationToken cancellationToken)
     {
-        var result = await browseService.ListReportsAsync(query, cancellationToken);
+        Guid? viewerId = User.TryGetUserId(out var userId) ? userId : null;
+        var result = await browseService.ListReportsAsync(query, viewerId, cancellationToken);
         return result.ToActionResult();
     }
 

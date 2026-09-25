@@ -26,7 +26,7 @@
             [title]="claim.reportTitle"
             [reportType]="claim.reportType"
             [subtitle]="claim.reporterDisplayName"
-            [date]="(claim.submittedAt | appDate: 'medium') ?? ''"
+            [date]="(claim.submittedAt | appDate) ?? ''"
             [badgeLabel]="domainLabels.claimStatus(claim.status)"
             [badgeVariant]="domainLabels.claimBadgeVariant(claim.status)"
             [routerLink]="reportLink(claim)"

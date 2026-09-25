@@ -55,7 +55,7 @@
         </div>
         <div>
           <dt>{{ "admin.abuse.detail.created_at" | translate }}</dt>
-          <dd>{{ item.createdAt | appDate: "medium" }}</dd>
+          <dd>{{ item.createdAt | appDate }}</dd>
         </div>
         @if (item.resolutionOutcome) {
           <div>
@@ -66,7 +66,7 @@
         @if (item.resolvedAt) {
           <div>
             <dt>{{ "admin.abuse.detail.resolved_at" | translate }}</dt>
-            <dd>{{ item.resolvedAt | appDate: "medium" }}</dd>
+            <dd>{{ item.resolvedAt | appDate }}</dd>
           </div>
         }
       </dl>
@@ -107,7 +107,7 @@
         @if (item.listing.publishedAt) {
           <div>
             <dt>{{ "admin.abuse.detail.published_at" | translate }}</dt>
-            <dd>{{ item.listing.publishedAt | appDate: "medium" }}</dd>
+            <dd>{{ item.listing.publishedAt | appDate }}</dd>
           </div>
         }
       </dl>
@@ -208,7 +208,7 @@
                                     message.senderDisplayName
                                   }}</span>
                                   <time [attr.datetime]="message.sentAt">
-                                    {{ message.sentAt | appDate: "short" }}
+                                    {{ message.sentAt | appDate }}
                                   </time>
                                 </header>
                                 @if (message.attachmentId) {
@@ -276,7 +276,7 @@
                                   | translate
                               }}
                             </dt>
-                            <dd>{{ claim.submittedAt | appDate: "medium" }}</dd>
+                            <dd>{{ claim.submittedAt | appDate }}</dd>
                           </div>
                           <div>
                             <dt>

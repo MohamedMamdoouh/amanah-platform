@@ -24,7 +24,7 @@
             <div>
               <p class="report-claims__claimant">{{ claim.claimantDisplayName }}</p>
               <p class="report-claims__meta">
-                {{ claim.submittedAt | appDate: "medium" }}
+                {{ claim.submittedAt | appDate }}
                 · {{ "claims.review.attempt" | translate: { n: claim.attemptNumber } }}
               </p>
             </div>

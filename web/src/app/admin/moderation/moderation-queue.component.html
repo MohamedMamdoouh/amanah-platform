@@ -41,7 +41,7 @@
               [title]="item.title"
               [reportType]="item.type"
               [subtitle]="categoryLabel(item.categoryCode)"
-              [date]="(item.createdAt | appDate: 'medium') ?? ''"
+              [date]="(item.createdAt | appDate) ?? ''"
               [badgeLabel]="statusLabel(item.status)"
               [badgeVariant]="'pending'"
               [routerLink]="['/admin/moderation', item.id]"
@@ -61,7 +61,7 @@
             [title]="item.title"
             [reportType]="item.type"
             [subtitle]="categoryLabel(item.categoryCode)"
-            [date]="(item.createdAt | appDate: 'medium') ?? ''"
+            [date]="(item.createdAt | appDate) ?? ''"
             [routerLink]="['/admin/moderation', item.id]"
             [actionLabel]="'admin.moderation.review' | translate"
           />

@@ -73,11 +73,13 @@ export class PublicReportDetailComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly report = signal<PublicReportDetail | null>(null);
   readonly approvedClaimId = signal<string | null>(null);
+  private readonly pendingClaimOnReport = signal(false);
   readonly chatThreadId = signal<string | null>(null);
   readonly isListingOwner = signal(false);
   readonly openFlag = signal<FlagListingResponse | null>(null);
   readonly flagDialogOpen = signal(false);
   readonly flagSuccessMessage = signal<string | null>(null);
+  readonly claimFormOpen = signal(false);
 
   readonly displayPhotos = computed<DisplayPhoto[]>(() => {
     const detail = this.report();
@@ -145,8 +147,8 @@ export class PublicReportDetailComponent implements OnInit {
     return translated === code ? code : translated;
   }
 
-  canClickClaim(): boolean {
-    return this.isPublished() && !this.auth.isLoggedIn();
+  hasPendingClaim(): boolean {
+    return this.pendingClaimOnReport();
   }
 
   showClaimForm(): boolean {
@@ -154,7 +156,8 @@ export class PublicReportDetailComponent implements OnInit {
       this.isPublished() &&
       this.auth.isLoggedIn() &&
       !this.auth.isAdmin() &&
-      !this.isListingOwner()
+      !this.isListingOwner() &&
+      !this.hasPendingClaim()
     );
   }
 
@@ -199,13 +202,18 @@ export class PublicReportDetailComponent implements OnInit {
   }
 
   onClaimClick(): void {
-    if (!this.canClickClaim()) {
+    if (this.isClaimDisabled()) {
       return;
     }
 
-    void this.router.navigate(['/login'], {
-      queryParams: { returnUrl: this.router.url },
-    });
+    if (!this.auth.isLoggedIn()) {
+      void this.router.navigate(['/login'], {
+        queryParams: { returnUrl: this.router.url },
+      });
+      return;
+    }
+
+    this.claimFormOpen.set(true);
   }
 
   onMessageClick(): void {
@@ -280,6 +288,7 @@ export class PublicReportDetailComponent implements OnInit {
   }
 
   private async loadReport(id: string, type: ReportType): Promise<void> {
+    this.claimFormOpen.set(false);
     const request$ =
       type === 'lost'
         ? this.browseService.getLostDetail(id)
@@ -290,6 +299,7 @@ export class PublicReportDetailComponent implements OnInit {
       this.report.set(detail);
       await this.loadFlagContext(id, detail.status);
       await this.loadParticipantChat(id, detail.status);
+      await this.loadPendingClaim(id, detail.status);
       this.loading.set(false);
     } catch (error) {
       const route = mapBrowseError(error);
@@ -373,6 +383,31 @@ export class PublicReportDetailComponent implements OnInit {
       this.chatThreadId.set(claim.chatThreadId ?? null);
     } catch {
       this.chatThreadId.set(null);
+    }
+  }
+
+  private async loadPendingClaim(
+    reportId: string,
+    status: PublicReportDetail['status'],
+  ): Promise<void> {
+    this.pendingClaimOnReport.set(false);
+
+    if (
+      status !== 'published' ||
+      !this.auth.isLoggedIn() ||
+      this.auth.isAdmin() ||
+      this.isListingOwner()
+    ) {
+      return;
+    }
+
+    try {
+      const claim = await firstValueFrom(
+        this.claimService.findPendingClaimForReport(reportId),
+      );
+      this.pendingClaimOnReport.set(claim !== null);
+    } catch {
+      this.pendingClaimOnReport.set(false);
     }
   }
 

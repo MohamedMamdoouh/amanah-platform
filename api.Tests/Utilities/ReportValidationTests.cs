@@ -320,6 +320,21 @@ public class ReportContentValidatorTests
 
         Assert.Contains(ReportContentValidator.RewardAmountField, errors.Keys);
     }
+
+    [Fact]
+    public void Validate_rejects_reward_on_found_reports()
+    {
+        var errors = ReportContentValidator.Validate(
+            isFoundReport: true,
+            title: "Found black wallet",
+            description: "I found a wallet near the station yesterday evening.",
+            areaText: null,
+            hasReward: true,
+            rewardAmount: 100,
+            heldLocation: "At Ramses police station");
+
+        Assert.Contains(ReportContentValidator.RewardAmountField, errors.Keys);
+    }
 }
 
 public class ContactInfoValidatorTests

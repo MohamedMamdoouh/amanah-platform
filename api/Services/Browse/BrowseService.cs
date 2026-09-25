@@ -16,6 +16,7 @@ public sealed class BrowseService(
 {
     public async Task<Result<PaginatedResponse<PublicReportSummaryResponse>>> ListReportsAsync(
         BrowseReportsQuery query,
+        Guid? viewerId = null,
         CancellationToken cancellationToken = default)
     {
         var page = query.Page;
@@ -30,6 +31,11 @@ public sealed class BrowseService(
             .Where(report =>
                 report.Status == ReportStatus.Published
                 || report.Status == ReportStatus.ClaimInProgress);
+
+        if (viewerId is Guid currentUserId)
+        {
+            reportsQuery = reportsQuery.Where(report => report.ReporterId != currentUserId);
+        }
 
         reportsQuery = SearchTextBuilder.FilterBySearchQuery(reportsQuery, query.Q);
 

@@ -255,36 +255,38 @@
           }
         </div>
 
-        <div class="form-section">
-          <label class="report-form__checkbox">
-            <input type="checkbox" formControlName="hasReward" />
-            <span>{{ "reports.form.has_reward" | translate }}</span>
-          </label>
-
-          @if (form.controls.hasReward.value) {
-            <label class="form-field">
-              <span class="form-label">{{
-                "reports.form.reward_amount" | translate
-              }}</span>
-              <input
-                type="number"
-                formControlName="rewardAmount"
-                class="form-input"
-                min="50"
-                max="50000"
-                [class.form-input--error]="isControlInvalid('rewardAmount')"
-              />
-              <span class="form-hint">{{
-                "reports.form.reward_hint" | translate
-              }}</span>
-              @if (fieldError("rewardAmount")) {
-                <span class="form-error" role="alert">{{
-                  fieldError("rewardAmount")
-                }}</span>
-              }
+        @if (!isFound()) {
+          <div class="form-section">
+            <label class="report-form__checkbox">
+              <input type="checkbox" formControlName="hasReward" />
+              <span>{{ "reports.form.has_reward" | translate }}</span>
             </label>
-          }
-        </div>
+
+            @if (form.controls.hasReward.value) {
+              <label class="form-field">
+                <span class="form-label">{{
+                  "reports.form.reward_amount" | translate
+                }}</span>
+                <input
+                  type="number"
+                  formControlName="rewardAmount"
+                  class="form-input"
+                  min="50"
+                  max="50000"
+                  [class.form-input--error]="isControlInvalid('rewardAmount')"
+                />
+                <span class="form-hint">{{
+                  "reports.form.reward_hint" | translate
+                }}</span>
+                @if (fieldError("rewardAmount")) {
+                  <span class="form-error" role="alert">{{
+                    fieldError("rewardAmount")
+                  }}</span>
+                }
+              </label>
+            }
+          </div>
+        }
 
         <app-button
           type="submit"

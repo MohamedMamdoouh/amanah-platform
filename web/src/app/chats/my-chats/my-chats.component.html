@@ -22,7 +22,7 @@
             [title]="thread.reportTitle"
             [reportType]="thread.reportType"
             [subtitle]="thread.counterpartyDisplayName"
-            [date]="(threadDate(thread) | appDate: 'medium') ?? ''"
+            [date]="(threadDate(thread) | appDate) ?? ''"
             [badgeLabel]="statusLabel(thread)"
             [badgeVariant]="statusBadgeVariant(thread)"
             [routerLink]="threadLink(thread)"

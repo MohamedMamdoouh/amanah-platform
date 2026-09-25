@@ -41,7 +41,7 @@
               <span class="notifications__item-note">{{ item.payload.note }}</span>
             }
             <span class="notifications__item-date">
-              {{ item.payload.createdAt | appDate: 'medium' }}
+              {{ item.payload.createdAt | appDate }}
             </span>
             <span class="notifications__item-link">
               {{ linkLabel(item) }}

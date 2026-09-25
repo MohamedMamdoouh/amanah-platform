@@ -24,7 +24,7 @@
             [title]="item.reportTitle"
             [reportType]="item.reportType"
             [subtitle]="queueSubtitle(item)"
-            [date]="(item.createdAt | appDate: 'medium') ?? ''"
+            [date]="(item.createdAt | appDate) ?? ''"
             [badgeLabel]="domainLabels.reportBadgeLabel(item.reportStatus, 'mine')"
             [badgeVariant]="
               domainLabels.reportBadgeVariant(item.reportStatus, 'mine')

@@ -3,7 +3,6 @@ using System;
 using Amanah.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,22 +11,24 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amanah.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260905111049_AddReportStatusCreatedAtIndex")]
-    partial class AddReportStatusCreatedAtIndex
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.AbuseReport", b =>
                 {
                     b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AbuseReporterId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -43,9 +44,6 @@ namespace Amanah.Api.Data.Migrations
                         .HasColumnType("character varying(40)");
 
                     b.Property<Guid>("ReportId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ReporterId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ResolutionOutcome")
@@ -67,11 +65,62 @@ namespace Amanah.Api.Data.Migrations
 
                     b.HasIndex("ReportId");
 
-                    b.HasIndex("ReporterId");
-
                     b.HasIndex("ResolvedByUserId");
 
+                    b.HasIndex("AbuseReporterId", "ReportId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Open'");
+
+                    b.HasIndex("Status", "CreatedAt");
+
                     b.ToTable("abuse_reports", (string)null);
+                });
+
+            modelBuilder.Entity("Amanah.Api.Data.Entities.AdminAlertEmailOutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("CategoryCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReportType")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportId");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("admin_alert_email_outbox", (string)null);
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.Category", b =>
@@ -144,13 +193,7 @@ namespace Amanah.Api.Data.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
 
-                    b.Property<int?>("MaxInt")
-                        .HasColumnType("integer");
-
                     b.Property<int?>("MaxLength")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("MinInt")
                         .HasColumnType("integer");
 
                     b.Property<int?>("MinLength")
@@ -179,6 +222,53 @@ namespace Amanah.Api.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("category_field_definitions", (string)null);
+                });
+
+            modelBuilder.Entity("Amanah.Api.Data.Entities.ChatAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChatThreadId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ThumbnailStorageKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("UploaderId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatThreadId");
+
+                    b.HasIndex("MessageId")
+                        .IsUnique()
+                        .HasFilter("\"MessageId\" IS NOT NULL");
+
+                    b.HasIndex("UploaderId");
+
+                    b.ToTable("chat_attachments", (string)null);
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.ChatThread", b =>
@@ -257,7 +347,9 @@ namespace Amanah.Api.Data.Migrations
 
                     b.HasIndex("ClaimantId");
 
-                    b.HasIndex("ReportId");
+                    b.HasIndex("ReportId", "ClaimantId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Pending'");
 
                     b.ToTable("claims", (string)null);
                 });
@@ -378,6 +470,8 @@ namespace Amanah.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("notifications", (string)null);
@@ -393,6 +487,11 @@ namespace Amanah.Api.Data.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
                     b.Property<string>("CodeHash")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -401,19 +500,67 @@ namespace Amanah.Api.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Phone")
+                    b.HasKey("Id");
+
+                    b.HasIndex("Destination", "Channel")
+                        .IsUnique();
+
+                    b.ToTable("otp_codes", (string)null);
+                });
+
+            modelBuilder.Entity("Amanah.Api.Data.Entities.OtpEmailOutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("OtpCodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProtectedPayload")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Phone");
+                    b.HasIndex("OtpCodeId");
 
-                    b.ToTable("otp_codes", (string)null);
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.HasIndex("Email", "Status", "ProcessedAt");
+
+                    b.ToTable("otp_email_outbox", (string)null);
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.OtpSmsOutboxMessage", b =>
@@ -479,6 +626,9 @@ namespace Amanah.Api.Data.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -529,11 +679,6 @@ namespace Amanah.Api.Data.Migrations
                     b.Property<string>("HeldLocation")
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
-
-                    b.Property<string>("HiddenDetail")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("NormalizedSearchText")
                         .HasColumnType("text");
@@ -587,6 +732,14 @@ namespace Amanah.Api.Data.Migrations
                     b.HasIndex("ReporterId");
 
                     b.HasIndex("Status", "CreatedAt");
+
+                    b.HasIndex("Status", "PublishedAt")
+                        .IsDescending(false, true);
+
+                    b.HasIndex(new[] { "NormalizedSearchText" }, "IX_reports_NormalizedSearchText_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "NormalizedSearchText" }, "IX_reports_NormalizedSearchText_trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "NormalizedSearchText" }, "IX_reports_NormalizedSearchText_trgm"), new[] { "gin_trgm_ops" });
 
                     b.ToTable("reports", (string)null);
                 });
@@ -651,6 +804,51 @@ namespace Amanah.Api.Data.Migrations
                     b.ToTable("resolutions", (string)null);
                 });
 
+            modelBuilder.Entity("Amanah.Api.Data.Entities.StorageDeletionOutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Pending'");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("storage_deletion_outbox", (string)null);
+                });
+
             modelBuilder.Entity("Amanah.Api.Data.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -659,7 +857,13 @@ namespace Amanah.Api.Data.Migrations
                     b.Property<string>("BanReason")
                         .HasColumnType("text");
 
+                    b.Property<DateTimeOffset?>("BannedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeactivatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DisplayName")
@@ -671,8 +875,11 @@ namespace Amanah.Api.Data.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
                     b.Property<string>("NormalizedPhone")
-                        .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
@@ -688,23 +895,29 @@ namespace Amanah.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique();
+
                     b.HasIndex("NormalizedPhone")
                         .IsUnique();
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("users", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_users_at_least_one_identifier", "\"NormalizedPhone\" IS NOT NULL OR \"NormalizedEmail\" IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.AbuseReport", b =>
                 {
-                    b.HasOne("Amanah.Api.Data.Entities.Report", "Report")
-                        .WithMany("AbuseReports")
-                        .HasForeignKey("ReportId")
+                    b.HasOne("Amanah.Api.Data.Entities.User", "AbuseReporter")
+                        .WithMany()
+                        .HasForeignKey("AbuseReporterId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Amanah.Api.Data.Entities.User", "Reporter")
-                        .WithMany()
-                        .HasForeignKey("ReporterId")
+                    b.HasOne("Amanah.Api.Data.Entities.Report", "Report")
+                        .WithMany("AbuseReports")
+                        .HasForeignKey("ReportId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -713,11 +926,22 @@ namespace Amanah.Api.Data.Migrations
                         .HasForeignKey("ResolvedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.Navigation("AbuseReporter");
+
                     b.Navigation("Report");
 
-                    b.Navigation("Reporter");
-
                     b.Navigation("ResolvedByUser");
+                });
+
+            modelBuilder.Entity("Amanah.Api.Data.Entities.AdminAlertEmailOutboxMessage", b =>
+                {
+                    b.HasOne("Amanah.Api.Data.Entities.Report", "Report")
+                        .WithMany()
+                        .HasForeignKey("ReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Report");
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.CategoryField", b =>
@@ -740,6 +964,32 @@ namespace Amanah.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Amanah.Api.Data.Entities.ChatAttachment", b =>
+                {
+                    b.HasOne("Amanah.Api.Data.Entities.ChatThread", "ChatThread")
+                        .WithMany()
+                        .HasForeignKey("ChatThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Amanah.Api.Data.Entities.Message", "Message")
+                        .WithOne("Attachment")
+                        .HasForeignKey("Amanah.Api.Data.Entities.ChatAttachment", "MessageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Amanah.Api.Data.Entities.User", "Uploader")
+                        .WithMany()
+                        .HasForeignKey("UploaderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChatThread");
+
+                    b.Navigation("Message");
+
+                    b.Navigation("Uploader");
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.ChatThread", b =>
@@ -825,6 +1075,16 @@ namespace Amanah.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Amanah.Api.Data.Entities.OtpEmailOutboxMessage", b =>
+                {
+                    b.HasOne("Amanah.Api.Data.Entities.OtpCode", "OtpCode")
+                        .WithMany()
+                        .HasForeignKey("OtpCodeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("OtpCode");
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.OtpSmsOutboxMessage", b =>
@@ -917,6 +1177,11 @@ namespace Amanah.Api.Data.Migrations
             modelBuilder.Entity("Amanah.Api.Data.Entities.Governorate", b =>
                 {
                     b.Navigation("Reports");
+                });
+
+            modelBuilder.Entity("Amanah.Api.Data.Entities.Message", b =>
+                {
+                    b.Navigation("Attachment");
                 });
 
             modelBuilder.Entity("Amanah.Api.Data.Entities.Report", b =>

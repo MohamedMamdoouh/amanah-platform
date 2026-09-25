@@ -52,7 +52,7 @@
         </div>
         <div>
           <dt>{{ "admin.users.field_created_at" | translate }}</dt>
-          <dd>{{ detail.createdAt | appDate: "medium" }}</dd>
+          <dd>{{ detail.createdAt | appDate }}</dd>
         </div>
         <div>
           <dt>{{ "admin.users.ban_status" | translate }}</dt>
@@ -73,7 +73,7 @@
         @if (detail.isBanned && detail.bannedAt) {
           <div>
             <dt>{{ "admin.users.banned_at" | translate }}</dt>
-            <dd>{{ detail.bannedAt | appDate: "medium" }}</dd>
+            <dd>{{ detail.bannedAt | appDate }}</dd>
           </div>
         }
       </dl>

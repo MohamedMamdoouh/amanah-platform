@@ -49,6 +49,19 @@ export class ClaimService {
   findApprovedClaimForReport(
     reportId: string,
   ): Observable<MyClaimSummary | null> {
+    return this.findMineForReport(reportId, 'approved');
+  }
+
+  findPendingClaimForReport(
+    reportId: string,
+  ): Observable<MyClaimSummary | null> {
+    return this.findMineForReport(reportId, 'pending');
+  }
+
+  private findMineForReport(
+    reportId: string,
+    status: MyClaimSummary['status'],
+  ): Observable<MyClaimSummary | null> {
     // Must stay within GET /claims/mine pageSize max (1–50) or the lookup 400s
     // and claimant confirm/cancel UI never appears on public report detail.
     const pageSize = 50;
@@ -57,8 +70,7 @@ export class ClaimService {
       this.getMine(page, pageSize).pipe(
         switchMap((response) => {
           const found = response.items.find(
-            (claim) =>
-              claim.reportId === reportId && claim.status === 'approved',
+            (claim) => claim.reportId === reportId && claim.status === status,
           );
           if (found) {
             return of(found);
